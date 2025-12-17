@@ -10,7 +10,7 @@ export default function Header() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="bg-primary border-b border-primary-foreground/10 sticky top-0 z-50">
+    <header className="bg-primary border-b border-border-gray sticky top-0 z-50">
       <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -66,7 +66,7 @@ export default function Header() {
               Contato
             </Link>
             <Link to="/area-restrita">
-              <Button className="bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-11 px-6 rounded-lg">
+              <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg">
                 Área Restrita
               </Button>
             </Link>
@@ -84,7 +84,7 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden py-6 border-t border-primary-foreground/10">
+          <nav className="lg:hidden py-6 border-t border-border-gray">
             <div className="flex flex-col gap-4">
               <Link
                 to="/imoveis"
@@ -131,7 +131,7 @@ export default function Header() {
                 Contato
               </Link>
               <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-11 px-6 rounded-lg w-full">
+                <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg w-full">
                   Área Restrita
                 </Button>
               </Link>

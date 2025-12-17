@@ -58,7 +58,7 @@ export default function SimuladorPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="w-full bg-gradient-to-br from-brandaccent/10 to-secondary/5 py-16">
+      <section className="w-full bg-gradient-to-br from-secondary/10 to-brandaccent/5 py-16">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -72,7 +72,7 @@ export default function SimuladorPage() {
             <h1 className="font-heading text-5xl lg:text-6xl text-secondary mb-6">
               Simulador de Financiamento
             </h1>
-            <p className="font-paragraph text-lg text-primary-foreground/80 max-w-2xl mx-auto">
+            <p className="font-paragraph text-lg text-dark-gray max-w-2xl mx-auto">
               Calcule as parcelas do seu financiamento imobiliário com as condições da Caixa Econômica Federal
             </p>
           </motion.div>
@@ -88,7 +88,7 @@ export default function SimuladorPage() {
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10"
+              className="bg-light-gray rounded-2xl p-8 border border-border-gray"
             >
               <h2 className="font-heading text-2xl text-secondary mb-8 font-semibold">
                 Dados do Financiamento
@@ -105,7 +105,7 @@ export default function SimuladorPage() {
                     value={propertyValue}
                     onChange={(e) => handleCurrencyInput(e.target.value, setPropertyValue)}
                     placeholder="R$ 0,00"
-                    className="h-12 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 rounded-lg"
+                    className="h-12 bg-primary border-border-gray text-primary-foreground placeholder:text-dark-gray rounded-lg"
                   />
                 </div>
 
@@ -119,7 +119,7 @@ export default function SimuladorPage() {
                     value={downPayment}
                     onChange={(e) => handleCurrencyInput(e.target.value, setDownPayment)}
                     placeholder="R$ 0,00"
-                    className="h-12 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 rounded-lg"
+                    className="h-12 bg-primary border-border-gray text-primary-foreground placeholder:text-dark-gray rounded-lg"
                   />
                 </div>
 
@@ -128,7 +128,7 @@ export default function SimuladorPage() {
                     Prazo (meses)
                   </Label>
                   <Select value={months} onValueChange={setMonths}>
-                    <SelectTrigger className="h-12 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground rounded-lg">
+                    <SelectTrigger className="h-12 bg-primary border-border-gray text-primary-foreground rounded-lg">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -151,16 +151,16 @@ export default function SimuladorPage() {
                     step="0.1"
                     value={interestRate}
                     onChange={(e) => setInterestRate(e.target.value)}
-                    className="h-12 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 rounded-lg"
+                    className="h-12 bg-primary border-border-gray text-primary-foreground placeholder:text-dark-gray rounded-lg"
                   />
-                  <p className="font-paragraph text-sm text-primary-foreground/60 mt-2">
+                  <p className="font-paragraph text-sm text-dark-gray mt-2">
                     Taxa média Caixa: 9,5% a.a. (sujeita a alteração)
                   </p>
                 </div>
 
                 <Button
                   onClick={calculateFinancing}
-                  className="w-full bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-14 rounded-lg text-base"
+                  className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-14 rounded-lg text-base"
                 >
                   <Calculator className="w-5 h-5 mr-2" />
                   Calcular Financiamento
@@ -192,7 +192,7 @@ export default function SimuladorPage() {
                     </p>
                   </div>
 
-                  <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
+                  <div className="bg-light-gray rounded-2xl p-8 border border-border-gray">
                     <div className="flex items-center gap-3 mb-6">
                       <TrendingUp className="w-6 h-6 text-secondary" />
                       <h3 className="font-heading text-lg text-primary-foreground font-semibold">
@@ -205,12 +205,12 @@ export default function SimuladorPage() {
                         currency: 'BRL',
                       }).format(result.totalAmount)}
                     </p>
-                    <p className="font-paragraph text-sm text-primary-foreground/60">
+                    <p className="font-paragraph text-sm text-dark-gray">
                       Total a pagar ao final do financiamento
                     </p>
                   </div>
 
-                  <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
+                  <div className="bg-light-gray rounded-2xl p-8 border border-border-gray">
                     <div className="flex items-center gap-3 mb-6">
                       <Calendar className="w-6 h-6 text-secondary" />
                       <h3 className="font-heading text-lg text-primary-foreground font-semibold">
@@ -223,7 +223,7 @@ export default function SimuladorPage() {
                         currency: 'BRL',
                       }).format(result.totalInterest)}
                     </p>
-                    <p className="font-paragraph text-sm text-primary-foreground/60">
+                    <p className="font-paragraph text-sm text-dark-gray">
                       Juros pagos durante o financiamento
                     </p>
                   </div>
@@ -235,12 +235,12 @@ export default function SimuladorPage() {
                   </div>
                 </>
               ) : (
-                <div className="bg-primary-foreground/5 rounded-2xl p-12 border border-primary-foreground/10 text-center h-full flex flex-col items-center justify-center">
+                <div className="bg-light-gray rounded-2xl p-12 border border-border-gray text-center h-full flex flex-col items-center justify-center">
                   <Calculator className="w-16 h-16 text-primary-foreground/30 mb-4" />
                   <h3 className="font-heading text-2xl text-primary-foreground mb-2">
                     Preencha os Dados
                   </h3>
-                  <p className="font-paragraph text-base text-primary-foreground/60">
+                  <p className="font-paragraph text-base text-dark-gray">
                     Complete o formulário ao lado e clique em calcular para ver os resultados da simulação
                   </p>
                 </div>
@@ -251,7 +251,7 @@ export default function SimuladorPage() {
       </section>
 
       {/* Info Section */}
-      <section className="w-full bg-primary-foreground/5 py-16 border-t border-primary-foreground/10">
+      <section className="w-full bg-light-gray/50 py-16 border-t border-border-gray">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -264,35 +264,35 @@ export default function SimuladorPage() {
               Como Funciona o Financiamento Caixa
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-primary-foreground/5 rounded-xl p-6 border border-primary-foreground/10">
+              <div className="bg-primary rounded-xl p-6 border border-border-gray">
                 <h3 className="font-heading text-lg text-primary-foreground mb-3 font-semibold">
                   Entrada Mínima
                 </h3>
-                <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
+                <p className="font-paragraph text-base text-dark-gray leading-relaxed">
                   A Caixa exige entrada mínima de 20% do valor do imóvel para financiamento habitacional.
                 </p>
               </div>
-              <div className="bg-primary-foreground/5 rounded-xl p-6 border border-primary-foreground/10">
+              <div className="bg-primary rounded-xl p-6 border border-border-gray">
                 <h3 className="font-heading text-lg text-primary-foreground mb-3 font-semibold">
                   Prazo Máximo
                 </h3>
-                <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
+                <p className="font-paragraph text-base text-dark-gray leading-relaxed">
                   O prazo máximo de financiamento é de 30 anos (360 meses), podendo variar conforme análise.
                 </p>
               </div>
-              <div className="bg-primary-foreground/5 rounded-xl p-6 border border-primary-foreground/10">
+              <div className="bg-primary rounded-xl p-6 border border-border-gray">
                 <h3 className="font-heading text-lg text-primary-foreground mb-3 font-semibold">
                   Taxas de Juros
                 </h3>
-                <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
+                <p className="font-paragraph text-base text-dark-gray leading-relaxed">
                   As taxas variam conforme o tipo de imóvel, renda e relacionamento com o banco.
                 </p>
               </div>
-              <div className="bg-primary-foreground/5 rounded-xl p-6 border border-primary-foreground/10">
+              <div className="bg-primary rounded-xl p-6 border border-border-gray">
                 <h3 className="font-heading text-lg text-primary-foreground mb-3 font-semibold">
                   Documentação
                 </h3>
-                <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
+                <p className="font-paragraph text-base text-dark-gray leading-relaxed">
                   Documentos pessoais, comprovantes de renda e documentação do imóvel são necessários.
                 </p>
               </div>

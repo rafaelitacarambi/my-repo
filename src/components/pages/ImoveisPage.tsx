@@ -67,7 +67,7 @@ export default function ImoveisPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="w-full bg-gradient-to-br from-brandaccent/10 to-secondary/5 py-16">
+      <section className="w-full bg-gradient-to-br from-secondary/10 to-brandaccent/5 py-16">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -78,7 +78,7 @@ export default function ImoveisPage() {
             <h1 className="font-heading text-5xl lg:text-6xl text-secondary mb-6">
               Encontre Seu Imóvel Ideal
             </h1>
-            <p className="font-paragraph text-lg text-primary-foreground/80 max-w-2xl mx-auto">
+            <p className="font-paragraph text-lg text-dark-gray max-w-2xl mx-auto">
               Explore nossa seleção completa de imóveis disponíveis para venda e locação
             </p>
           </motion.div>
@@ -86,24 +86,24 @@ export default function ImoveisPage() {
       </section>
 
       {/* Filters Section */}
-      <section className="w-full bg-primary-foreground/5 py-8 border-b border-primary-foreground/10">
+      <section className="w-full bg-light-gray/50 py-8 border-b border-border-gray">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary-foreground/50" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-gray" />
                 <Input
                   type="text"
                   placeholder="Buscar por nome ou endereço..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 h-12 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 rounded-lg"
+                  className="pl-12 h-12 bg-primary border-border-gray text-primary-foreground placeholder:text-dark-gray rounded-lg"
                 />
               </div>
             </div>
 
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-12 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground rounded-lg">
+              <SelectTrigger className="h-12 bg-primary border-border-gray text-primary-foreground rounded-lg">
                 <SelectValue placeholder="Tipo de Imóvel" />
               </SelectTrigger>
               <SelectContent>
@@ -116,7 +116,7 @@ export default function ImoveisPage() {
             </Select>
 
             <Select value={transactionFilter} onValueChange={setTransactionFilter}>
-              <SelectTrigger className="h-12 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground rounded-lg">
+              <SelectTrigger className="h-12 bg-primary border-border-gray text-primary-foreground rounded-lg">
                 <SelectValue placeholder="Transação" />
               </SelectTrigger>
               <SelectContent>
@@ -127,7 +127,7 @@ export default function ImoveisPage() {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-12 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground rounded-lg">
+              <SelectTrigger className="h-12 bg-primary border-border-gray text-primary-foreground rounded-lg">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -145,7 +145,7 @@ export default function ImoveisPage() {
       <section className="w-full py-12">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <div className="flex items-center justify-between mb-8">
-            <p className="font-paragraph text-base text-primary-foreground/70">
+            <p className="font-paragraph text-base text-dark-gray">
               {filteredProperties.length} {filteredProperties.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}
             </p>
           </div>
@@ -153,7 +153,7 @@ export default function ImoveisPage() {
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="bg-primary-foreground/5 rounded-2xl h-96 animate-pulse"></div>
+                <div key={i} className="bg-light-gray rounded-2xl h-96 animate-pulse border border-border-gray"></div>
               ))}
             </div>
           ) : filteredProperties.length === 0 ? (
@@ -162,7 +162,7 @@ export default function ImoveisPage() {
               <h3 className="font-heading text-2xl text-primary-foreground mb-2">
                 Nenhum imóvel encontrado
               </h3>
-              <p className="font-paragraph text-base text-primary-foreground/60">
+              <p className="font-paragraph text-base text-dark-gray">
                 Tente ajustar os filtros para ver mais resultados
               </p>
             </div>
@@ -176,8 +176,8 @@ export default function ImoveisPage() {
                   transition={{ duration: 0.6, delay: index * 0.05 }}
                 >
                   <Link to={`/imoveis/${property._id}`}>
-                    <div className="bg-primary-foreground/5 rounded-2xl overflow-hidden border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
-                      <div className="relative h-64 bg-primary-foreground/10 overflow-hidden">
+                    <div className="bg-light-gray rounded-2xl overflow-hidden border border-border-gray hover:border-secondary/30 transition-all group h-full">
+                      <div className="relative h-64 bg-light-gray overflow-hidden">
                         {property.propertyImages ? (
                           <Image
                             src={property.propertyImages}
@@ -196,7 +196,7 @@ export default function ImoveisPage() {
                               property.status === 'Disponível'
                                 ? 'bg-secondary text-secondary-foreground'
                                 : property.status === 'Reservado'
-                                ? 'bg-brandaccent text-foreground'
+                                ? 'bg-brandaccent text-white'
                                 : 'bg-destructive text-destructiveforeground'
                             }`}>
                               {property.status}
@@ -206,24 +206,24 @@ export default function ImoveisPage() {
                       </div>
                       <div className="p-6">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-paragraph text-xs text-primary-foreground/60 bg-primary-foreground/10 px-2 py-1 rounded">
+                          <span className="font-paragraph text-xs text-dark-gray bg-border-gray px-2 py-1 rounded">
                             {property.propertyType}
                           </span>
-                          <span className="font-paragraph text-xs text-primary-foreground/60 bg-primary-foreground/10 px-2 py-1 rounded">
+                          <span className="font-paragraph text-xs text-dark-gray bg-border-gray px-2 py-1 rounded">
                             {property.transactionType}
                           </span>
                         </div>
                         <h3 className="font-heading text-xl text-primary-foreground mb-2 font-semibold line-clamp-1">
                           {property.propertyName}
                         </h3>
-                        <p className="font-paragraph text-sm text-primary-foreground/60 mb-4 line-clamp-1">
+                        <p className="font-paragraph text-sm text-dark-gray mb-4 line-clamp-1">
                           {property.address}
                         </p>
                         <div className="flex items-center justify-between mb-4">
-                          <span className="font-paragraph text-sm text-primary-foreground/70">
+                          <span className="font-paragraph text-sm text-dark-gray">
                             {property.bedrooms} quartos • {property.bathrooms} banheiros
                           </span>
-                          <span className="font-paragraph text-sm text-primary-foreground/70">
+                          <span className="font-paragraph text-sm text-dark-gray">
                             {property.area}m²
                           </span>
                         </div>

@@ -88,7 +88,7 @@ const ParallaxImage = ({ src, alt, className, speed = 0.5 }) => {
 // Sticky Section Component
 const StickySection = ({ title, subtitle, children }) => {
   return (
-    <section className="relative w-full max-w-[120rem] mx-auto px-6 lg:px-12 py-24 lg:py-32">
+    <section className="relative w-full max-w-[120rem] mx-auto px-6 lg:px-12 py-24 lg:py-32 bg-primary">
       <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
         <div className="lg:w-1/3">
           <div className="sticky top-32">
@@ -96,7 +96,7 @@ const StickySection = ({ title, subtitle, children }) => {
               <h2 className="font-heading text-4xl lg:text-6xl text-secondary mb-6 leading-tight">
                 {title}
               </h2>
-              <p className="font-paragraph text-lg text-primary-foreground/80 leading-relaxed mb-8">
+              <p className="font-paragraph text-lg text-dark-gray leading-relaxed mb-8">
                 {subtitle}
               </p>
               <div className="h-1 w-24 bg-brandaccent rounded-full" />
@@ -145,16 +145,15 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-primary text-foreground overflow-x-clip selection:bg-brandaccent selection:text-white" onMouseMove={handleMouseMove}>
+    <div className="min-h-screen bg-primary text-primary-foreground overflow-x-clip selection:bg-secondary selection:text-secondary-foreground" onMouseMove={handleMouseMove}>
       <Header />
-
       {/* --- HERO SECTION --- */}
       {/* Replicating the structure of the inspiration image: Left aligned text, Right aligned abstract motif */}
       <section className="relative w-full min-h-[90vh] flex items-center pt-20 overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-gradient-to-b from-brandaccent/10 to-transparent rounded-full blur-[120px] translate-x-1/3 -translate-y-1/4" />
-          <div className="absolute bottom-0 left-0 w-[60vw] h-[60vw] bg-gradient-to-t from-secondary/5 to-transparent rounded-full blur-[100px] -translate-x-1/3 translate-y-1/4" />
+          <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-gradient-to-b from-secondary/5 to-transparent rounded-full blur-[120px] translate-x-1/3 -translate-y-1/4" />
+          <div className="absolute bottom-0 left-0 w-[60vw] h-[60vw] bg-gradient-to-t from-brandaccent/5 to-transparent rounded-full blur-[100px] -translate-x-1/3 translate-y-1/4" />
         </div>
 
         <div className="w-full max-w-[120rem] mx-auto px-6 lg:px-12 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
@@ -171,14 +170,14 @@ export default function HomePage() {
                 <span className="font-heading text-sm tracking-widest uppercase text-secondary">Especialistas Caixa</span>
               </div>
               
-              <h1 className="font-heading text-6xl lg:text-8xl font-bold leading-[0.95] tracking-tight text-white mb-8">
+              <h1 className="font-heading text-6xl lg:text-8xl font-bold leading-[0.95] tracking-tight text-primary-foreground mb-8">
                 O Futuro do <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-brandaccent">
                   Seu Patrimônio
                 </span>
               </h1>
               
-              <p className="font-paragraph text-xl text-primary-foreground/70 max-w-lg leading-relaxed border-l-2 border-brandaccent/30 pl-6">
+              <p className="font-paragraph text-xl text-dark-gray max-w-lg leading-relaxed border-l-2 border-secondary/30 pl-6">
                 Conectamos você às melhores oportunidades imobiliárias com a segurança e facilidade do financiamento Caixa.
               </p>
             </motion.div>
@@ -190,12 +189,12 @@ export default function HomePage() {
               className="flex flex-wrap gap-4"
             >
               <Link to="/imoveis">
-                <Button className="h-16 px-10 bg-secondary text-primary hover:bg-white hover:text-primary text-lg font-heading font-bold rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(185,229,79,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]">
+                <Button className="h-16 px-10 bg-secondary text-secondary-foreground hover:bg-secondary/90 text-lg font-heading font-bold rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(0,92,169,0.2)] hover:shadow-[0_0_30px_rgba(0,92,169,0.3)]">
                   Explorar Imóveis
                 </Button>
               </Link>
               <Link to="/simulador">
-                <Button variant="outline" className="h-16 px-10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/40 text-lg font-heading font-bold rounded-full backdrop-blur-sm transition-all duration-300">
+                <Button variant="outline" className="h-16 px-10 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/5 hover:border-primary-foreground/40 text-lg font-heading font-bold rounded-full backdrop-blur-sm transition-all duration-300">
                   Simular Agora
                 </Button>
               </Link>
@@ -208,7 +207,7 @@ export default function HomePage() {
             {[1, 2, 3, 4].map((i) => (
               <motion.div
                 key={i}
-                className="absolute rounded-full border border-white/5 bg-white/[0.02] backdrop-blur-[1px]"
+                className="absolute rounded-full border border-primary-foreground/10 bg-primary-foreground/[0.02] backdrop-blur-[1px]"
                 style={{
                   width: `${i * 140}px`,
                   height: `${i * 140}px`,
@@ -229,7 +228,7 @@ export default function HomePage() {
             
             {/* Central Focus Element */}
             <motion.div 
-              className="relative z-20 w-64 h-64 rounded-full bg-gradient-to-br from-brandaccent to-secondary p-1 shadow-[0_0_100px_rgba(107,93,211,0.4)]"
+              className="relative z-20 w-64 h-64 rounded-full bg-gradient-to-br from-secondary to-brandaccent p-1 shadow-[0_0_100px_rgba(0,92,169,0.2)]"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1, delay: 0.4 }}
@@ -241,27 +240,27 @@ export default function HomePage() {
                   className="w-full h-full object-cover opacity-60 mix-blend-overlay"
                   width={400}
                 />
-                <Home className="absolute w-24 h-24 text-white drop-shadow-lg" strokeWidth={1} />
+                <Home className="absolute w-24 h-24 text-primary-foreground drop-shadow-lg" strokeWidth={1} />
               </div>
             </motion.div>
 
             {/* Floating Cards */}
             <motion.div
-              className="absolute top-1/4 right-10 z-30 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex items-center gap-4 shadow-xl"
+              className="absolute top-1/4 right-10 z-30 bg-light-gray/80 backdrop-blur-md border border-border-gray p-4 rounded-2xl flex items-center gap-4 shadow-xl"
               animate={{ y: [0, -20, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             >
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground">
                 <BadgePercent size={20} />
               </div>
               <div>
-                <p className="text-xs text-white/60 font-paragraph">Taxas a partir de</p>
-                <p className="text-lg font-bold text-white font-heading">TR + 6.5% a.a.</p>
+                <p className="text-xs text-dark-gray font-paragraph">Taxas a partir de</p>
+                <p className="text-lg font-bold text-primary-foreground font-heading">TR + 6.5% a.a.</p>
               </div>
             </motion.div>
 
             <motion.div
-              className="absolute bottom-1/4 left-0 z-30 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex items-center gap-4 shadow-xl"
+              className="absolute bottom-1/4 left-0 z-30 bg-light-gray/80 backdrop-blur-md border border-border-gray p-4 rounded-2xl flex items-center gap-4 shadow-xl"
               animate={{ y: [0, 20, 0] }}
               transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             >
@@ -269,16 +268,15 @@ export default function HomePage() {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <p className="text-xs text-white/60 font-paragraph">Aprovação</p>
-                <p className="text-lg font-bold text-white font-heading">Simplificada</p>
+                <p className="text-xs text-dark-gray font-paragraph">Aprovação</p>
+                <p className="text-lg font-bold text-primary-foreground font-heading">Simplificada</p>
               </div>
             </motion.div>
           </div>
         </div>
       </section>
-
       {/* --- STATS TICKER --- */}
-      <div className="w-full border-y border-white/10 bg-primary/50 backdrop-blur-sm">
+      <div className="w-full border-y border-border-gray bg-light-gray/50 backdrop-blur-sm">
         <div className="max-w-[120rem] mx-auto">
           <div className="flex overflow-hidden py-8 group">
             <div className="flex animate-marquee whitespace-nowrap gap-24 px-12">
@@ -294,14 +292,13 @@ export default function HomePage() {
               ].map((stat, i) => (
                 <div key={i} className="flex items-center gap-4 opacity-50 group-hover:opacity-100 transition-opacity duration-500">
                   <span className="text-3xl font-heading font-bold text-secondary">{stat.value}</span>
-                  <span className="text-sm font-paragraph text-white uppercase tracking-wider">{stat.label}</span>
+                  <span className="text-sm font-paragraph uppercase tracking-wider text-primary-foreground">{stat.label}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
-
       {/* --- STICKY SERVICES SECTION --- */}
       <StickySection 
         title="Soluções Completas" 
@@ -309,19 +306,19 @@ export default function HomePage() {
       >
         {/* Card 1 */}
         <ScrollReveal className="w-full">
-          <div className="group relative w-full bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-secondary/50 transition-colors duration-500">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-secondary/20 transition-all duration-500" />
+          <div className="group relative w-full bg-light-gray border border-border-gray rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-secondary/50 transition-colors duration-500">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-secondary/10 transition-all duration-500" />
             
             <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
               <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center shrink-0">
-                <Calculator className="w-8 h-8 text-primary" />
+                <Calculator className="w-8 h-8 text-secondary-foreground" />
               </div>
               <div>
-                <h3 className="text-2xl lg:text-3xl font-heading font-bold text-white mb-4">Simulação & Financiamento</h3>
-                <p className="text-primary-foreground/70 font-paragraph text-lg leading-relaxed mb-6">
+                <h3 className="text-2xl lg:text-3xl font-heading font-bold text-primary-foreground mb-4">Simulação & Financiamento</h3>
+                <p className="text-dark-gray font-paragraph text-lg leading-relaxed mb-6">
                   Como correspondentes Caixa, oferecemos acesso direto às melhores taxas do mercado. Realizamos toda a análise de crédito e aprovação sem que você precise ir ao banco.
                 </p>
-                <Link to="/simulador" className="inline-flex items-center text-secondary font-bold hover:text-white transition-colors group-hover:translate-x-2 duration-300">
+                <Link to="/simulador" className="inline-flex items-center text-secondary font-bold hover:text-secondary/80 transition-colors group-hover:translate-x-2 duration-300">
                   Simular agora <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
               </div>
@@ -331,19 +328,19 @@ export default function HomePage() {
 
         {/* Card 2 */}
         <ScrollReveal className="w-full" delay={100}>
-          <div className="group relative w-full bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-brandaccent/50 transition-colors duration-500">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-brandaccent/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-brandaccent/20 transition-all duration-500" />
+          <div className="group relative w-full bg-light-gray border border-border-gray rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-brandaccent/50 transition-colors duration-500">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-brandaccent/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-brandaccent/10 transition-all duration-500" />
             
             <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
               <div className="w-16 h-16 rounded-2xl bg-brandaccent flex items-center justify-center shrink-0">
                 <Search className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h3 className="text-2xl lg:text-3xl font-heading font-bold text-white mb-4">Curadoria de Imóveis</h3>
-                <p className="text-primary-foreground/70 font-paragraph text-lg leading-relaxed mb-6">
+                <h3 className="text-2xl lg:text-3xl font-heading font-bold text-primary-foreground mb-4">Curadoria de Imóveis</h3>
+                <p className="text-dark-gray font-paragraph text-lg leading-relaxed mb-6">
                   Não apenas listamos imóveis; selecionamos oportunidades. Nossa equipe avalia documentação, estado de conservação e potencial de valorização de cada propriedade.
                 </p>
-                <Link to="/imoveis" className="inline-flex items-center text-brandaccent font-bold hover:text-white transition-colors group-hover:translate-x-2 duration-300">
+                <Link to="/imoveis" className="inline-flex items-center text-brandaccent font-bold hover:text-brandaccent/80 transition-colors group-hover:translate-x-2 duration-300">
                   Ver catálogo <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
               </div>
@@ -353,19 +350,19 @@ export default function HomePage() {
 
         {/* Card 3 */}
         <ScrollReveal className="w-full" delay={200}>
-          <div className="group relative w-full bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-white/30 transition-colors duration-500">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-white/10 transition-all duration-500" />
+          <div className="group relative w-full bg-light-gray border border-border-gray rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-primary-foreground/30 transition-colors duration-500">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-foreground/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary-foreground/10 transition-all duration-500" />
             
             <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
-              <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
-                <Users className="w-8 h-8 text-white" />
+              <div className="w-16 h-16 rounded-2xl bg-primary-foreground/10 flex items-center justify-center shrink-0">
+                <Users className="w-8 h-8 text-primary-foreground" />
               </div>
               <div>
-                <h3 className="text-2xl lg:text-3xl font-heading font-bold text-white mb-4">Assessoria Jurídica</h3>
-                <p className="text-primary-foreground/70 font-paragraph text-lg leading-relaxed mb-6">
+                <h3 className="text-2xl lg:text-3xl font-heading font-bold text-primary-foreground mb-4">Assessoria Jurídica</h3>
+                <p className="text-dark-gray font-paragraph text-lg leading-relaxed mb-6">
                   Segurança jurídica total. Nossa equipe interna cuida de todas as certidões, contratos e registros, garantindo uma transação limpa e sem surpresas.
                 </p>
-                <Link to="/contato" className="inline-flex items-center text-white font-bold hover:text-secondary transition-colors group-hover:translate-x-2 duration-300">
+                <Link to="/contato" className="inline-flex items-center text-secondary font-bold hover:text-secondary/80 transition-colors group-hover:translate-x-2 duration-300">
                   Falar com consultor <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
               </div>
@@ -373,26 +370,25 @@ export default function HomePage() {
           </div>
         </ScrollReveal>
       </StickySection>
-
       {/* --- FEATURED PROPERTIES (Data Fidelity) --- */}
       <section className="w-full py-24 bg-primary relative">
         {/* Decorative Background Line */}
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border-gray to-transparent" />
         
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
             <ScrollReveal>
-              <h2 className="font-heading text-4xl lg:text-5xl text-white mb-4">
+              <h2 className="font-heading text-4xl lg:text-5xl text-primary-foreground mb-4">
                 Oportunidades <span className="text-secondary">Exclusivas</span>
               </h2>
-              <p className="font-paragraph text-lg text-primary-foreground/60 max-w-xl">
+              <p className="font-paragraph text-lg text-dark-gray max-w-xl">
                 Uma seleção criteriosa dos melhores imóveis disponíveis para venda e financiamento imediato.
               </p>
             </ScrollReveal>
             
             <ScrollReveal delay={100}>
               <Link to="/imoveis">
-                <Button variant="outline" className="border-white/20 text-white hover:bg-white hover:text-primary rounded-full px-8 h-12 font-heading">
+                <Button variant="outline" className="border-border-gray text-primary-foreground hover:bg-light-gray hover:text-primary-foreground rounded-full px-8 h-12 font-heading">
                   Ver todo o portfólio
                 </Button>
               </Link>
@@ -402,7 +398,7 @@ export default function HomePage() {
           {loading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white/5 rounded-3xl h-[500px] animate-pulse border border-white/5" />
+                <div key={i} className="bg-light-gray rounded-3xl h-[500px] animate-pulse border border-border-gray" />
               ))}
             </div>
           ) : (
@@ -410,11 +406,11 @@ export default function HomePage() {
               {featuredProperties.map((property, index) => (
                 <ScrollReveal key={property._id} delay={index * 100}>
                   <Link to={`/imoveis/${property._id}`} className="group block h-full">
-                    <div className="relative h-full bg-white/5 rounded-3xl overflow-hidden border border-white/10 hover:border-secondary/50 transition-all duration-500 hover:-translate-y-2">
+                    <div className="relative h-full bg-light-gray rounded-3xl overflow-hidden border border-border-gray hover:border-secondary/50 transition-all duration-500 hover:-translate-y-2">
                       {/* Image Container */}
                       <div className="relative h-[300px] overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-t from-primary to-transparent opacity-60 z-10" />
-                        <div className="absolute top-4 right-4 z-20 bg-primary/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                        <div className="absolute top-4 right-4 z-20 bg-primary/80 backdrop-blur-md px-4 py-2 rounded-full border border-border-gray">
                           <span className="text-secondary font-bold font-heading">
                             {property.transactionType || 'Venda'}
                           </span>
@@ -427,46 +423,46 @@ export default function HomePage() {
                             width={600}
                           />
                         ) : (
-                          <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                            <Home className="w-16 h-16 text-white/20" />
+                          <div className="w-full h-full bg-light-gray flex items-center justify-center">
+                            <Home className="w-16 h-16 text-primary-foreground/20" />
                           </div>
                         )}
                       </div>
 
                       {/* Content */}
                       <div className="p-8 relative z-20 -mt-12">
-                        <div className="bg-primary border border-white/10 p-6 rounded-2xl shadow-xl group-hover:shadow-secondary/10 transition-shadow duration-500">
-                          <h3 className="font-heading text-xl text-white font-bold mb-2 line-clamp-1">
+                        <div className="bg-primary border border-border-gray p-6 rounded-2xl shadow-xl group-hover:shadow-secondary/10 transition-shadow duration-500">
+                          <h3 className="font-heading text-xl text-primary-foreground font-bold mb-2 line-clamp-1">
                             {property.propertyName}
                           </h3>
-                          <div className="flex items-center text-primary-foreground/60 mb-4 text-sm">
+                          <div className="flex items-center text-dark-gray mb-4 text-sm">
                             <MapPin className="w-4 h-4 mr-1" />
                             <span className="line-clamp-1">{property.address}</span>
                           </div>
                           
-                          <div className="grid grid-cols-3 gap-4 py-4 border-y border-white/10 mb-4">
+                          <div className="grid grid-cols-3 gap-4 py-4 border-y border-border-gray mb-4">
                             <div className="text-center">
-                              <p className="text-xs text-primary-foreground/50 uppercase tracking-wider mb-1">Área</p>
-                              <p className="font-bold text-white">{property.area}m²</p>
+                              <p className="text-xs text-dark-gray uppercase tracking-wider mb-1">Área</p>
+                              <p className="font-bold text-primary-foreground">{property.area}m²</p>
                             </div>
-                            <div className="text-center border-l border-white/10">
-                              <p className="text-xs text-primary-foreground/50 uppercase tracking-wider mb-1">Quartos</p>
-                              <p className="font-bold text-white">{property.bedrooms}</p>
+                            <div className="text-center border-l border-border-gray">
+                              <p className="text-xs text-dark-gray uppercase tracking-wider mb-1">Quartos</p>
+                              <p className="font-bold text-primary-foreground">{property.bedrooms}</p>
                             </div>
-                            <div className="text-center border-l border-white/10">
-                              <p className="text-xs text-primary-foreground/50 uppercase tracking-wider mb-1">Banheiros</p>
-                              <p className="font-bold text-white">{property.bathrooms}</p>
+                            <div className="text-center border-l border-border-gray">
+                              <p className="text-xs text-dark-gray uppercase tracking-wider mb-1">Banheiros</p>
+                              <p className="font-bold text-primary-foreground">{property.bathrooms}</p>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-xs text-primary-foreground/50 mb-1">Valor</p>
+                              <p className="text-xs text-dark-gray mb-1">Valor</p>
                               <p className="text-2xl font-heading font-bold text-secondary">
                                 {property.price ? `R$ ${property.price.toLocaleString('pt-BR')}` : 'Sob Consulta'}
                               </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-secondary group-hover:text-primary transition-colors duration-300">
+                            <div className="w-10 h-10 rounded-full bg-light-gray flex items-center justify-center group-hover:bg-secondary group-hover:text-secondary-foreground transition-colors duration-300">
                               <ArrowRight className="w-5 h-5" />
                             </div>
                           </div>
@@ -480,7 +476,6 @@ export default function HomePage() {
           )}
         </div>
       </section>
-
       {/* --- PARALLAX BREAK SECTION --- */}
       <section className="relative w-full h-[80vh] overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 z-0">
@@ -495,14 +490,14 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
           <ScrollReveal>
-            <div className="inline-block px-4 py-2 rounded-full border border-white/20 bg-white/5 backdrop-blur-md mb-8">
+            <div className="inline-block px-4 py-2 rounded-full border border-border-gray bg-light-gray/10 backdrop-blur-md mb-8">
               <span className="text-secondary font-bold tracking-wider uppercase text-sm">Simulador Caixa</span>
             </div>
-            <h2 className="font-heading text-5xl lg:text-7xl text-white font-bold mb-8 leading-tight">
+            <h2 className="font-heading text-5xl lg:text-7xl text-primary-foreground font-bold mb-8 leading-tight">
               Quanto custa o seu <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-white">novo começo?</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-primary-foreground">novo começo?</span>
             </h2>
-            <p className="font-paragraph text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+            <p className="font-paragraph text-xl text-dark-gray mb-10 max-w-2xl mx-auto">
               Utilize nosso simulador integrado com a Caixa Econômica Federal e descubra em segundos as condições reais para o seu perfil.
             </p>
             <Link to="/simulador">
@@ -513,18 +508,17 @@ export default function HomePage() {
           </ScrollReveal>
         </div>
       </section>
-
       {/* --- PROCESS STEPS (Horizontal Flow) --- */}
       <section className="w-full py-24 lg:py-32 bg-primary">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <div className="text-center mb-20">
-            <h2 className="font-heading text-4xl lg:text-5xl text-white mb-6">Jornada Simplificada</h2>
-            <p className="text-primary-foreground/60 text-lg">Do primeiro clique até a entrega das chaves</p>
+            <h2 className="font-heading text-4xl lg:text-5xl text-primary-foreground mb-6">Jornada Simplificada</h2>
+            <p className="text-dark-gray text-lg">Do primeiro clique até a entrega das chaves</p>
           </div>
 
           <div className="relative">
             {/* Connecting Line */}
-            <div className="absolute top-1/2 left-0 w-full h-px bg-white/10 -translate-y-1/2 hidden lg:block" />
+            <div className="absolute top-1/2 left-0 w-full h-px bg-border-gray -translate-y-1/2 hidden lg:block" />
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
               {[
@@ -535,11 +529,11 @@ export default function HomePage() {
               ].map((step, i) => (
                 <ScrollReveal key={i} delay={i * 150} className="relative bg-primary">
                   <div className="flex flex-col items-center text-center group">
-                    <div className="w-20 h-20 rounded-full bg-primary border border-white/10 flex items-center justify-center mb-6 relative z-10 group-hover:border-secondary transition-colors duration-300 shadow-lg shadow-black/20">
-                      <step.icon className="w-8 h-8 text-white group-hover:text-secondary transition-colors" />
+                    <div className="w-20 h-20 rounded-full bg-primary border border-border-gray flex items-center justify-center mb-6 relative z-10 group-hover:border-secondary transition-colors duration-300 shadow-lg shadow-black/20">
+                      <step.icon className="w-8 h-8 text-primary-foreground group-hover:text-secondary transition-colors" />
                     </div>
-                    <h3 className="text-xl font-heading font-bold text-white mb-3">{step.title}</h3>
-                    <p className="text-primary-foreground/60 font-paragraph">{step.desc}</p>
+                    <h3 className="text-xl font-heading font-bold text-primary-foreground mb-3">{step.title}</h3>
+                    <p className="text-dark-gray font-paragraph">{step.desc}</p>
                   </div>
                 </ScrollReveal>
               ))}
@@ -547,27 +541,26 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
       {/* --- CTA SECTION --- */}
-      <section className="w-full py-24 bg-gradient-to-b from-primary to-[#092b35] relative overflow-hidden">
+      <section className="w-full py-24 bg-light-gray relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-secondary/5 rounded-full blur-[120px]" />
         
         <div className="max-w-5xl mx-auto px-6 relative z-10 text-center">
           <ScrollReveal>
-            <h2 className="font-heading text-5xl lg:text-6xl text-white font-bold mb-8">
+            <h2 className="font-heading text-5xl lg:text-6xl text-primary-foreground font-bold mb-8">
               Pronto para dar o próximo passo?
             </h2>
-            <p className="font-paragraph text-xl text-primary-foreground/70 mb-12 max-w-2xl mx-auto">
+            <p className="font-paragraph text-xl text-dark-gray mb-12 max-w-2xl mx-auto">
               Nossa equipe de corretores especialistas está pronta para apresentar as melhores opções para o seu momento de vida.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Link to="/contato">
-                <Button className="h-14 px-10 bg-white text-primary hover:bg-secondary hover:text-primary font-bold text-lg rounded-full w-full sm:w-auto transition-colors">
+                <Button className="h-14 px-10 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold text-lg rounded-full w-full sm:w-auto transition-colors">
                   Falar com Especialista
                 </Button>
               </Link>
               <Link to="/corretores">
-                <Button variant="outline" className="h-14 px-10 border-white/20 text-white hover:bg-white/10 font-bold text-lg rounded-full w-full sm:w-auto">
+                <Button variant="outline" className="h-14 px-10 border-border-gray text-primary-foreground hover:bg-primary-foreground/5 font-bold text-lg rounded-full w-full sm:w-auto">
                   Conhecer Equipe
                 </Button>
               </Link>
@@ -575,9 +568,7 @@ export default function HomePage() {
           </ScrollReveal>
         </div>
       </section>
-
       <Footer />
-      
       {/* Global Styles for Custom Animations */}
       <style>{`
         @keyframes marquee {
