@@ -66,7 +66,7 @@ export default function ContatoPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="w-full bg-gradient-to-br from-brandaccent/10 to-secondary/5 py-16">
+      <section className="w-full bg-gradient-to-br from-secondary/10 to-secondary/5 py-16">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -98,7 +98,7 @@ export default function ContatoPage() {
               transition={{ duration: 0.6 }}
             >
               {submitted ? (
-                <div className="bg-gradient-to-br from-secondary/20 to-brandaccent/10 rounded-2xl p-12 border border-secondary/30 text-center">
+                <div className="bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-2xl p-12 border border-secondary/30 text-center">
                   <CheckCircle className="w-16 h-16 text-secondary mx-auto mb-6" />
                   <h2 className="font-heading text-3xl text-secondary mb-4 font-semibold">
                     Mensagem Enviada!
@@ -283,7 +283,7 @@ export default function ContatoPage() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-brandaccent/20 to-secondary/10 rounded-2xl p-8 border border-secondary/20">
+              <div className="bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-2xl p-8 border border-secondary/20">
                 <h3 className="font-heading text-xl text-secondary mb-4 font-semibold">
                   Horário de Atendimento
                 </h3>

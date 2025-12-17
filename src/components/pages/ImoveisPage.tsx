@@ -196,7 +196,7 @@ export default function ImoveisPage() {
                               property.status === 'Disponível'
                                 ? 'bg-secondary text-secondary-foreground'
                                 : property.status === 'Reservado'
-                                ? 'bg-brandaccent text-white'
+                                ? 'bg-dark-gray text-white'
                                 : 'bg-destructive text-destructiveforeground'
                             }`}>
                               {property.status}

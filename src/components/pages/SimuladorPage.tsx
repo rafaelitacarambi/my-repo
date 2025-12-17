@@ -177,7 +177,7 @@ export default function SimuladorPage() {
             >
               {result ? (
                 <>
-                  <div className="bg-gradient-to-br from-secondary/20 to-brandaccent/10 rounded-2xl p-8 border border-secondary/30">
+                  <div className="bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-2xl p-8 border border-secondary/30">
                     <div className="flex items-center gap-3 mb-4">
                       <DollarSign className="w-8 h-8 text-secondary" />
                       <h3 className="font-heading text-xl text-primary-foreground font-semibold">
@@ -228,7 +228,7 @@ export default function SimuladorPage() {
                     </p>
                   </div>
 
-                  <div className="bg-brandaccent/10 rounded-2xl p-6 border border-brandaccent/20">
+                  <div className="bg-light-gray rounded-2xl p-6 border border-border-gray">
                     <p className="font-paragraph text-sm text-primary-foreground/80 leading-relaxed">
                       <strong className="text-secondary">Importante:</strong> Esta é uma simulação aproximada. Os valores reais podem variar de acordo com a análise de crédito, taxas vigentes e condições específicas da Caixa Econômica Federal.
                     </p>

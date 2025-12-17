@@ -116,7 +116,7 @@ export default function ImovelDetailPage() {
                       property.status === 'Disponível'
                         ? 'bg-secondary text-secondary-foreground'
                         : property.status === 'Reservado'
-                        ? 'bg-brandaccent text-foreground'
+                        ? 'bg-dark-gray text-white'
                         : 'bg-destructive text-destructiveforeground'
                     }`}>
                       {property.status}
@@ -226,7 +226,7 @@ export default function ImovelDetailPage() {
                       </Button>
                     </Link>
                     <Link to="/contato" className="block">
-                      <Button className="w-full bg-brandaccent text-foreground hover:bg-brandaccent/90 font-paragraph font-semibold h-12 rounded-lg">
+                      <Button className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-12 rounded-lg">
                         <Phone className="w-5 h-5 mr-2" />
                         Entrar em Contato
                       </Button>

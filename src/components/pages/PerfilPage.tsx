@@ -25,7 +25,7 @@ function PerfilContent() {
       <Header />
 
       {/* Header */}
-      <section className="w-full bg-gradient-to-br from-brandaccent/10 to-secondary/5 py-12">
+      <section className="w-full bg-gradient-to-br from-secondary/10 to-secondary/5 py-12">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <Link to="/area-restrita">
             <Button
@@ -178,7 +178,7 @@ function PerfilContent() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-brandaccent/20 to-secondary/10 rounded-2xl p-8 border border-secondary/20">
+              <div className="bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-2xl p-8 border border-secondary/20">
                 <h3 className="font-heading text-xl text-secondary mb-4 font-semibold">
                   Acesso Rápido
                 </h3>

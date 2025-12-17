@@ -61,7 +61,7 @@ function AdminLeadsContent() {
       <Header />
 
       {/* Header */}
-      <section className="w-full bg-gradient-to-br from-brandaccent/10 to-secondary/5 py-12">
+      <section className="w-full bg-gradient-to-br from-secondary/10 to-secondary/5 py-12">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <Link to="/area-restrita">
             <Button
