@@ -1,5 +1,6 @@
-import { Building2, Mail, Phone, MapPin, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Image } from '@/components/ui/image';
 
 export default function Footer() {
   return (
@@ -8,13 +9,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand Section */}
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-secondary-foreground" />
-              </div>
-              <span className="font-heading text-xl text-primary-foreground font-bold">
-                ImóvelPrime
-              </span>
+            <div className="mb-6">
+              <Image 
+                src="https://static.wixstatic.com/media/9b23b4_b58f681501154c4994c8a52eb8477ef8~mv2.png" 
+                alt="R. Sales Imóveis Logo"
+                width={180}
+                className="h-auto"
+              />
             </div>
             <p className="font-paragraph text-base text-dark-gray leading-relaxed">
               Sua parceira de confiança em soluções imobiliárias. Especialistas em financiamento Caixa e atendimento personalizado.
@@ -130,7 +131,7 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-border-gray">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="font-paragraph text-sm text-dark-gray">
-              © {new Date().getFullYear()} ImóvelPrime. Todos os direitos reservados.
+              © {new Date().getFullYear()} R. Sales Imóveis. Todos os direitos reservados.
             </p>
             <p className="font-paragraph text-sm text-dark-gray">
               CRECI: 12345-J | CNPJ: 12.345.678/0001-90

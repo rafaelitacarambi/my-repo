@@ -2,8 +2,9 @@ import { useMember } from '@/integrations';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Building2, Users, TrendingUp, FileText, Key, DollarSign } from 'lucide-react';
+import { Users, TrendingUp, FileText, Key, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Image } from '@/components/ui/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -21,14 +22,22 @@ function AreaRestritaContent() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center"
+            className="flex flex-col items-center text-center gap-6"
           >
-            <h1 className="font-heading text-5xl lg:text-6xl text-secondary mb-6">
-              Área Restrita
-            </h1>
-            <p className="font-paragraph text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-              Bem-vindo, {member?.profile?.nickname || member?.contact?.firstName || 'Corretor'}!
-            </p>
+            <Image 
+              src="https://static.wixstatic.com/media/9b23b4_901f6032bce24b56a3af78024a71a840~mv2.png" 
+              alt="R. Sales Imóveis Logo"
+              width={100}
+              className="h-auto"
+            />
+            <div>
+              <h1 className="font-heading text-5xl lg:text-6xl text-secondary mb-6">
+                Área Restrita
+              </h1>
+              <p className="font-paragraph text-lg text-primary-foreground/80 max-w-2xl mx-auto">
+                Bem-vindo, {member?.profile?.nickname || member?.contact?.firstName || 'Corretor'}!
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -46,7 +55,12 @@ function AreaRestritaContent() {
               <Link to="/admin/imoveis">
                 <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
                   <div className="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Building2 className="w-7 h-7 text-secondary-foreground" />
+                    <Image 
+                      src="https://static.wixstatic.com/media/9b23b4_901f6032bce24b56a3af78024a71a840~mv2.png" 
+                      alt="Logo"
+                      width={28}
+                      className="h-auto"
+                    />
                   </div>
                   <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
                     Cadastro de Imóveis
