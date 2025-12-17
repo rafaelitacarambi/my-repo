@@ -96,7 +96,7 @@ const StickySection = ({ title, subtitle, children }) => {
               <h2 className="font-heading text-4xl lg:text-6xl text-secondary mb-6 leading-tight">
                 {title}
               </h2>
-              <p className="font-paragraph text-lg text-dark-gray leading-relaxed mb-8">
+              <p className="font-paragraph text-lg text-primary-foreground/80 leading-relaxed mb-8">
                 {subtitle}
               </p>
               <div className="h-1 w-24 bg-brandaccent rounded-full" />
@@ -147,6 +147,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-primary text-foreground overflow-x-clip selection:bg-brandaccent selection:text-white" onMouseMove={handleMouseMove}>
       <Header />
+
       {/* --- HERO SECTION --- */}
       {/* Replicating the structure of the inspiration image: Left aligned text, Right aligned abstract motif */}
       <section className="relative w-full min-h-[90vh] flex items-center pt-20 overflow-hidden">
@@ -275,6 +276,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
       {/* --- STATS TICKER --- */}
       <div className="w-full border-y border-white/10 bg-primary/50 backdrop-blur-sm">
         <div className="max-w-[120rem] mx-auto">
@@ -292,13 +294,14 @@ export default function HomePage() {
               ].map((stat, i) => (
                 <div key={i} className="flex items-center gap-4 opacity-50 group-hover:opacity-100 transition-opacity duration-500">
                   <span className="text-3xl font-heading font-bold text-secondary">{stat.value}</span>
-                  <span className="text-sm font-paragraph uppercase tracking-wider text-primary-foreground">{stat.label}</span>
+                  <span className="text-sm font-paragraph text-white uppercase tracking-wider">{stat.label}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
+
       {/* --- STICKY SERVICES SECTION --- */}
       <StickySection 
         title="Soluções Completas" 
@@ -370,6 +373,7 @@ export default function HomePage() {
           </div>
         </ScrollReveal>
       </StickySection>
+
       {/* --- FEATURED PROPERTIES (Data Fidelity) --- */}
       <section className="w-full py-24 bg-primary relative">
         {/* Decorative Background Line */}
@@ -476,6 +480,7 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
       {/* --- PARALLAX BREAK SECTION --- */}
       <section className="relative w-full h-[80vh] overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 z-0">
@@ -508,6 +513,7 @@ export default function HomePage() {
           </ScrollReveal>
         </div>
       </section>
+
       {/* --- PROCESS STEPS (Horizontal Flow) --- */}
       <section className="w-full py-24 lg:py-32 bg-primary">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
@@ -541,6 +547,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
       {/* --- CTA SECTION --- */}
       <section className="w-full py-24 bg-gradient-to-b from-primary to-[#092b35] relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-secondary/5 rounded-full blur-[120px]" />
@@ -568,7 +575,9 @@ export default function HomePage() {
           </ScrollReveal>
         </div>
       </section>
+
       <Footer />
+      
       {/* Global Styles for Custom Animations */}
       <style>{`
         @keyframes marquee {
