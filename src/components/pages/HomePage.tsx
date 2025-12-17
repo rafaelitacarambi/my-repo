@@ -96,7 +96,7 @@ const StickySection = ({ title, subtitle, children }) => {
               <h2 className="font-heading text-4xl lg:text-6xl text-secondary mb-6 leading-tight">
                 {title}
               </h2>
-              <p className="font-paragraph text-lg text-primary-foreground/80 leading-relaxed mb-8">
+              <p className="font-paragraph text-lg text-dark-gray leading-relaxed mb-8">
                 {subtitle}
               </p>
               <div className="h-1 w-24 bg-brandaccent rounded-full" />
