@@ -19,24 +19,20 @@ export default {
                 '9xl': ['8rem', { lineHeight: '1', letterSpacing: '-0.02em', fontWeight: '900' }],
             },
             fontFamily: {
-                heading: "Inter, Manrope, Helvetica Neue, sans-serif",
-                paragraph: "Inter, Manrope, Helvetica Neue, sans-serif"
+                heading: "questrial",
+                paragraph: "proxima-n-w01-reg"
             },
             colors: {
-                brandaccent: '#000000',
-                buttonbackground: '#000000',
+                brandaccent: '#6B5DD3',
+                buttonbackground: '#B9E54F',
                 foreground: '#FFFFFF',
                 destructive: '#DF3131',
                 destructiveforeground: '#FFFFFF',
-                background: '#FFFFFF',
-                secondary: '#000000',
-                'secondary-foreground': '#FFFFFF',
-                'primary-foreground': '#333333',
-                primary: '#FFFFFF',
-                'ice-gray': '#F4F4F4',
-                'matte-silver': '#D1D1D1',
-                'medium-gray': '#A6A6A6',
-                'dark-gray': '#333333',
+                background: '#0D3B47',
+                secondary: '#B9E54F',
+                'secondary-foreground': '#0D3B47',
+                'primary-foreground': '#FFFFFF',
+                primary: '#0D3B47'
             },
         },
     },

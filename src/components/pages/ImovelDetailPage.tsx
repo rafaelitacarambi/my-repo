@@ -33,12 +33,12 @@ export default function ImovelDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-primary">
         <Header />
-        <div className="max-w-[100rem] mx-auto px-6 lg:px-12 py-20">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12 py-20">
           <div className="animate-pulse space-y-8">
-            <div className="h-96 bg-ice-gray rounded-none"></div>
-            <div className="h-64 bg-ice-gray rounded-none"></div>
+            <div className="h-96 bg-primary-foreground/5 rounded-2xl"></div>
+            <div className="h-64 bg-primary-foreground/5 rounded-2xl"></div>
           </div>
         </div>
         <Footer />
@@ -48,15 +48,15 @@ export default function ImovelDetailPage() {
 
   if (!property) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-primary">
         <Header />
-        <div className="max-w-[100rem] mx-auto px-6 lg:px-12 py-20 text-center">
-          <Home className="w-16 h-16 text-medium-gray mx-auto mb-4" />
-          <h2 className="font-heading text-3xl text-secondary mb-4 font-bold">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12 py-20 text-center">
+          <Home className="w-16 h-16 text-primary-foreground/30 mx-auto mb-4" />
+          <h2 className="font-heading text-3xl text-primary-foreground mb-4">
             Imóvel não encontrado
           </h2>
           <Link to="/imoveis">
-            <Button className="bg-secondary text-foreground hover:bg-black font-paragraph font-semibold h-12 px-6 rounded-none">
+            <Button className="bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 px-6 rounded-lg">
               Voltar para Imóveis
             </Button>
           </Link>
@@ -67,16 +67,16 @@ export default function ImovelDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-primary">
       <Header />
 
       {/* Back Button */}
-      <section className="w-full py-6 border-b border-matte-silver">
-        <div className="max-w-[100rem] mx-auto px-6 lg:px-12">
+      <section className="w-full py-6 border-b border-primary-foreground/10">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <Link to="/imoveis">
             <Button
               variant="ghost"
-              className="text-dark-gray hover:text-secondary hover:bg-ice-gray font-paragraph rounded-none"
+              className="text-primary-foreground hover:text-secondary hover:bg-primary-foreground/5 font-paragraph"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Voltar para Imóveis
@@ -87,7 +87,7 @@ export default function ImovelDetailPage() {
 
       {/* Property Details */}
       <section className="w-full py-12">
-        <div className="max-w-[100rem] mx-auto px-6 lg:px-12">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
@@ -96,7 +96,7 @@ export default function ImovelDetailPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="relative h-96 lg:h-[500px] bg-ice-gray rounded-none overflow-hidden border border-matte-silver"
+                className="relative h-96 lg:h-[500px] bg-primary-foreground/10 rounded-2xl overflow-hidden"
               >
                 {property.propertyImages ? (
                   <Image
@@ -107,17 +107,17 @@ export default function ImovelDetailPage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Home className="w-24 h-24 text-medium-gray" />
+                    <Home className="w-24 h-24 text-primary-foreground/30" />
                   </div>
                 )}
                 {property.status && (
                   <div className="absolute top-6 right-6">
-                    <span className={`font-paragraph text-sm px-4 py-2 rounded-none font-semibold ${
+                    <span className={`font-paragraph text-sm px-4 py-2 rounded-lg font-semibold ${
                       property.status === 'Disponível'
-                        ? 'bg-secondary text-foreground'
+                        ? 'bg-secondary text-secondary-foreground'
                         : property.status === 'Reservado'
-                        ? 'bg-medium-gray text-foreground'
-                        : 'bg-matte-silver text-secondary'
+                        ? 'bg-brandaccent text-foreground'
+                        : 'bg-destructive text-destructiveforeground'
                     }`}>
                       {property.status}
                     </span>
@@ -134,53 +134,53 @@ export default function ImovelDetailPage() {
               >
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="font-paragraph text-sm text-dark-gray bg-ice-gray px-3 py-1 rounded-none">
+                    <span className="font-paragraph text-sm text-primary-foreground/60 bg-primary-foreground/10 px-3 py-1 rounded-lg">
                       {property.propertyType}
                     </span>
-                    <span className="font-paragraph text-sm text-dark-gray bg-ice-gray px-3 py-1 rounded-none">
+                    <span className="font-paragraph text-sm text-primary-foreground/60 bg-primary-foreground/10 px-3 py-1 rounded-lg">
                       {property.transactionType}
                     </span>
                   </div>
-                  <h1 className="font-heading text-4xl lg:text-5xl text-secondary mb-4 font-bold">
+                  <h1 className="font-heading text-4xl lg:text-5xl text-secondary mb-4">
                     {property.propertyName}
                   </h1>
-                  <div className="flex items-start gap-2 text-dark-gray">
+                  <div className="flex items-start gap-2 text-primary-foreground/70">
                     <MapPin className="w-5 h-5 mt-1 flex-shrink-0" />
                     <span className="font-paragraph text-lg">{property.address}</span>
                   </div>
                 </div>
 
                 {/* Features */}
-                <div className="grid grid-cols-3 gap-6 py-8 border-y border-matte-silver">
+                <div className="grid grid-cols-3 gap-6 py-8 border-y border-primary-foreground/10">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-ice-gray rounded-none flex items-center justify-center">
+                    <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
                       <Bed className="w-6 h-6 text-secondary" />
                     </div>
                     <div>
-                      <p className="font-paragraph text-sm text-dark-gray">Quartos</p>
-                      <p className="font-heading text-xl text-secondary font-semibold">
+                      <p className="font-paragraph text-sm text-primary-foreground/60">Quartos</p>
+                      <p className="font-heading text-xl text-primary-foreground font-semibold">
                         {property.bedrooms}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-ice-gray rounded-none flex items-center justify-center">
+                    <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
                       <Bath className="w-6 h-6 text-secondary" />
                     </div>
                     <div>
-                      <p className="font-paragraph text-sm text-dark-gray">Banheiros</p>
-                      <p className="font-heading text-xl text-secondary font-semibold">
+                      <p className="font-paragraph text-sm text-primary-foreground/60">Banheiros</p>
+                      <p className="font-heading text-xl text-primary-foreground font-semibold">
                         {property.bathrooms}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-ice-gray rounded-none flex items-center justify-center">
+                    <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
                       <Maximize className="w-6 h-6 text-secondary" />
                     </div>
                     <div>
-                      <p className="font-paragraph text-sm text-dark-gray">Área</p>
-                      <p className="font-heading text-xl text-secondary font-semibold">
+                      <p className="font-paragraph text-sm text-primary-foreground/60">Área</p>
+                      <p className="font-heading text-xl text-primary-foreground font-semibold">
                         {property.area}m²
                       </p>
                     </div>
@@ -192,7 +192,7 @@ export default function ImovelDetailPage() {
                   <h2 className="font-heading text-2xl text-secondary mb-4 font-semibold">
                     Sobre o Imóvel
                   </h2>
-                  <p className="font-paragraph text-base text-dark-gray leading-relaxed whitespace-pre-line">
+                  <p className="font-paragraph text-base text-primary-foreground/80 leading-relaxed whitespace-pre-line">
                     {property.description || 'Descrição não disponível.'}
                   </p>
                 </div>
@@ -208,8 +208,8 @@ export default function ImovelDetailPage() {
                 className="sticky top-24 space-y-6"
               >
                 {/* Price Card */}
-                <div className="bg-ice-gray rounded-none p-8 border border-matte-silver">
-                  <p className="font-paragraph text-sm text-dark-gray mb-2">
+                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
+                  <p className="font-paragraph text-sm text-primary-foreground/60 mb-2">
                     Valor do Imóvel
                   </p>
                   <p className="font-heading text-4xl text-secondary font-bold mb-6">
@@ -220,13 +220,13 @@ export default function ImovelDetailPage() {
 
                   <div className="space-y-3">
                     <Link to="/simulador" className="block">
-                      <Button className="w-full bg-secondary text-foreground hover:bg-black font-paragraph font-semibold h-12 rounded-none">
+                      <Button className="w-full bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 rounded-lg">
                         <Calculator className="w-5 h-5 mr-2" />
                         Simular Financiamento
                       </Button>
                     </Link>
                     <Link to="/contato" className="block">
-                      <Button className="w-full bg-white text-secondary hover:bg-ice-gray font-paragraph font-semibold h-12 rounded-none border border-matte-silver">
+                      <Button className="w-full bg-brandaccent text-foreground hover:bg-brandaccent/90 font-paragraph font-semibold h-12 rounded-lg">
                         <Phone className="w-5 h-5 mr-2" />
                         Entrar em Contato
                       </Button>
@@ -236,11 +236,11 @@ export default function ImovelDetailPage() {
 
                 {/* QR Code */}
                 {property.keyQrCodeUrl && (
-                  <div className="bg-ice-gray rounded-none p-8 border border-matte-silver">
-                    <h3 className="font-heading text-lg text-secondary mb-4 font-semibold">
+                  <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
+                    <h3 className="font-heading text-lg text-primary-foreground mb-4 font-semibold">
                       QR Code da Chave
                     </h3>
-                    <div className="bg-foreground p-4 rounded-none">
+                    <div className="bg-foreground p-4 rounded-lg">
                       <Image
                         src={property.keyQrCodeUrl}
                         alt="QR Code"
@@ -248,7 +248,7 @@ export default function ImovelDetailPage() {
                         width={200}
                       />
                     </div>
-                    <p className="font-paragraph text-sm text-dark-gray mt-4">
+                    <p className="font-paragraph text-sm text-primary-foreground/60 mt-4">
                       Use este QR Code para acessar informações sobre a chave do imóvel
                     </p>
                   </div>
