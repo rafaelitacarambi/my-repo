@@ -17,11 +17,11 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <Image
-              src="https://static.wixstatic.com/media/9b23b4_9989d36da508403ca0253e7ce162dbeb~mv2.png?originWidth=128&originHeight=128"
-              alt="R Sales Imóveis"
+              src="https://static.wixstatic.com/media/9b23b4_c5959c54bcc24c369727070cc053e52c~mv2.png"
               className="h-12 w-auto"
               width={120}
-            />
+              originWidth={5379}
+              originHeight={3842} />
           </Link>
 
           {/* Desktop Navigation */}
