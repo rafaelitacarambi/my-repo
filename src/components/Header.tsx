@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Building2, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Image } from '@/components/ui/image';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -10,63 +11,63 @@ export default function Header() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="bg-primary border-b border-primary-foreground/10 sticky top-0 z-50">
-      <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
-        <div className="flex items-center justify-between h-20">
+    <header className="bg-white border-b border-matte-silver sticky top-0 z-50 shadow-sm">
+      <div className="max-w-[100rem] mx-auto px-6 lg:px-12">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-secondary-foreground" />
-            </div>
-            <span className="font-heading text-xl text-primary-foreground font-bold">
-              ImóvelPrime
-            </span>
+          <Link to="/" className="flex items-center gap-2 group">
+            <Image
+              src="https://static.wixstatic.com/media/9b23b4_9989d36da508403ca0253e7ce162dbeb~mv2.png?originWidth=128&originHeight=128"
+              alt="R Sales Imóveis"
+              className="h-12 w-auto"
+              width={120}
+            />
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8">
             <Link
               to="/imoveis"
-              className={`font-paragraph text-base transition-colors ${
+              className={`font-paragraph text-sm font-medium transition-colors ${
                 isActive('/imoveis')
                   ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
+                  : 'text-dark-gray hover:text-secondary'
               }`}
             >
               Imóveis
             </Link>
             <Link
               to="/simulador"
-              className={`font-paragraph text-base transition-colors ${
+              className={`font-paragraph text-sm font-medium transition-colors ${
                 isActive('/simulador')
                   ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
+                  : 'text-dark-gray hover:text-secondary'
               }`}
             >
               Simulador
             </Link>
             <Link
               to="/corretores"
-              className={`font-paragraph text-base transition-colors ${
+              className={`font-paragraph text-sm font-medium transition-colors ${
                 isActive('/corretores')
                   ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
+                  : 'text-dark-gray hover:text-secondary'
               }`}
             >
               Corretores
             </Link>
             <Link
               to="/contato"
-              className={`font-paragraph text-base transition-colors ${
+              className={`font-paragraph text-sm font-medium transition-colors ${
                 isActive('/contato')
                   ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
+                  : 'text-dark-gray hover:text-secondary'
               }`}
             >
               Contato
             </Link>
             <Link to="/area-restrita">
-              <Button className="bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-11 px-6 rounded-lg">
+              <Button className="bg-secondary text-foreground hover:bg-black font-paragraph font-semibold h-10 px-6 rounded-none">
                 Área Restrita
               </Button>
             </Link>
@@ -75,7 +76,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden text-primary-foreground p-2"
+            className="lg:hidden text-secondary p-2"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -84,15 +85,15 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden py-6 border-t border-primary-foreground/10">
+          <nav className="lg:hidden py-6 border-t border-matte-silver">
             <div className="flex flex-col gap-4">
               <Link
                 to="/imoveis"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
+                className={`font-paragraph text-sm font-medium py-2 transition-colors ${
                   isActive('/imoveis')
                     ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
+                    : 'text-dark-gray hover:text-secondary'
                 }`}
               >
                 Imóveis
@@ -100,10 +101,10 @@ export default function Header() {
               <Link
                 to="/simulador"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
+                className={`font-paragraph text-sm font-medium py-2 transition-colors ${
                   isActive('/simulador')
                     ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
+                    : 'text-dark-gray hover:text-secondary'
                 }`}
               >
                 Simulador
@@ -111,10 +112,10 @@ export default function Header() {
               <Link
                 to="/corretores"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
+                className={`font-paragraph text-sm font-medium py-2 transition-colors ${
                   isActive('/corretores')
                     ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
+                    : 'text-dark-gray hover:text-secondary'
                 }`}
               >
                 Corretores
@@ -122,16 +123,16 @@ export default function Header() {
               <Link
                 to="/contato"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
+                className={`font-paragraph text-sm font-medium py-2 transition-colors ${
                   isActive('/contato')
                     ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
+                    : 'text-dark-gray hover:text-secondary'
                 }`}
               >
                 Contato
               </Link>
               <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-11 px-6 rounded-lg w-full">
+                <Button className="bg-secondary text-foreground hover:bg-black font-paragraph font-semibold h-10 px-6 rounded-none w-full">
                   Área Restrita
                 </Button>
               </Link>
