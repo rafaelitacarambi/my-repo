@@ -7,9 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { CreateNewModal } from '@/components/CreateNewModal';
+import { ClientRegistrationModal } from '@/components/ClientRegistrationModal';
+import { useState } from 'react';
 
 function AreaRestritaContent() {
   const { member } = useMember();
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [showPropertyForm, setShowPropertyForm] = useState(false);
+
+  const handleCreateProperty = () => {
+    // Navigate to property creation
+    window.location.href = '/admin/imoveis';
+  };
+
+  const handleCreateClient = () => {
+    setIsClientModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-primary">
@@ -37,6 +51,12 @@ function AreaRestritaContent() {
               <p className="font-paragraph text-lg text-primary-foreground/80 max-w-2xl mx-auto">
                 Bem-vindo, {member?.profile?.nickname || member?.contact?.firstName || 'Corretor'}!
               </p>
+            </div>
+            <div className="mt-4">
+              <CreateNewModal 
+                onSelectProperty={handleCreateProperty}
+                onSelectClient={handleCreateClient}
+              />
             </div>
           </motion.div>
         </div>
@@ -265,6 +285,11 @@ function AreaRestritaContent() {
       </section>
 
       <Footer />
+
+      <ClientRegistrationModal 
+        isOpen={isClientModalOpen}
+        onOpenChange={setIsClientModalOpen}
+      />
     </div>
   );
 }

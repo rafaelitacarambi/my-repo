@@ -10,10 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
-import { Atendimentos } from '@/entities';
+import { ServiceRecords } from '@/entities';
 
 function AdminAtendimentosContent() {
-  const [atendimentos, setAtendimentos] = useState<Atendimentos[]>([]);
+  const [atendimentos, setAtendimentos] = useState<ServiceRecords[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -33,7 +33,7 @@ function AdminAtendimentosContent() {
 
   const loadAtendimentos = async () => {
     try {
-      const { items } = await BaseCrudService.getAll<Atendimentos>('atendimentos');
+      const { items } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
       setAtendimentos(items.sort((a, b) => {
         const dateA = a.creationDate ? new Date(a.creationDate).getTime() : 0;
         const dateB = b.creationDate ? new Date(b.creationDate).getTime() : 0;
@@ -77,7 +77,7 @@ function AdminAtendimentosContent() {
     }
   };
 
-  const handleEdit = (atendimento: Atendimentos) => {
+  const handleEdit = (atendimento: ServiceRecords) => {
     setEditingId(atendimento._id);
     setFormData({
       contactName: atendimento.contactName || '',

@@ -1,0 +1,440 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Check, X } from 'lucide-react';
+import { BaseCrudService } from '@/integrations';
+import { Clientes, ServiceRecords } from '@/entities';
+
+interface ClientRegistrationModalProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: (clientId: string, atendimentoIds: string[]) => void;
+}
+
+const ROLES = [
+  { id: 'comprador', label: 'Comprador', kanban: 'Kanban Compra/Financiamento' },
+  { id: 'vendedor', label: 'Vendedor', kanban: 'Kanban Captação/Venda' },
+  { id: 'locatario', label: 'Locatário', kanban: 'Kanban Locação (locatário)' },
+  { id: 'locador', label: 'Locador', kanban: 'Kanban Administração/Locação (locador)' },
+  { id: 'financiamento', label: 'Financiamento', kanban: 'Kanban Financiamento' },
+  { id: 'leilao', label: 'Leilão Caixa', kanban: 'Kanban Leilão Caixa' },
+];
+
+export function ClientRegistrationModal({
+  isOpen,
+  onOpenChange,
+  onSuccess,
+}: ClientRegistrationModalProps) {
+  const [step, setStep] = useState<'form' | 'roles' | 'success'>('form');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<Clientes | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [createdClientId, setCreatedClientId] = useState<string | null>(null);
+  const [createdAtendimentos, setCreatedAtendimentos] = useState<string[]>([]);
+
+  const [formData, setFormData] = useState({
+    clientName: '',
+    email: '',
+    phoneNumber: '',
+    address: '',
+    notes: '',
+  });
+
+  const resetForm = () => {
+    setFormData({
+      clientName: '',
+      email: '',
+      phoneNumber: '',
+      address: '',
+      notes: '',
+    });
+    setSelectedRoles([]);
+    setError(null);
+    setDuplicateWarning(null);
+    setStep('form');
+    setCreatedClientId(null);
+    setCreatedAtendimentos([]);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onOpenChange(false);
+  };
+
+  const checkDuplicateClient = async (): Promise<Clientes | null> => {
+    try {
+      const { items } = await BaseCrudService.getAll<Clientes>('clientes');
+      const duplicate = items.find(
+        (c) =>
+          (formData.phoneNumber && c.phoneNumber === formData.phoneNumber) ||
+          (formData.email && c.email === formData.email)
+      );
+      return duplicate || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setDuplicateWarning(null);
+
+    if (!formData.clientName.trim()) {
+      setError('Nome do cliente é obrigatório');
+      return;
+    }
+
+    if (!formData.email && !formData.phoneNumber) {
+      setError('Email ou telefone é obrigatório');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const duplicate = await checkDuplicateClient();
+      if (duplicate) {
+        setDuplicateWarning(duplicate);
+        setLoading(false);
+        return;
+      }
+
+      setStep('roles');
+    } catch (err) {
+      setError('Erro ao verificar cliente duplicado');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoleToggle = (roleId: string) => {
+    setSelectedRoles((prev) =>
+      prev.includes(roleId) ? prev.filter((r) => r !== roleId) : [...prev, roleId]
+    );
+  };
+
+  const handleCreateClient = async () => {
+    if (selectedRoles.length === 0) {
+      setError('Selecione pelo menos um papel/função');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const clientId = crypto.randomUUID();
+      
+      // Create client
+      await BaseCrudService.create('clientes', {
+        _id: clientId,
+        clientName: formData.clientName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+        notes: formData.notes,
+        status: 'Ativo',
+      });
+
+      // Create atendimentos for each selected role
+      const atendimentoIds: string[] = [];
+      for (const roleId of selectedRoles) {
+        const role = ROLES.find((r) => r.id === roleId);
+        if (role) {
+          const atendimentoId = crypto.randomUUID();
+          await BaseCrudService.create('atendimentos', {
+            _id: atendimentoId,
+            contactName: formData.clientName,
+            contactEmail: formData.email,
+            contactPhone: formData.phoneNumber,
+            serviceType: role.label,
+            status: 'Aberto',
+            priority: 'Normal',
+            notes: `Atendimento automático para ${role.label}. Direcionado para: ${role.kanban}`,
+            creationDate: new Date(),
+          });
+          atendimentoIds.push(atendimentoId);
+        }
+      }
+
+      setCreatedClientId(clientId);
+      setCreatedAtendimentos(atendimentoIds);
+      setStep('success');
+    } catch (err) {
+      setError('Erro ao criar cliente e atendimentos');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSuccessClose = () => {
+    if (createdClientId && createdAtendimentos.length > 0) {
+      onSuccess?.(createdClientId, createdAtendimentos);
+    }
+    handleClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl bg-primary border-primary-foreground/20 max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-heading text-2xl text-secondary">
+            {step === 'form' && 'Cadastrar Novo Cliente'}
+            {step === 'roles' && 'Selecionar Papéis/Funções'}
+            {step === 'success' && 'Cliente Criado com Sucesso!'}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Form Step */}
+        {step === 'form' && (
+          <form onSubmit={handleFormSubmit} className="space-y-4 mt-4">
+            {error && (
+              <Alert className="bg-destructive/10 border-destructive/30">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-destructive ml-2">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {duplicateWarning && (
+              <Alert className="bg-brandaccent/10 border-brandaccent/30">
+                <AlertCircle className="h-4 w-4 text-brandaccent" />
+                <AlertDescription className="text-foreground ml-2">
+                  <p className="font-semibold mb-2">Cliente já existe no sistema:</p>
+                  <p>{duplicateWarning.clientName}</p>
+                  {duplicateWarning.email && <p>Email: {duplicateWarning.email}</p>}
+                  {duplicateWarning.phoneNumber && <p>Telefone: {duplicateWarning.phoneNumber}</p>}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div>
+              <Label htmlFor="clientName" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                Nome do Cliente *
+              </Label>
+              <Input
+                id="clientName"
+                required
+                value={formData.clientName}
+                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                placeholder="Nome completo ou razão social"
+              />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="email" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="phoneNumber" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                  Telefone
+                </Label>
+                <Input
+                  id="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="address" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                Endereço
+              </Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                placeholder="Rua, número, bairro, cidade"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="notes" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                Notas
+              </Label>
+              <textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="w-full p-2 border border-primary-foreground/20 rounded-lg bg-primary-foreground/10 text-primary-foreground font-paragraph text-sm resize-none"
+                rows={3}
+                placeholder="Informações adicionais..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 rounded-lg"
+              >
+                {loading ? 'Verificando...' : 'Próximo'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* Roles Step */}
+        {step === 'roles' && (
+          <div className="space-y-4 mt-4">
+            <p className="font-paragraph text-sm text-primary-foreground/70">
+              Selecione os papéis/funções deste cliente. Um atendimento será criado automaticamente para cada papel selecionado.
+            </p>
+
+            <div className="space-y-3">
+              {ROLES.map((role) => (
+                <div
+                  key={role.id}
+                  className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10 hover:border-secondary/30 transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id={role.id}
+                      checked={selectedRoles.includes(role.id)}
+                      onCheckedChange={() => handleRoleToggle(role.id)}
+                      className="border-primary-foreground/30 mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label
+                        htmlFor={role.id}
+                        className="font-paragraph font-semibold text-primary-foreground cursor-pointer"
+                      >
+                        {role.label}
+                      </Label>
+                      <p className="font-paragraph text-xs text-primary-foreground/60 mt-1">
+                        {role.kanban}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {error && (
+              <Alert className="bg-destructive/10 border-destructive/30">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <AlertDescription className="text-destructive ml-2">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleCreateClient}
+                disabled={loading || selectedRoles.length === 0}
+                className="flex-1 bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 rounded-lg"
+              >
+                {loading ? 'Criando...' : `Criar Cliente (${selectedRoles.length} papel${selectedRoles.length !== 1 ? 'éis' : ''})`}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep('form')}
+                className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
+              >
+                Voltar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Success Step */}
+        {step === 'success' && (
+          <div className="space-y-4 mt-4 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
+
+            <div>
+              <h3 className="font-heading text-xl text-primary-foreground font-semibold mb-2">
+                Cliente criado com sucesso!
+              </h3>
+              <p className="font-paragraph text-sm text-primary-foreground/70">
+                {formData.clientName}
+              </p>
+            </div>
+
+            <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+              <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
+                Atendimentos criados:
+              </p>
+              <ul className="space-y-1">
+                {selectedRoles.map((roleId) => {
+                  const role = ROLES.find((r) => r.id === roleId);
+                  return (
+                    <li key={roleId} className="font-paragraph text-sm text-primary-foreground">
+                      ✓ {role?.label}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={() => {
+                  if (createdAtendimentos.length > 0) {
+                    window.location.href = '/admin/atendimentos';
+                  }
+                }}
+                className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-12 rounded-lg"
+              >
+                Ver Atendimentos
+              </Button>
+              <Button
+                onClick={() => {
+                  window.location.href = '/admin/clientes';
+                }}
+                variant="outline"
+                className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
+              >
+                Ver Cliente
+              </Button>
+            </div>
+
+            <Button
+              onClick={handleSuccessClose}
+              variant="ghost"
+              className="w-full text-primary-foreground/60 hover:text-primary-foreground"
+            >
+              Fechar
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

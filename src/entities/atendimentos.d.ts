@@ -1,2 +1,2 @@
 // Re-export from main entities file for backward compatibility
-export type { Atendimentos } from './index';
+export type { ServiceRecords } from './index';
