@@ -99,29 +99,22 @@ export class ErrorOverlay {
     `;
   }
 
-  static async sendErrorToParent(err, type) {
+  static sendErrorToParent(err, type) {
     // Send error to parent using framewire
-    const isDev = import.meta.env?.DEV ?? false;
-    const isIframe = window.self !== window.top;
-
-    if (!isDev || !isIframe) {
-      return;
-    }
-
-    try {
-      const loadFramewire = (await import("framewire.js")).default;
-      await loadFramewire();
-      const { sendMessageToParent, EditorEventMessages } = globalThis.framewire;
-      sendMessageToParent({
-        type: EditorEventMessages.CLIENT_ERROR,
-        clientErrorData: {
-          errorType: type,
-          message: err?.message || 'Unknown error',
-          stack: err?.stack || 'No stack trace available',
-        }
-      });
-    } catch (error) {
-      console.warn('Failed to send error to parent via framewire:', error?.message);
+    if (globalThis.framewire) {
+      try {
+        const { sendMessageToParent, EditorEventMessages } = globalThis.framewire;
+        sendMessageToParent({
+          type: EditorEventMessages.CLIENT_ERROR,
+          clientErrorData: {
+            errorType: type,
+            message: err?.message || 'Unknown error',
+            stack: err?.stack || 'No stack trace available',
+          }
+        });
+      } catch (error) {
+        console.warn('Failed to send error to parent via framewire:', error?.message);
+      }
     }
   }
 
