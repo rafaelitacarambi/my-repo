@@ -84,7 +84,7 @@ export interface RealEstateBrokers {
   _updatedDate?: Date;
   /** @wixFieldType text */
   fullName?: string;
-  /** @wixFieldType image */
+  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
   profilePicture?: string;
   /** @wixFieldType text */
   creciNumber?: string;
@@ -152,7 +152,7 @@ export interface Imveis {
   area?: number;
   /** @wixFieldType text */
   description?: string;
-  /** @wixFieldType image */
+  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
   propertyImages?: string;
   /** @wixFieldType text */
   status?: string;
