@@ -4,6 +4,77 @@
  */
 
 /**
+ * Collection ID: agendamentos
+ * Interface for Appointments
+ */
+export interface Appointments {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType datetime */
+  appointmentDateTime?: Date | string;
+  /** @wixFieldType text */
+  serviceType?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType number */
+  duration?: number;
+  /** @wixFieldType text */
+  notes?: string;
+}
+
+
+/**
+ * Collection ID: atendimentos
+ * Interface for ServiceRecords
+ */
+export interface ServiceRecords {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  contactName?: string;
+  /** @wixFieldType text */
+  contactEmail?: string;
+  /** @wixFieldType text */
+  contactPhone?: string;
+  /** @wixFieldType text */
+  serviceType?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType text */
+  notes?: string;
+  /** @wixFieldType datetime */
+  creationDate?: Date | string;
+  /** @wixFieldType text */
+  priority?: string;
+}
+
+
+/**
+ * Collection ID: clientes
+ * Interface for Clients
+ */
+export interface Clients {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  clientName?: string;
+  /** @wixFieldType text */
+  email?: string;
+  /** @wixFieldType text */
+  phoneNumber?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType text */
+  address?: string;
+  /** @wixFieldType text */
+  notes?: string;
+}
+
+
+/**
  * Collection ID: corretores
  * Interface for RealEstateBrokers
  */
@@ -27,6 +98,27 @@ export interface RealEstateBrokers {
   whatsAppUrl?: string;
   /** @wixFieldType boolean */
   isActive?: boolean;
+}
+
+
+/**
+ * Collection ID: historicointeracoes
+ * Interface for HistricodeInteraes
+ */
+export interface HistricodeInteraes {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType datetime */
+  interactionDate?: Date | string;
+  /** @wixFieldType text */
+  interactionType?: string;
+  /** @wixFieldType text */
+  interactionDescription?: string;
+  /** @wixFieldType text */
+  interactionOutcome?: string;
+  /** @wixFieldType text */
+  interactionMedium?: string;
 }
 
 
@@ -120,4 +212,96 @@ export interface ProcessosdeVenda {
   expectedClosingDate?: Date | string;
   /** @wixFieldType text */
   notes?: string;
+}
+
+
+/**
+ * Collection ID: clientes
+ * Interface for Clientes
+ */
+export interface Clientes {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  clientName?: string;
+  /** @wixFieldType text */
+  email?: string;
+  /** @wixFieldType text */
+  phoneNumber?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType text */
+  address?: string;
+  /** @wixFieldType text */
+  notes?: string;
+}
+
+
+/**
+ * Collection ID: atendimentos
+ * Interface for Atendimentos
+ */
+export interface Atendimentos {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  contactName?: string;
+  /** @wixFieldType text */
+  contactEmail?: string;
+  /** @wixFieldType text */
+  contactPhone?: string;
+  /** @wixFieldType text */
+  serviceType?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType text */
+  notes?: string;
+  /** @wixFieldType datetime */
+  creationDate?: Date | string;
+  /** @wixFieldType text */
+  priority?: string;
+}
+
+
+/**
+ * Collection ID: agendamentos
+ * Interface for Agendamentos
+ */
+export interface Agendamentos {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType datetime */
+  appointmentDateTime?: Date | string;
+  /** @wixFieldType text */
+  serviceType?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType number */
+  duration?: number;
+  /** @wixFieldType text */
+  notes?: string;
+}
+
+
+/**
+ * Collection ID: historicointeracoes
+ * Interface for HistoricoInteracoes
+ */
+export interface HistoricoInteracoes {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType datetime */
+  interactionDate?: Date | string;
+  /** @wixFieldType text */
+  interactionType?: string;
+  /** @wixFieldType text */
+  interactionDescription?: string;
+  /** @wixFieldType text */
+  interactionOutcome?: string;
+  /** @wixFieldType text */
+  interactionMedium?: string;
 }

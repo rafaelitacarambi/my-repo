@@ -20,6 +20,10 @@ import AdminLeadsPage from '@/components/pages/admin/AdminLeadsPage';
 import AdminProcessosPage from '@/components/pages/admin/AdminProcessosPage';
 import AdminChavesPage from '@/components/pages/admin/AdminChavesPage';
 import AdminFinanceiroPage from '@/components/pages/admin/AdminFinanceiroPage';
+import AdminClientesPage from '@/components/pages/admin/AdminClientesPage';
+import AdminAtendimentosPage from '@/components/pages/admin/AdminAtendimentosPage';
+import AdminAgendamentosPage from '@/components/pages/admin/AdminAgendamentosPage';
+import AdminHistoricoPage from '@/components/pages/admin/AdminHistoricoPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -96,6 +100,22 @@ const router = createBrowserRouter([
       {
         path: "admin/financeiro",
         element: <AdminFinanceiroPage />,
+      },
+      {
+        path: "admin/clientes",
+        element: <AdminClientesPage />,
+      },
+      {
+        path: "admin/atendimentos",
+        element: <AdminAtendimentosPage />,
+      },
+      {
+        path: "admin/agendamentos",
+        element: <AdminAgendamentosPage />,
+      },
+      {
+        path: "admin/historico",
+        element: <AdminHistoricoPage />,
       },
       {
         path: "*",
