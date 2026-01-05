@@ -2,37 +2,54 @@ import { useEffect, useState } from 'react';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Building2, Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
 import { Imveis } from '@/entities';
+
+const SEGMENTOS = [
+  'Minha Casa Minha Vida',
+  'Usados (Oportunidades)',
+  'Terrenos',
+  'Áreas',
+  'Leilão Caixa',
+  'Alto Padrão'
+];
 
 function AdminImoveisContent() {
   const [properties, setProperties] = useState<Imveis[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Imveis | null>(null);
-  const [formData, setFormData] = useState<Partial<Imveis>>({
-    propertyName: '',
-    propertyType: 'Apartamento',
-    transactionType: 'Venda',
-    price: 0,
-    address: '',
-    bedrooms: 0,
-    bathrooms: 0,
-    area: 0,
-    description: '',
-    propertyImages: '',
-    status: 'Disponível',
-    keyQrCodeUrl: '',
-  });
+  const [formData, setFormData] = useState<Partial<Imveis>>(getInitialFormData());
+  const [selectedSegmentos, setSelectedSegmentos] = useState<string[]>([]);
+
+  function getInitialFormData(): Partial<Imveis> {
+    return {
+      propertyName: '',
+      propertyType: 'Apartamento',
+      transactionType: 'Venda',
+      price: 0,
+      address: '',
+      bedrooms: 0,
+      bathrooms: 0,
+      area: 0,
+      description: '',
+      propertyImages: '',
+      status: 'Disponível',
+      keyQrCodeUrl: '',
+      segmentoCompra: '',
+      investimentoOportunidade: false,
+    };
+  }
 
   useEffect(() => {
     loadProperties();
@@ -53,15 +70,20 @@ function AdminImoveisContent() {
     e.preventDefault();
 
     try {
+      const dataToSave = {
+        ...formData,
+        segmentoCompra: selectedSegmentos.join(','),
+      };
+
       if (editingProperty) {
         await BaseCrudService.update('imoveis', {
           _id: editingProperty._id,
-          ...formData,
+          ...dataToSave,
         });
       } else {
         await BaseCrudService.create('imoveis', {
           _id: crypto.randomUUID(),
-          ...formData,
+          ...dataToSave,
         });
       }
 
@@ -89,7 +111,10 @@ function AdminImoveisContent() {
       propertyImages: property.propertyImages,
       status: property.status,
       keyQrCodeUrl: property.keyQrCodeUrl,
+      investimentoOportunidade: property.investimentoOportunidade,
     });
+    const segmentos = property.segmentoCompra?.split(',').filter(s => s) || [];
+    setSelectedSegmentos(segmentos);
     setDialogOpen(true);
   };
 
@@ -105,20 +130,8 @@ function AdminImoveisContent() {
   };
 
   const resetForm = () => {
-    setFormData({
-      propertyName: '',
-      propertyType: 'Apartamento',
-      transactionType: 'Venda',
-      price: 0,
-      address: '',
-      bedrooms: 0,
-      bathrooms: 0,
-      area: 0,
-      description: '',
-      propertyImages: '',
-      status: 'Disponível',
-      keyQrCodeUrl: '',
-    });
+    setFormData(getInitialFormData());
+    setSelectedSegmentos([]);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -129,6 +142,14 @@ function AdminImoveisContent() {
         ? parseFloat(value) || 0
         : value,
     });
+  };
+
+  const toggleSegmento = (segmento: string) => {
+    setSelectedSegmentos(prev =>
+      prev.includes(segmento)
+        ? prev.filter(s => s !== segmento)
+        : [...prev, segmento]
+    );
   };
 
   return (
@@ -341,6 +362,47 @@ function AdminImoveisContent() {
                   </div>
 
                   <div>
+                    <Label className="font-paragraph text-sm text-primary-foreground mb-3 block">
+                      Segmentos de Compra
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {SEGMENTOS.map((segmento) => (
+                        <div key={segmento} className="flex items-center gap-2">
+                          <Checkbox
+                            id={segmento}
+                            checked={selectedSegmentos.includes(segmento)}
+                            onCheckedChange={() => toggleSegmento(segmento)}
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor={segmento}
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            {segmento}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="investimentoOportunidade"
+                      checked={formData.investimentoOportunidade || false}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, investimentoOportunidade: checked as boolean })
+                      }
+                      className="border-primary-foreground/30"
+                    />
+                    <Label
+                      htmlFor="investimentoOportunidade"
+                      className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                    >
+                      Marcar como Investimento/Oportunidade
+                    </Label>
+                  </div>
+
+                  <div>
                     <Label htmlFor="propertyImages" className="font-paragraph text-sm text-primary-foreground mb-2 block">
                       URL da Imagem
                     </Label>
@@ -441,10 +503,20 @@ function AdminImoveisContent() {
                         }`}>
                           {property.status}
                         </span>
+                        {property.investimentoOportunidade && (
+                          <span className="font-paragraph text-xs px-2 py-1 rounded bg-brandaccent text-foreground">
+                            Oportunidade
+                          </span>
+                        )}
                       </div>
                       <p className="font-paragraph text-sm text-primary-foreground/60 mb-2">
                         {property.address}
                       </p>
+                      {property.segmentoCompra && (
+                        <p className="font-paragraph text-xs text-primary-foreground/50 mb-2">
+                          Segmentos: {property.segmentoCompra}
+                        </p>
+                      )}
                       <div className="flex flex-wrap gap-4 text-sm text-primary-foreground/70">
                         <span>{property.propertyType}</span>
                         <span>•</span>

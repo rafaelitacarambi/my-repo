@@ -11,6 +11,24 @@ import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
 import { Imveis } from '@/entities';
 
+const SEGMENTOS = [
+  { id: 'minha-casa', label: 'Minha Casa Minha Vida', icon: '🏠' },
+  { id: 'usados', label: 'Usados (Oportunidades)', icon: '💎' },
+  { id: 'terrenos', label: 'Terrenos', icon: '🌳' },
+  { id: 'areas', label: 'Áreas', icon: '📐' },
+  { id: 'leilao-caixa', label: 'Leilão Caixa', icon: '🏛️' },
+  { id: 'alto-padrao', label: 'Alto Padrão', icon: '✨' },
+];
+
+const SEGMENTO_MAP: Record<string, string> = {
+  'minha-casa': 'Minha Casa Minha Vida',
+  'usados': 'Usados (Oportunidades)',
+  'terrenos': 'Terrenos',
+  'areas': 'Áreas',
+  'leilao-caixa': 'Leilão Caixa',
+  'alto-padrao': 'Alto Padrão',
+};
+
 export default function ImoveisPage() {
   const [properties, setProperties] = useState<Imveis[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Imveis[]>([]);
@@ -19,6 +37,7 @@ export default function ImoveisPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [transactionFilter, setTransactionFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [segmentoFilter, setSegmentoFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProperties = async () => {
@@ -59,8 +78,15 @@ export default function ImoveisPage() {
       filtered = filtered.filter((p) => p.status === statusFilter);
     }
 
+    if (segmentoFilter) {
+      const segmentoLabel = SEGMENTO_MAP[segmentoFilter];
+      filtered = filtered.filter((p) =>
+        p.segmentoCompra?.includes(segmentoLabel)
+      );
+    }
+
     setFilteredProperties(filtered);
-  }, [searchTerm, typeFilter, transactionFilter, statusFilter, properties]);
+  }, [searchTerm, typeFilter, transactionFilter, statusFilter, segmentoFilter, properties]);
 
   return (
     <div className="min-h-screen bg-primary">
@@ -82,6 +108,51 @@ export default function ImoveisPage() {
               Explore nossa seleção completa de imóveis disponíveis para venda e locação
             </p>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Segmentos Section */}
+      <section className="w-full py-12 bg-light-gray/30">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
+          <div className="mb-8">
+            <h2 className="font-heading text-3xl text-secondary mb-2">Navegue por Tipo de Compra</h2>
+            <p className="font-paragraph text-dark-gray">Selecione uma categoria para filtrar imóveis</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {SEGMENTOS.map((segmento, index) => (
+              <motion.button
+                key={segmento.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                onClick={() => setSegmentoFilter(segmentoFilter === segmento.id ? null : segmento.id)}
+                className={`p-6 rounded-2xl border-2 transition-all text-left group ${
+                  segmentoFilter === segmento.id
+                    ? 'border-secondary bg-secondary/10'
+                    : 'border-border-gray bg-primary hover:border-secondary/50'
+                }`}
+              >
+                <div className="text-4xl mb-3">{segmento.icon}</div>
+                <h3 className="font-heading text-xl text-primary-foreground mb-2 group-hover:text-secondary transition-colors">
+                  {segmento.label}
+                </h3>
+                <p className="font-paragraph text-sm text-dark-gray">
+                  {segmentoFilter === segmento.id ? 'Filtro ativo' : 'Clique para filtrar'}
+                </p>
+              </motion.button>
+            ))}
+          </div>
+          {segmentoFilter && (
+            <div className="mt-6 flex justify-center">
+              <Button
+                onClick={() => setSegmentoFilter(null)}
+                variant="outline"
+                className="border-secondary text-secondary hover:bg-secondary/10"
+              >
+                Limpar Filtro de Segmento
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 

@@ -14,6 +14,7 @@ import CorretorDetailPage from '@/components/pages/CorretorDetailPage';
 import ContatoPage from '@/components/pages/ContatoPage';
 import AreaRestritaPage from '@/components/pages/AreaRestritaPage';
 import PerfilPage from '@/components/pages/PerfilPage';
+import LeilaoPage from '@/components/pages/LeilaoPage';
 import AdminImoveisPage from '@/components/pages/admin/AdminImoveisPage';
 import AdminLeadsPage from '@/components/pages/admin/AdminLeadsPage';
 import AdminProcessosPage from '@/components/pages/admin/AdminProcessosPage';
@@ -47,6 +48,10 @@ const router = createBrowserRouter([
       {
         path: "imoveis/:id",
         element: <ImovelDetailPage />,
+      },
+      {
+        path: "leilao-caixa",
+        element: <LeilaoPage />,
       },
       {
         path: "simulador",

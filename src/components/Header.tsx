@@ -37,6 +37,16 @@ export default function Header() {
               Imóveis
             </Link>
             <Link
+              to="/leilao-caixa"
+              className={`font-paragraph text-base transition-colors ${
+                isActive('/leilao-caixa')
+                  ? 'text-secondary'
+                  : 'text-primary-foreground hover:text-secondary'
+              }`}
+            >
+              Leilão Caixa
+            </Link>
+            <Link
               to="/simulador"
               className={`font-paragraph text-base transition-colors ${
                 isActive('/simulador')
@@ -97,6 +107,17 @@ export default function Header() {
                 }`}
               >
                 Imóveis
+              </Link>
+              <Link
+                to="/leilao-caixa"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`font-paragraph text-base py-2 transition-colors ${
+                  isActive('/leilao-caixa')
+                    ? 'text-secondary'
+                    : 'text-primary-foreground hover:text-secondary'
+                }`}
+              >
+                Leilão Caixa
               </Link>
               <Link
                 to="/simulador"

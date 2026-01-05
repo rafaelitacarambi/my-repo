@@ -38,6 +38,10 @@ export interface Imveis {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
+  /** @wixFieldType boolean */
+  investimentoOportunidade?: boolean;
+  /** @wixFieldType text */
+  segmentoCompra?: string;
   /** @wixFieldType text */
   propertyName?: string;
   /** @wixFieldType text */
