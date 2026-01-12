@@ -1,2 +1,2 @@
 // Re-export from main entities file for backward compatibility
-export type { VinculosProcessos } from './index';
+export type { ProcessBindings } from './index';

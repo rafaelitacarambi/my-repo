@@ -1,2 +1,2 @@
 // Re-export from main entities file for backward compatibility
-export type { UsuariosSistema } from './index';
+export type { UsuriosdoSistema } from './index';
