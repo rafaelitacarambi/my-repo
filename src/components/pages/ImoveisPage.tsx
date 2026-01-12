@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Search, SlidersHorizontal } from 'lucide-react';
+import { Home, Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Image } from '@/components/ui/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -38,6 +39,14 @@ export default function ImoveisPage() {
   const [transactionFilter, setTransactionFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [segmentoFilter, setSegmentoFilter] = useState<string | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  
+  // Advanced filters
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
+  const [bedroomsMin, setBedroomsMin] = useState('');
+  const [areaMin, setAreaMin] = useState('');
+  const [amenitiesFilter, setAmenitiesFilter] = useState<string[]>([]);
 
   useEffect(() => {
     const loadProperties = async () => {
@@ -85,8 +94,53 @@ export default function ImoveisPage() {
       );
     }
 
+    // Advanced filters (AND logic)
+    if (priceMin) {
+      filtered = filtered.filter((p) => (p.price || 0) >= parseFloat(priceMin));
+    }
+
+    if (priceMax) {
+      filtered = filtered.filter((p) => (p.price || 0) <= parseFloat(priceMax));
+    }
+
+    if (bedroomsMin) {
+      filtered = filtered.filter((p) => (p.bedrooms || 0) >= parseFloat(bedroomsMin));
+    }
+
+    if (areaMin) {
+      filtered = filtered.filter((p) => (p.area || 0) >= parseFloat(areaMin));
+    }
+
+    // Amenities filter (AND logic - must have ALL selected amenities)
+    if (amenitiesFilter.length > 0) {
+      filtered = filtered.filter((p) => {
+        return amenitiesFilter.every((amenity) => {
+          switch (amenity) {
+            case 'piscina':
+              return p.piscina;
+            case 'academia':
+              return p.academia;
+            case 'elevador':
+              return p.elevador;
+            case 'seguranca24h':
+              return p.seguranca24h;
+            case 'acessibilidade':
+              return p.acessibilidade;
+            case 'churrasqueira':
+              return p.churrasqueira;
+            case 'playground':
+              return p.playground;
+            case 'sacadaVaranda':
+              return p.sacadaVaranda;
+            default:
+              return true;
+          }
+        });
+      });
+    }
+
     setFilteredProperties(filtered);
-  }, [searchTerm, typeFilter, transactionFilter, statusFilter, segmentoFilter, properties]);
+  }, [searchTerm, typeFilter, transactionFilter, statusFilter, segmentoFilter, properties, priceMin, priceMax, bedroomsMin, areaMin, amenitiesFilter]);
 
   return (
     <div className="min-h-screen bg-primary">
@@ -208,7 +262,136 @@ export default function ImoveisPage() {
                 <SelectItem value="Vendido">Vendido</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              variant="outline"
+              className="h-12 border-border-gray text-primary-foreground hover:bg-primary-foreground/5 rounded-lg col-span-1 md:col-span-2 lg:col-span-1"
+            >
+              <SlidersHorizontal className="w-5 h-5 mr-2" />
+              Filtros Avançados
+              <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+            </Button>
           </div>
+
+          {/* Advanced Filters */}
+          {showAdvancedFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-6 pt-6 border-t border-border-gray space-y-6"
+            >
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="font-paragraph text-sm text-primary-foreground/60 mb-2 block">
+                    Preço Mínimo (R$)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    className="h-10 bg-primary border-border-gray text-primary-foreground rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-paragraph text-sm text-primary-foreground/60 mb-2 block">
+                    Preço Máximo (R$)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="Sem limite"
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    className="h-10 bg-primary border-border-gray text-primary-foreground rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-paragraph text-sm text-primary-foreground/60 mb-2 block">
+                    Quartos Mínimos
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={bedroomsMin}
+                    onChange={(e) => setBedroomsMin(e.target.value)}
+                    className="h-10 bg-primary border-border-gray text-primary-foreground rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-paragraph text-sm text-primary-foreground/60 mb-2 block">
+                    Área Mínima (m²)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={areaMin}
+                    onChange={(e) => setAreaMin(e.target.value)}
+                    className="h-10 bg-primary border-border-gray text-primary-foreground rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-paragraph text-sm text-primary-foreground/60 mb-3 block">
+                  Amenidades (selecione as desejadas)
+                </label>
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { id: 'piscina', label: 'Piscina' },
+                    { id: 'academia', label: 'Academia' },
+                    { id: 'elevador', label: 'Elevador' },
+                    { id: 'seguranca24h', label: 'Segurança 24h' },
+                    { id: 'acessibilidade', label: 'Acessibilidade' },
+                    { id: 'churrasqueira', label: 'Churrasqueira' },
+                    { id: 'playground', label: 'Playground' },
+                    { id: 'sacadaVaranda', label: 'Sacada/Varanda' },
+                  ].map((amenity) => (
+                    <div key={amenity.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={amenity.id}
+                        checked={amenitiesFilter.includes(amenity.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setAmenitiesFilter([...amenitiesFilter, amenity.id]);
+                          } else {
+                            setAmenitiesFilter(amenitiesFilter.filter(a => a !== amenity.id));
+                          }
+                        }}
+                        className="border-primary-foreground/30"
+                      />
+                      <label
+                        htmlFor={amenity.id}
+                        className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                      >
+                        {amenity.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {(priceMin || priceMax || bedroomsMin || areaMin || amenitiesFilter.length > 0) && (
+                <Button
+                  onClick={() => {
+                    setPriceMin('');
+                    setPriceMax('');
+                    setBedroomsMin('');
+                    setAreaMin('');
+                    setAmenitiesFilter([]);
+                  }}
+                  variant="outline"
+                  className="border-secondary/50 text-secondary hover:bg-secondary/10"
+                >
+                  Limpar Filtros Avançados
+                </Button>
+              )}
+            </motion.div>
+          )}
         </div>
       </section>
 

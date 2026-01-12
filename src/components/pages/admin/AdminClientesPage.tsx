@@ -10,10 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
-import { Clientes } from '@/entities';
+import { Clients } from '@/entities';
 
 function AdminClientesContent() {
-  const [clientes, setClientes] = useState<Clientes[]>([]);
+  const [clientes, setClientes] = useState<Clients[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -32,7 +32,7 @@ function AdminClientesContent() {
 
   const loadClientes = async () => {
     try {
-      const { items } = await BaseCrudService.getAll<Clientes>('clientes');
+      const { items } = await BaseCrudService.getAll<Clients>('clientes');
       setClientes(items);
     } catch (error) {
       console.error('Error loading clientes:', error);
@@ -71,7 +71,7 @@ function AdminClientesContent() {
     }
   };
 
-  const handleEdit = (cliente: Clientes) => {
+  const handleEdit = (cliente: Clients) => {
     setEditingId(cliente._id);
     setFormData({
       clientName: cliente.clientName || '',

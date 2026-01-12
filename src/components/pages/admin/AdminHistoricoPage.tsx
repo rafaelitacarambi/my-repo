@@ -10,10 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
-import { HistoricoInteracoes } from '@/entities';
+import { HistricodeInteraes } from '@/entities';
 
 function AdminHistoricoContent() {
-  const [historico, setHistorico] = useState<HistoricoInteracoes[]>([]);
+  const [historico, setHistorico] = useState<HistricodeInteraes[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -31,7 +31,7 @@ function AdminHistoricoContent() {
 
   const loadHistorico = async () => {
     try {
-      const { items } = await BaseCrudService.getAll<HistoricoInteracoes>('historicointeracoes');
+      const { items } = await BaseCrudService.getAll<HistricodeInteraes>('historicointeracoes');
       setHistorico(items.sort((a, b) => {
         const dateA = a.interactionDate ? new Date(a.interactionDate).getTime() : 0;
         const dateB = b.interactionDate ? new Date(b.interactionDate).getTime() : 0;
@@ -74,7 +74,7 @@ function AdminHistoricoContent() {
     }
   };
 
-  const handleEdit = (item: HistoricoInteracoes) => {
+  const handleEdit = (item: HistricodeInteraes) => {
     setEditingId(item._id);
     setFormData({
       interactionDate: item.interactionDate ? 

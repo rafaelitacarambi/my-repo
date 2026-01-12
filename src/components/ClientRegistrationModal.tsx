@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Check, X } from 'lucide-react';
 import { BaseCrudService } from '@/integrations';
-import { Clientes, ServiceRecords } from '@/entities';
+import { Clients, ServiceRecords } from '@/entities';
 
 interface ClientRegistrationModalProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ export function ClientRegistrationModal({
   const [step, setStep] = useState<'form' | 'roles' | 'success'>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [duplicateWarning, setDuplicateWarning] = useState<Clientes | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<Clients | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [createdClientId, setCreatedClientId] = useState<string | null>(null);
   const [createdAtendimentos, setCreatedAtendimentos] = useState<string[]>([]);
@@ -66,9 +66,9 @@ export function ClientRegistrationModal({
     onOpenChange(false);
   };
 
-  const checkDuplicateClient = async (): Promise<Clientes | null> => {
+  const checkDuplicateClient = async (): Promise<Clients | null> => {
     try {
-      const { items } = await BaseCrudService.getAll<Clientes>('clientes');
+      const { items } = await BaseCrudService.getAll<Clients>('clientes');
       const duplicate = items.find(
         (c) =>
           (formData.phoneNumber && c.phoneNumber === formData.phoneNumber) ||

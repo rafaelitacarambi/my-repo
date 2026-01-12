@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Building2, Plus, Edit, Trash2, ArrowLeft, Check } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs as TabsComponent, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
@@ -24,6 +25,8 @@ const SEGMENTOS = [
   'Alto Padrão'
 ];
 
+const POSICOES_SOL = ['Norte', 'Sul', 'Leste', 'Oeste', 'Misto'];
+
 function AdminImoveisContent() {
   const [properties, setProperties] = useState<Imveis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +34,7 @@ function AdminImoveisContent() {
   const [editingProperty, setEditingProperty] = useState<Imveis | null>(null);
   const [formData, setFormData] = useState<Partial<Imveis>>(getInitialFormData());
   const [selectedSegmentos, setSelectedSegmentos] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('basico');
 
   function getInitialFormData(): Partial<Imveis> {
     return {
@@ -48,6 +52,35 @@ function AdminImoveisContent() {
       keyQrCodeUrl: '',
       segmentoCompra: '',
       investimentoOportunidade: false,
+      precoVenda: 0,
+      precoLocacao: 0,
+      valorCondominio: 0,
+      iptuAnual: 0,
+      valorSinal: 0,
+      suites: 0,
+      andar: 0,
+      areaUtil: 0,
+      numeroPavimentos: 0,
+      posicaoSol: '',
+      permiteFinanciamento: false,
+      aceitaFgts: false,
+      aceitaFinanciamentoCaixa: false,
+      armariosPlanejados: false,
+      sacadaVaranda: false,
+      elevador: false,
+      academia: false,
+      churrasqueira: false,
+      piscina: false,
+      playground: false,
+      seguranca24h: false,
+      acessibilidade: false,
+      diferenciais: '',
+      resumoImovel: '',
+      proprietarioId: '',
+      corretorResponsavelId: '',
+      galeriaFotos: '',
+      plantaBaixa: '',
+      tourVirtual: '',
     };
   }
 
@@ -112,9 +145,39 @@ function AdminImoveisContent() {
       status: property.status,
       keyQrCodeUrl: property.keyQrCodeUrl,
       investimentoOportunidade: property.investimentoOportunidade,
+      precoVenda: property.precoVenda,
+      precoLocacao: property.precoLocacao,
+      valorCondominio: property.valorCondominio,
+      iptuAnual: property.iptuAnual,
+      valorSinal: property.valorSinal,
+      suites: property.suites,
+      andar: property.andar,
+      areaUtil: property.areaUtil,
+      numeroPavimentos: property.numeroPavimentos,
+      posicaoSol: property.posicaoSol,
+      permiteFinanciamento: property.permiteFinanciamento,
+      aceitaFgts: property.aceitaFgts,
+      aceitaFinanciamentoCaixa: property.aceitaFinanciamentoCaixa,
+      armariosPlanejados: property.armariosPlanejados,
+      sacadaVaranda: property.sacadaVaranda,
+      elevador: property.elevador,
+      academia: property.academia,
+      churrasqueira: property.churrasqueira,
+      piscina: property.piscina,
+      playground: property.playground,
+      seguranca24h: property.seguranca24h,
+      acessibilidade: property.acessibilidade,
+      diferenciais: property.diferenciais,
+      resumoImovel: property.resumoImovel,
+      proprietarioId: property.proprietarioId,
+      corretorResponsavelId: property.corretorResponsavelId,
+      galeriaFotos: property.galeriaFotos,
+      plantaBaixa: property.plantaBaixa,
+      tourVirtual: property.tourVirtual,
     });
     const segmentos = property.segmentoCompra?.split(',').filter(s => s) || [];
     setSelectedSegmentos(segmentos);
+    setActiveTab('basico');
     setDialogOpen(true);
   };
 
@@ -136,9 +199,10 @@ function AdminImoveisContent() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    const numericFields = ['price', 'bedrooms', 'bathrooms', 'area', 'precoVenda', 'precoLocacao', 'valorCondominio', 'iptuAnual', 'valorSinal', 'suites', 'andar', 'areaUtil', 'numeroPavimentos'];
     setFormData({
       ...formData,
-      [name]: name === 'price' || name === 'bedrooms' || name === 'bathrooms' || name === 'area'
+      [name]: numericFields.includes(name)
         ? parseFloat(value) || 0
         : value,
     });
@@ -200,237 +264,735 @@ function AdminImoveisContent() {
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="propertyName" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                        Nome do Imóvel *
-                      </Label>
-                      <Input
-                        id="propertyName"
-                        name="propertyName"
-                        required
-                        value={formData.propertyName}
-                        onChange={handleChange}
-                        className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                      />
-                    </div>
+                  <TabsComponent value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid w-full grid-cols-4 bg-primary-foreground/10">
+                      <TabsTrigger value="basico" className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">
+                        Básico
+                      </TabsTrigger>
+                      <TabsTrigger value="precos" className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">
+                        Preços
+                      </TabsTrigger>
+                      <TabsTrigger value="amenidades" className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">
+                        Amenidades
+                      </TabsTrigger>
+                      <TabsTrigger value="midia" className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">
+                        Mídia
+                      </TabsTrigger>
+                    </TabsList>
 
-                    <div>
-                      <Label htmlFor="propertyType" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                        Tipo *
-                      </Label>
-                      <Select
-                        value={formData.propertyType}
-                        onValueChange={(value) => setFormData({ ...formData, propertyType: value })}
-                      >
-                        <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Apartamento">Apartamento</SelectItem>
-                          <SelectItem value="Casa">Casa</SelectItem>
-                          <SelectItem value="Terreno">Terreno</SelectItem>
-                          <SelectItem value="Comercial">Comercial</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {/* TAB BÁSICO */}
+                    <TabsContent value="basico" className="space-y-4 mt-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="propertyName" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Nome do Imóvel *
+                          </Label>
+                          <Input
+                            id="propertyName"
+                            name="propertyName"
+                            required
+                            value={formData.propertyName}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
 
-                    <div>
-                      <Label htmlFor="transactionType" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                        Transação *
-                      </Label>
-                      <Select
-                        value={formData.transactionType}
-                        onValueChange={(value) => setFormData({ ...formData, transactionType: value })}
-                      >
-                        <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Venda">Venda</SelectItem>
-                          <SelectItem value="Locação">Locação</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        <div>
+                          <Label htmlFor="propertyType" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Tipo *
+                          </Label>
+                          <Select
+                            value={formData.propertyType}
+                            onValueChange={(value) => setFormData({ ...formData, propertyType: value })}
+                          >
+                            <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Apartamento">Apartamento</SelectItem>
+                              <SelectItem value="Casa">Casa</SelectItem>
+                              <SelectItem value="Terreno">Terreno</SelectItem>
+                              <SelectItem value="Comercial">Comercial</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                    <div>
-                      <Label htmlFor="price" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                        Preço (R$) *
-                      </Label>
-                      <Input
-                        id="price"
-                        name="price"
-                        type="number"
-                        required
-                        value={formData.price}
-                        onChange={handleChange}
-                        className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                      />
-                    </div>
+                        <div>
+                          <Label htmlFor="transactionType" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Transação *
+                          </Label>
+                          <Select
+                            value={formData.transactionType}
+                            onValueChange={(value) => setFormData({ ...formData, transactionType: value })}
+                          >
+                            <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Venda">Venda</SelectItem>
+                              <SelectItem value="Locação">Locação</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                    <div>
-                      <Label htmlFor="bedrooms" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                        Quartos *
-                      </Label>
-                      <Input
-                        id="bedrooms"
-                        name="bedrooms"
-                        type="number"
-                        required
-                        value={formData.bedrooms}
-                        onChange={handleChange}
-                        className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                      />
-                    </div>
+                        <div>
+                          <Label htmlFor="price" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Preço (R$) *
+                          </Label>
+                          <Input
+                            id="price"
+                            name="price"
+                            type="number"
+                            required
+                            value={formData.price}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
 
-                    <div>
-                      <Label htmlFor="bathrooms" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                        Banheiros *
-                      </Label>
-                      <Input
-                        id="bathrooms"
-                        name="bathrooms"
-                        type="number"
-                        required
-                        value={formData.bathrooms}
-                        onChange={handleChange}
-                        className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                      />
-                    </div>
+                        <div>
+                          <Label htmlFor="bedrooms" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Quartos *
+                          </Label>
+                          <Input
+                            id="bedrooms"
+                            name="bedrooms"
+                            type="number"
+                            required
+                            value={formData.bedrooms}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
 
-                    <div>
-                      <Label htmlFor="area" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                        Área (m²) *
-                      </Label>
-                      <Input
-                        id="area"
-                        name="area"
-                        type="number"
-                        required
-                        value={formData.area}
-                        onChange={handleChange}
-                        className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                      />
-                    </div>
+                        <div>
+                          <Label htmlFor="bathrooms" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Banheiros *
+                          </Label>
+                          <Input
+                            id="bathrooms"
+                            name="bathrooms"
+                            type="number"
+                            required
+                            value={formData.bathrooms}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
 
-                    <div>
-                      <Label htmlFor="status" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                        Status *
-                      </Label>
-                      <Select
-                        value={formData.status}
-                        onValueChange={(value) => setFormData({ ...formData, status: value })}
-                      >
-                        <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Disponível">Disponível</SelectItem>
-                          <SelectItem value="Reservado">Reservado</SelectItem>
-                          <SelectItem value="Vendido">Vendido</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                        <div>
+                          <Label htmlFor="area" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Área Total (m²) *
+                          </Label>
+                          <Input
+                            id="area"
+                            name="area"
+                            type="number"
+                            required
+                            value={formData.area}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
 
-                  <div>
-                    <Label htmlFor="address" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                      Endereço *
-                    </Label>
-                    <Input
-                      id="address"
-                      name="address"
-                      required
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                    />
-                  </div>
+                        <div>
+                          <Label htmlFor="status" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Status *
+                          </Label>
+                          <Select
+                            value={formData.status}
+                            onValueChange={(value) => setFormData({ ...formData, status: value })}
+                          >
+                            <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Disponível">Disponível</SelectItem>
+                              <SelectItem value="Reservado">Reservado</SelectItem>
+                              <SelectItem value="Vendido">Vendido</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
 
-                  <div>
-                    <Label htmlFor="description" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                      Descrição
-                    </Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows={4}
-                      className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground resize-none"
-                    />
-                  </div>
+                      <div>
+                        <Label htmlFor="address" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          Endereço *
+                        </Label>
+                        <Input
+                          id="address"
+                          name="address"
+                          required
+                          value={formData.address}
+                          onChange={handleChange}
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                        />
+                      </div>
 
-                  <div>
-                    <Label className="font-paragraph text-sm text-primary-foreground mb-3 block">
-                      Segmentos de Compra
-                    </Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {SEGMENTOS.map((segmento) => (
-                        <div key={segmento} className="flex items-center gap-2">
+                      <div>
+                        <Label htmlFor="resumoImovel" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          Resumo do Imóvel
+                        </Label>
+                        <Textarea
+                          id="resumoImovel"
+                          name="resumoImovel"
+                          value={formData.resumoImovel}
+                          onChange={handleChange}
+                          rows={3}
+                          placeholder="Descrição breve do imóvel"
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground resize-none"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="description" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          Descrição Detalhada
+                        </Label>
+                        <Textarea
+                          id="description"
+                          name="description"
+                          value={formData.description}
+                          onChange={handleChange}
+                          rows={4}
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground resize-none"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="font-paragraph text-sm text-primary-foreground mb-3 block">
+                          Segmentos de Compra
+                        </Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {SEGMENTOS.map((segmento) => (
+                            <div key={segmento} className="flex items-center gap-2">
+                              <Checkbox
+                                id={segmento}
+                                checked={selectedSegmentos.includes(segmento)}
+                                onCheckedChange={() => toggleSegmento(segmento)}
+                                className="border-primary-foreground/30"
+                              />
+                              <Label
+                                htmlFor={segmento}
+                                className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                              >
+                                {segmento}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="investimentoOportunidade"
+                          checked={formData.investimentoOportunidade || false}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, investimentoOportunidade: checked as boolean })
+                          }
+                          className="border-primary-foreground/30"
+                        />
+                        <Label
+                          htmlFor="investimentoOportunidade"
+                          className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                        >
+                          Marcar como Investimento/Oportunidade
+                        </Label>
+                      </div>
+                    </TabsContent>
+
+                    {/* TAB PREÇOS */}
+                    <TabsContent value="precos" className="space-y-4 mt-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="precoVenda" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Preço de Venda (R$)
+                          </Label>
+                          <Input
+                            id="precoVenda"
+                            name="precoVenda"
+                            type="number"
+                            value={formData.precoVenda}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="precoLocacao" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Preço de Locação (R$)
+                          </Label>
+                          <Input
+                            id="precoLocacao"
+                            name="precoLocacao"
+                            type="number"
+                            value={formData.precoLocacao}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="valorCondominio" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Valor Condomínio (R$)
+                          </Label>
+                          <Input
+                            id="valorCondominio"
+                            name="valorCondominio"
+                            type="number"
+                            value={formData.valorCondominio}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="iptuAnual" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            IPTU Anual (R$)
+                          </Label>
+                          <Input
+                            id="iptuAnual"
+                            name="iptuAnual"
+                            type="number"
+                            value={formData.iptuAnual}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="valorSinal" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                            Valor Sinal (R$)
+                          </Label>
+                          <Input
+                            id="valorSinal"
+                            name="valorSinal"
+                            type="number"
+                            value={formData.valorSinal}
+                            onChange={handleChange}
+                            className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="border-t border-primary-foreground/10 pt-4">
+                        <h3 className="font-heading text-lg text-secondary mb-4">Características Físicas</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="suites" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                              Suítes
+                            </Label>
+                            <Input
+                              id="suites"
+                              name="suites"
+                              type="number"
+                              value={formData.suites}
+                              onChange={handleChange}
+                              className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="andar" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                              Andar
+                            </Label>
+                            <Input
+                              id="andar"
+                              name="andar"
+                              type="number"
+                              value={formData.andar}
+                              onChange={handleChange}
+                              className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="areaUtil" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                              Área Útil (m²)
+                            </Label>
+                            <Input
+                              id="areaUtil"
+                              name="areaUtil"
+                              type="number"
+                              value={formData.areaUtil}
+                              onChange={handleChange}
+                              className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="numeroPavimentos" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                              Número de Pavimentos
+                            </Label>
+                            <Input
+                              id="numeroPavimentos"
+                              name="numeroPavimentos"
+                              type="number"
+                              value={formData.numeroPavimentos}
+                              onChange={handleChange}
+                              className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <Label htmlFor="posicaoSol" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                              Posição do Sol
+                            </Label>
+                            <Select
+                              value={formData.posicaoSol}
+                              onValueChange={(value) => setFormData({ ...formData, posicaoSol: value })}
+                            >
+                              <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
+                                <SelectValue placeholder="Selecione a posição" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {POSICOES_SOL.map((pos) => (
+                                  <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-primary-foreground/10 pt-4">
+                        <h3 className="font-heading text-lg text-secondary mb-4">Financiamento</h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="permiteFinanciamento"
+                              checked={formData.permiteFinanciamento || false}
+                              onCheckedChange={(checked) =>
+                                setFormData({ ...formData, permiteFinanciamento: checked as boolean })
+                              }
+                              className="border-primary-foreground/30"
+                            />
+                            <Label
+                              htmlFor="permiteFinanciamento"
+                              className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                            >
+                              Permite Financiamento
+                            </Label>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="aceitaFgts"
+                              checked={formData.aceitaFgts || false}
+                              onCheckedChange={(checked) =>
+                                setFormData({ ...formData, aceitaFgts: checked as boolean })
+                              }
+                              className="border-primary-foreground/30"
+                            />
+                            <Label
+                              htmlFor="aceitaFgts"
+                              className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                            >
+                              Aceita FGTS
+                            </Label>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="aceitaFinanciamentoCaixa"
+                              checked={formData.aceitaFinanciamentoCaixa || false}
+                              onCheckedChange={(checked) =>
+                                setFormData({ ...formData, aceitaFinanciamentoCaixa: checked as boolean })
+                              }
+                              className="border-primary-foreground/30"
+                            />
+                            <Label
+                              htmlFor="aceitaFinanciamentoCaixa"
+                              className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                            >
+                              Aceita Financiamento Caixa
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* TAB AMENIDADES */}
+                    <TabsContent value="amenidades" className="space-y-4 mt-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="flex items-center gap-2">
                           <Checkbox
-                            id={segmento}
-                            checked={selectedSegmentos.includes(segmento)}
-                            onCheckedChange={() => toggleSegmento(segmento)}
+                            id="armariosPlanejados"
+                            checked={formData.armariosPlanejados || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, armariosPlanejados: checked as boolean })
+                            }
                             className="border-primary-foreground/30"
                           />
                           <Label
-                            htmlFor={segmento}
+                            htmlFor="armariosPlanejados"
                             className="font-paragraph text-sm text-primary-foreground cursor-pointer"
                           >
-                            {segmento}
+                            Armários Planejados
                           </Label>
                         </div>
-                      ))}
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="investimentoOportunidade"
-                      checked={formData.investimentoOportunidade || false}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, investimentoOportunidade: checked as boolean })
-                      }
-                      className="border-primary-foreground/30"
-                    />
-                    <Label
-                      htmlFor="investimentoOportunidade"
-                      className="font-paragraph text-sm text-primary-foreground cursor-pointer"
-                    >
-                      Marcar como Investimento/Oportunidade
-                    </Label>
-                  </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="sacadaVaranda"
+                            checked={formData.sacadaVaranda || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, sacadaVaranda: checked as boolean })
+                            }
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor="sacadaVaranda"
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            Sacada/Varanda
+                          </Label>
+                        </div>
 
-                  <div>
-                    <Label htmlFor="propertyImages" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                      URL da Imagem
-                    </Label>
-                    <Input
-                      id="propertyImages"
-                      name="propertyImages"
-                      type="url"
-                      value={formData.propertyImages}
-                      onChange={handleChange}
-                      placeholder="https://static.wixstatic.com/media/9b23b4_a76dcf7c42ef462b8db93d40d0dae796~mv2.png?originWidth=896&originHeight=576"
-                      className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                    />
-                  </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="elevador"
+                            checked={formData.elevador || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, elevador: checked as boolean })
+                            }
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor="elevador"
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            Elevador
+                          </Label>
+                        </div>
 
-                  <div>
-                    <Label htmlFor="keyQrCodeUrl" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                      URL do QR Code da Chave
-                    </Label>
-                    <Input
-                      id="keyQrCodeUrl"
-                      name="keyQrCodeUrl"
-                      type="url"
-                      value={formData.keyQrCodeUrl}
-                      onChange={handleChange}
-                      placeholder="https://static.wixstatic.com/media/9b23b4_875dcfda084644b7b6ed0542d72a60cf~mv2.png?originWidth=896&originHeight=576"
-                      className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                    />
-                  </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="academia"
+                            checked={formData.academia || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, academia: checked as boolean })
+                            }
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor="academia"
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            Academia
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="churrasqueira"
+                            checked={formData.churrasqueira || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, churrasqueira: checked as boolean })
+                            }
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor="churrasqueira"
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            Churrasqueira
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="piscina"
+                            checked={formData.piscina || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, piscina: checked as boolean })
+                            }
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor="piscina"
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            Piscina
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="playground"
+                            checked={formData.playground || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, playground: checked as boolean })
+                            }
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor="playground"
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            Playground
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="seguranca24h"
+                            checked={formData.seguranca24h || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, seguranca24h: checked as boolean })
+                            }
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor="seguranca24h"
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            Segurança 24h
+                          </Label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="acessibilidade"
+                            checked={formData.acessibilidade || false}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, acessibilidade: checked as boolean })
+                            }
+                            className="border-primary-foreground/30"
+                          />
+                          <Label
+                            htmlFor="acessibilidade"
+                            className="font-paragraph text-sm text-primary-foreground cursor-pointer"
+                          >
+                            Acessibilidade (PCD)
+                          </Label>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-primary-foreground/10 pt-4">
+                        <Label htmlFor="diferenciais" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          Diferenciais (Tags)
+                        </Label>
+                        <Textarea
+                          id="diferenciais"
+                          name="diferenciais"
+                          value={formData.diferenciais}
+                          onChange={handleChange}
+                          rows={3}
+                          placeholder="Ex: Vista para o mar, Piscina aquecida, Garagem coberta"
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground resize-none"
+                        />
+                      </div>
+                    </TabsContent>
+
+                    {/* TAB MÍDIA */}
+                    <TabsContent value="midia" className="space-y-4 mt-4">
+                      <div>
+                        <Label htmlFor="propertyImages" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          URL da Imagem Principal
+                        </Label>
+                        <Input
+                          id="propertyImages"
+                          name="propertyImages"
+                          type="url"
+                          value={formData.propertyImages}
+                          onChange={handleChange}
+                          placeholder="https://static.wixstatic.com/media/..."
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="galeriaFotos" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          URL da Galeria de Fotos
+                        </Label>
+                        <Input
+                          id="galeriaFotos"
+                          name="galeriaFotos"
+                          type="url"
+                          value={formData.galeriaFotos}
+                          onChange={handleChange}
+                          placeholder="https://static.wixstatic.com/media/..."
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="plantaBaixa" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          URL da Planta Baixa
+                        </Label>
+                        <Input
+                          id="plantaBaixa"
+                          name="plantaBaixa"
+                          type="url"
+                          value={formData.plantaBaixa}
+                          onChange={handleChange}
+                          placeholder="https://static.wixstatic.com/media/..."
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="tourVirtual" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          URL do Tour Virtual
+                        </Label>
+                        <Input
+                          id="tourVirtual"
+                          name="tourVirtual"
+                          type="url"
+                          value={formData.tourVirtual}
+                          onChange={handleChange}
+                          placeholder="https://..."
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="keyQrCodeUrl" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                          URL do QR Code da Chave
+                        </Label>
+                        <Input
+                          id="keyQrCodeUrl"
+                          name="keyQrCodeUrl"
+                          type="url"
+                          value={formData.keyQrCodeUrl}
+                          onChange={handleChange}
+                          placeholder="https://static.wixstatic.com/media/..."
+                          className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                        />
+                      </div>
+
+                      <div className="border-t border-primary-foreground/10 pt-4">
+                        <h3 className="font-heading text-lg text-secondary mb-4">Referências</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="proprietarioId" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                              ID do Proprietário
+                            </Label>
+                            <Input
+                              id="proprietarioId"
+                              name="proprietarioId"
+                              value={formData.proprietarioId}
+                              onChange={handleChange}
+                              className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="corretorResponsavelId" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                              ID do Corretor Responsável
+                            </Label>
+                            <Input
+                              id="corretorResponsavelId"
+                              name="corretorResponsavelId"
+                              value={formData.corretorResponsavelId}
+                              onChange={handleChange}
+                              className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </TabsComponent>
 
                   <div className="flex gap-3 pt-4">
                     <Button

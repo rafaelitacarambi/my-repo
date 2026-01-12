@@ -130,6 +130,66 @@ export interface Imveis {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
+  /** @wixFieldType text */
+  resumoImovel?: string;
+  /** @wixFieldType url */
+  tourVirtual?: string;
+  /** @wixFieldType url */
+  plantaBaixa?: string;
+  /** @wixFieldType image */
+  galeriaFotos?: string;
+  /** @wixFieldType text */
+  segmentosCompra?: string;
+  /** @wixFieldType text */
+  corretorResponsavelId?: string;
+  /** @wixFieldType text */
+  proprietarioId?: string;
+  /** @wixFieldType boolean */
+  aceitaFgts?: boolean;
+  /** @wixFieldType text */
+  diferenciais?: string;
+  /** @wixFieldType boolean */
+  acessibilidade?: boolean;
+  /** @wixFieldType boolean */
+  seguranca24h?: boolean;
+  /** @wixFieldType boolean */
+  playground?: boolean;
+  /** @wixFieldType boolean */
+  piscina?: boolean;
+  /** @wixFieldType boolean */
+  churrasqueira?: boolean;
+  /** @wixFieldType boolean */
+  academia?: boolean;
+  /** @wixFieldType boolean */
+  elevador?: boolean;
+  /** @wixFieldType boolean */
+  sacadaVaranda?: boolean;
+  /** @wixFieldType boolean */
+  armariosPlanejados?: boolean;
+  /** @wixFieldType boolean */
+  aceitaFinanciamentoCaixa?: boolean;
+  /** @wixFieldType number */
+  andar?: number;
+  /** @wixFieldType boolean */
+  permiteFinanciamento?: boolean;
+  /** @wixFieldType text */
+  posicaoSol?: string;
+  /** @wixFieldType number */
+  numeroPavimentos?: number;
+  /** @wixFieldType number */
+  areaUtil?: number;
+  /** @wixFieldType number */
+  valorCondominio?: number;
+  /** @wixFieldType number */
+  suites?: number;
+  /** @wixFieldType number */
+  valorSinal?: number;
+  /** @wixFieldType number */
+  iptuAnual?: number;
+  /** @wixFieldType number */
+  precoVenda?: number;
+  /** @wixFieldType number */
+  precoLocacao?: number;
   /** @wixFieldType boolean */
   investimentoOportunidade?: boolean;
   /** @wixFieldType text */
@@ -158,66 +218,6 @@ export interface Imveis {
   status?: string;
   /** @wixFieldType url */
   keyQrCodeUrl?: string;
-  /** @wixFieldType number */
-  precoVenda?: number;
-  /** @wixFieldType number */
-  precoLocacao?: number;
-  /** @wixFieldType number */
-  valorCondominio?: number;
-  /** @wixFieldType number */
-  iptuAnual?: number;
-  /** @wixFieldType number */
-  valorSinal?: number;
-  /** @wixFieldType number */
-  suites?: number;
-  /** @wixFieldType number */
-  andar?: number;
-  /** @wixFieldType number */
-  areaUtil?: number;
-  /** @wixFieldType number */
-  numeroPavimentos?: number;
-  /** @wixFieldType text */
-  posicaoSol?: string;
-  /** @wixFieldType boolean */
-  permiteFinanciamento?: boolean;
-  /** @wixFieldType boolean */
-  aceitaFgts?: boolean;
-  /** @wixFieldType boolean */
-  aceitaFinanciamentoCaixa?: boolean;
-  /** @wixFieldType boolean */
-  armariosPlanejados?: boolean;
-  /** @wixFieldType boolean */
-  sacadaVaranda?: boolean;
-  /** @wixFieldType boolean */
-  elevador?: boolean;
-  /** @wixFieldType boolean */
-  academia?: boolean;
-  /** @wixFieldType boolean */
-  churrasqueira?: boolean;
-  /** @wixFieldType boolean */
-  piscina?: boolean;
-  /** @wixFieldType boolean */
-  playground?: boolean;
-  /** @wixFieldType boolean */
-  seguranca24h?: boolean;
-  /** @wixFieldType boolean */
-  acessibilidade?: boolean;
-  /** @wixFieldType text */
-  diferenciais?: string;
-  /** @wixFieldType text */
-  resumoImovel?: string;
-  /** @wixFieldType text */
-  proprietarioId?: string;
-  /** @wixFieldType text */
-  corretorResponsavelId?: string;
-  /** @wixFieldType text */
-  segmentosCompra?: string;
-  /** @wixFieldType image */
-  galeriaFotos?: string;
-  /** @wixFieldType url */
-  plantaBaixa?: string;
-  /** @wixFieldType url */
-  tourVirtual?: string;
 }
 
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, MapPin, Bed, Bath, Maximize, ArrowLeft, Calculator, Phone } from 'lucide-react';
+import { Home, MapPin, Bed, Bath, Maximize, ArrowLeft, Calculator, Phone, CheckCircle, Zap, Shield, Sofa } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
@@ -196,6 +197,185 @@ export default function ImovelDetailPage() {
                     {property.description || 'Descrição não disponível.'}
                   </p>
                 </div>
+
+                {/* Tabs for Additional Info */}
+                <Tabs defaultValue="detalhes" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 bg-primary-foreground/10">
+                    <TabsTrigger value="detalhes" className="font-paragraph">Detalhes</TabsTrigger>
+                    <TabsTrigger value="amenidades" className="font-paragraph">Amenidades</TabsTrigger>
+                    <TabsTrigger value="financeiro" className="font-paragraph">Financeiro</TabsTrigger>
+                  </TabsList>
+
+                  {/* Detalhes Tab */}
+                  <TabsContent value="detalhes" className="space-y-6 mt-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {property.areaUtil && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Área Útil</p>
+                          <p className="font-heading text-xl text-primary-foreground font-semibold">{property.areaUtil}m²</p>
+                        </div>
+                      )}
+                      {property.suites && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Suítes</p>
+                          <p className="font-heading text-xl text-primary-foreground font-semibold">{property.suites}</p>
+                        </div>
+                      )}
+                      {property.andar && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Andar</p>
+                          <p className="font-heading text-xl text-primary-foreground font-semibold">{property.andar}</p>
+                        </div>
+                      )}
+                      {property.numeroPavimentos && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Pavimentos</p>
+                          <p className="font-heading text-xl text-primary-foreground font-semibold">{property.numeroPavimentos}</p>
+                        </div>
+                      )}
+                      {property.posicaoSol && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Posição do Sol</p>
+                          <p className="font-heading text-xl text-primary-foreground font-semibold">{property.posicaoSol}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {property.resumoImovel && (
+                      <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                        <p className="font-paragraph text-sm text-primary-foreground/60 mb-2">Resumo</p>
+                        <p className="font-paragraph text-base text-primary-foreground/80">{property.resumoImovel}</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Amenidades Tab */}
+                  <TabsContent value="amenidades" className="space-y-6 mt-6">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {property.piscina && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <Sofa className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Piscina</span>
+                        </div>
+                      )}
+                      {property.academia && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <Zap className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Academia</span>
+                        </div>
+                      )}
+                      {property.elevador && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Elevador</span>
+                        </div>
+                      )}
+                      {property.seguranca24h && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <Shield className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Segurança 24h</span>
+                        </div>
+                      )}
+                      {property.acessibilidade && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Acessibilidade (PCD)</span>
+                        </div>
+                      )}
+                      {property.churrasqueira && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <Sofa className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Churrasqueira</span>
+                        </div>
+                      )}
+                      {property.playground && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <Sofa className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Playground</span>
+                        </div>
+                      )}
+                      {property.sacadaVaranda && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <Sofa className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Sacada/Varanda</span>
+                        </div>
+                      )}
+                      {property.armariosPlanejados && (
+                        <div className="flex items-center gap-3 bg-secondary/10 rounded-lg p-4 border border-secondary/20">
+                          <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <span className="font-paragraph text-primary-foreground">Armários Planejados</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {property.diferenciais && (
+                      <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                        <p className="font-paragraph text-sm text-primary-foreground/60 mb-2">Diferenciais</p>
+                        <p className="font-paragraph text-base text-primary-foreground/80">{property.diferenciais}</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Financeiro Tab */}
+                  <TabsContent value="financeiro" className="space-y-6 mt-6">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {property.precoVenda && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Preço de Venda</p>
+                          <p className="font-heading text-xl text-secondary font-semibold">R$ {property.precoVenda.toLocaleString('pt-BR')}</p>
+                        </div>
+                      )}
+                      {property.precoLocacao && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Preço de Locação</p>
+                          <p className="font-heading text-xl text-secondary font-semibold">R$ {property.precoLocacao.toLocaleString('pt-BR')}</p>
+                        </div>
+                      )}
+                      {property.valorCondominio && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Condomínio</p>
+                          <p className="font-heading text-xl text-primary-foreground font-semibold">R$ {property.valorCondominio.toLocaleString('pt-BR')}</p>
+                        </div>
+                      )}
+                      {property.iptuAnual && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">IPTU Anual</p>
+                          <p className="font-heading text-xl text-primary-foreground font-semibold">R$ {property.iptuAnual.toLocaleString('pt-BR')}</p>
+                        </div>
+                      )}
+                      {property.valorSinal && (
+                        <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                          <p className="font-paragraph text-sm text-primary-foreground/60 mb-1">Valor Sinal</p>
+                          <p className="font-heading text-xl text-primary-foreground font-semibold">R$ {property.valorSinal.toLocaleString('pt-BR')}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-primary-foreground/5 rounded-lg p-6 border border-primary-foreground/10">
+                      <h3 className="font-heading text-lg text-secondary mb-4 font-semibold">Opções de Financiamento</h3>
+                      <div className="space-y-3">
+                        {property.permiteFinanciamento && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-5 h-5 text-secondary" />
+                            <span className="font-paragraph text-primary-foreground">Permite Financiamento</span>
+                          </div>
+                        )}
+                        {property.aceitaFgts && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-5 h-5 text-secondary" />
+                            <span className="font-paragraph text-primary-foreground">Aceita FGTS</span>
+                          </div>
+                        )}
+                        {property.aceitaFinanciamentoCaixa && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-5 h-5 text-secondary" />
+                            <span className="font-paragraph text-primary-foreground">Financiamento Caixa Disponível</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </motion.div>
             </div>
 
@@ -234,25 +414,77 @@ export default function ImovelDetailPage() {
                   </div>
                 </div>
 
-                {/* QR Code */}
-                {property.keyQrCodeUrl && (
-                  <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
-                    <h3 className="font-heading text-lg text-primary-foreground mb-4 font-semibold">
-                      QR Code da Chave
-                    </h3>
-                    <div className="bg-foreground p-4 rounded-lg">
-                      <Image
-                        src={property.keyQrCodeUrl}
-                        alt="QR Code"
-                        className="w-full h-auto"
-                        width={200}
-                      />
+                {/* Mídia */}
+                <div className="space-y-6">
+                  {property.galeriaFotos && (
+                    <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
+                      <h3 className="font-heading text-lg text-primary-foreground mb-4 font-semibold">
+                        Galeria de Fotos
+                      </h3>
+                      <div className="bg-foreground p-4 rounded-lg">
+                        <Image
+                          src={property.galeriaFotos}
+                          alt="Galeria"
+                          className="w-full h-auto rounded-lg"
+                          width={400}
+                        />
+                      </div>
                     </div>
-                    <p className="font-paragraph text-sm text-primary-foreground/60 mt-4">
-                      Use este QR Code para acessar informações sobre a chave do imóvel
-                    </p>
-                  </div>
-                )}
+                  )}
+
+                  {property.plantaBaixa && (
+                    <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
+                      <h3 className="font-heading text-lg text-primary-foreground mb-4 font-semibold">
+                        Planta Baixa
+                      </h3>
+                      <div className="bg-foreground p-4 rounded-lg">
+                        <Image
+                          src={property.plantaBaixa}
+                          alt="Planta Baixa"
+                          className="w-full h-auto rounded-lg"
+                          width={400}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {property.tourVirtual && (
+                    <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
+                      <h3 className="font-heading text-lg text-primary-foreground mb-4 font-semibold">
+                        Tour Virtual
+                      </h3>
+                      <a
+                        href={property.tourVirtual}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block"
+                      >
+                        <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-12 px-6 rounded-lg">
+                          Acessar Tour Virtual
+                        </Button>
+                      </a>
+                    </div>
+                  )}
+
+                  {property.keyQrCodeUrl && (
+                    <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
+                      <h3 className="font-heading text-lg text-primary-foreground mb-4 font-semibold">
+                        QR Code da Chave
+                      </h3>
+                      <div className="bg-foreground p-4 rounded-lg">
+                        <Image
+                          src={property.keyQrCodeUrl}
+                          alt="QR Code"
+                          className="w-full h-auto"
+                          width={200}
+                        />
+                      </div>
+                      <p className="font-paragraph text-sm text-primary-foreground/60 mt-4">
+                        Use este QR Code para acessar informações sobre a chave do imóvel
+                      </p>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             </div>
           </div>
