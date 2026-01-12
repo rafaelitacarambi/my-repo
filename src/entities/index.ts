@@ -213,3 +213,95 @@ export interface ProcessosdeVenda {
   /** @wixFieldType text */
   notes?: string;
 }
+
+
+/**
+ * Collection ID: usuariossistema
+ * Interface for UsuariosSistema
+ */
+export interface UsuariosSistema {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  name?: string;
+  /** @wixFieldType text */
+  emailLogin?: string;
+  /** @wixFieldType text */
+  profile?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType datetime */
+  inviteDate?: Date | string;
+  /** @wixFieldType datetime */
+  lastLogin?: Date | string;
+}
+
+
+/**
+ * Collection ID: vinculosprocessos
+ * Interface for VinculosProcessos
+ */
+export interface VinculosProcessos {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  userId?: string;
+  /** @wixFieldType text */
+  serviceId?: string;
+  /** @wixFieldType text */
+  linkType?: string;
+  /** @wixFieldType text */
+  permission?: string;
+  /** @wixFieldType datetime */
+  bindingDate?: Date | string;
+  /** @wixFieldType text */
+  notes?: string;
+}
+
+
+/**
+ * Collection ID: usuariossistema
+ * Interface for UsuriosdoSistema
+ */
+export interface UsuriosdoSistema {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  name?: string;
+  /** @wixFieldType text */
+  emailLogin?: string;
+  /** @wixFieldType text */
+  profile?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType datetime */
+  inviteDate?: Date | string;
+  /** @wixFieldType datetime */
+  lastLogin?: Date | string;
+}
+
+
+/**
+ * Collection ID: vinculosprocessos
+ * Interface for ProcessBindings
+ */
+export interface ProcessBindings {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  userId?: string;
+  /** @wixFieldType text */
+  serviceId?: string;
+  /** @wixFieldType text */
+  linkType?: string;
+  /** @wixFieldType text */
+  permission?: string;
+  /** @wixFieldType datetime */
+  bindingDate?: Date | string;
+  /** @wixFieldType text */
+  notes?: string;
+}
