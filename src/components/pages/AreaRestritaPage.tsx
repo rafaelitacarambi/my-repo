@@ -280,6 +280,27 @@ function AreaRestritaContent() {
                 </div>
               </Link>
             </motion.div>
+
+            {/* Kanban de Financiamento */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.1 }}
+            >
+              <Link to="/admin/financiamento-kanban">
+                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
+                  <div className="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <DollarSign className="w-7 h-7 text-secondary-foreground" />
+                  </div>
+                  <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
+                    Kanban de Financiamento
+                  </h3>
+                  <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
+                    Gerencie o fluxo de financiamentos através das 9 fases do processo
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
           </div>
         </div>
       </section>

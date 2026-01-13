@@ -24,6 +24,7 @@ import AdminClientesPage from '@/components/pages/admin/AdminClientesPage';
 import AdminAtendimentosPage from '@/components/pages/admin/AdminAtendimentosPage';
 import AdminAgendamentosPage from '@/components/pages/admin/AdminAgendamentosPage';
 import AdminHistoricoPage from '@/components/pages/admin/AdminHistoricoPage';
+import AdminFinancingKanbanPage from '@/components/pages/admin/AdminFinancingKanbanPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -116,6 +117,10 @@ const router = createBrowserRouter([
       {
         path: "admin/historico",
         element: <AdminHistoricoPage />,
+      },
+      {
+        path: "admin/financiamento-kanban",
+        element: <AdminFinancingKanbanPage />,
       },
       {
         path: "*",
