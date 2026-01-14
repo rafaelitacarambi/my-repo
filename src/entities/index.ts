@@ -77,6 +77,18 @@ export interface ServiceRecords {
   /** @wixFieldType boolean */
   alertaAtraso?: boolean;
   /** @wixFieldType text */
+  clientePrincipalRef?: string;
+  /** @wixFieldType text */
+  canalOrigem?: string;
+  /** @wixFieldType datetime */
+  dataConclusao?: Date | string;
+  /** @wixFieldType text */
+  empresaResponsavelRef?: string;
+  /** @wixFieldType text */
+  unidadeResponsavelRef?: string;
+  /** @wixFieldType text */
+  corretorResponsavelRef?: string;
+  /** @wixFieldType text */
   responsavelExterno?: string;
   /** @wixFieldType date */
   dataPrevistaConclusao?: Date | string;
@@ -111,6 +123,22 @@ export interface Clients {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
+  /** @wixFieldType text */
+  papeis?: string;
+  /** @wixFieldType text */
+  tipoPessoa?: string;
+  /** @wixFieldType text */
+  whatsAppPrincipal?: string;
+  /** @wixFieldType text */
+  telefonePrincipal?: string;
+  /** @wixFieldType text */
+  emailPrincipal?: string;
+  /** @wixFieldType text */
+  nomeFantasia?: string;
+  /** @wixFieldType text */
+  nomeRazaoSocial?: string;
+  /** @wixFieldType text */
+  cpfCnpj?: string;
   /** @wixFieldType text */
   clientName?: string;
   /** @wixFieldType text */
@@ -190,6 +218,12 @@ export interface DocumentosdoFinanciamento {
   _updatedDate?: Date;
   /** @wixFieldType text */
   documentName?: string;
+  /** @wixFieldType text */
+  enviadoPor?: string;
+  /** @wixFieldType text */
+  origem?: string;
+  /** @wixFieldType text */
+  atendimentoRef?: string;
   /** @wixFieldType text */
   documentType?: string;
   /** @wixFieldType url */
@@ -336,6 +370,14 @@ export interface HistricodeInteraes {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
+  /** @wixFieldType text */
+  autorTipo?: string;
+  /** @wixFieldType text */
+  autorRef?: string;
+  /** @wixFieldType text */
+  atendimentoRef?: string;
+  /** @wixFieldType text */
+  tipoEvento?: string;
   /** @wixFieldType datetime */
   interactionDate?: Date | string;
   /** @wixFieldType text */
@@ -359,6 +401,14 @@ export interface Imveis {
   _updatedDate?: Date;
   /** @wixFieldType text */
   resumoImovel?: string;
+  /** @wixFieldType number */
+  rendaMinimaEstimada?: number;
+  /** @wixFieldType number */
+  entradaMinimaEstimada?: number;
+  /** @wixFieldType text */
+  bairro?: string;
+  /** @wixFieldType text */
+  cidade?: string;
   /** @wixFieldType url */
   tourVirtual?: string;
   /** @wixFieldType url */
@@ -456,8 +506,36 @@ export interface LeadsdeContato {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
+  /** @wixFieldType datetime */
+  ultimaInteracao?: Date | string;
+  /** @wixFieldType text */
+  tipoImovelDesejado?: string;
+  /** @wixFieldType text */
+  urgencia?: string;
+  /** @wixFieldType text */
+  perfilCompra?: string;
+  /** @wixFieldType number */
+  rendaBruta?: number;
+  /** @wixFieldType number */
+  potencialEntrada?: number;
+  /** @wixFieldType number */
+  faixaValorMax?: number;
+  /** @wixFieldType number */
+  faixaValorMin?: number;
   /** @wixFieldType text */
   fullName?: string;
+  /** @wixFieldType text */
+  bairroDesejado?: string;
+  /** @wixFieldType text */
+  cidadeDesejada?: string;
+  /** @wixFieldType text */
+  interessePrincipal?: string;
+  /** @wixFieldType text */
+  unidadeRef?: string;
+  /** @wixFieldType text */
+  responsavelRef?: string;
+  /** @wixFieldType text */
+  statusFunil?: string;
   /** @wixFieldType text */
   email?: string;
   /** @wixFieldType text */
@@ -514,6 +592,20 @@ export interface PendnciasdoFinanciamento {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
+  /** @wixFieldType text */
+  responsavelExternoRef?: string;
+  /** @wixFieldType text */
+  responsavelEntidadeTexto?: string;
+  /** @wixFieldType text */
+  categoria?: string;
+  /** @wixFieldType text */
+  responsavelInternoRef?: string;
+  /** @wixFieldType boolean */
+  bloqueiaFase?: boolean;
+  /** @wixFieldType text */
+  tipo?: string;
+  /** @wixFieldType text */
+  atendimentoRef?: string;
   /** @wixFieldType text */
   financingCaseId?: string;
   /** @wixFieldType text */
@@ -629,7 +721,17 @@ export interface FinancingTasks {
   _createdDate?: Date;
   _updatedDate?: Date;
   /** @wixFieldType text */
+  responsavelExternoRef?: string;
+  /** @wixFieldType text */
+  canalNotificacao?: string;
+  /** @wixFieldType text */
   description?: string;
+  /** @wixFieldType text */
+  titulo?: string;
+  /** @wixFieldType text */
+  atendimentoRef?: string;
+  /** @wixFieldType text */
+  pendenciaRef?: string;
   /** @wixFieldType text */
   pendingItemReference?: string;
   /** @wixFieldType text */
@@ -707,6 +809,12 @@ export interface UsuriosdoSistema {
   _updatedDate?: Date;
   /** @wixFieldType text */
   name?: string;
+  /** @wixFieldType boolean */
+  ativo?: boolean;
+  /** @wixFieldType text */
+  unidadeRef?: string;
+  /** @wixFieldType text */
+  memberRef?: string;
   /** @wixFieldType text */
   emailLogin?: string;
   /** @wixFieldType text */
