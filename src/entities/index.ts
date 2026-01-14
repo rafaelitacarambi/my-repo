@@ -32,8 +32,18 @@ export interface ServiceRecords {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
+  /** @wixFieldType boolean */
+  alertaAtraso?: boolean;
+  /** @wixFieldType text */
+  responsavelExterno?: string;
+  /** @wixFieldType date */
+  dataPrevistaConclusao?: Date | string;
   /** @wixFieldType text */
   contactName?: string;
+  /** @wixFieldType text */
+  responsavelInternoId?: string;
+  /** @wixFieldType text */
+  faseFinanciamento?: string;
   /** @wixFieldType text */
   contactEmail?: string;
   /** @wixFieldType text */
@@ -449,130 +459,4 @@ export interface ProcessBindings {
   bindingDate?: Date | string;
   /** @wixFieldType text */
   notes?: string;
-}
-
-/**
- * Collection ID: financiamentodetalhes
- * Interface for FinancingDetails
- */
-export interface FinancingDetails {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  bankName?: string;
-  /** @wixFieldType text */
-  bankAccountNumber?: string;
-  /** @wixFieldType text */
-  financingContractNumber?: string;
-  /** @wixFieldType number */
-  financingAmount?: number;
-  /** @wixFieldType number */
-  interestRate?: number;
-  /** @wixFieldType number */
-  loanTermMonths?: number;
-  /** @wixFieldType date */
-  firstPaymentDate?: Date | string;
-}
-
-/**
- * Collection ID: pendenciasfinanciamento
- * Interface for FinancingPendings
- */
-export interface FinancingPendings {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  financingCaseId?: string;
-  /** @wixFieldType text */
-  title?: string;
-  /** @wixFieldType text */
-  description?: string;
-  /** @wixFieldType text */
-  status?: string;
-  /** @wixFieldType text */
-  priority?: string;
-  /** @wixFieldType datetime */
-  creationDate?: Date | string;
-  /** @wixFieldType datetime */
-  dueDate?: Date | string;
-  /** @wixFieldType text */
-  responsiblePartyType?: string;
-  /** @wixFieldType text */
-  responsiblePartyDetails?: string;
-  /** @wixFieldType boolean */
-  taskAutomaticallyCreated?: boolean;
-  /** @wixFieldType datetime */
-  resolvedDate?: Date | string;
-}
-
-/**
- * Collection ID: tarefasfinanciamento
- * Interface for FinancingTasks
- */
-export interface FinancingTasks {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  description?: string;
-  /** @wixFieldType text */
-  pendingItemReference?: string;
-  /** @wixFieldType text */
-  responsibleType?: string;
-  /** @wixFieldType text */
-  internalResponsibleId?: string;
-  /** @wixFieldType text */
-  externalResponsibleName?: string;
-  /** @wixFieldType text */
-  externalResponsibleContact?: string;
-  /** @wixFieldType datetime */
-  dueDate?: Date | string;
-  /** @wixFieldType text */
-  status?: string;
-  /** @wixFieldType datetime */
-  creationDate?: Date | string;
-}
-
-/**
- * Collection ID: documentosfinanciamento
- * Interface for FinancingDocuments
- */
-export interface FinancingDocuments {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  documentName?: string;
-  /** @wixFieldType text */
-  documentType?: string;
-  /** @wixFieldType url */
-  documentUrl?: string;
-  /** @wixFieldType date */
-  uploadDate?: Date | string;
-  /** @wixFieldType text */
-  documentStatus?: string;
-  /** @wixFieldType text */
-  description?: string;
-}
-
-/**
- * Collection ID: historicofinanciamento
- * Interface for FinancingHistory
- */
-export interface FinancingHistory {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  financingProcessId?: string;
-  /** @wixFieldType text */
-  originPhase?: string;
-  /** @wixFieldType text */
-  destinationPhase?: string;
-  /** @wixFieldType datetime */
-  movementDateTime?: Date | string;
-  /** @wixFieldType text */
-  changedBy?: string;
 }
