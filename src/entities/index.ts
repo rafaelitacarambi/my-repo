@@ -25,6 +25,48 @@ export interface Appointments {
 
 
 /**
+ * Collection ID: atendimentoimoveis
+ * Interface for AtendimentoImveis
+ */
+export interface AtendimentoImveis {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  atendimentoRef?: string;
+  /** @wixFieldType text */
+  imovelRef?: string;
+  /** @wixFieldType text */
+  role?: string;
+  /** @wixFieldType datetime */
+  dateAdded?: Date | string;
+  /** @wixFieldType text */
+  notes?: string;
+}
+
+
+/**
+ * Collection ID: atendimentopartes
+ * Interface for ServiceParties
+ */
+export interface ServiceParties {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  serviceRecordRef?: string;
+  /** @wixFieldType text */
+  clientRef?: string;
+  /** @wixFieldType text */
+  roleInService?: string;
+  /** @wixFieldType number */
+  participationPercentage?: number;
+  /** @wixFieldType text */
+  notes?: string;
+}
+
+
+/**
  * Collection ID: atendimentos
  * Interface for ServiceRecords
  */
@@ -85,6 +127,33 @@ export interface Clients {
 
 
 /**
+ * Collection ID: contratos
+ * Interface for GeneratedContracts
+ */
+export interface GeneratedContracts {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  serviceRecordRef?: string;
+  /** @wixFieldType text */
+  clientRefs?: string;
+  /** @wixFieldType text */
+  contractType?: string;
+  /** @wixFieldType number */
+  version?: number;
+  /** @wixFieldType text */
+  filledData?: string;
+  /** @wixFieldType url */
+  generatedPdf?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType datetime */
+  creationDate?: Date | string;
+}
+
+
+/**
  * Collection ID: corretores
  * Interface for RealEstateBrokers
  */
@@ -131,6 +200,85 @@ export interface DocumentosdoFinanciamento {
   documentStatus?: string;
   /** @wixFieldType text */
   description?: string;
+}
+
+
+/**
+ * Collection ID: empresas
+ * Interface for Companies
+ */
+export interface Companies {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  tradeName?: string;
+  /** @wixFieldType text */
+  legalName?: string;
+  /** @wixFieldType text */
+  cnpj?: string;
+  /** @wixFieldType text */
+  type?: string;
+  /** @wixFieldType boolean */
+  isActive?: boolean;
+}
+
+
+/**
+ * Collection ID: equipedistribuicao
+ * Interface for EquipedeDistribuio
+ */
+export interface EquipedeDistribuio {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  userRef?: string;
+  /** @wixFieldType text */
+  leadSectorRefs?: string;
+  /** @wixFieldType boolean */
+  isActive?: boolean;
+  /** @wixFieldType number */
+  queueOrder?: number;
+  /** @wixFieldType number */
+  maxDailyCapacity?: number;
+}
+
+
+/**
+ * Collection ID: financeirolancamentos
+ * Interface for FinancialEntries
+ */
+export interface FinancialEntries {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  serviceRecordId?: string;
+  /** @wixFieldType text */
+  type?: string;
+  /** @wixFieldType text */
+  category?: string;
+  /** @wixFieldType number */
+  value?: number;
+  /** @wixFieldType date */
+  competenceDate?: Date | string;
+  /** @wixFieldType date */
+  paymentDate?: Date | string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType text */
+  payerClientId?: string;
+  /** @wixFieldType text */
+  receiverName?: string;
+  /** @wixFieldType text */
+  receiverType?: string;
+  /** @wixFieldType text */
+  notes?: string;
+  /** @wixFieldType number */
+  brokerCommissionValue?: number;
+  /** @wixFieldType number */
+  partnerCommissionValue?: number;
 }
 
 
@@ -330,6 +478,35 @@ export interface LeadsdeContato {
 
 
 /**
+ * Collection ID: matches
+ * Interface for LeadPropertyMatches
+ */
+export interface LeadPropertyMatches {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  leadRef?: string;
+  /** @wixFieldType text */
+  propertyRef?: string;
+  /** @wixFieldType number */
+  score?: number;
+  /** @wixFieldType text */
+  reason?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType text */
+  responsibleAgentRef?: string;
+  /** @wixFieldType date */
+  matchDate?: Date | string;
+  /** @wixFieldType boolean */
+  notifiedWhatsApp?: boolean;
+  /** @wixFieldType boolean */
+  notifiedEmail?: boolean;
+}
+
+
+/**
  * Collection ID: pendenciasfinanciamento
  * Interface for PendnciasdoFinanciamento
  */
@@ -363,6 +540,41 @@ export interface PendnciasdoFinanciamento {
 
 
 /**
+ * Collection ID: preferenciaslead
+ * Interface for LeadPreferences
+ */
+export interface LeadPreferences {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  leadReference?: string;
+  /** @wixFieldType text */
+  city?: string;
+  /** @wixFieldType text */
+  neighborhood?: string;
+  /** @wixFieldType text */
+  propertyType?: string;
+  /** @wixFieldType number */
+  minimumValue?: number;
+  /** @wixFieldType number */
+  maximumValue?: number;
+  /** @wixFieldType number */
+  minimumDownPayment?: number;
+  /** @wixFieldType number */
+  maximumDownPayment?: number;
+  /** @wixFieldType text */
+  purchaseProfile?: string;
+  /** @wixFieldType boolean */
+  acceptsOffPlan?: boolean;
+  /** @wixFieldType boolean */
+  acceptsRenovation?: boolean;
+  /** @wixFieldType boolean */
+  acceptsAuction?: boolean;
+}
+
+
+/**
  * Collection ID: processosdevenda
  * Interface for ProcessosdeVenda
  */
@@ -384,6 +596,27 @@ export interface ProcessosdeVenda {
   expectedClosingDate?: Date | string;
   /** @wixFieldType text */
   notes?: string;
+}
+
+
+/**
+ * Collection ID: setoreslead
+ * Interface for LeadSectors
+ */
+export interface LeadSectors {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  sectorName?: string;
+  /** @wixFieldType boolean */
+  isActive?: boolean;
+  /** @wixFieldType text */
+  description?: string;
+  /** @wixFieldType text */
+  defaultLeadInterest?: string;
+  /** @wixFieldType number */
+  priorityLevel?: number;
 }
 
 
@@ -413,6 +646,54 @@ export interface FinancingTasks {
   status?: string;
   /** @wixFieldType datetime */
   creationDate?: Date | string;
+}
+
+
+/**
+ * Collection ID: templatescontratos
+ * Interface for ContractTemplates
+ */
+export interface ContractTemplates {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  templateName?: string;
+  /** @wixFieldType text */
+  targetServiceType?: string;
+  /** @wixFieldType number */
+  version?: number;
+  /** @wixFieldType text */
+  templateContent?: string;
+  /** @wixFieldType boolean */
+  isActive?: boolean;
+}
+
+
+/**
+ * Collection ID: unidades
+ * Interface for Units
+ */
+export interface Units {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  unitName?: string;
+  /** @wixFieldType text */
+  cityState?: string;
+  /** @wixFieldType text */
+  address?: string;
+  /** @wixFieldType text */
+  phoneNumber?: string;
+  /** @wixFieldType text */
+  email?: string;
+  /** @wixFieldType text */
+  description?: string;
+  /** @wixFieldType image */
+  logo?: string;
+  /** @wixFieldType boolean */
+  isActive?: boolean;
 }
 
 
