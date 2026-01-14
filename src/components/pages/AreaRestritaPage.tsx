@@ -1,20 +1,52 @@
 import { useMember } from '@/integrations';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { Users, TrendingUp, FileText, Key, DollarSign, UserCheck, Headphones, Calendar, History, UserCog } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Users, TrendingUp, FileText, Key, DollarSign, UserCheck, Headphones, Calendar, History, UserCog, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { CreateNewModal } from '@/components/CreateNewModal';
 import { ClientRegistrationModal } from '@/components/ClientRegistrationModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuthValidation } from '@/hooks/use-auth-validation';
 
 function AreaRestritaContent() {
-  const { member } = useMember();
+  const { member, actions } = useMember();
+  const { isValidating, isAuthorized, userProfile, error } = useAuthValidation();
+  const navigate = useNavigate();
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
+
+  // Redirect based on user profile
+  useEffect(() => {
+    if (!isValidating && isAuthorized && userProfile) {
+      const profile = userProfile.profile?.toLowerCase();
+      
+      // Define dashboard routes by profile
+      const dashboardRoutes: Record<string, string> = {
+        'admin': '/admin/usuarios',
+        'corretor': '/admin/imoveis',
+        'operacional': '/admin/atendimentos',
+        'financeiro': '/admin/financeiro',
+      };
+
+      // Check if there's a specific dashboard for this profile
+      if (profile && dashboardRoutes[profile]) {
+        // Only redirect if we're on the main area-restrita page
+        if (window.location.pathname === '/area-restrita') {
+          navigate(dashboardRoutes[profile], { replace: true });
+        }
+      }
+    }
+  }, [isValidating, isAuthorized, userProfile, navigate]);
+
+  const handleLogout = () => {
+    actions.logout();
+  };
 
   const handleCreateProperty = () => {
     // Navigate to property creation
@@ -24,6 +56,46 @@ function AreaRestritaContent() {
   const handleCreateClient = () => {
     setIsClientModalOpen(true);
   };
+
+  // Show loading state while validating
+  if (isValidating) {
+    return (
+      <div className="min-h-screen bg-primary">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <LoadingSpinner />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show error if not authorized
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-primary">
+        <Header />
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12 py-16">
+          <Alert variant="destructive" className="max-w-2xl mx-auto">
+            <AlertDescription className="font-paragraph text-base">
+              {error || 'Acesso não autorizado'}
+            </AlertDescription>
+          </Alert>
+          <div className="text-center mt-8">
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              className="font-paragraph"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-primary">
@@ -49,14 +121,25 @@ function AreaRestritaContent() {
                 Área Restrita
               </h1>
               <p className="font-paragraph text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-                Bem-vindo, {member?.profile?.nickname || member?.contact?.firstName || 'Corretor'}!
+                Bem-vindo, {userProfile?.name || member?.profile?.nickname || member?.contact?.firstName || 'Usuário'}!
+              </p>
+              <p className="font-paragraph text-sm text-primary-foreground/60 mt-2">
+                Perfil: {userProfile?.profile || 'Não definido'}
               </p>
             </div>
-            <div className="mt-4">
+            <div className="flex items-center gap-4 mt-4">
               <CreateNewModal 
                 onSelectProperty={handleCreateProperty}
                 onSelectClient={handleCreateClient}
               />
+              <Button 
+                onClick={handleLogout}
+                variant="outline"
+                className="font-paragraph"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
             </div>
           </motion.div>
         </div>

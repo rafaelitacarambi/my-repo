@@ -189,12 +189,15 @@ export function UserRegistrationModal({
                 <SelectValue placeholder="Selecione o perfil" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Administrador">Administrador</SelectItem>
-                <SelectItem value="Gerente">Gerente</SelectItem>
+                <SelectItem value="Admin">Admin</SelectItem>
                 <SelectItem value="Corretor">Corretor</SelectItem>
-                <SelectItem value="Assistente">Assistente</SelectItem>
+                <SelectItem value="Operacional">Operacional</SelectItem>
+                <SelectItem value="Financeiro">Financeiro</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-foreground/60">
+              Admin: acesso total | Corretor: imóveis e leads | Operacional: atendimentos | Financeiro: gestão financeira
+            </p>
           </div>
 
           {/* Unidade */}

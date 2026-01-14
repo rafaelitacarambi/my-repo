@@ -2,6 +2,7 @@ import { MemberProvider } from '@/integrations';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import { ScrollToTop } from '@/lib/scroll-to-top';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
+import { ProtectedAdminRoute } from '@/components/ui/protected-admin-route';
 import ErrorPage from '@/integrations/errorHandlers/ErrorPage';
 
 // Pages
@@ -86,51 +87,99 @@ const router = createBrowserRouter([
       },
       {
         path: "admin/imoveis",
-        element: <AdminImoveisPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminImoveisPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/leads",
-        element: <AdminLeadsPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminLeadsPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/processos",
-        element: <AdminProcessosPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminProcessosPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/chaves",
-        element: <AdminChavesPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminChavesPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/financeiro",
-        element: <AdminFinanceiroPage />,
+        element: (
+          <ProtectedAdminRoute allowedProfiles={['Admin', 'Financeiro']}>
+            <AdminFinanceiroPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/clientes",
-        element: <AdminClientesPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminClientesPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/atendimentos",
-        element: <AdminAtendimentosPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminAtendimentosPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/agendamentos",
-        element: <AdminAgendamentosPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminAgendamentosPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/historico",
-        element: <AdminHistoricoPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminHistoricoPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/financiamento-kanban",
-        element: <AdminFinancingKanbanPage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminFinancingKanbanPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/financiamento/:atendimentoId",
-        element: <AdminFinanciamentoDetalhePage />,
+        element: (
+          <ProtectedAdminRoute>
+            <AdminFinanciamentoDetalhePage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "admin/usuarios",
-        element: <AdminUsuariosPage />,
+        element: (
+          <ProtectedAdminRoute allowedProfiles={['Admin']}>
+            <AdminUsuariosPage />
+          </ProtectedAdminRoute>
+        ),
       },
       {
         path: "*",

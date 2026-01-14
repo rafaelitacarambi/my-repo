@@ -1,14 +1,20 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
+import { useMember } from '@/integrations';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { isAuthenticated, actions } = useMember();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = () => {
+    actions.logout();
+  };
 
   return (
     <header className="bg-primary border-b border-border-gray sticky top-0 z-50">
@@ -76,11 +82,29 @@ export default function Header() {
             >
               Contato
             </Link>
-            <Link to="/area-restrita">
-              <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg">
-                Área Restrita
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <Link to="/area-restrita">
+                  <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg">
+                    Área Restrita
+                  </Button>
+                </Link>
+                <Button 
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="h-11 px-4 rounded-lg"
+                  title="Sair"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Link to="/area-restrita">
+                <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg">
+                  Área Restrita
+                </Button>
+              </Link>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -152,11 +176,32 @@ export default function Header() {
               >
                 Contato
               </Link>
-              <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg w-full">
-                  Área Restrita
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg w-full">
+                      Área Restrita
+                    </Button>
+                  </Link>
+                  <Button 
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    variant="outline"
+                    className="w-full h-11 rounded-lg"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sair
+                  </Button>
+                </>
+              ) : (
+                <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg w-full">
+                    Área Restrita
+                  </Button>
+                </Link>
+              )}
             </div>
           </nav>
         )}

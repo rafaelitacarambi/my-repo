@@ -136,10 +136,10 @@ export default function AdminUsuariosPage() {
 
   const getProfileBadge = (profile?: string) => {
     const profileColors = {
-      'Administrador': 'bg-purple-100 text-purple-800',
-      'Gerente': 'bg-blue-100 text-blue-800',
+      'Admin': 'bg-purple-100 text-purple-800',
       'Corretor': 'bg-green-100 text-green-800',
-      'Assistente': 'bg-gray-100 text-gray-800'
+      'Operacional': 'bg-blue-100 text-blue-800',
+      'Financeiro': 'bg-orange-100 text-orange-800'
     };
     
     const colorClass = profileColors[profile as keyof typeof profileColors] || 'bg-gray-100 text-gray-800';
