@@ -25,6 +25,7 @@ import AdminAtendimentosPage from '@/components/pages/admin/AdminAtendimentosPag
 import AdminAgendamentosPage from '@/components/pages/admin/AdminAgendamentosPage';
 import AdminHistoricoPage from '@/components/pages/admin/AdminHistoricoPage';
 import AdminFinancingKanbanPage from '@/components/pages/admin/AdminFinancingKanbanPage';
+import AdminFinanciamentoDetalhePage from '@/components/pages/admin/AdminFinanciamentoDetalhePage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -121,6 +122,10 @@ const router = createBrowserRouter([
       {
         path: "admin/financiamento-kanban",
         element: <AdminFinancingKanbanPage />,
+      },
+      {
+        path: "admin/financiamento/:atendimentoId",
+        element: <AdminFinanciamentoDetalhePage />,
       },
       {
         path: "*",

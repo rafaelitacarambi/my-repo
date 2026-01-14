@@ -191,7 +191,7 @@ export interface RealEstateBrokers {
   _updatedDate?: Date;
   /** @wixFieldType text */
   fullName?: string;
-  /** @wixFieldType image */
+  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
   profilePicture?: string;
   /** @wixFieldType text */
   creciNumber?: string;
@@ -413,7 +413,7 @@ export interface Imveis {
   tourVirtual?: string;
   /** @wixFieldType url */
   plantaBaixa?: string;
-  /** @wixFieldType image */
+  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
   galeriaFotos?: string;
   /** @wixFieldType text */
   segmentosCompra?: string;
@@ -489,7 +489,7 @@ export interface Imveis {
   area?: number;
   /** @wixFieldType text */
   description?: string;
-  /** @wixFieldType image */
+  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
   propertyImages?: string;
   /** @wixFieldType text */
   status?: string;
@@ -792,7 +792,7 @@ export interface Units {
   email?: string;
   /** @wixFieldType text */
   description?: string;
-  /** @wixFieldType image */
+  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
   logo?: string;
   /** @wixFieldType boolean */
   isActive?: boolean;

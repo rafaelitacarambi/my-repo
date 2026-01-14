@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
@@ -13,7 +14,8 @@ import {
   X,
   Edit2,
   Trash2,
-  Eye
+  Eye,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -150,6 +152,7 @@ const PENDING_STATUS = ['Aberta', 'Em Andamento', 'Resolvida', 'Cancelada'];
 const TASK_STATUS = ['Pendente', 'Em Progresso', 'Concluída', 'Atrasada'];
 
 export default function AdminFinancingKanbanPage() {
+  const navigate = useNavigate();
   const [cases, setCases] = useState<FinancingCase[]>([]);
   const [pendings, setPendings] = useState<Pending[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -506,12 +509,15 @@ export default function AdminFinancingKanbanPage() {
                               key={caseItem._id}
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              className="bg-white rounded-lg p-4 border border-primary-foreground/10 cursor-pointer hover:shadow-lg transition-shadow"
-                              onClick={() => setSelectedCase(caseItem)}
+                              className="bg-white rounded-lg p-4 border border-primary-foreground/10 cursor-pointer hover:shadow-lg transition-all group"
+                              onClick={() => navigate(`/admin/financiamento/${caseItem._id}`)}
                             >
-                              <h4 className="font-heading text-sm text-primary-foreground font-semibold mb-2">
-                                {caseItem.clientName}
-                              </h4>
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-heading text-sm text-primary-foreground font-semibold flex-1">
+                                  {caseItem.clientName}
+                                </h4>
+                                <ExternalLink className="w-4 h-4 text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
                               <div className="space-y-1 text-xs text-primary-foreground/60">
                                 <div className="flex items-center gap-1">
                                   <Mail className="w-3 h-3" />
@@ -528,6 +534,12 @@ export default function AdminFinancingKanbanPage() {
                                 <p className="font-paragraph text-xs text-primary-foreground/70">
                                   {caseItem.currentSubPhase}
                                 </p>
+                              </div>
+                              <div className="mt-2 flex items-center justify-between">
+                                <span className="text-xs text-secondary font-semibold">Abrir Processo →</span>
+                                {caseItem.isOverdue && (
+                                  <AlertCircle className="w-4 h-4 text-destructive" />
+                                )}
                               </div>
                             </motion.div>
                           ))}
