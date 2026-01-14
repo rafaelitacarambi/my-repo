@@ -28,6 +28,7 @@ import AdminHistoricoPage from '@/components/pages/admin/AdminHistoricoPage';
 import AdminFinancingKanbanPage from '@/components/pages/admin/AdminFinancingKanbanPage';
 import AdminFinanciamentoDetalhePage from '@/components/pages/admin/AdminFinanciamentoDetalhePage';
 import AdminUsuariosPage from '@/components/pages/admin/AdminUsuariosPage';
+import DiagnosticoUsuarioPage from '@/components/pages/DiagnosticoUsuarioPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -84,6 +85,10 @@ const router = createBrowserRouter([
       {
         path: "perfil",
         element: <PerfilPage />,
+      },
+      {
+        path: "diagnostico-usuario",
+        element: <DiagnosticoUsuarioPage />,
       },
       {
         path: "admin/imoveis",
