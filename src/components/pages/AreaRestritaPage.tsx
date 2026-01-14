@@ -2,7 +2,7 @@ import { useMember } from '@/integrations';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Users, TrendingUp, FileText, Key, DollarSign, UserCheck, Headphones, Calendar, History } from 'lucide-react';
+import { Users, TrendingUp, FileText, Key, DollarSign, UserCheck, Headphones, Calendar, History, UserCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
 import Header from '@/components/Header';
@@ -297,6 +297,27 @@ function AreaRestritaContent() {
                   </h3>
                   <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
                     Gerencie o fluxo de financiamentos através das 9 fases do processo
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Gestão de Usuários */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.2 }}
+            >
+              <Link to="/admin/usuarios">
+                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
+                  <div className="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <UserCog className="w-7 h-7 text-secondary-foreground" />
+                  </div>
+                  <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
+                    Gestão de Usuários
+                  </h3>
+                  <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
+                    Cadastre e gerencie usuários do sistema com integração Wix Members
                   </p>
                 </div>
               </Link>
