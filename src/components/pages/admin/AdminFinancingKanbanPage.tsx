@@ -484,7 +484,7 @@ export default function AdminFinancingKanbanPage() {
               </div>
 
               {/* Kanban Board */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-x-auto pb-6">
+              <div className="flex gap-4 overflow-x-auto pb-6">
                 {FINANCING_PHASES.map((phase) => {
                   const phaseCases = getCasesByPhase(phase.id);
                   return (
@@ -493,56 +493,86 @@ export default function AdminFinancingKanbanPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4 }}
-                      className="flex-shrink-0 w-full lg:w-80"
+                      className="flex-shrink-0 w-80"
                     >
-                      <div className={`${phase.color} border-2 rounded-2xl p-4 min-h-96`}>
-                        <h3 className="font-heading text-lg text-primary-foreground font-semibold mb-4">
-                          {phase.name}
-                        </h3>
-                        <p className="font-paragraph text-sm text-primary-foreground/60 mb-4">
-                          {phaseCases.length} caso(s)
-                        </p>
-
-                        <div className="space-y-3">
-                          {phaseCases.map((caseItem) => (
-                            <motion.div
-                              key={caseItem._id}
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="bg-white rounded-lg p-4 border border-primary-foreground/10 cursor-pointer hover:shadow-lg transition-all group"
-                              onClick={() => navigate(`/admin/financiamento/${caseItem._id}`)}
+                      <div className={`${phase.color} border-2 rounded-xl p-3 min-h-[500px] flex flex-col`}>
+                        <div className="mb-3">
+                          <h3 className="font-heading text-sm text-primary-foreground font-bold uppercase tracking-wide mb-1">
+                            {phase.name}
+                          </h3>
+                          <div className="flex items-center justify-between">
+                            <p className="font-paragraph text-xs text-primary-foreground/60">
+                              {phaseCases.length} {phaseCases.length === 1 ? 'caso' : 'casos'}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-xs hover:bg-primary-foreground/10"
+                              onClick={() => {
+                                setNewCaseData({ ...newCaseData, currentPhase: phase.id, currentSubPhase: phase.subPhases[0] });
+                                setShowNewCaseDialog(true);
+                              }}
                             >
-                              <div className="flex items-start justify-between mb-2">
-                                <h4 className="font-heading text-sm text-primary-foreground font-semibold flex-1">
+                              <Plus className="w-3 h-3 mr-1" />
+                              Adicionar um cartão
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 flex-1">
+                          {phaseCases.map((caseItem) => {
+                            const daysSinceCreation = Math.floor(
+                              (new Date().getTime() - new Date(caseItem.createdDate).getTime()) / (1000 * 60 * 60 * 24)
+                            );
+                            return (
+                              <motion.div
+                                key={caseItem._id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="bg-white rounded-lg p-3 border border-primary-foreground/10 cursor-pointer hover:shadow-md transition-all group"
+                                onClick={() => navigate(`/admin/financiamento/${caseItem._id}`)}
+                              >
+                                <div className="mb-2">
+                                  <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                                    caseItem.currentSubPhase.toLowerCase().includes('condicionado') 
+                                      ? 'bg-red-500 text-white'
+                                      : caseItem.currentSubPhase.toLowerCase().includes('aprovado') || caseItem.currentSubPhase.toLowerCase().includes('concluído')
+                                      ? 'bg-green-600 text-white'
+                                      : caseItem.currentSubPhase.toLowerCase().includes('análise') || caseItem.currentSubPhase.toLowerCase().includes('aguardando')
+                                      ? 'bg-yellow-500 text-white'
+                                      : 'bg-blue-600 text-white'
+                                  }`}>
+                                    {caseItem.currentSubPhase}
+                                  </span>
+                                </div>
+                                
+                                <h4 className="font-heading text-sm text-primary-foreground font-semibold mb-2 line-clamp-1">
                                   {caseItem.clientName}
                                 </h4>
-                                <ExternalLink className="w-4 h-4 text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
-                              <div className="space-y-1 text-xs text-primary-foreground/60">
-                                <div className="flex items-center gap-1">
-                                  <Mail className="w-3 h-3" />
-                                  <span className="truncate">{caseItem.email}</span>
-                                </div>
-                                {caseItem.phoneNumber && (
-                                  <div className="flex items-center gap-1">
-                                    <Phone className="w-3 h-3" />
-                                    <span>{caseItem.phoneNumber}</span>
+                                
+                                <div className="space-y-1 mb-3">
+                                  <div className="flex items-center gap-1.5 text-xs text-primary-foreground/70">
+                                    <User className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate">{caseItem.email}</span>
                                   </div>
-                                )}
-                              </div>
-                              <div className="mt-3 pt-3 border-t border-primary-foreground/10">
-                                <p className="font-paragraph text-xs text-primary-foreground/70">
-                                  {caseItem.currentSubPhase}
-                                </p>
-                              </div>
-                              <div className="mt-2 flex items-center justify-between">
-                                <span className="text-xs text-secondary font-semibold">Abrir Processo →</span>
-                                {caseItem.isOverdue && (
-                                  <AlertCircle className="w-4 h-4 text-destructive" />
-                                )}
-                              </div>
-                            </motion.div>
-                          ))}
+                                  {caseItem.phoneNumber && (
+                                    <div className="flex items-center gap-1.5 text-xs text-primary-foreground/70">
+                                      <Phone className="w-3 h-3 flex-shrink-0" />
+                                      <span>{caseItem.phoneNumber}</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center justify-between pt-2 border-t border-primary-foreground/10">
+                                  <div className="flex items-center gap-1 text-xs text-primary-foreground/60">
+                                    <Clock className="w-3 h-3" />
+                                    <span className="font-semibold">{daysSinceCreation} days</span>
+                                  </div>
+                                  <ExternalLink className="w-3.5 h-3.5 text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                              </motion.div>
+                            );
+                          })}
                         </div>
                       </div>
                     </motion.div>
