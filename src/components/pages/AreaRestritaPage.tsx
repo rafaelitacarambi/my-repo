@@ -21,29 +21,6 @@ function AreaRestritaContent() {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
 
-  // Redirect based on user profile
-  useEffect(() => {
-    if (!isValidating && isAuthorized && userProfile) {
-      const profile = userProfile.profile?.toLowerCase();
-      
-      // Define dashboard routes by profile
-      const dashboardRoutes: Record<string, string> = {
-        'admin': '/admin/usuarios',
-        'corretor': '/admin/imoveis',
-        'operacional': '/admin/atendimentos',
-        'financeiro': '/admin/financeiro',
-      };
-
-      // Check if there's a specific dashboard for this profile
-      if (profile && dashboardRoutes[profile]) {
-        // Only redirect if we're on the main area-restrita page
-        if (window.location.pathname === '/area-restrita') {
-          navigate(dashboardRoutes[profile], { replace: true });
-        }
-      }
-    }
-  }, [isValidating, isAuthorized, userProfile, navigate]);
-
   const handleLogout = () => {
     actions.logout();
   };

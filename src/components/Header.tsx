@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut } from 'lucide-react';
+import { Menu, X, LogOut, Home } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
@@ -11,6 +11,7 @@ export default function Header() {
   const { isAuthenticated, actions } = useMember();
 
   const isActive = (path: string) => location.pathname === path;
+  const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname === '/area-restrita' || location.pathname === '/perfil';
 
   const handleLogout = () => {
     actions.logout();
@@ -32,6 +33,17 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8">
+            {isAdminRoute && isAuthenticated && (
+              <Link to="/area-restrita">
+                <Button 
+                  variant="outline" 
+                  className="font-paragraph flex items-center gap-2"
+                >
+                  <Home className="w-4 h-4" />
+                  Hub
+                </Button>
+              </Link>
+            )}
             <Link
               to="/imoveis"
               className={`font-paragraph text-base transition-colors ${
@@ -121,6 +133,17 @@ export default function Header() {
         {mobileMenuOpen && (
           <nav className="lg:hidden py-6 border-t border-border-gray">
             <div className="flex flex-col gap-4">
+              {isAdminRoute && isAuthenticated && (
+                <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
+                  <Button 
+                    variant="outline" 
+                    className="w-full font-paragraph flex items-center gap-2"
+                  >
+                    <Home className="w-4 h-4" />
+                    Hub
+                  </Button>
+                </Link>
+              )}
               <Link
                 to="/imoveis"
                 onClick={() => setMobileMenuOpen(false)}

@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Search, UserPlus, Edit, Trash2, Mail, Shield, Building2 } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Mail, Shield, Building2, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { UserRegistrationModal } from '@/components/UserRegistrationModal';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminUsuariosPage() {
   const [users, setUsers] = useState<UsuriosdoSistema[]>([]);
@@ -22,6 +23,7 @@ export default function AdminUsuariosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UsuriosdoSistema | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const loadData = async () => {
     setIsLoading(true);
@@ -172,6 +174,17 @@ export default function AdminUsuariosPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
+            <div className="flex items-center gap-4 mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/area-restrita')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar ao Hub
+              </Button>
+            </div>
             <h1 className="font-heading text-4xl lg:text-5xl text-foreground mb-4">
               Gestão de Usuários do Sistema
             </h1>
