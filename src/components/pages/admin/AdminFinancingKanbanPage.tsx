@@ -561,7 +561,10 @@ export default function AdminFinancingKanbanPage() {
                                 key={caseItem._id}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-white rounded-lg p-3 border border-primary-foreground/10 hover:shadow-md transition-all group relative"
+                                whileHover={{ scale: 1.02, boxShadow: '0 8px 16px rgba(0,0,0,0.12)' }}
+                                transition={{ duration: 0.2 }}
+                                onClick={() => navigate(`/admin/financiamento/${caseItem._id}`)}
+                                className="bg-white rounded-lg p-3 border border-primary-foreground/10 hover:shadow-lg transition-all cursor-pointer group relative"
                               >
                                 {/* Productivity indicator */}
                                 <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${productivityColor}`} title={hasActivityToday ? 'Atividade hoje' : 'Sem atividade hoje'}></div>
@@ -615,7 +618,7 @@ export default function AdminFinancingKanbanPage() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="flex-1 h-7 text-xs"
+                                    className="flex-1 h-7 text-xs hover:bg-secondary/10"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedCase(caseItem);
@@ -627,15 +630,14 @@ export default function AdminFinancingKanbanPage() {
                                   </Button>
                                   <Button
                                     size="sm"
-                                    variant="outline"
-                                    className="flex-1 h-7 text-xs"
+                                    className="flex-1 h-7 text-xs bg-secondary text-secondary-foreground hover:bg-secondary/90"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       navigate(`/admin/financiamento/${caseItem._id}`);
                                     }}
                                   >
                                     <Eye className="w-3 h-3 mr-1" />
-                                    Ver Detalhes
+                                    Abrir
                                   </Button>
                                 </div>
                               </motion.div>
