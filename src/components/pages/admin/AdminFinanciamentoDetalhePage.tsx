@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -20,7 +20,10 @@ import {
   Mail,
   DollarSign,
   TrendingUp,
-  History
+  History,
+  RotateCcw,
+  Check,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,21 +35,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Checkbox } from '@/components/ui/checkbox';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
 import { 
   ServiceRecords, 
   Clients, 
-  RealEstateBrokers, 
   UsuriosdoSistema,
-  Companies,
-  Units,
   PendnciasdoFinanciamento,
   FinancingTasks,
   DocumentosdoFinanciamento,
   HistricodeInteraes,
-  DetalhesdoFinanciamento
+  ServiceParties,
+  Imveis
 } from '@/entities';
 
 // Financing Phases Configuration
@@ -65,7 +67,31 @@ const FINANCING_PHASES = [
 const RESPONSIBLE_TYPES = ['Interno', 'Cliente', 'Parceiro Externo', 'Construtora', 'Caixa', 'Cartório', 'Sistema/Prazo legal'];
 const PRIORITY_LEVELS = ['Alta', 'Média', 'Baixa'];
 const DOCUMENT_TYPES = ['RG', 'CPF', 'Comprovante de Renda', 'Comprovante de Residência', 'Certidão de Casamento', 'Escritura', 'Matrícula', 'Laudo de Avaliação', 'Outros'];
-const DOCUMENT_STATUS = ['Pendente', 'Recebido', 'Aprovado', 'Rejeitado'];
+const DOCUMENT_STATUS_OPTIONS = ['Pendente', 'Recebido', 'Aprovado', 'Rejeitado'];
+const MARITAL_STATUS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
+
+interface Proponente {
+  _id: string;
+  nome: string;
+  cpf: string;
+  telefone: string;
+  renda: number;
+  estadoCivil: string;
+  possuiFgts: boolean;
+}
+
+interface Vendedor {
+  _id: string;
+  nome: string;
+  cpfCnpj: string;
+  whatsapp: string;
+  dadosBancarios: string;
+  documentos: {
+    tipo: string;
+    status: string;
+    arquivo?: string;
+  }[];
+}
 
 export default function AdminFinanciamentoDetalhePage() {
   const { atendimentoId } = useParams<{ atendimentoId: string }>();
@@ -77,50 +103,60 @@ export default function AdminFinanciamentoDetalhePage() {
   
   // Main data
   const [atendimento, setAtendimento] = useState<ServiceRecords | null>(null);
-  const [financingDetails, setFinancingDetails] = useState<DetalhesdoFinanciamento | null>(null);
+  const [phaseEntryDate, setPhaseEntryDate] = useState<string>('');
+  const [daysInPhase, setDaysInPhase] = useState(0);
   
   // Related data
   const [clientes, setClientes] = useState<Clients[]>([]);
-  const [corretores, setCorretores] = useState<RealEstateBrokers[]>([]);
   const [usuarios, setUsuarios] = useState<UsuriosdoSistema[]>([]);
-  const [empresas, setEmpresas] = useState<Companies[]>([]);
-  const [unidades, setUnidades] = useState<Units[]>([]);
   const [pendencias, setPendencias] = useState<PendnciasdoFinanciamento[]>([]);
   const [tarefas, setTarefas] = useState<FinancingTasks[]>([]);
   const [documentos, setDocumentos] = useState<DocumentosdoFinanciamento[]>([]);
   const [historico, setHistorico] = useState<HistricodeInteraes[]>([]);
+  const [proponentes, setProponentes] = useState<Proponente[]>([]);
+  const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   
   // Form states
   const [formData, setFormData] = useState({
-    clientePrincipalRef: '',
-    corretorResponsavelRef: '',
-    responsavelInternoId: '',
-    responsavelExterno: '',
-    empresaResponsavelRef: '',
-    unidadeResponsavelRef: '',
+    contactName: '',
+    cpf: '',
+    contactPhone: '',
+    matriculaImovel: '',
+    numeroContratoSiopi: '',
+    numeroRegistroCartorio: '',
     faseFinanciamento: 'novos-clientes',
-    subfase: '',
-    dataPrevistaConclusao: '',
-    notes: ''
+    status: 'Cadastro de cliente',
+    creationDate: new Date().toISOString()
   });
-  
-  const [financingFormData, setFinancingFormData] = useState({
-    bankName: '',
-    bankAccountNumber: '',
-    financingContractNumber: '',
-    financingAmount: 0,
-    interestRate: 0,
-    loanTermMonths: 0,
-    firstPaymentDate: ''
-  });
-  
+
   // Dialog states
-  const [showNewPendingDialog, setShowNewPendingDialog] = useState(false);
-  const [showNewTaskDialog, setShowNewTaskDialog] = useState(false);
-  const [showNewDocumentDialog, setShowNewDocumentDialog] = useState(false);
-  const [showPhaseChangeDialog, setShowPhaseChangeDialog] = useState(false);
-  
-  const [newPendingData, setNewPendingData] = useState({
+  const [showAddProponenteDialog, setShowAddProponenteDialog] = useState(false);
+  const [showAddVendedorDialog, setShowAddVendedorDialog] = useState(false);
+  const [showAddPendenciaDialog, setShowAddPendenciaDialog] = useState(false);
+  const [showAddTarefaDialog, setShowAddTarefaDialog] = useState(false);
+  const [showAddDocumentoDialog, setShowAddDocumentoDialog] = useState(false);
+
+  // New item forms
+  const [newProponente, setNewProponente] = useState<Proponente>({
+    _id: '',
+    nome: '',
+    cpf: '',
+    telefone: '',
+    renda: 0,
+    estadoCivil: 'Solteiro(a)',
+    possuiFgts: false
+  });
+
+  const [newVendedor, setNewVendedor] = useState<Vendedor>({
+    _id: '',
+    nome: '',
+    cpfCnpj: '',
+    whatsapp: '',
+    dadosBancarios: '',
+    documentos: []
+  });
+
+  const [newPendencia, setNewPendencia] = useState({
     title: '',
     description: '',
     priority: 'Média',
@@ -129,249 +165,228 @@ export default function AdminFinanciamentoDetalhePage() {
     responsiblePartyDetails: '',
     bloqueiaFase: false
   });
-  
-  const [newTaskData, setNewTaskData] = useState({
-    titulo: '',
+
+  const [newTarefa, setNewTarefa] = useState({
     description: '',
     responsibleType: 'Interno',
     internalResponsibleId: '',
     externalResponsibleName: '',
-    externalResponsibleContact: '',
     dueDate: ''
   });
-  
-  const [newDocumentData, setNewDocumentData] = useState({
+
+  const [newDocumento, setNewDocumento] = useState({
     documentName: '',
-    documentType: 'Outros',
-    description: '',
+    documentType: 'RG',
     documentStatus: 'Pendente',
-    documentUrl: ''
-  });
-  
-  const [phaseChangeData, setPhaseChangeData] = useState({
-    newPhase: '',
-    newSubPhase: '',
-    reason: ''
+    description: ''
   });
 
-  // Load all data
+  // Load data
   useEffect(() => {
     const loadData = async () => {
       if (!atendimentoId) return;
       
       try {
-        setLoading(true);
-        
         // Load main atendimento
         const atend = await BaseCrudService.getById<ServiceRecords>('atendimentos', atendimentoId);
+        if (!atend) {
+          navigate('/admin/financiamento-kanban');
+          return;
+        }
         setAtendimento(atend);
         
-        if (atend) {
-          setFormData({
-            clientePrincipalRef: atend.clientePrincipalRef || '',
-            corretorResponsavelRef: atend.corretorResponsavelRef || '',
-            responsavelInternoId: atend.responsavelInternoId || '',
-            responsavelExterno: atend.responsavelExterno || '',
-            empresaResponsavelRef: atend.empresaResponsavelRef || '',
-            unidadeResponsavelRef: atend.unidadeResponsavelRef || '',
-            faseFinanciamento: atend.faseFinanciamento || 'novos-clientes',
-            subfase: '',
-            dataPrevistaConclusao: atend.dataPrevistaConclusao ? new Date(atend.dataPrevistaConclusao).toISOString().split('T')[0] : '',
-            notes: atend.notes || ''
-          });
-        }
+        // Calculate days in phase
+        const entryDate = atend.dataPrevistaConclusao ? new Date(atend.dataPrevistaConclusao).toISOString() : new Date(atend._createdDate || new Date()).toISOString();
+        setPhaseEntryDate(entryDate);
+        const days = Math.floor((new Date().getTime() - new Date(entryDate).getTime()) / (1000 * 60 * 60 * 24));
+        setDaysInPhase(days);
         
-        // Load financing details
-        const { items: financingDetailsList } = await BaseCrudService.getAll<DetalhesdoFinanciamento>('financiamentodetalhes');
-        const details = financingDetailsList.find(d => d._id === atendimentoId);
-        if (details) {
-          setFinancingDetails(details);
-          setFinancingFormData({
-            bankName: details.bankName || '',
-            bankAccountNumber: details.bankAccountNumber || '',
-            financingContractNumber: details.financingContractNumber || '',
-            financingAmount: details.financingAmount || 0,
-            interestRate: details.interestRate || 0,
-            loanTermMonths: details.loanTermMonths || 0,
-            firstPaymentDate: details.firstPaymentDate ? new Date(details.firstPaymentDate).toISOString().split('T')[0] : ''
-          });
-        }
-        
-        // Load related collections
-        const [clientesRes, corretoresRes, usuariosRes, empresasRes, unidadesRes] = await Promise.all([
+        setFormData({
+          contactName: atend.contactName || '',
+          cpf: '',
+          contactPhone: atend.contactPhone || '',
+          matriculaImovel: '',
+          numeroContratoSiopi: '',
+          numeroRegistroCartorio: '',
+          faseFinanciamento: atend.faseFinanciamento || 'novos-clientes',
+          status: atend.status || 'Cadastro de cliente',
+          creationDate: atend.creationDate?.toString() || new Date().toISOString()
+        });
+
+        // Load related data
+        const [clientesRes, usuariosRes, pendenciasRes, tarefasRes, documentosRes, historicoRes] = await Promise.all([
           BaseCrudService.getAll<Clients>('clientes'),
-          BaseCrudService.getAll<RealEstateBrokers>('corretores'),
           BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema'),
-          BaseCrudService.getAll<Companies>('empresas'),
-          BaseCrudService.getAll<Units>('unidades')
-        ]);
-        
-        setClientes(clientesRes.items);
-        setCorretores(corretoresRes.items);
-        setUsuarios(usuariosRes.items);
-        setEmpresas(empresasRes.items);
-        setUnidades(unidadesRes.items);
-        
-        // Load process-specific data
-        const [pendenciasRes, tarefasRes, documentosRes, historicoRes] = await Promise.all([
           BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento'),
           BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento'),
           BaseCrudService.getAll<DocumentosdoFinanciamento>('documentosfinanciamento'),
           BaseCrudService.getAll<HistricodeInteraes>('historicointeracoes')
         ]);
-        
+
+        setClientes(clientesRes.items);
+        setUsuarios(usuariosRes.items);
         setPendencias(pendenciasRes.items.filter(p => p.atendimentoRef === atendimentoId));
         setTarefas(tarefasRes.items.filter(t => t.atendimentoRef === atendimentoId));
         setDocumentos(documentosRes.items.filter(d => d.atendimentoRef === atendimentoId));
-        setHistorico(historicoRes.items.filter(h => h.atendimentoRef === atendimentoId));
-        
+        setHistorico(historicoRes.items.filter(h => h.atendimentoRef === atendimentoId).sort((a, b) => 
+          new Date(b.interactionDate || '').getTime() - new Date(a.interactionDate || '').getTime()
+        ));
+
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
-    
-    loadData();
-  }, [atendimentoId]);
 
-  // Save main data
-  const handleSave = async () => {
-    if (!atendimentoId) return;
+    loadData();
+  }, [atendimentoId, navigate]);
+
+  // Auto-save function
+  const handleAutoSave = async (field: string, value: any) => {
+    if (!atendimento) return;
     
     try {
-      setSaving(true);
+      const updates: Partial<ServiceRecords> = {
+        _id: atendimento._id,
+        [field]: value
+      };
       
-      // Update atendimento
-      await BaseCrudService.update<ServiceRecords>('atendimentos', {
-        _id: atendimentoId,
-        clientePrincipalRef: formData.clientePrincipalRef,
-        corretorResponsavelRef: formData.corretorResponsavelRef,
-        responsavelInternoId: formData.responsavelInternoId,
-        responsavelExterno: formData.responsavelExterno,
-        empresaResponsavelRef: formData.empresaResponsavelRef,
-        unidadeResponsavelRef: formData.unidadeResponsavelRef,
-        faseFinanciamento: formData.faseFinanciamento,
-        dataPrevistaConclusao: formData.dataPrevistaConclusao,
-        notes: formData.notes
-      });
+      await BaseCrudService.update('atendimentos', updates);
       
-      // Update or create financing details
-      if (financingDetails) {
-        await BaseCrudService.update<DetalhesdoFinanciamento>('financiamentodetalhes', {
-          _id: financingDetails._id,
-          ...financingFormData
-        });
-      } else {
-        await BaseCrudService.create<DetalhesdoFinanciamento>('financiamentodetalhes', {
-          _id: atendimentoId,
-          ...financingFormData
-        });
-      }
+      // Create history entry
+      await createHistoryEntry(`Campo "${field}" atualizado`);
       
-      // Register in history
-      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-        _id: crypto.randomUUID(),
-        atendimentoRef: atendimentoId,
-        tipoEvento: 'Edição',
-        interactionType: 'Atualização de Dados',
-        interactionDescription: 'Dados do processo atualizados',
-        interactionDate: new Date().toISOString(),
-        autorTipo: 'Sistema'
-      });
-      
-      alert('Dados salvos com sucesso!');
-      
+      setAtendimento({ ...atendimento, ...updates });
     } catch (error) {
-      console.error('Error saving:', error);
-      alert('Erro ao salvar dados');
-    } finally {
-      setSaving(false);
+      console.error('Error auto-saving:', error);
     }
   };
 
-  // Change phase
-  const handlePhaseChange = async () => {
-    if (!atendimentoId || !phaseChangeData.newPhase) return;
+  // Create history entry
+  const createHistoryEntry = async (description: string) => {
+    if (!atendimento) return;
     
     try {
-      // Check for blocking pendings
-      const blockingPendings = pendencias.filter(p => 
-        p.bloqueiaFase && 
-        p.status !== 'Resolvida' && 
-        p.status !== 'Cancelada'
-      );
-      
-      if (blockingPendings.length > 0) {
-        alert(`Não é possível mudar de fase. Existem ${blockingPendings.length} pendência(s) bloqueante(s) não resolvida(s).`);
-        return;
-      }
-      
-      const oldPhase = formData.faseFinanciamento;
-      
-      // Update phase
-      await BaseCrudService.update<ServiceRecords>('atendimentos', {
-        _id: atendimentoId,
-        faseFinanciamento: phaseChangeData.newPhase
-      });
-      
-      // Register phase change in history
-      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+      const historyEntry: HistricodeInteraes = {
         _id: crypto.randomUUID(),
-        atendimentoRef: atendimentoId,
-        tipoEvento: 'Mudança de Fase',
-        interactionType: 'Alteração de Fase',
-        interactionDescription: `Fase alterada de "${FINANCING_PHASES.find(p => p.id === oldPhase)?.name}" para "${FINANCING_PHASES.find(p => p.id === phaseChangeData.newPhase)?.name}". Motivo: ${phaseChangeData.reason}`,
+        atendimentoRef: atendimento._id,
         interactionDate: new Date().toISOString(),
-        autorTipo: 'Sistema'
+        interactionType: 'Alteração',
+        interactionDescription: description,
+        autorTipo: 'Sistema',
+        tipoEvento: 'Atualização'
+      };
+      
+      await BaseCrudService.create('historicointeracoes', historyEntry);
+      setHistorico([historyEntry, ...historico]);
+    } catch (error) {
+      console.error('Error creating history entry:', error);
+    }
+  };
+
+  // Handle phase change
+  const handlePhaseChange = async (newPhase: string, newSubPhase: string) => {
+    if (!atendimento) return;
+    
+    try {
+      const now = new Date().toISOString();
+      
+      await BaseCrudService.update('atendimentos', {
+        _id: atendimento._id,
+        faseFinanciamento: newPhase,
+        status: newSubPhase,
+        dataPrevistaConclusao: now
       });
       
-      setFormData({ ...formData, faseFinanciamento: phaseChangeData.newPhase });
-      setShowPhaseChangeDialog(false);
-      setPhaseChangeData({ newPhase: '', newSubPhase: '', reason: '' });
+      setPhaseEntryDate(now);
+      setDaysInPhase(0);
       
-      alert('Fase alterada com sucesso!');
+      await createHistoryEntry(`Fase alterada para: ${newPhase} - ${newSubPhase}`);
       
+      setAtendimento({
+        ...atendimento,
+        faseFinanciamento: newPhase,
+        status: newSubPhase,
+        dataPrevistaConclusao: now
+      });
+      
+      setFormData({
+        ...formData,
+        faseFinanciamento: newPhase,
+        status: newSubPhase
+      });
     } catch (error) {
       console.error('Error changing phase:', error);
-      alert('Erro ao alterar fase');
     }
   };
 
-  // Create pending
-  const handleCreatePending = async () => {
-    if (!atendimentoId || !newPendingData.title) return;
+  // Add proponente
+  const handleAddProponente = () => {
+    const proponente = { ...newProponente, _id: crypto.randomUUID() };
+    setProponentes([...proponentes, proponente]);
+    createHistoryEntry(`Proponente adicionado: ${proponente.nome}`);
+    setNewProponente({
+      _id: '',
+      nome: '',
+      cpf: '',
+      telefone: '',
+      renda: 0,
+      estadoCivil: 'Solteiro(a)',
+      possuiFgts: false
+    });
+    setShowAddProponenteDialog(false);
+  };
+
+  // Remove proponente
+  const handleRemoveProponente = (id: string) => {
+    const proponente = proponentes.find(p => p._id === id);
+    setProponentes(proponentes.filter(p => p._id !== id));
+    if (proponente) {
+      createHistoryEntry(`Proponente removido: ${proponente.nome}`);
+    }
+  };
+
+  // Add vendedor
+  const handleAddVendedor = () => {
+    const vendedor = { ...newVendedor, _id: crypto.randomUUID() };
+    setVendedores([...vendedores, vendedor]);
+    createHistoryEntry(`Vendedor adicionado: ${vendedor.nome}`);
+    setNewVendedor({
+      _id: '',
+      nome: '',
+      cpfCnpj: '',
+      whatsapp: '',
+      dadosBancarios: '',
+      documentos: []
+    });
+    setShowAddVendedorDialog(false);
+  };
+
+  // Add pendencia
+  const handleAddPendencia = async () => {
+    if (!atendimento || !newPendencia.title) return;
     
     try {
-      const newPending: PendnciasdoFinanciamento = {
+      const pendencia: PendnciasdoFinanciamento = {
         _id: crypto.randomUUID(),
-        atendimentoRef: atendimentoId,
-        title: newPendingData.title,
-        description: newPendingData.description,
+        atendimentoRef: atendimento._id,
+        title: newPendencia.title,
+        description: newPendencia.description,
         status: 'Aberta',
-        priority: newPendingData.priority,
-        dueDate: newPendingData.dueDate,
-        responsiblePartyType: newPendingData.responsiblePartyType,
-        responsiblePartyDetails: newPendingData.responsiblePartyDetails,
-        bloqueiaFase: newPendingData.bloqueiaFase,
+        priority: newPendencia.priority,
+        dueDate: newPendencia.dueDate,
+        responsiblePartyType: newPendencia.responsiblePartyType,
+        responsiblePartyDetails: newPendencia.responsiblePartyDetails,
+        bloqueiaFase: newPendencia.bloqueiaFase,
         creationDate: new Date().toISOString()
       };
       
-      await BaseCrudService.create('pendenciasfinanciamento', newPending);
-      setPendencias([...pendencias, newPending]);
+      await BaseCrudService.create('pendenciasfinanciamento', pendencia);
+      setPendencias([...pendencias, pendencia]);
+      await createHistoryEntry(`Pendência criada: ${pendencia.title}`);
       
-      // Register in history
-      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-        _id: crypto.randomUUID(),
-        atendimentoRef: atendimentoId,
-        tipoEvento: 'Criação de Pendência',
-        interactionType: 'Nova Pendência',
-        interactionDescription: `Pendência criada: ${newPendingData.title}`,
-        interactionDate: new Date().toISOString(),
-        autorTipo: 'Sistema'
-      });
-      
-      setNewPendingData({
+      setNewPendencia({
         title: '',
         description: '',
         priority: 'Média',
@@ -380,152 +395,186 @@ export default function AdminFinanciamentoDetalhePage() {
         responsiblePartyDetails: '',
         bloqueiaFase: false
       });
-      setShowNewPendingDialog(false);
-      
+      setShowAddPendenciaDialog(false);
     } catch (error) {
-      console.error('Error creating pending:', error);
+      console.error('Error adding pendencia:', error);
     }
   };
 
-  // Create task
-  const handleCreateTask = async () => {
-    if (!atendimentoId || !newTaskData.titulo) return;
+  // Mark pendencia as resolved
+  const handleResolvePendencia = async (id: string) => {
+    try {
+      await BaseCrudService.update('pendenciasfinanciamento', {
+        _id: id,
+        status: 'Resolvida',
+        resolvedDate: new Date().toISOString()
+      });
+      
+      const updatedPendencias = pendencias.map(p => 
+        p._id === id ? { ...p, status: 'Resolvida', resolvedDate: new Date().toISOString() } : p
+      );
+      setPendencias(updatedPendencias);
+      
+      const pendencia = pendencias.find(p => p._id === id);
+      if (pendencia) {
+        await createHistoryEntry(`Pendência resolvida: ${pendencia.title}`);
+      }
+    } catch (error) {
+      console.error('Error resolving pendencia:', error);
+    }
+  };
+
+  // Reopen pendencia
+  const handleReopenPendencia = async (id: string) => {
+    try {
+      await BaseCrudService.update('pendenciasfinanciamento', {
+        _id: id,
+        status: 'Aberta'
+      });
+      
+      const updatedPendencias = pendencias.map(p => 
+        p._id === id ? { ...p, status: 'Aberta' } : p
+      );
+      setPendencias(updatedPendencias);
+      
+      const pendencia = pendencias.find(p => p._id === id);
+      if (pendencia) {
+        await createHistoryEntry(`Pendência reaberta: ${pendencia.title}`);
+      }
+    } catch (error) {
+      console.error('Error reopening pendencia:', error);
+    }
+  };
+
+  // Add tarefa
+  const handleAddTarefa = async () => {
+    if (!atendimento || !newTarefa.description) return;
     
     try {
-      const newTask: FinancingTasks = {
+      const tarefa: FinancingTasks = {
         _id: crypto.randomUUID(),
-        atendimentoRef: atendimentoId,
-        titulo: newTaskData.titulo,
-        description: newTaskData.description,
-        responsibleType: newTaskData.responsibleType,
-        internalResponsibleId: newTaskData.internalResponsibleId,
-        externalResponsibleName: newTaskData.externalResponsibleName,
-        externalResponsibleContact: newTaskData.externalResponsibleContact,
-        dueDate: newTaskData.dueDate,
+        atendimentoRef: atendimento._id,
+        description: newTarefa.description,
+        responsibleType: newTarefa.responsibleType,
+        internalResponsibleId: newTarefa.internalResponsibleId,
+        externalResponsibleName: newTarefa.externalResponsibleName,
+        dueDate: newTarefa.dueDate,
         status: 'Pendente',
         creationDate: new Date().toISOString()
       };
       
-      await BaseCrudService.create('tarefasfinanciamento', newTask);
-      setTarefas([...tarefas, newTask]);
+      await BaseCrudService.create('tarefasfinanciamento', tarefa);
+      setTarefas([...tarefas, tarefa]);
+      await createHistoryEntry(`Tarefa criada: ${tarefa.description}`);
       
-      setNewTaskData({
-        titulo: '',
+      setNewTarefa({
         description: '',
         responsibleType: 'Interno',
         internalResponsibleId: '',
         externalResponsibleName: '',
-        externalResponsibleContact: '',
         dueDate: ''
       });
-      setShowNewTaskDialog(false);
-      
+      setShowAddTarefaDialog(false);
     } catch (error) {
-      console.error('Error creating task:', error);
+      console.error('Error adding tarefa:', error);
     }
   };
 
-  // Create document
-  const handleCreateDocument = async () => {
-    if (!atendimentoId || !newDocumentData.documentName) return;
+  // Complete tarefa
+  const handleCompleteTarefa = async (id: string) => {
+    try {
+      await BaseCrudService.update('tarefasfinanciamento', {
+        _id: id,
+        status: 'Concluída'
+      });
+      
+      const updatedTarefas = tarefas.map(t => 
+        t._id === id ? { ...t, status: 'Concluída' } : t
+      );
+      setTarefas(updatedTarefas);
+      
+      const tarefa = tarefas.find(t => t._id === id);
+      if (tarefa) {
+        await createHistoryEntry(`Tarefa concluída: ${tarefa.description}`);
+      }
+    } catch (error) {
+      console.error('Error completing tarefa:', error);
+    }
+  };
+
+  // Reopen tarefa
+  const handleReopenTarefa = async (id: string) => {
+    try {
+      await BaseCrudService.update('tarefasfinanciamento', {
+        _id: id,
+        status: 'Pendente'
+      });
+      
+      const updatedTarefas = tarefas.map(t => 
+        t._id === id ? { ...t, status: 'Pendente' } : t
+      );
+      setTarefas(updatedTarefas);
+      
+      const tarefa = tarefas.find(t => t._id === id);
+      if (tarefa) {
+        await createHistoryEntry(`Tarefa reaberta: ${tarefa.description}`);
+      }
+    } catch (error) {
+      console.error('Error reopening tarefa:', error);
+    }
+  };
+
+  // Add documento
+  const handleAddDocumento = async () => {
+    if (!atendimento || !newDocumento.documentName) return;
     
     try {
-      const newDocument: DocumentosdoFinanciamento = {
+      const documento: DocumentosdoFinanciamento = {
         _id: crypto.randomUUID(),
-        atendimentoRef: atendimentoId,
-        documentName: newDocumentData.documentName,
-        documentType: newDocumentData.documentType,
-        description: newDocumentData.description,
-        documentStatus: newDocumentData.documentStatus,
-        documentUrl: newDocumentData.documentUrl,
+        atendimentoRef: atendimento._id,
+        documentName: newDocumento.documentName,
+        documentType: newDocumento.documentType,
+        documentStatus: newDocumento.documentStatus,
+        description: newDocumento.description,
         uploadDate: new Date().toISOString(),
         origem: 'Sistema'
       };
       
-      await BaseCrudService.create('documentosfinanciamento', newDocument);
-      setDocumentos([...documentos, newDocument]);
+      await BaseCrudService.create('documentosfinanciamento', documento);
+      setDocumentos([...documentos, documento]);
+      await createHistoryEntry(`Documento adicionado: ${documento.documentName}`);
       
-      setNewDocumentData({
+      setNewDocumento({
         documentName: '',
-        documentType: 'Outros',
-        description: '',
+        documentType: 'RG',
         documentStatus: 'Pendente',
-        documentUrl: ''
+        description: ''
       });
-      setShowNewDocumentDialog(false);
-      
+      setShowAddDocumentoDialog(false);
     } catch (error) {
-      console.error('Error creating document:', error);
+      console.error('Error adding documento:', error);
     }
   };
 
-  // Update pending status
-  const handleUpdatePendingStatus = async (pendingId: string, newStatus: string) => {
+  // Update documento status
+  const handleUpdateDocumentoStatus = async (id: string, status: string) => {
     try {
-      await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
-        _id: pendingId,
-        status: newStatus,
-        resolvedDate: newStatus === 'Resolvida' ? new Date().toISOString() : undefined
+      await BaseCrudService.update('documentosfinanciamento', {
+        _id: id,
+        documentStatus: status
       });
       
-      setPendencias(pendencias.map(p => 
-        p._id === pendingId ? { ...p, status: newStatus } : p
-      ));
+      const updatedDocumentos = documentos.map(d => 
+        d._id === id ? { ...d, documentStatus: status } : d
+      );
+      setDocumentos(updatedDocumentos);
       
-      // Register in history
-      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-        _id: crypto.randomUUID(),
-        atendimentoRef: atendimentoId!,
-        tipoEvento: 'Atualização de Pendência',
-        interactionType: 'Status Alterado',
-        interactionDescription: `Status da pendência alterado para: ${newStatus}`,
-        interactionDate: new Date().toISOString(),
-        autorTipo: 'Sistema'
-      });
-      
+      const documento = documentos.find(d => d._id === id);
+      if (documento) {
+        await createHistoryEntry(`Status do documento "${documento.documentName}" alterado para: ${status}`);
+      }
     } catch (error) {
-      console.error('Error updating pending:', error);
-    }
-  };
-
-  // Update task status
-  const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
-    try {
-      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
-        _id: taskId,
-        status: newStatus
-      });
-      
-      setTarefas(tarefas.map(t => 
-        t._id === taskId ? { ...t, status: newStatus } : t
-      ));
-      
-    } catch (error) {
-      console.error('Error updating task:', error);
-    }
-  };
-
-  // Delete pending
-  const handleDeletePending = async (pendingId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta pendência?')) return;
-    
-    try {
-      await BaseCrudService.delete('pendenciasfinanciamento', pendingId);
-      setPendencias(pendencias.filter(p => p._id !== pendingId));
-    } catch (error) {
-      console.error('Error deleting pending:', error);
-    }
-  };
-
-  // Delete task
-  const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
-    
-    try {
-      await BaseCrudService.delete('tarefasfinanciamento', taskId);
-      setTarefas(tarefas.filter(t => t._id !== taskId));
-    } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error('Error updating documento status:', error);
     }
   };
 
@@ -541,845 +590,320 @@ export default function AdminFinanciamentoDetalhePage() {
     return (
       <div className="min-h-screen bg-primary">
         <Header />
-        <div className="max-w-[120rem] mx-auto px-6 lg:px-12 py-20 text-center">
-          <h1 className="font-heading text-3xl text-primary-foreground mb-4">Processo não encontrado</h1>
-          <Button onClick={() => navigate('/admin/financiamento-kanban')}>
-            Voltar ao Kanban
-          </Button>
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12 py-20">
+          <p className="font-paragraph text-primary-foreground text-center">Atendimento não encontrado</p>
         </div>
         <Footer />
       </div>
     );
   }
 
-  const currentPhase = FINANCING_PHASES.find(p => p.id === formData.faseFinanciamento);
-  const clientePrincipal = clientes.find(c => c._id === formData.clientePrincipalRef);
-  const corretor = corretores.find(c => c._id === formData.corretorResponsavelRef);
-  const responsavelInterno = usuarios.find(u => u._id === formData.responsavelInternoId);
-  const empresa = empresas.find(e => e._id === formData.empresaResponsavelRef);
-  const unidade = unidades.find(u => u._id === formData.unidadeResponsavelRef);
-
-  const overdueCount = pendencias.filter(p => 
-    new Date(p.dueDate || '') < new Date() && 
-    p.status !== 'Resolvida' && 
-    p.status !== 'Cancelada'
-  ).length;
+  const daysBadgeColor = daysInPhase <= 3 ? 'bg-green-500' : daysInPhase <= 7 ? 'bg-yellow-500' : 'bg-red-500';
 
   return (
     <div className="min-h-screen bg-primary">
       <Header />
 
-      {/* Breadcrumb */}
-      <section className="w-full bg-light-gray py-4 border-b border-border-gray">
+      {/* Hero Section */}
+      <section className="w-full bg-gradient-to-br from-secondary/10 to-secondary/5 py-8">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
-          <div className="flex items-center gap-2 text-sm font-paragraph text-primary-foreground/70">
-            <Link to="/area-restrita" className="hover:text-secondary">Área Restrita</Link>
-            <span>/</span>
-            <Link to="/admin/financiamento-kanban" className="hover:text-secondary">Kanban de Financiamento</Link>
-            <span>/</span>
-            <span className="text-primary-foreground font-semibold">{atendimento.contactName}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/admin/financiamento-kanban')}
+                className="hover:bg-primary-foreground/10"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h1 className="font-heading text-3xl lg:text-4xl text-secondary">
+                  {formData.contactName || 'Processo de Financiamento'}
+                </h1>
+                <p className="font-paragraph text-sm text-primary-foreground/70 mt-1">
+                  ID: {atendimento._id}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge className={`${daysBadgeColor} text-white px-3 py-1`}>
+                {daysInPhase} {daysInPhase === 1 ? 'dia' : 'dias'} nesta fase
+              </Badge>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Header */}
-      <section className="w-full bg-gradient-to-br from-secondary/10 to-secondary/5 py-8">
+      {/* Tabs Section */}
+      <section className="w-full py-8">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex-1">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/admin/financiamento-kanban')}
-                className="mb-4 text-primary-foreground/70 hover:text-primary-foreground"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar ao Kanban
-              </Button>
-              
-              <h1 className="font-heading text-4xl text-secondary mb-2">
-                Processo de Financiamento
-              </h1>
-              <p className="font-paragraph text-lg text-primary-foreground/80">
-                Cliente: {atendimento.contactName}
-              </p>
-              
-              <div className="flex items-center gap-3 mt-4">
-                <Badge className="bg-secondary text-secondary-foreground">
-                  {currentPhase?.name}
-                </Badge>
-                {overdueCount > 0 && (
-                  <Badge className="bg-destructive text-destructiveforeground">
-                    {overdueCount} Pendência(s) Atrasada(s)
-                  </Badge>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex gap-3">
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-secondary text-secondary-foreground hover:bg-secondary/90 h-12 px-6"
-              >
-                <Save className="w-5 h-5 mr-2" />
-                {saving ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
-              
-              <Dialog open={showPhaseChangeDialog} onOpenChange={setShowPhaseChangeDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-brandaccent text-primary hover:bg-brandaccent/90 h-12 px-6">
-                    <TrendingUp className="w-5 h-5 mr-2" />
-                    Alterar Fase
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Alterar Fase do Processo</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-6 bg-primary-foreground/10 mb-8">
+              <TabsTrigger value="dados" className="font-paragraph">Dados do Processo</TabsTrigger>
+              <TabsTrigger value="proponentes" className="font-paragraph">Proponente(s)</TabsTrigger>
+              <TabsTrigger value="vendedores" className="font-paragraph">Vendedor(es)</TabsTrigger>
+              <TabsTrigger value="pendencias" className="font-paragraph">Pendências e Tarefas</TabsTrigger>
+              <TabsTrigger value="documentos" className="font-paragraph">Documentos</TabsTrigger>
+              <TabsTrigger value="historico" className="font-paragraph">Histórico</TabsTrigger>
+            </TabsList>
+
+            {/* Tab: Dados do Processo */}
+            <TabsContent value="dados" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-heading text-xl">Informações do Processo</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label>Fase Atual</Label>
-                      <Input value={currentPhase?.name} disabled className="mt-2" />
+                      <Label className="font-paragraph text-sm mb-2 block">Nome do Cliente Principal</Label>
+                      <Input
+                        value={formData.contactName}
+                        onChange={(e) => {
+                          setFormData({ ...formData, contactName: e.target.value });
+                          handleAutoSave('contactName', e.target.value);
+                        }}
+                        className="h-10 bg-primary border-border-gray"
+                      />
                     </div>
                     <div>
-                      <Label>Nova Fase *</Label>
-                      <Select value={phaseChangeData.newPhase} onValueChange={(value) => setPhaseChangeData({ ...phaseChangeData, newPhase: value })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Selecione a nova fase" />
+                      <Label className="font-paragraph text-sm mb-2 block">CPF</Label>
+                      <Input
+                        value={formData.cpf}
+                        onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                        placeholder="000.000.000-00"
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Contato WhatsApp</Label>
+                      <Input
+                        value={formData.contactPhone}
+                        onChange={(e) => {
+                          setFormData({ ...formData, contactPhone: e.target.value });
+                          handleAutoSave('contactPhone', e.target.value);
+                        }}
+                        placeholder="(11) 98765-4321"
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Matrícula do Imóvel</Label>
+                      <Input
+                        value={formData.matriculaImovel}
+                        onChange={(e) => setFormData({ ...formData, matriculaImovel: e.target.value })}
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Nº Contrato SIOPI</Label>
+                      <Input
+                        value={formData.numeroContratoSiopi}
+                        onChange={(e) => setFormData({ ...formData, numeroContratoSiopi: e.target.value })}
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Nº Registro em Cartório</Label>
+                      <Input
+                        value={formData.numeroRegistroCartorio}
+                        onChange={(e) => setFormData({ ...formData, numeroRegistroCartorio: e.target.value })}
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Fase Atual do Financiamento</Label>
+                      <Select 
+                        value={formData.faseFinanciamento} 
+                        onValueChange={(value) => {
+                          const phase = FINANCING_PHASES.find(p => p.id === value);
+                          if (phase) {
+                            handlePhaseChange(value, phase.subPhases[0]);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-10 bg-primary border-border-gray">
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {FINANCING_PHASES.map(phase => (
-                            <SelectItem key={phase.id} value={phase.id}>
-                              {phase.name}
-                            </SelectItem>
+                            <SelectItem key={phase.id} value={phase.id}>{phase.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label>Motivo da Mudança *</Label>
-                      <Textarea
-                        value={phaseChangeData.reason}
-                        onChange={(e) => setPhaseChangeData({ ...phaseChangeData, reason: e.target.value })}
-                        placeholder="Descreva o motivo da mudança de fase"
-                        rows={3}
-                        className="mt-2"
-                      />
-                    </div>
-                    <Button
-                      onClick={handlePhaseChange}
-                      className="w-full bg-secondary text-secondary-foreground"
-                    >
-                      Confirmar Mudança
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="w-full py-12">
-        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-light-gray mb-8">
-              <TabsTrigger value="dados">Dados do Processo</TabsTrigger>
-              <TabsTrigger value="pendencias">
-                Pendências e Tarefas
-                {overdueCount > 0 && (
-                  <Badge className="ml-2 bg-destructive text-destructiveforeground">{overdueCount}</Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="documentos">Documentos ({documentos.length})</TabsTrigger>
-              <TabsTrigger value="historico">Histórico ({historico.length})</TabsTrigger>
-            </TabsList>
-
-            {/* Tab 1: Dados do Processo */}
-            <TabsContent value="dados" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Cliente e Responsáveis */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <User className="w-5 h-5" />
-                      Cliente e Responsáveis
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label>Cliente Principal *</Label>
-                      <Select value={formData.clientePrincipalRef} onValueChange={(value) => setFormData({ ...formData, clientePrincipalRef: value })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Selecione o cliente" />
+                      <Label className="font-paragraph text-sm mb-2 block">Subetapa Atual</Label>
+                      <Select 
+                        value={formData.status} 
+                        onValueChange={(value) => handlePhaseChange(formData.faseFinanciamento, value)}
+                      >
+                        <SelectTrigger className="h-10 bg-primary border-border-gray">
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {clientes.map(cliente => (
-                            <SelectItem key={cliente._id} value={cliente._id}>
-                              {cliente.clientName || cliente.nomeRazaoSocial}
-                            </SelectItem>
+                          {FINANCING_PHASES.find(p => p.id === formData.faseFinanciamento)?.subPhases.map(subPhase => (
+                            <SelectItem key={subPhase} value={subPhase}>{subPhase}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    
                     <div>
-                      <Label>Corretor Responsável</Label>
-                      <Select value={formData.corretorResponsavelRef} onValueChange={(value) => setFormData({ ...formData, corretorResponsavelRef: value })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Selecione o corretor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {corretores.map(corretor => (
-                            <SelectItem key={corretor._id} value={corretor._id}>
-                              {corretor.fullName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label>Responsável Interno</Label>
-                      <Select value={formData.responsavelInternoId} onValueChange={(value) => setFormData({ ...formData, responsavelInternoId: value })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Selecione o responsável" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {usuarios.map(usuario => (
-                            <SelectItem key={usuario._id} value={usuario._id}>
-                              {usuario.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label>Responsável Externo</Label>
-                      <Input
-                        value={formData.responsavelExterno}
-                        onChange={(e) => setFormData({ ...formData, responsavelExterno: e.target.value })}
-                        placeholder="Nome e contato do responsável externo"
-                        className="mt-2"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Empresa e Unidade */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building className="w-5 h-5" />
-                      Empresa e Unidade
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label>Empresa Responsável</Label>
-                      <Select value={formData.empresaResponsavelRef} onValueChange={(value) => setFormData({ ...formData, empresaResponsavelRef: value })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Selecione a empresa" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {empresas.map(empresa => (
-                            <SelectItem key={empresa._id} value={empresa._id}>
-                              {empresa.tradeName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label>Unidade Responsável</Label>
-                      <Select value={formData.unidadeResponsavelRef} onValueChange={(value) => setFormData({ ...formData, unidadeResponsavelRef: value })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue placeholder="Selecione a unidade" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {unidades.map(unidade => (
-                            <SelectItem key={unidade._id} value={unidade._id}>
-                              {unidade.unitName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label>Data Prevista de Conclusão</Label>
+                      <Label className="font-paragraph text-sm mb-2 block">Data de Início do Processo</Label>
                       <Input
                         type="date"
-                        value={formData.dataPrevistaConclusao}
-                        onChange={(e) => setFormData({ ...formData, dataPrevistaConclusao: e.target.value })}
-                        className="mt-2"
+                        value={formData.creationDate ? new Date(formData.creationDate).toISOString().split('T')[0] : ''}
+                        disabled
+                        className="h-10 bg-light-gray border-border-gray"
                       />
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* Dados Bancários */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="w-5 h-5" />
-                      Dados Bancários do Financiamento
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
                     <div>
-                      <Label>Banco</Label>
+                      <Label className="font-paragraph text-sm mb-2 block">Data de Entrada na Fase Atual</Label>
                       <Input
-                        value={financingFormData.bankName}
-                        onChange={(e) => setFinancingFormData({ ...financingFormData, bankName: e.target.value })}
-                        placeholder="Nome do banco"
-                        className="mt-2"
+                        type="date"
+                        value={phaseEntryDate ? new Date(phaseEntryDate).toISOString().split('T')[0] : ''}
+                        disabled
+                        className="h-10 bg-light-gray border-border-gray"
                       />
                     </div>
-                    
                     <div>
-                      <Label>Número da Conta</Label>
-                      <Input
-                        value={financingFormData.bankAccountNumber}
-                        onChange={(e) => setFinancingFormData({ ...financingFormData, bankAccountNumber: e.target.value })}
-                        placeholder="Número da conta bancária"
-                        className="mt-2"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label>Número do Contrato</Label>
-                      <Input
-                        value={financingFormData.financingContractNumber}
-                        onChange={(e) => setFinancingFormData({ ...financingFormData, financingContractNumber: e.target.value })}
-                        placeholder="Número do contrato de financiamento"
-                        className="mt-2"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Valor do Financiamento</Label>
-                        <Input
-                          type="number"
-                          value={financingFormData.financingAmount}
-                          onChange={(e) => setFinancingFormData({ ...financingFormData, financingAmount: parseFloat(e.target.value) })}
-                          placeholder="0.00"
-                          className="mt-2"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label>Taxa de Juros (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={financingFormData.interestRate}
-                          onChange={(e) => setFinancingFormData({ ...financingFormData, interestRate: parseFloat(e.target.value) })}
-                          placeholder="0.00"
-                          className="mt-2"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Prazo (meses)</Label>
-                        <Input
-                          type="number"
-                          value={financingFormData.loanTermMonths}
-                          onChange={(e) => setFinancingFormData({ ...financingFormData, loanTermMonths: parseInt(e.target.value) })}
-                          placeholder="0"
-                          className="mt-2"
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label>Data 1º Pagamento</Label>
-                        <Input
-                          type="date"
-                          value={financingFormData.firstPaymentDate}
-                          onChange={(e) => setFinancingFormData({ ...financingFormData, firstPaymentDate: e.target.value })}
-                          className="mt-2"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Observações */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Observações Gerais</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder="Observações sobre o processo..."
-                      rows={8}
-                      className="resize-none"
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* Tab 2: Pendências e Tarefas */}
-            <TabsContent value="pendencias" className="space-y-6">
-              <div className="flex gap-3 mb-6">
-                <Dialog open={showNewPendingDialog} onOpenChange={setShowNewPendingDialog}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-secondary text-secondary-foreground">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nova Pendência
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Nova Pendência</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Título *</Label>
-                        <Input
-                          value={newPendingData.title}
-                          onChange={(e) => setNewPendingData({ ...newPendingData, title: e.target.value })}
-                          placeholder="Título da pendência"
-                          className="mt-2"
-                        />
-                      </div>
-                      <div>
-                        <Label>Descrição</Label>
-                        <Textarea
-                          value={newPendingData.description}
-                          onChange={(e) => setNewPendingData({ ...newPendingData, description: e.target.value })}
-                          placeholder="Descrição detalhada"
-                          rows={3}
-                          className="mt-2"
-                        />
-                      </div>
-                      <div>
-                        <Label>Prioridade</Label>
-                        <Select value={newPendingData.priority} onValueChange={(value) => setNewPendingData({ ...newPendingData, priority: value })}>
-                          <SelectTrigger className="mt-2">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PRIORITY_LEVELS.map(level => (
-                              <SelectItem key={level} value={level}>{level}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Prazo</Label>
-                        <Input
-                          type="datetime-local"
-                          value={newPendingData.dueDate}
-                          onChange={(e) => setNewPendingData({ ...newPendingData, dueDate: e.target.value })}
-                          className="mt-2"
-                        />
-                      </div>
-                      <div>
-                        <Label>Tipo de Responsável</Label>
-                        <Select value={newPendingData.responsiblePartyType} onValueChange={(value) => setNewPendingData({ ...newPendingData, responsiblePartyType: value })}>
-                          <SelectTrigger className="mt-2">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {RESPONSIBLE_TYPES.map(type => (
-                              <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {newPendingData.responsiblePartyType !== 'Interno' && (
-                        <div>
-                          <Label>Detalhes do Responsável</Label>
-                          <Input
-                            value={newPendingData.responsiblePartyDetails}
-                            onChange={(e) => setNewPendingData({ ...newPendingData, responsiblePartyDetails: e.target.value })}
-                            placeholder="Nome/Entidade + Contato"
-                            className="mt-2"
-                          />
-                        </div>
-                      )}
+                      <Label className="font-paragraph text-sm mb-2 block">Dias Nesta Fase</Label>
                       <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="bloqueiaFase"
-                          checked={newPendingData.bloqueiaFase}
-                          onChange={(e) => setNewPendingData({ ...newPendingData, bloqueiaFase: e.target.checked })}
-                          className="w-4 h-4"
-                        />
-                        <Label htmlFor="bloqueiaFase" className="cursor-pointer">
-                          Bloqueia mudança de fase
-                        </Label>
+                        <Badge className={`${daysBadgeColor} text-white px-4 py-2 text-base`}>
+                          {daysInPhase} {daysInPhase === 1 ? 'dia' : 'dias'}
+                        </Badge>
                       </div>
-                      <Button
-                        onClick={handleCreatePending}
-                        className="w-full bg-secondary text-secondary-foreground"
-                      >
-                        Criar Pendência
-                      </Button>
                     </div>
-                  </DialogContent>
-                </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <Dialog open={showNewTaskDialog} onOpenChange={setShowNewTaskDialog}>
+            {/* Tab: Proponentes */}
+            <TabsContent value="proponentes" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="font-heading text-2xl text-primary-foreground">Lista de Proponentes</h2>
+                <Dialog open={showAddProponenteDialog} onOpenChange={setShowAddProponenteDialog}>
                   <DialogTrigger asChild>
-                    <Button className="bg-brandaccent text-primary">
+                    <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
                       <Plus className="w-4 h-4 mr-2" />
-                      Nova Tarefa
+                      Adicionar Proponente
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                  <DialogContent className="max-w-md">
                     <DialogHeader>
-                      <DialogTitle>Nova Tarefa</DialogTitle>
+                      <DialogTitle>Novo Proponente</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label>Título *</Label>
+                        <Label className="font-paragraph text-sm mb-2 block">Nome Completo</Label>
                         <Input
-                          value={newTaskData.titulo}
-                          onChange={(e) => setNewTaskData({ ...newTaskData, titulo: e.target.value })}
-                          placeholder="Título da tarefa"
-                          className="mt-2"
+                          value={newProponente.nome}
+                          onChange={(e) => setNewProponente({ ...newProponente, nome: e.target.value })}
+                          className="h-10 bg-primary border-border-gray"
                         />
                       </div>
                       <div>
-                        <Label>Descrição</Label>
-                        <Textarea
-                          value={newTaskData.description}
-                          onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
-                          placeholder="Descrição detalhada"
-                          rows={3}
-                          className="mt-2"
+                        <Label className="font-paragraph text-sm mb-2 block">CPF</Label>
+                        <Input
+                          value={newProponente.cpf}
+                          onChange={(e) => setNewProponente({ ...newProponente, cpf: e.target.value })}
+                          placeholder="000.000.000-00"
+                          className="h-10 bg-primary border-border-gray"
                         />
                       </div>
                       <div>
-                        <Label>Tipo de Responsável</Label>
-                        <Select value={newTaskData.responsibleType} onValueChange={(value) => setNewTaskData({ ...newTaskData, responsibleType: value })}>
-                          <SelectTrigger className="mt-2">
+                        <Label className="font-paragraph text-sm mb-2 block">Telefone/WhatsApp</Label>
+                        <Input
+                          value={newProponente.telefone}
+                          onChange={(e) => setNewProponente({ ...newProponente, telefone: e.target.value })}
+                          placeholder="(11) 98765-4321"
+                          className="h-10 bg-primary border-border-gray"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Renda Mensal</Label>
+                        <Input
+                          type="number"
+                          value={newProponente.renda}
+                          onChange={(e) => setNewProponente({ ...newProponente, renda: parseFloat(e.target.value) })}
+                          placeholder="0.00"
+                          className="h-10 bg-primary border-border-gray"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Estado Civil</Label>
+                        <Select value={newProponente.estadoCivil} onValueChange={(value) => setNewProponente({ ...newProponente, estadoCivil: value })}>
+                          <SelectTrigger className="h-10 bg-primary border-border-gray">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {RESPONSIBLE_TYPES.map(type => (
-                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            {MARITAL_STATUS.map(status => (
+                              <SelectItem key={status} value={status}>{status}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                      {newTaskData.responsibleType === 'Interno' ? (
-                        <div>
-                          <Label>Responsável Interno</Label>
-                          <Select value={newTaskData.internalResponsibleId} onValueChange={(value) => setNewTaskData({ ...newTaskData, internalResponsibleId: value })}>
-                            <SelectTrigger className="mt-2">
-                              <SelectValue placeholder="Selecione o usuário" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {usuarios.map(usuario => (
-                                <SelectItem key={usuario._id} value={usuario._id}>
-                                  {usuario.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : (
-                        <>
-                          <div>
-                            <Label>Nome do Responsável Externo</Label>
-                            <Input
-                              value={newTaskData.externalResponsibleName}
-                              onChange={(e) => setNewTaskData({ ...newTaskData, externalResponsibleName: e.target.value })}
-                              placeholder="Nome completo"
-                              className="mt-2"
-                            />
-                          </div>
-                          <div>
-                            <Label>Contato</Label>
-                            <Input
-                              value={newTaskData.externalResponsibleContact}
-                              onChange={(e) => setNewTaskData({ ...newTaskData, externalResponsibleContact: e.target.value })}
-                              placeholder="Telefone ou e-mail"
-                              className="mt-2"
-                            />
-                          </div>
-                        </>
-                      )}
-                      <div>
-                        <Label>Prazo</Label>
-                        <Input
-                          type="datetime-local"
-                          value={newTaskData.dueDate}
-                          onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value })}
-                          className="mt-2"
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={newProponente.possuiFgts}
+                          onCheckedChange={(checked) => setNewProponente({ ...newProponente, possuiFgts: checked as boolean })}
                         />
+                        <Label className="font-paragraph text-sm">Possui FGTS</Label>
                       </div>
-                      <Button
-                        onClick={handleCreateTask}
-                        className="w-full bg-brandaccent text-primary"
-                      >
-                        Criar Tarefa
+                      <Button onClick={handleAddProponente} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                        Adicionar
                       </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
               </div>
 
-              {/* Pendências List */}
-              <div>
-                <h3 className="font-heading text-xl text-secondary mb-4">Pendências</h3>
-                <div className="space-y-3">
-                  {pendencias.length === 0 ? (
-                    <p className="text-center py-8 text-primary-foreground/60">Nenhuma pendência registrada</p>
-                  ) : (
-                    pendencias.map(pending => {
-                      const isOverdue = new Date(pending.dueDate || '') < new Date() && pending.status !== 'Resolvida';
-                      return (
-                        <Card key={pending._id} className={isOverdue ? 'border-destructive border-2' : ''}>
-                          <CardContent className="pt-6">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h4 className="font-heading text-base font-semibold">{pending.title}</h4>
-                                  {isOverdue && <AlertCircle className="w-5 h-5 text-destructive" />}
-                                  {pending.bloqueiaFase && <Badge className="bg-destructive text-destructiveforeground">Bloqueante</Badge>}
-                                </div>
-                                <p className="text-sm text-primary-foreground/70 mb-3">{pending.description}</p>
-                                <div className="flex flex-wrap gap-2 text-xs mb-3">
-                                  <Badge variant="outline">{pending.priority}</Badge>
-                                  <Badge variant="outline">{pending.status}</Badge>
-                                  <Badge variant="outline">{pending.responsiblePartyType}</Badge>
-                                  {pending.dueDate && (
-                                    <Badge variant="outline">
-                                      <Calendar className="w-3 h-3 mr-1" />
-                                      {new Date(pending.dueDate).toLocaleDateString('pt-BR')}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleUpdatePendingStatus(pending._id, 'Resolvida')}
-                                    disabled={pending.status === 'Resolvida'}
-                                  >
-                                    <CheckCircle className="w-4 h-4 mr-1" />
-                                    Concluir
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleUpdatePendingStatus(pending._id, 'Aberta')}
-                                    disabled={pending.status === 'Aberta'}
-                                  >
-                                    Reabrir
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleDeletePending(pending._id)}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* Tarefas List */}
-              <div>
-                <h3 className="font-heading text-xl text-secondary mb-4">Tarefas</h3>
-                <div className="space-y-3">
-                  {tarefas.length === 0 ? (
-                    <p className="text-center py-8 text-primary-foreground/60">Nenhuma tarefa registrada</p>
-                  ) : (
-                    tarefas.map(task => {
-                      const isOverdue = new Date(task.dueDate || '') < new Date() && task.status !== 'Concluída';
-                      return (
-                        <Card key={task._id} className={isOverdue ? 'border-destructive border-2' : ''}>
-                          <CardContent className="pt-6">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  {task.status === 'Concluída' ? (
-                                    <CheckCircle className="w-5 h-5 text-green-600" />
-                                  ) : isOverdue ? (
-                                    <AlertCircle className="w-5 h-5 text-destructive" />
-                                  ) : (
-                                    <Clock className="w-5 h-5 text-primary-foreground/60" />
-                                  )}
-                                  <h4 className="font-heading text-base font-semibold">{task.titulo}</h4>
-                                </div>
-                                <p className="text-sm text-primary-foreground/70 mb-3">{task.description}</p>
-                                <div className="flex flex-wrap gap-2 text-xs mb-3">
-                                  <Badge variant="outline">{task.status}</Badge>
-                                  <Badge variant="outline">{task.responsibleType}</Badge>
-                                  {task.externalResponsibleName && (
-                                    <Badge variant="outline">{task.externalResponsibleName}</Badge>
-                                  )}
-                                  {task.dueDate && (
-                                    <Badge variant="outline">
-                                      <Calendar className="w-3 h-3 mr-1" />
-                                      {new Date(task.dueDate).toLocaleDateString('pt-BR')}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleUpdateTaskStatus(task._id, 'Concluída')}
-                                    disabled={task.status === 'Concluída'}
-                                  >
-                                    <CheckCircle className="w-4 h-4 mr-1" />
-                                    Concluir
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleUpdateTaskStatus(task._id, 'Pendente')}
-                                    disabled={task.status === 'Pendente'}
-                                  >
-                                    Reabrir
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleDeleteTask(task._id)}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Tab 3: Documentos */}
-            <TabsContent value="documentos" className="space-y-6">
-              <Dialog open={showNewDocumentDialog} onOpenChange={setShowNewDocumentDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-secondary text-secondary-foreground">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Adicionar Documento
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Novo Documento</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Nome do Documento *</Label>
-                      <Input
-                        value={newDocumentData.documentName}
-                        onChange={(e) => setNewDocumentData({ ...newDocumentData, documentName: e.target.value })}
-                        placeholder="Nome do arquivo"
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label>Tipo de Documento</Label>
-                      <Select value={newDocumentData.documentType} onValueChange={(value) => setNewDocumentData({ ...newDocumentData, documentType: value })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DOCUMENT_TYPES.map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>URL do Documento</Label>
-                      <Input
-                        value={newDocumentData.documentUrl}
-                        onChange={(e) => setNewDocumentData({ ...newDocumentData, documentUrl: e.target.value })}
-                        placeholder="https://..."
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label>Status</Label>
-                      <Select value={newDocumentData.documentStatus} onValueChange={(value) => setNewDocumentData({ ...newDocumentData, documentStatus: value })}>
-                        <SelectTrigger className="mt-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DOCUMENT_STATUS.map(status => (
-                            <SelectItem key={status} value={status}>{status}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Observação</Label>
-                      <Textarea
-                        value={newDocumentData.description}
-                        onChange={(e) => setNewDocumentData({ ...newDocumentData, description: e.target.value })}
-                        placeholder="Observações sobre o documento"
-                        rows={3}
-                        className="mt-2"
-                      />
-                    </div>
-                    <Button
-                      onClick={handleCreateDocument}
-                      className="w-full bg-secondary text-secondary-foreground"
-                    >
-                      Adicionar Documento
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {documentos.length === 0 ? (
-                  <p className="col-span-full text-center py-8 text-primary-foreground/60">Nenhum documento anexado</p>
+              <div className="space-y-4">
+                {proponentes.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <p className="font-paragraph text-primary-foreground/60">Nenhum proponente cadastrado</p>
+                    </CardContent>
+                  </Card>
                 ) : (
-                  documentos.map(doc => (
-                    <Card key={doc._id}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start gap-3">
-                          <FileText className="w-8 h-8 text-secondary flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-heading text-sm font-semibold mb-1 truncate">{doc.documentName}</h4>
-                            <p className="text-xs text-primary-foreground/60 mb-2">{doc.documentType}</p>
-                            <Badge variant="outline" className="text-xs">{doc.documentStatus}</Badge>
-                            {doc.description && (
-                              <p className="text-xs text-primary-foreground/70 mt-2">{doc.description}</p>
-                            )}
-                            {doc.documentUrl && (
-                              <a
-                                href={doc.documentUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-secondary hover:underline mt-2 inline-block"
-                              >
-                                Abrir documento
-                              </a>
-                            )}
+                  proponentes.map((proponente) => (
+                    <Card key={proponente._id}>
+                      <CardContent className="py-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Nome</p>
+                              <p className="font-paragraph text-sm font-semibold">{proponente.nome}</p>
+                            </div>
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">CPF</p>
+                              <p className="font-paragraph text-sm">{proponente.cpf}</p>
+                            </div>
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Telefone</p>
+                              <p className="font-paragraph text-sm">{proponente.telefone}</p>
+                            </div>
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Renda</p>
+                              <p className="font-paragraph text-sm">R$ {proponente.renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Estado Civil</p>
+                              <p className="font-paragraph text-sm">{proponente.estadoCivil}</p>
+                            </div>
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">FGTS</p>
+                              <Badge className={proponente.possuiFgts ? 'bg-green-500' : 'bg-gray-400'}>
+                                {proponente.possuiFgts ? 'Sim' : 'Não'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleRemoveProponente(proponente._id)}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -1389,35 +913,562 @@ export default function AdminFinanciamentoDetalhePage() {
               </div>
             </TabsContent>
 
-            {/* Tab 4: Histórico */}
-            <TabsContent value="historico" className="space-y-6">
+            {/* Tab: Vendedores */}
+            <TabsContent value="vendedores" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="font-heading text-2xl text-primary-foreground">Lista de Vendedores</h2>
+                <Dialog open={showAddVendedorDialog} onOpenChange={setShowAddVendedorDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Vendedor
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Novo Vendedor</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Nome do Vendedor</Label>
+                        <Input
+                          value={newVendedor.nome}
+                          onChange={(e) => setNewVendedor({ ...newVendedor, nome: e.target.value })}
+                          className="h-10 bg-primary border-border-gray"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">CPF ou CNPJ</Label>
+                        <Input
+                          value={newVendedor.cpfCnpj}
+                          onChange={(e) => setNewVendedor({ ...newVendedor, cpfCnpj: e.target.value })}
+                          className="h-10 bg-primary border-border-gray"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Contato WhatsApp</Label>
+                        <Input
+                          value={newVendedor.whatsapp}
+                          onChange={(e) => setNewVendedor({ ...newVendedor, whatsapp: e.target.value })}
+                          placeholder="(11) 98765-4321"
+                          className="h-10 bg-primary border-border-gray"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Dados Bancários</Label>
+                        <Textarea
+                          value={newVendedor.dadosBancarios}
+                          onChange={(e) => setNewVendedor({ ...newVendedor, dadosBancarios: e.target.value })}
+                          placeholder="Banco, Agência, Conta"
+                          rows={3}
+                          className="bg-primary border-border-gray resize-none"
+                        />
+                      </div>
+                      <Button onClick={handleAddVendedor} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                        Adicionar
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
               <div className="space-y-4">
-                {historico.length === 0 ? (
-                  <p className="text-center py-8 text-primary-foreground/60">Nenhum evento registrado</p>
+                {vendedores.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <p className="font-paragraph text-primary-foreground/60">Nenhum vendedor cadastrado</p>
+                    </CardContent>
+                  </Card>
                 ) : (
-                  historico
-                    .sort((a, b) => new Date(b.interactionDate || '').getTime() - new Date(a.interactionDate || '').getTime())
-                    .map(event => (
-                      <Card key={event._id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                              <History className="w-5 h-5 text-secondary" />
+                  vendedores.map((vendedor) => (
+                    <Card key={vendedor._id}>
+                      <CardContent className="py-4">
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Nome</p>
+                              <p className="font-paragraph text-sm font-semibold">{vendedor.nome}</p>
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-heading text-sm font-semibold">{event.tipoEvento}</h4>
-                                <Badge variant="outline" className="text-xs">{event.interactionType}</Badge>
-                              </div>
-                              <p className="text-sm text-primary-foreground/70 mb-2">{event.interactionDescription}</p>
-                              <p className="text-xs text-primary-foreground/50">
-                                {new Date(event.interactionDate || '').toLocaleString('pt-BR')}
-                              </p>
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">CPF/CNPJ</p>
+                              <p className="font-paragraph text-sm">{vendedor.cpfCnpj}</p>
+                            </div>
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">WhatsApp</p>
+                              <p className="font-paragraph text-sm">{vendedor.whatsapp}</p>
+                            </div>
+                            <div>
+                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Dados Bancários</p>
+                              <p className="font-paragraph text-sm">{vendedor.dadosBancarios}</p>
                             </div>
                           </div>
+                          
+                          <div className="border-t pt-4">
+                            <h4 className="font-heading text-sm font-semibold mb-3">Checklist de Documentos</h4>
+                            <div className="space-y-2">
+                              {['Documento de identificação', 'Certidão de casamento ou nascimento', 'Comprovante de residência'].map((doc) => (
+                                <div key={doc} className="flex items-center gap-3 p-2 bg-light-gray rounded">
+                                  <Checkbox />
+                                  <span className="font-paragraph text-sm flex-1">{doc}</span>
+                                  <Badge className="bg-yellow-500 text-white">Pendente</Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Tab: Pendências e Tarefas */}
+            <TabsContent value="pendencias" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Pendências Column */}
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-heading text-xl text-secondary font-semibold">Pendências</h3>
+                    <Dialog open={showAddPendenciaDialog} onOpenChange={setShowAddPendenciaDialog}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nova Pendência
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Nova Pendência</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Título</Label>
+                            <Input
+                              value={newPendencia.title}
+                              onChange={(e) => setNewPendencia({ ...newPendencia, title: e.target.value })}
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Descrição</Label>
+                            <Textarea
+                              value={newPendencia.description}
+                              onChange={(e) => setNewPendencia({ ...newPendencia, description: e.target.value })}
+                              rows={3}
+                              className="bg-primary border-border-gray resize-none"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Prioridade</Label>
+                            <Select value={newPendencia.priority} onValueChange={(value) => setNewPendencia({ ...newPendencia, priority: value })}>
+                              <SelectTrigger className="h-10 bg-primary border-border-gray">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {PRIORITY_LEVELS.map(level => (
+                                  <SelectItem key={level} value={level}>{level}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
+                            <Input
+                              type="datetime-local"
+                              value={newPendencia.dueDate}
+                              onChange={(e) => setNewPendencia({ ...newPendencia, dueDate: e.target.value })}
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
+                            <Select value={newPendencia.responsiblePartyType} onValueChange={(value) => setNewPendencia({ ...newPendencia, responsiblePartyType: value })}>
+                              <SelectTrigger className="h-10 bg-primary border-border-gray">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {RESPONSIBLE_TYPES.map(type => (
+                                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={newPendencia.bloqueiaFase}
+                              onCheckedChange={(checked) => setNewPendencia({ ...newPendencia, bloqueiaFase: checked as boolean })}
+                            />
+                            <Label className="font-paragraph text-sm">Bloqueia mudança de fase</Label>
+                          </div>
+                          <Button onClick={handleAddPendencia} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                            Criar Pendência
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  <div className="space-y-3">
+                    {pendencias.length === 0 ? (
+                      <Card>
+                        <CardContent className="py-8 text-center">
+                          <p className="font-paragraph text-primary-foreground/60 text-sm">Nenhuma pendência</p>
                         </CardContent>
                       </Card>
-                    ))
+                    ) : (
+                      pendencias.map((pendencia) => {
+                        const isOverdue = new Date(pendencia.dueDate || '') < new Date() && pendencia.status !== 'Resolvida';
+                        const bgColor = pendencia.status === 'Resolvida' ? 'bg-green-50 border-green-300' : isOverdue ? 'bg-red-50 border-red-300' : 'bg-yellow-50 border-yellow-300';
+                        
+                        return (
+                          <Card key={pendencia._id} className={`border-2 ${bgColor}`}>
+                            <CardContent className="py-3">
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <h4 className="font-heading text-sm font-semibold flex-1">{pendencia.title}</h4>
+                                {isOverdue && <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />}
+                              </div>
+                              <p className="font-paragraph text-xs text-primary-foreground/70 mb-2">{pendencia.description}</p>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <Badge className="text-xs">{pendencia.priority}</Badge>
+                                <Badge className="text-xs">{pendencia.status}</Badge>
+                                <Badge className="text-xs">{pendencia.responsiblePartyType}</Badge>
+                              </div>
+                              {pendencia.dueDate && (
+                                <p className="font-paragraph text-xs text-primary-foreground/60 mb-3">
+                                  Prazo: {new Date(pendencia.dueDate).toLocaleDateString('pt-BR')}
+                                </p>
+                              )}
+                              <div className="flex gap-2">
+                                {pendencia.status !== 'Resolvida' ? (
+                                  <Button size="sm" variant="outline" onClick={() => handleResolvePendencia(pendencia._id)} className="flex-1 h-8 text-xs">
+                                    <Check className="w-3 h-3 mr-1" />
+                                    Marcar como tratada
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" variant="outline" onClick={() => handleReopenPendencia(pendencia._id)} className="flex-1 h-8 text-xs">
+                                    <RotateCcw className="w-3 h-3 mr-1" />
+                                    Reabrir
+                                  </Button>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Tarefas Column */}
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-heading text-xl text-secondary font-semibold">Tarefas</h3>
+                    <Dialog open={showAddTarefaDialog} onOpenChange={setShowAddTarefaDialog}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nova Tarefa
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Nova Tarefa</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Descrição</Label>
+                            <Textarea
+                              value={newTarefa.description}
+                              onChange={(e) => setNewTarefa({ ...newTarefa, description: e.target.value })}
+                              rows={3}
+                              className="bg-primary border-border-gray resize-none"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Tipo de Responsável</Label>
+                            <Select value={newTarefa.responsibleType} onValueChange={(value) => setNewTarefa({ ...newTarefa, responsibleType: value })}>
+                              <SelectTrigger className="h-10 bg-primary border-border-gray">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {RESPONSIBLE_TYPES.map(type => (
+                                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {newTarefa.responsibleType === 'Interno' && (
+                            <div>
+                              <Label className="font-paragraph text-sm mb-2 block">Usuário Responsável</Label>
+                              <Select value={newTarefa.internalResponsibleId} onValueChange={(value) => setNewTarefa({ ...newTarefa, internalResponsibleId: value })}>
+                                <SelectTrigger className="h-10 bg-primary border-border-gray">
+                                  <SelectValue placeholder="Selecione um usuário" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {usuarios.map(user => (
+                                    <SelectItem key={user._id} value={user._id}>{user.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          {newTarefa.responsibleType !== 'Interno' && (
+                            <div>
+                              <Label className="font-paragraph text-sm mb-2 block">Nome do Responsável Externo</Label>
+                              <Input
+                                value={newTarefa.externalResponsibleName}
+                                onChange={(e) => setNewTarefa({ ...newTarefa, externalResponsibleName: e.target.value })}
+                                className="h-10 bg-primary border-border-gray"
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
+                            <Input
+                              type="datetime-local"
+                              value={newTarefa.dueDate}
+                              onChange={(e) => setNewTarefa({ ...newTarefa, dueDate: e.target.value })}
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                          <Button onClick={handleAddTarefa} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                            Criar Tarefa
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  <div className="space-y-3">
+                    {tarefas.length === 0 ? (
+                      <Card>
+                        <CardContent className="py-8 text-center">
+                          <p className="font-paragraph text-primary-foreground/60 text-sm">Nenhuma tarefa</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      tarefas.map((tarefa) => {
+                        const isOverdue = new Date(tarefa.dueDate || '') < new Date() && tarefa.status !== 'Concluída';
+                        const bgColor = tarefa.status === 'Concluída' ? 'bg-green-50 border-green-300' : isOverdue ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-300';
+                        
+                        return (
+                          <Card key={tarefa._id} className={`border-2 ${bgColor}`}>
+                            <CardContent className="py-3">
+                              <div className="flex items-start gap-2 mb-2">
+                                {tarefa.status === 'Concluída' ? (
+                                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                ) : isOverdue ? (
+                                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                                ) : (
+                                  <Clock className="w-4 h-4 text-primary-foreground/60 flex-shrink-0 mt-0.5" />
+                                )}
+                                <p className="font-paragraph text-sm flex-1">{tarefa.description}</p>
+                              </div>
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                <Badge className="text-xs">{tarefa.status}</Badge>
+                                <Badge className="text-xs">{tarefa.responsibleType}</Badge>
+                              </div>
+                              {tarefa.dueDate && (
+                                <p className="font-paragraph text-xs text-primary-foreground/60 mb-3">
+                                  Prazo: {new Date(tarefa.dueDate).toLocaleDateString('pt-BR')}
+                                </p>
+                              )}
+                              <div className="flex gap-2">
+                                {tarefa.status !== 'Concluída' ? (
+                                  <Button size="sm" variant="outline" onClick={() => handleCompleteTarefa(tarefa._id)} className="flex-1 h-8 text-xs">
+                                    <Check className="w-3 h-3 mr-1" />
+                                    Concluir
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" variant="outline" onClick={() => handleReopenTarefa(tarefa._id)} className="flex-1 h-8 text-xs">
+                                    <RotateCcw className="w-3 h-3 mr-1" />
+                                    Reabrir
+                                  </Button>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Tab: Documentos */}
+            <TabsContent value="documentos" className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="font-heading text-2xl text-primary-foreground">Documentos do Processo</h2>
+                <Dialog open={showAddDocumentoDialog} onOpenChange={setShowAddDocumentoDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Documento
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Novo Documento</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Nome do Documento</Label>
+                        <Input
+                          value={newDocumento.documentName}
+                          onChange={(e) => setNewDocumento({ ...newDocumento, documentName: e.target.value })}
+                          className="h-10 bg-primary border-border-gray"
+                        />
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Tipo</Label>
+                        <Select value={newDocumento.documentType} onValueChange={(value) => setNewDocumento({ ...newDocumento, documentType: value })}>
+                          <SelectTrigger className="h-10 bg-primary border-border-gray">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DOCUMENT_TYPES.map(type => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Status</Label>
+                        <Select value={newDocumento.documentStatus} onValueChange={(value) => setNewDocumento({ ...newDocumento, documentStatus: value })}>
+                          <SelectTrigger className="h-10 bg-primary border-border-gray">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DOCUMENT_STATUS_OPTIONS.map(status => (
+                              <SelectItem key={status} value={status}>{status}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Descrição</Label>
+                        <Textarea
+                          value={newDocumento.description}
+                          onChange={(e) => setNewDocumento({ ...newDocumento, description: e.target.value })}
+                          rows={3}
+                          className="bg-primary border-border-gray resize-none"
+                        />
+                      </div>
+                      <Button onClick={handleAddDocumento} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">
+                        Adicionar
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="space-y-3">
+                {documentos.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <p className="font-paragraph text-primary-foreground/60">Nenhum documento cadastrado</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  documentos.map((documento) => (
+                    <Card key={documento._id}>
+                      <CardContent className="py-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3 flex-1">
+                            <FileText className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <h4 className="font-heading text-sm font-semibold mb-1">{documento.documentName}</h4>
+                              <p className="font-paragraph text-xs text-primary-foreground/70 mb-2">{documento.description}</p>
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                <Badge className="text-xs">{documento.documentType}</Badge>
+                                <Badge className={`text-xs ${
+                                  documento.documentStatus === 'Aprovado' ? 'bg-green-500' :
+                                  documento.documentStatus === 'Rejeitado' ? 'bg-red-500' :
+                                  documento.documentStatus === 'Recebido' ? 'bg-blue-500' :
+                                  'bg-yellow-500'
+                                }`}>
+                                  {documento.documentStatus}
+                                </Badge>
+                              </div>
+                              {documento.uploadDate && (
+                                <p className="font-paragraph text-xs text-primary-foreground/60">
+                                  Enviado em: {new Date(documento.uploadDate).toLocaleDateString('pt-BR')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Select value={documento.documentStatus} onValueChange={(value) => handleUpdateDocumentoStatus(documento._id, value)}>
+                              <SelectTrigger className="h-8 text-xs w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {DOCUMENT_STATUS_OPTIONS.map(status => (
+                                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Tab: Histórico */}
+            <TabsContent value="historico" className="space-y-6">
+              <h2 className="font-heading text-2xl text-primary-foreground">Linha do Tempo do Processo</h2>
+              
+              <div className="space-y-4">
+                {historico.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <p className="font-paragraph text-primary-foreground/60">Nenhum histórico registrado</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border-gray"></div>
+                    {historico.map((entry, index) => (
+                      <motion.div
+                        key={entry._id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="relative pl-12 pb-8"
+                      >
+                        <div className="absolute left-2 top-1 w-4 h-4 rounded-full bg-secondary border-2 border-primary"></div>
+                        <Card>
+                          <CardContent className="py-3">
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                              <h4 className="font-heading text-sm font-semibold">{entry.interactionDescription}</h4>
+                              <Badge className="text-xs">{entry.interactionType}</Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-primary-foreground/60">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                <span>{new Date(entry.interactionDate || '').toLocaleDateString('pt-BR')}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{new Date(entry.interactionDate || '').toLocaleTimeString('pt-BR')}</span>
+                              </div>
+                              {entry.autorTipo && (
+                                <div className="flex items-center gap-1">
+                                  <User className="w-3 h-3" />
+                                  <span>{entry.autorTipo}</span>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
               </div>
             </TabsContent>

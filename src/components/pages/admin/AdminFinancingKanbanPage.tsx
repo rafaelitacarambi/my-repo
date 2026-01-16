@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
-import { ServiceRecords, UsuriosdoSistema } from '@/entities';
+import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks } from '@/entities';
 
 // Types
 interface FinancingPhase {
@@ -50,11 +50,13 @@ interface FinancingCase {
   isOverdue?: boolean;
   createdDate: string;
   updatedDate: string;
+  phaseEntryDate?: string;
+  daysInCurrentPhase?: number;
 }
 
 interface Pending {
   _id: string;
-  financingCaseId: string;
+  atendimentoRef: string;
   title: string;
   description: string;
   status: string;
@@ -64,12 +66,14 @@ interface Pending {
   responsiblePartyDetails?: string;
   taskAutomaticallyCreated: boolean;
   createdDate: string;
+  bloqueiaFase?: boolean;
 }
 
 interface Task {
   _id: string;
   description: string;
-  pendingItemReference: string;
+  atendimentoRef: string;
+  pendenciaRef?: string;
   responsibleType: string;
   internalResponsibleId?: string;
   externalResponsibleName?: string;
@@ -186,18 +190,27 @@ export default function AdminFinancingKanbanPage() {
         const { items: atendimentos } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
         const financingCases = atendimentos
           .filter(a => a.serviceType === 'Financiamento')
-          .map(a => ({
-            _id: a._id,
-            clientName: a.contactName || 'Sem nome',
-            email: a.contactEmail || '',
-            phoneNumber: a.contactPhone || '',
-            currentPhase: 'novos-clientes',
-            currentSubPhase: 'Cadastro de cliente',
-            dueDate: undefined,
-            isOverdue: false,
-            createdDate: a._createdDate?.toString() || new Date().toISOString(),
-            updatedDate: a._updatedDate?.toString() || new Date().toISOString()
-          }));
+          .map(a => {
+            const phaseEntryDate = a.dataPrevistaConclusao ? new Date(a.dataPrevistaConclusao).toISOString() : new Date(a._createdDate || new Date()).toISOString();
+            const daysInPhase = Math.floor((new Date().getTime() - new Date(phaseEntryDate).getTime()) / (1000 * 60 * 60 * 24));
+            
+            return {
+              _id: a._id,
+              clientName: a.contactName || 'Sem nome',
+              email: a.contactEmail || '',
+              phoneNumber: a.contactPhone || '',
+              currentPhase: a.faseFinanciamento || 'novos-clientes',
+              currentSubPhase: a.status || 'Cadastro de cliente',
+              responsibleInternalId: a.responsavelInternoId,
+              responsibleExternal: a.responsavelExterno,
+              dueDate: a.dataPrevistaConclusao?.toString(),
+              isOverdue: false,
+              createdDate: a._createdDate?.toString() || new Date().toISOString(),
+              updatedDate: a._updatedDate?.toString() || new Date().toISOString(),
+              phaseEntryDate,
+              daysInCurrentPhase: daysInPhase
+            };
+          });
         setCases(financingCases);
 
         // Load users
@@ -268,9 +281,9 @@ export default function AdminFinancingKanbanPage() {
     if (!selectedCase || !newPendingData.title) return;
 
     try {
-      const newPending: Pending = {
+      const newPending: PendnciasdoFinanciamento = {
         _id: crypto.randomUUID(),
-        financingCaseId: selectedCase._id,
+        atendimentoRef: selectedCase._id,
         title: newPendingData.title,
         description: newPendingData.description,
         status: 'Aberta',
@@ -279,16 +292,18 @@ export default function AdminFinancingKanbanPage() {
         responsiblePartyType: newPendingData.responsiblePartyType,
         responsiblePartyDetails: newPendingData.responsiblePartyDetails,
         taskAutomaticallyCreated: false,
-        createdDate: new Date().toISOString()
+        creationDate: new Date().toISOString(),
+        bloqueiaFase: false
       };
 
       await BaseCrudService.create('pendenciasfinanciamento', newPending);
 
       // Create associated task automatically
-      const newTask: Task = {
+      const newTask: FinancingTasks = {
         _id: crypto.randomUUID(),
         description: `Tarefa: ${newPendingData.title}`,
-        pendingItemReference: newPending._id,
+        atendimentoRef: selectedCase._id,
+        pendenciaRef: newPending._id,
         responsibleType: newPendingData.responsiblePartyType,
         externalResponsibleName: newPendingData.responsiblePartyDetails,
         dueDate: newPendingData.dueDate,
@@ -298,8 +313,8 @@ export default function AdminFinancingKanbanPage() {
 
       await BaseCrudService.create('tarefasfinanciamento', newTask);
 
-      setPendings([...pendings, newPending]);
-      setTasks([...tasks, newTask]);
+      setPendings([...pendings, newPending as Pending]);
+      setTasks([...tasks, newTask as Task]);
       setNewPendingData({
         title: '',
         description: '',
@@ -521,20 +536,48 @@ export default function AdminFinancingKanbanPage() {
 
                         <div className="space-y-2 flex-1">
                           {phaseCases.map((caseItem) => {
-                            const daysSinceCreation = Math.floor(
-                              (new Date().getTime() - new Date(caseItem.createdDate).getTime()) / (1000 * 60 * 60 * 24)
-                            );
+                            const daysInPhase = caseItem.daysInCurrentPhase || 0;
+                            const casePendings = pendings.filter(p => p.atendimentoRef === caseItem._id && p.status !== 'Resolvida');
+                            const caseTasks = tasks.filter(t => t.atendimentoRef === caseItem._id && t.status !== 'Concluída');
+                            const openPendings = casePendings.filter(p => p.status === 'Aberta').length;
+                            const openTasks = caseTasks.filter(t => t.status === 'Pendente').length;
+                            
+                            // Badge color based on days in phase
+                            const daysBadgeColor = daysInPhase <= 3 ? 'bg-green-500' : daysInPhase <= 7 ? 'bg-yellow-500' : 'bg-red-500';
+                            
+                            // Pending indicator color
+                            const pendingColor = openPendings === 0 ? 'bg-green-500' : openPendings <= 2 ? 'bg-yellow-500' : 'bg-red-500';
+                            
+                            // Check if any action was taken today
+                            const today = new Date().toDateString();
+                            const hasActivityToday = [...casePendings, ...caseTasks].some(item => {
+                              const itemDate = new Date(item.createdDate || '').toDateString();
+                              return itemDate === today;
+                            });
+                            const productivityColor = hasActivityToday ? 'bg-green-500' : 'bg-red-500';
+                            
                             return (
                               <motion.div
                                 key={caseItem._id}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-white rounded-lg p-3 border border-primary-foreground/10 cursor-pointer hover:shadow-md transition-all group"
-                                onClick={() => navigate(`/admin/financiamento/${caseItem._id}`)}
+                                className="bg-white rounded-lg p-3 border border-primary-foreground/10 hover:shadow-md transition-all group relative"
                               >
-                                <div className="mb-2">
+                                {/* Productivity indicator */}
+                                <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${productivityColor}`} title={hasActivityToday ? 'Atividade hoje' : 'Sem atividade hoje'}></div>
+                                
+                                {/* Client name */}
+                                <h4 className="font-heading text-sm text-primary-foreground font-semibold mb-2 line-clamp-1 pr-4">
+                                  {caseItem.clientName}
+                                </h4>
+                                
+                                {/* Current phase and subphase */}
+                                <div className="mb-2 space-y-1">
+                                  <div className="text-xs text-primary-foreground/60">
+                                    Fase: <span className="font-semibold">{FINANCING_PHASES.find(p => p.id === caseItem.currentPhase)?.name || caseItem.currentPhase}</span>
+                                  </div>
                                   <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                                    caseItem.currentSubPhase.toLowerCase().includes('condicionado') 
+                                    caseItem.currentSubPhase.toLowerCase().includes('condicionado') || caseItem.currentSubPhase.toLowerCase().includes('reprovado')
                                       ? 'bg-red-500 text-white'
                                       : caseItem.currentSubPhase.toLowerCase().includes('aprovado') || caseItem.currentSubPhase.toLowerCase().includes('concluído')
                                       ? 'bg-green-600 text-white'
@@ -546,29 +589,54 @@ export default function AdminFinancingKanbanPage() {
                                   </span>
                                 </div>
                                 
-                                <h4 className="font-heading text-sm text-primary-foreground font-semibold mb-2 line-clamp-1">
-                                  {caseItem.clientName}
-                                </h4>
-                                
-                                <div className="space-y-1 mb-3">
-                                  <div className="flex items-center gap-1.5 text-xs text-primary-foreground/70">
-                                    <User className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate">{caseItem.email}</span>
+                                {/* Pending and tasks count */}
+                                <div className="flex items-center gap-3 mb-2 text-xs">
+                                  <div className="flex items-center gap-1">
+                                    <div className={`w-2 h-2 rounded-full ${pendingColor}`}></div>
+                                    <AlertCircle className="w-3 h-3 text-primary-foreground/60" />
+                                    <span className="text-primary-foreground/70">{openPendings} pendências</span>
                                   </div>
-                                  {caseItem.phoneNumber && (
-                                    <div className="flex items-center gap-1.5 text-xs text-primary-foreground/70">
-                                      <Phone className="w-3 h-3 flex-shrink-0" />
-                                      <span>{caseItem.phoneNumber}</span>
-                                    </div>
-                                  )}
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3 text-primary-foreground/60" />
+                                    <span className="text-primary-foreground/70">{openTasks} tarefas</span>
+                                  </div>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-2 border-t border-primary-foreground/10">
-                                  <div className="flex items-center gap-1 text-xs text-primary-foreground/60">
-                                    <Clock className="w-3 h-3" />
-                                    <span className="font-semibold">{daysSinceCreation} days</span>
-                                  </div>
-                                  <ExternalLink className="w-3.5 h-3.5 text-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                {/* Days in phase */}
+                                <div className="flex items-center gap-1 mb-3">
+                                  <Clock className="w-3 h-3 text-primary-foreground/60" />
+                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded ${daysBadgeColor} text-white`}>
+                                    {daysInPhase} {daysInPhase === 1 ? 'dia' : 'dias'} nesta fase
+                                  </span>
+                                </div>
+
+                                {/* Action buttons */}
+                                <div className="flex gap-2 pt-2 border-t border-primary-foreground/10">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 h-7 text-xs"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedCase(caseItem);
+                                      setShowNewPendingDialog(true);
+                                    }}
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Pendência
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1 h-7 text-xs"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/admin/financiamento/${caseItem._id}`);
+                                    }}
+                                  >
+                                    <Eye className="w-3 h-3 mr-1" />
+                                    Ver Detalhes
+                                  </Button>
                                 </div>
                               </motion.div>
                             );
@@ -729,7 +797,7 @@ export default function AdminFinancingKanbanPage() {
                   ) : (
                     pendings.map((pending) => {
                       const isOverdue = new Date(pending.dueDate) < new Date() && pending.status !== 'Resolvida';
-                      const caseItem = cases.find(c => c._id === pending.financingCaseId);
+                      const caseItem = cases.find(c => c._id === pending.atendimentoRef);
                       return (
                         <motion.div
                           key={pending._id}
