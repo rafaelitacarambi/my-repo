@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
   AlertCircle, 
@@ -23,7 +23,18 @@ import {
   Edit2,
   Calendar,
   Search,
-  Filter
+  Filter,
+  DollarSign,
+  Home,
+  CreditCard,
+  RotateCcw,
+  CheckSquare,
+  XCircle,
+  AlertTriangle,
+  Info,
+  ChevronRight,
+  Eye,
+  Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,22 +46,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
-import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis } from '@/entities';
+import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis } from '@/entities';
 
 // Types
 interface FinancingColumn {
   id: string;
   name: string;
   color: string;
+  bgColor: string;
+  borderColor: string;
 }
 
 interface FinancingCase {
   _id: string;
   agencia?: string;
   proponentePrincipal: string;
+  cpfProponentePrincipal?: string;
   pastaInterna?: string;
   status: string;
   faseAtual: string;
@@ -69,23 +84,51 @@ interface FinancingCase {
   bloqueioRestricao?: boolean;
   bloqueioFgts?: boolean;
   
-  // Dados completos
+  // Dados completos do processo
   cpf?: string;
   email?: string;
   phoneNumber?: string;
+  
+  // Dados bancários e financeiros
+  numeroMatricula?: string;
+  numeroContrato?: string;
+  numeroProtocoloCartorio?: string;
+  valorItbi?: number;
+  valorPrenotacaoCartorio?: number;
+  valorProdutoNegociado?: number;
+  valorTaxaVista?: number;
+  
+  // Financeiro do financiamento
   propertyValue?: number;
   desiredFinancingValue?: number;
   approvedFinancingValue?: number;
+  
+  // FGTS
   useFgts?: boolean;
   fgtsValue?: number;
+  
+  // Proposta comercial
+  hasCommercialProposal?: boolean;
+  hasCheckingAccountWithOverdraft?: boolean;
+  hasCheckingAccountWithoutOverdraft?: boolean;
+  hasCreditCard?: boolean;
+  
+  // Responsáveis
   responsibleInternalId?: string;
   responsibleExternal?: string;
+  
+  // Banco
   bankName?: string;
   bankAccountNumber?: string;
   financingContractNumber?: string;
+  
+  // Outros
   notes?: string;
   createdDate: string;
   updatedDate: string;
+  
+  // Imóveis vinculados
+  propertyRefs?: string[];
 }
 
 interface Pending {
@@ -142,30 +185,30 @@ interface VendorChecklist {
 
 // Financing Columns Configuration (exact order as requested)
 const FINANCING_COLUMNS: FinancingColumn[] = [
-  { id: 'aguardando-imovel', name: 'Aguardando o imóvel', color: 'bg-slate-50 border-slate-200' },
-  { id: 'condicionados', name: 'Condicionados', color: 'bg-orange-50 border-orange-200' },
-  { id: 'pendencia', name: 'Pendência', color: 'bg-red-50 border-red-200' },
-  { id: 'consultar-restricao', name: 'Consultar restrição', color: 'bg-yellow-50 border-yellow-200' },
-  { id: 'novos-clientes', name: 'Novos clientes', color: 'bg-blue-50 border-blue-200' },
-  { id: 'analise-documentos', name: 'Análise de documentos', color: 'bg-indigo-50 border-indigo-200' },
-  { id: 'cadastro-cliente', name: 'Cadastro de cliente', color: 'bg-cyan-50 border-cyan-200' },
-  { id: 'avaliacao-risco', name: 'Avaliação de risco', color: 'bg-purple-50 border-purple-200' },
-  { id: 'engenharia', name: 'Engenharia', color: 'bg-violet-50 border-violet-200' },
-  { id: 'fgts', name: 'FGTS', color: 'bg-green-50 border-green-200' },
-  { id: 'formularios', name: 'Formulários', color: 'bg-teal-50 border-teal-200' },
-  { id: 'siopi', name: 'SIOPI', color: 'bg-sky-50 border-sky-200' },
-  { id: 'solicitar-reserva', name: 'Solicitar reserva orçamentária', color: 'bg-lime-50 border-lime-200' },
-  { id: 'sictd', name: 'SICTD', color: 'bg-emerald-50 border-emerald-200' },
-  { id: 'conformidade', name: 'Conformidade', color: 'bg-amber-50 border-amber-200' },
-  { id: 'entrevista', name: 'Entrevista', color: 'bg-rose-50 border-rose-200' },
-  { id: 'assinatura-minuta', name: 'Assinatura minuta', color: 'bg-pink-50 border-pink-200' },
-  { id: 'itbi', name: 'ITBI', color: 'bg-fuchsia-50 border-fuchsia-200' },
-  { id: 'cartorio-rsales', name: 'Cartório (R Sales)', color: 'bg-purple-50 border-purple-200' },
-  { id: 'cartorio-cliente', name: 'Cartório por conta do cliente', color: 'bg-indigo-50 border-indigo-200' },
-  { id: 'garantia', name: 'Garantia', color: 'bg-blue-50 border-blue-200' },
-  { id: 'concluido', name: 'Concluído', color: 'bg-green-50 border-green-200' },
-  { id: 'acompanhamento-obra', name: 'Acompanhamento de obra', color: 'bg-yellow-50 border-yellow-200' },
-  { id: 'reprovados', name: 'Reprovados', color: 'bg-red-50 border-red-200' }
+  { id: 'aguardando-imovel', name: 'Aguardando o imóvel', color: 'bg-slate-50 border-slate-200', bgColor: 'bg-slate-50', borderColor: 'border-slate-300' },
+  { id: 'condicionados', name: 'Condicionados', color: 'bg-orange-50 border-orange-200', bgColor: 'bg-orange-50', borderColor: 'border-orange-300' },
+  { id: 'pendencia', name: 'Pendência', color: 'bg-red-50 border-red-200', bgColor: 'bg-red-50', borderColor: 'border-red-300' },
+  { id: 'consultar-restricao', name: 'Consultar restrição', color: 'bg-yellow-50 border-yellow-200', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-300' },
+  { id: 'novos-clientes', name: 'Novos clientes', color: 'bg-blue-50 border-blue-200', bgColor: 'bg-blue-50', borderColor: 'border-blue-300' },
+  { id: 'analise-documentos', name: 'Análise de documentos', color: 'bg-indigo-50 border-indigo-200', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-300' },
+  { id: 'cadastro-cliente', name: 'Cadastro de cliente', color: 'bg-cyan-50 border-cyan-200', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-300' },
+  { id: 'avaliacao-risco', name: 'Avaliação de risco', color: 'bg-purple-50 border-purple-200', bgColor: 'bg-purple-50', borderColor: 'border-purple-300' },
+  { id: 'engenharia', name: 'Engenharia', color: 'bg-violet-50 border-violet-200', bgColor: 'bg-violet-50', borderColor: 'border-violet-300' },
+  { id: 'fgts', name: 'FGTS', color: 'bg-green-50 border-green-200', bgColor: 'bg-green-50', borderColor: 'border-green-300' },
+  { id: 'formularios', name: 'Formulários', color: 'bg-teal-50 border-teal-200', bgColor: 'bg-teal-50', borderColor: 'border-teal-300' },
+  { id: 'siopi', name: 'SIOPI', color: 'bg-sky-50 border-sky-200', bgColor: 'bg-sky-50', borderColor: 'border-sky-300' },
+  { id: 'solicitar-reserva', name: 'Solicitar reserva orçamentária', color: 'bg-lime-50 border-lime-200', bgColor: 'bg-lime-50', borderColor: 'border-lime-300' },
+  { id: 'sictd', name: 'SICTD', color: 'bg-emerald-50 border-emerald-200', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-300' },
+  { id: 'conformidade', name: 'Conformidade', color: 'bg-amber-50 border-amber-200', bgColor: 'bg-amber-50', borderColor: 'border-amber-300' },
+  { id: 'entrevista', name: 'Entrevista', color: 'bg-rose-50 border-rose-200', bgColor: 'bg-rose-50', borderColor: 'border-rose-300' },
+  { id: 'assinatura-minuta', name: 'Assinatura minuta', color: 'bg-pink-50 border-pink-200', bgColor: 'bg-pink-50', borderColor: 'border-pink-300' },
+  { id: 'itbi', name: 'ITBI', color: 'bg-fuchsia-50 border-fuchsia-200', bgColor: 'bg-fuchsia-50', borderColor: 'border-fuchsia-300' },
+  { id: 'cartorio-rsales', name: 'Cartório (R Sales)', color: 'bg-purple-50 border-purple-200', bgColor: 'bg-purple-50', borderColor: 'border-purple-300' },
+  { id: 'cartorio-cliente', name: 'Cartório por conta do cliente', color: 'bg-indigo-50 border-indigo-200', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-300' },
+  { id: 'garantia', name: 'Garantia', color: 'bg-blue-50 border-blue-200', bgColor: 'bg-blue-50', borderColor: 'border-blue-300' },
+  { id: 'concluido', name: 'Concluído', color: 'bg-green-50 border-green-200', bgColor: 'bg-green-50', borderColor: 'border-green-300' },
+  { id: 'acompanhamento-obra', name: 'Acompanhamento de obra', color: 'bg-yellow-50 border-yellow-200', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-300' },
+  { id: 'reprovados', name: 'Reprovados', color: 'bg-red-50 border-red-200', bgColor: 'bg-red-50', borderColor: 'border-red-300' }
 ];
 
 const RESPONSIBLE_TYPES = ['Interno', 'Cliente', 'Parceiro Externo', 'Construtora', 'Caixa', 'Cartório', 'Sistema/Prazo legal'];
@@ -195,22 +238,35 @@ export default function AdminFinancingKanbanPage() {
   // Form states
   const [caseFormData, setCaseFormData] = useState<Partial<FinancingCase>>({
     proponentePrincipal: '',
+    cpfProponentePrincipal: '',
     agencia: '',
     pastaInterna: '',
     cpf: '',
     email: '',
     phoneNumber: '',
+    numeroMatricula: '',
+    numeroContrato: '',
+    numeroProtocoloCartorio: '',
+    valorItbi: 0,
+    valorPrenotacaoCartorio: 0,
+    valorProdutoNegociado: 0,
+    valorTaxaVista: 0,
     propertyValue: 0,
     desiredFinancingValue: 0,
     approvedFinancingValue: 0,
     useFgts: false,
     fgtsValue: 0,
+    hasCommercialProposal: false,
+    hasCheckingAccountWithOverdraft: false,
+    hasCheckingAccountWithoutOverdraft: false,
+    hasCreditCard: false,
     bankName: '',
     bankAccountNumber: '',
     financingContractNumber: '',
     responsibleInternalId: '',
     responsibleExternal: '',
-    notes: ''
+    notes: '',
+    propertyRefs: []
   });
 
   const [newPendingData, setNewPendingData] = useState({
@@ -223,6 +279,10 @@ export default function AdminFinancingKanbanPage() {
     categoria: '',
     bloqueiaFase: false
   });
+
+  const [editingPending, setEditingPending] = useState<Pending | null>(null);
+  const [showPendingForm, setShowPendingForm] = useState(false);
+  const [linkedProperties, setLinkedProperties] = useState<AtendimentoImveis[]>([]);
 
   const [newTaskData, setNewTaskData] = useState({
     description: '',
@@ -372,6 +432,10 @@ export default function AdminFinancingKanbanPage() {
       const { items: propertiesList } = await BaseCrudService.getAll<Imveis>('imoveis');
       setProperties(propertiesList);
 
+      // Load linked properties
+      const { items: linkedPropsList } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
+      setLinkedProperties(linkedPropsList.filter(lp => lp.atendimentoRef === caseId));
+
     } catch (error) {
       console.error('Error loading case details:', error);
     }
@@ -496,46 +560,65 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
-  // Create new pending
-  const handleCreatePending = async () => {
+  // Create or update pending
+  const handleSavePending = async () => {
     if (!selectedCase || !newPendingData.title) return;
 
     try {
-      const newPending: PendnciasdoFinanciamento = {
-        _id: crypto.randomUUID(),
-        atendimentoRef: selectedCase._id,
-        title: newPendingData.title,
-        description: newPendingData.description,
-        status: 'Aberta',
-        priority: newPendingData.priority,
-        dueDate: newPendingData.dueDate,
-        responsiblePartyType: newPendingData.responsiblePartyType,
-        responsiblePartyDetails: newPendingData.responsiblePartyDetails,
-        taskAutomaticallyCreated: false,
-        creationDate: new Date().toISOString(),
-        bloqueiaFase: newPendingData.bloqueiaFase,
-        categoria: newPendingData.categoria
-      };
+      if (editingPending) {
+        // Update existing pending
+        await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
+          _id: editingPending._id,
+          title: newPendingData.title,
+          description: newPendingData.description,
+          priority: newPendingData.priority,
+          dueDate: newPendingData.dueDate,
+          responsiblePartyType: newPendingData.responsiblePartyType,
+          responsiblePartyDetails: newPendingData.responsiblePartyDetails,
+          bloqueiaFase: newPendingData.bloqueiaFase,
+          categoria: newPendingData.categoria
+        });
 
-      await BaseCrudService.create('pendenciasfinanciamento', newPending);
+        setPendings(pendings.map(p => p._id === editingPending._id ? { ...p, ...newPendingData } : p));
+        setEditingPending(null);
+      } else {
+        // Create new pending
+        const newPending: PendnciasdoFinanciamento = {
+          _id: crypto.randomUUID(),
+          atendimentoRef: selectedCase._id,
+          title: newPendingData.title,
+          description: newPendingData.description,
+          status: 'Aberta',
+          priority: newPendingData.priority,
+          dueDate: newPendingData.dueDate,
+          responsiblePartyType: newPendingData.responsiblePartyType,
+          responsiblePartyDetails: newPendingData.responsiblePartyDetails,
+          taskAutomaticallyCreated: true,
+          creationDate: new Date().toISOString(),
+          bloqueiaFase: newPendingData.bloqueiaFase,
+          categoria: newPendingData.categoria
+        };
 
-      // Create associated task automatically
-      const newTask: FinancingTasks = {
-        _id: crypto.randomUUID(),
-        description: `Tarefa: ${newPendingData.title}`,
-        atendimentoRef: selectedCase._id,
-        pendenciaRef: newPending._id,
-        responsibleType: newPendingData.responsiblePartyType,
-        externalResponsibleName: newPendingData.responsiblePartyDetails,
-        dueDate: newPendingData.dueDate,
-        status: 'Pendente',
-        creationDate: new Date().toISOString()
-      };
+        await BaseCrudService.create('pendenciasfinanciamento', newPending);
 
-      await BaseCrudService.create('tarefasfinanciamento', newTask);
+        // Create associated task automatically
+        const newTask: FinancingTasks = {
+          _id: crypto.randomUUID(),
+          description: `Tarefa: ${newPendingData.title}`,
+          atendimentoRef: selectedCase._id,
+          pendenciaRef: newPending._id,
+          responsibleType: newPendingData.responsiblePartyType,
+          externalResponsibleName: newPendingData.responsiblePartyDetails,
+          dueDate: newPendingData.dueDate,
+          status: 'Pendente',
+          creationDate: new Date().toISOString()
+        };
 
-      setPendings([...pendings, newPending as Pending]);
-      setTasks([...tasks, newTask as Task]);
+        await BaseCrudService.create('tarefasfinanciamento', newTask);
+
+        setPendings([...pendings, newPending as Pending]);
+        setTasks([...tasks, newTask as Task]);
+      }
       
       setNewPendingData({
         title: '',
@@ -547,10 +630,46 @@ export default function AdminFinancingKanbanPage() {
         categoria: '',
         bloqueiaFase: false
       });
+      setShowPendingForm(false);
 
       await loadData();
     } catch (error) {
-      console.error('Error creating pending:', error);
+      console.error('Error saving pending:', error);
+    }
+  };
+
+  // Edit pending
+  const handleEditPending = (pending: Pending) => {
+    setEditingPending(pending);
+    setNewPendingData({
+      title: pending.title,
+      description: pending.description,
+      priority: pending.priority,
+      dueDate: pending.dueDate,
+      responsiblePartyType: pending.responsiblePartyType,
+      responsiblePartyDetails: pending.responsiblePartyDetails || '',
+      categoria: pending.categoria || '',
+      bloqueiaFase: pending.bloqueiaFase || false
+    });
+    setShowPendingForm(true);
+  };
+
+  // Delete pending
+  const handleDeletePending = async (pendingId: string) => {
+    try {
+      await BaseCrudService.delete('pendenciasfinanciamento', pendingId);
+      setPendings(pendings.filter(p => p._id !== pendingId));
+      
+      // Delete associated tasks
+      const associatedTasks = tasks.filter(t => t.pendenciaRef === pendingId);
+      for (const task of associatedTasks) {
+        await BaseCrudService.delete('tarefasfinanciamento', task._id);
+      }
+      setTasks(tasks.filter(t => t.pendenciaRef !== pendingId));
+      
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting pending:', error);
     }
   };
 
@@ -948,213 +1067,368 @@ export default function AdminFinancingKanbanPage() {
 
                 {/* Dados do Processo Tab */}
                 <TabsContent value="dados" className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Proponente Principal *</Label>
-                      <Input
-                        value={caseFormData.proponentePrincipal}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, proponentePrincipal: e.target.value })}
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">CPF</Label>
-                      <Input
-                        value={caseFormData.cpf}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, cpf: e.target.value })}
-                        placeholder="000.000.000-00"
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Agência</Label>
-                      <Input
-                        value={caseFormData.agencia}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, agencia: e.target.value })}
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Pasta Interna</Label>
-                      <Input
-                        value={caseFormData.pastaInterna}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, pastaInterna: e.target.value })}
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
+                  {/* Campos Obrigatórios */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <Info className="w-5 h-5 text-secondary" />
+                        Campos Obrigatórios
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Agência Responsável *</Label>
+                          <Input
+                            value={caseFormData.agencia}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, agencia: e.target.value })}
+                            placeholder="Nome da agência"
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Pasta Interna (editável) *</Label>
+                          <Input
+                            value={caseFormData.pastaInterna}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, pastaInterna: e.target.value })}
+                            placeholder="Código da pasta"
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Proponente Principal (Nome) *</Label>
+                          <Input
+                            value={caseFormData.proponentePrincipal}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, proponentePrincipal: e.target.value })}
+                            placeholder="Nome completo"
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">CPF do Proponente Principal *</Label>
+                          <Input
+                            value={caseFormData.cpfProponentePrincipal}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, cpfProponentePrincipal: e.target.value })}
+                            placeholder="000.000.000-00"
+                            className="h-10"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                  {/* Participants Section */}
-                  <div className="border border-border-gray rounded-lg p-4">
-                    <h3 className="font-heading text-lg mb-3">+ Participantes Vinculados</h3>
-                    
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      <Select value={newParticipant.clientRef} onValueChange={(value) => setNewParticipant({ ...newParticipant, clientRef: value })}>
-                        <SelectTrigger className="h-10">
-                          <SelectValue placeholder="Selecionar cliente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {clients.map(client => (
-                            <SelectItem key={client._id} value={client._id}>
-                              {client.clientName || client.nomeRazaoSocial}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        value={newParticipant.roleInService}
-                        onChange={(e) => setNewParticipant({ ...newParticipant, roleInService: e.target.value })}
-                        placeholder="Papel (ex: Dependente)"
-                        className="h-10"
-                      />
-                      <Button onClick={handleAddParticipant} className="h-10 bg-secondary text-secondary-foreground">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Adicionar
-                      </Button>
-                    </div>
+                  {/* Campos Bancários */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <Building2 className="w-5 h-5 text-secondary" />
+                        Campos Bancários
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Número da Matrícula</Label>
+                          <Input
+                            value={caseFormData.numeroMatricula}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, numeroMatricula: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Número do Contrato</Label>
+                          <Input
+                            value={caseFormData.numeroContrato}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, numeroContrato: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Número do Protocolo do Cartório</Label>
+                          <Input
+                            value={caseFormData.numeroProtocoloCartorio}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, numeroProtocoloCartorio: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Valor do ITBI</Label>
+                          <Input
+                            type="number"
+                            value={caseFormData.valorItbi}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, valorItbi: parseFloat(e.target.value) || 0 })}
+                            placeholder="R$ 0,00"
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Valor da Prenotação Cartório</Label>
+                          <Input
+                            type="number"
+                            value={caseFormData.valorPrenotacaoCartorio}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, valorPrenotacaoCartorio: parseFloat(e.target.value) || 0 })}
+                            placeholder="R$ 0,00"
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Valor do Produto Negociado</Label>
+                          <Input
+                            type="number"
+                            value={caseFormData.valorProdutoNegociado}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, valorProdutoNegociado: parseFloat(e.target.value) || 0 })}
+                            placeholder="R$ 0,00"
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Valor da Taxa à Vista</Label>
+                          <Input
+                            type="number"
+                            value={caseFormData.valorTaxaVista}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, valorTaxaVista: parseFloat(e.target.value) || 0 })}
+                            placeholder="R$ 0,00"
+                            className="h-10"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                    <div className="space-y-2">
-                      {participants.map(participant => {
-                        const client = clients.find(c => c._id === participant.clientRef);
-                        return (
-                          <div key={participant._id} className="flex items-center justify-between bg-light-gray p-3 rounded">
-                            <div>
-                              <p className="font-paragraph text-sm font-semibold">{client?.clientName || client?.nomeRazaoSocial}</p>
-                              <p className="text-xs text-foreground/60">{participant.roleInService}</p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveParticipant(participant._id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                  {/* Financeiro do Financiamento */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-secondary" />
+                        Financeiro do Financiamento
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Valor do Imóvel *</Label>
+                          <Input
+                            type="number"
+                            value={caseFormData.propertyValue}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, propertyValue: parseFloat(e.target.value) || 0 })}
+                            placeholder="R$ 0,00"
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Valor de Financiamento Desejado *</Label>
+                          <Input
+                            type="number"
+                            value={caseFormData.desiredFinancingValue}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, desiredFinancingValue: parseFloat(e.target.value) || 0 })}
+                            placeholder="R$ 0,00"
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Valor de Financiamento Possível/Aprovado</Label>
+                          <Input
+                            type="number"
+                            value={caseFormData.approvedFinancingValue}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, approvedFinancingValue: parseFloat(e.target.value) || 0 })}
+                            placeholder="R$ 0,00"
+                            className="h-10"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* FGTS */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <Folder className="w-5 h-5 text-secondary" />
+                        FGTS
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Utilizará FGTS? *</Label>
+                          <Select 
+                            value={caseFormData.useFgts ? 'sim' : 'nao'} 
+                            onValueChange={(value) => setCaseFormData({ ...caseFormData, useFgts: value === 'sim', fgtsValue: value === 'nao' ? 0 : caseFormData.fgtsValue })}
+                          >
+                            <SelectTrigger className="h-10">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sim">Sim</SelectItem>
+                              <SelectItem value="nao">Não</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {caseFormData.useFgts && (
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Valor desejado de débito FGTS</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.fgtsValue}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, fgtsValue: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                  {/* Financial Fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Valor do Imóvel *</Label>
-                      <Input
-                        type="number"
-                        value={caseFormData.propertyValue}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, propertyValue: parseFloat(e.target.value) })}
-                        placeholder="R$ 0,00"
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Valor de Financiamento Desejado *</Label>
-                      <Input
-                        type="number"
-                        value={caseFormData.desiredFinancingValue}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, desiredFinancingValue: parseFloat(e.target.value) })}
-                        placeholder="R$ 0,00"
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Valor de Financiamento Aprovado</Label>
-                      <Input
-                        type="number"
-                        value={caseFormData.approvedFinancingValue}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, approvedFinancingValue: parseFloat(e.target.value) })}
-                        placeholder="R$ 0,00"
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Utilizará FGTS? *</Label>
-                      <Select 
-                        value={caseFormData.useFgts ? 'sim' : 'nao'} 
-                        onValueChange={(value) => setCaseFormData({ ...caseFormData, useFgts: value === 'sim', fgtsValue: value === 'nao' ? 0 : caseFormData.fgtsValue })}
-                      >
-                        <SelectTrigger className="h-10">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sim">Sim</SelectItem>
-                          <SelectItem value="nao">Não</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  {/* Proposta Comercial */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <CreditCard className="w-5 h-5 text-secondary" />
+                        Proposta Comercial
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={caseFormData.hasCommercialProposal || false}
+                            onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, hasCommercialProposal: checked as boolean })}
+                          />
+                          <Label className="font-paragraph text-sm cursor-pointer">
+                            Possui proposta comercial?
+                          </Label>
+                        </div>
+                        
+                        {caseFormData.hasCommercialProposal && (
+                          <div className="ml-6 space-y-2 p-4 bg-light-gray rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                checked={caseFormData.hasCheckingAccountWithOverdraft || false}
+                                onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, hasCheckingAccountWithOverdraft: checked as boolean })}
+                              />
+                              <Label className="font-paragraph text-sm cursor-pointer">
+                                Conta com cheque especial
+                              </Label>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                checked={caseFormData.hasCheckingAccountWithoutOverdraft || false}
+                                onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, hasCheckingAccountWithoutOverdraft: checked as boolean })}
+                              />
+                              <Label className="font-paragraph text-sm cursor-pointer">
+                                Conta sem cheque especial
+                              </Label>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Checkbox
+                                checked={caseFormData.hasCreditCard || false}
+                                onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, hasCreditCard: checked as boolean })}
+                              />
+                              <Label className="font-paragraph text-sm cursor-pointer">
+                                Cartão de crédito
+                              </Label>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                  {caseFormData.useFgts && (
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Valor desejado de débito FGTS</Label>
-                      <Input
-                        type="number"
-                        value={caseFormData.fgtsValue}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, fgtsValue: parseFloat(e.target.value) })}
-                        placeholder="R$ 0,00"
-                        className="h-10"
-                      />
-                    </div>
-                  )}
+                  {/* Participantes */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <Users className="w-5 h-5 text-secondary" />
+                        Participantes Vinculados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <Select value={newParticipant.clientRef} onValueChange={(value) => setNewParticipant({ ...newParticipant, clientRef: value })}>
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Selecionar cliente" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clients.map(client => (
+                              <SelectItem key={client._id} value={client._id}>
+                                {client.clientName || client.nomeRazaoSocial}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          value={newParticipant.roleInService}
+                          onChange={(e) => setNewParticipant({ ...newParticipant, roleInService: e.target.value })}
+                          placeholder="Papel (ex: Dependente)"
+                          className="h-10"
+                        />
+                        <Button onClick={handleAddParticipant} className="h-10 bg-secondary text-secondary-foreground">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar
+                        </Button>
+                      </div>
 
-                  {/* Bank Fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Banco</Label>
-                      <Input
-                        value={caseFormData.bankName}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, bankName: e.target.value })}
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Conta Bancária</Label>
-                      <Input
-                        value={caseFormData.bankAccountNumber}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, bankAccountNumber: e.target.value })}
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Número do Contrato</Label>
-                      <Input
-                        value={caseFormData.financingContractNumber}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, financingContractNumber: e.target.value })}
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
+                      <div className="space-y-2">
+                        {participants.map(participant => {
+                          const client = clients.find(c => c._id === participant.clientRef);
+                          return (
+                            <div key={participant._id} className="flex items-center justify-between bg-light-gray p-3 rounded-lg">
+                              <div>
+                                <p className="font-paragraph text-sm font-semibold">{client?.clientName || client?.nomeRazaoSocial}</p>
+                                <p className="text-xs text-foreground/60">{participant.roleInService}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveParticipant(participant._id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">E-mail</Label>
-                      <Input
-                        type="email"
-                        value={caseFormData.email}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, email: e.target.value })}
-                        className="h-10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Telefone</Label>
-                      <Input
-                        value={caseFormData.phoneNumber}
-                        onChange={(e) => setCaseFormData({ ...caseFormData, phoneNumber: e.target.value })}
-                        className="h-10"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="font-paragraph text-sm mb-2 block">Observações</Label>
-                    <Textarea
-                      value={caseFormData.notes}
-                      onChange={(e) => setCaseFormData({ ...caseFormData, notes: e.target.value })}
-                      rows={4}
-                      className="resize-none"
-                    />
-                  </div>
+                  {/* Contato e Observações */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading">Contato e Observações</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">E-mail</Label>
+                          <Input
+                            type="email"
+                            value={caseFormData.email}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, email: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Telefone</Label>
+                          <Input
+                            value={caseFormData.phoneNumber}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, phoneNumber: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="font-paragraph text-sm mb-2 block">Observações</Label>
+                        <Textarea
+                          value={caseFormData.notes}
+                          onChange={(e) => setCaseFormData({ ...caseFormData, notes: e.target.value })}
+                          rows={4}
+                          className="resize-none"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 {/* Proponentes Tab */}
@@ -1287,86 +1561,294 @@ export default function AdminFinancingKanbanPage() {
 
                 {/* Pendências + Tarefas Tab */}
                 <TabsContent value="pendencias" className="space-y-6">
-                  <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-heading text-lg">Pendências</h3>
-                      <Button onClick={() => {}} className="h-9 bg-secondary text-secondary-foreground">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nova Pendência
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {pendings.filter(p => p.atendimentoRef === selectedCase?._id).map(pending => (
-                        <div key={pending._id} className="bg-light-gray p-4 rounded-lg border border-border-gray">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <h4 className="font-paragraph font-semibold text-sm">{pending.title}</h4>
-                              <p className="text-xs text-foreground/60 mt-1">{pending.description}</p>
+                  {/* Pendências Section */}
+                  <Card>
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-lg font-heading flex items-center gap-2">
+                          <AlertTriangle className="w-5 h-5 text-secondary" />
+                          Pendências (Totalmente Editável)
+                        </CardTitle>
+                        <Button 
+                          onClick={() => {
+                            setShowPendingForm(true);
+                            setEditingPending(null);
+                            setNewPendingData({
+                              title: '',
+                              description: '',
+                              priority: 'Média',
+                              dueDate: '',
+                              responsiblePartyType: 'Interno',
+                              responsiblePartyDetails: '',
+                              categoria: '',
+                              bloqueiaFase: false
+                            });
+                          }} 
+                          className="h-9 bg-secondary text-secondary-foreground"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nova Pendência
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Pending Form */}
+                      {showPendingForm && (
+                        <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg space-y-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <h4 className="font-heading text-sm font-bold">
+                              {editingPending ? 'Editar Pendência' : 'Nova Pendência'}
+                            </h4>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setShowPendingForm(false);
+                                setEditingPending(null);
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="col-span-2">
+                              <Label className="text-xs mb-1 block">Título *</Label>
+                              <Input
+                                value={newPendingData.title}
+                                onChange={(e) => setNewPendingData({ ...newPendingData, title: e.target.value })}
+                                placeholder="Ex: Aguardando documento do cliente"
+                                className="h-9"
+                              />
                             </div>
-                            <div className="flex gap-2">
+                            <div className="col-span-2">
+                              <Label className="text-xs mb-1 block">Descrição</Label>
+                              <Textarea
+                                value={newPendingData.description}
+                                onChange={(e) => setNewPendingData({ ...newPendingData, description: e.target.value })}
+                                placeholder="Detalhes da pendência..."
+                                rows={2}
+                                className="resize-none text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs mb-1 block">Categoria</Label>
+                              <Select value={newPendingData.categoria} onValueChange={(value) => setNewPendingData({ ...newPendingData, categoria: value })}>
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Documento">📄 Documento</SelectItem>
+                                  <SelectItem value="Caixa">🏦 Caixa</SelectItem>
+                                  <SelectItem value="Cartório">🏛 Cartório</SelectItem>
+                                  <SelectItem value="Cliente">👤 Cliente</SelectItem>
+                                  <SelectItem value="Engenharia">🏗 Engenharia</SelectItem>
+                                  <SelectItem value="Formulários">📑 Formulários</SelectItem>
+                                  <SelectItem value="Restrição">🔍 Restrição</SelectItem>
+                                  <SelectItem value="FGTS">💰 FGTS</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs mb-1 block">Prioridade</Label>
+                              <Select value={newPendingData.priority} onValueChange={(value) => setNewPendingData({ ...newPendingData, priority: value })}>
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {PRIORITY_LEVELS.map(p => (
+                                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs mb-1 block">Responsável</Label>
+                              <Select value={newPendingData.responsiblePartyType} onValueChange={(value) => setNewPendingData({ ...newPendingData, responsiblePartyType: value })}>
+                                <SelectTrigger className="h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {RESPONSIBLE_TYPES.map(r => (
+                                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs mb-1 block">Prazo</Label>
+                              <Input
+                                type="date"
+                                value={newPendingData.dueDate}
+                                onChange={(e) => setNewPendingData({ ...newPendingData, dueDate: e.target.value })}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  checked={newPendingData.bloqueiaFase}
+                                  onCheckedChange={(checked) => setNewPendingData({ ...newPendingData, bloqueiaFase: checked as boolean })}
+                                />
+                                <Label className="text-xs cursor-pointer">Bloqueia mudança de fase</Label>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2 pt-2">
+                            <Button onClick={handleSavePending} className="h-9 bg-secondary text-secondary-foreground">
+                              <Save className="w-4 h-4 mr-2" />
+                              {editingPending ? 'Salvar Alterações' : 'Criar Pendência'}
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => {
+                                setShowPendingForm(false);
+                                setEditingPending(null);
+                              }}
+                              className="h-9"
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pending List */}
+                      <div className="space-y-3">
+                        {pendings.filter(p => p.atendimentoRef === selectedCase?._id).length === 0 ? (
+                          <div className="text-center py-8 text-foreground/60">
+                            <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                            <p className="text-sm">Nenhuma pendência cadastrada</p>
+                          </div>
+                        ) : (
+                          pendings.filter(p => p.atendimentoRef === selectedCase?._id).map(pending => (
+                            <div key={pending._id} className={`p-4 rounded-lg border-2 transition-all ${
+                              pending.status === 'Resolvida' ? 'bg-green-50 border-green-200' : 'bg-white border-border-gray shadow-sm'
+                            }`}>
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h4 className="font-paragraph font-bold text-sm mb-1">{pending.title}</h4>
+                                  {pending.description && (
+                                    <p className="text-xs text-foreground/70 mb-2">{pending.description}</p>
+                                  )}
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <Badge variant={pending.status === 'Resolvida' ? 'default' : 'secondary'} className="text-xs">
+                                      {pending.status}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">{pending.priority}</Badge>
+                                    {pending.categoria && (
+                                      <Badge className="text-xs bg-secondary/10 text-secondary border-secondary/20">
+                                        {pending.categoria}
+                                      </Badge>
+                                    )}
+                                    {pending.bloqueiaFase && (
+                                      <Badge variant="destructive" className="text-xs">
+                                        🚫 Bloqueia fase
+                                      </Badge>
+                                    )}
+                                    <Badge variant="outline" className="text-xs">
+                                      {pending.responsiblePartyType}
+                                    </Badge>
+                                  </div>
+                                  {pending.dueDate && (
+                                    <div className="flex items-center gap-1 mt-2 text-xs text-foreground/60">
+                                      <Calendar className="w-3 h-3" />
+                                      <span>Prazo: {new Date(pending.dueDate).toLocaleDateString('pt-BR')}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-1 ml-3">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleUpdatePendingStatus(pending._id, pending.status === 'Resolvida' ? 'Aberta' : 'Resolvida')}
+                                    className="h-8"
+                                  >
+                                    {pending.status === 'Resolvida' ? (
+                                      <><RotateCcw className="w-3 h-3 mr-1" /> Reabrir</>
+                                    ) : (
+                                      <><CheckSquare className="w-3 h-3 mr-1" /> Concluir</>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditPending(pending)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Edit2 className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeletePending(pending._id)}
+                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Tarefas Section */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-secondary" />
+                        Tarefas Automáticas
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {tasks.filter(t => t.atendimentoRef === selectedCase?._id).length === 0 ? (
+                        <div className="text-center py-8 text-foreground/60">
+                          <ClipboardList className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                          <p className="text-sm">Nenhuma tarefa gerada</p>
+                        </div>
+                      ) : (
+                        tasks.filter(t => t.atendimentoRef === selectedCase?._id).map(task => (
+                          <div key={task._id} className={`p-4 rounded-lg border-2 ${
+                            task.status === 'Concluída' ? 'bg-green-50 border-green-200' : 'bg-white border-border-gray'
+                          }`}>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-paragraph font-semibold text-sm mb-2">{task.description}</h4>
+                                <div className="flex gap-2">
+                                  <Badge variant={task.status === 'Concluída' ? 'default' : 'secondary'} className="text-xs">
+                                    {task.status}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-xs">{task.responsibleType}</Badge>
+                                  {task.dueDate && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Calendar className="w-3 h-3 mr-1" />
+                                      {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleUpdatePendingStatus(pending._id, pending.status === 'Resolvida' ? 'Aberta' : 'Resolvida')}
+                                onClick={() => handleUpdateTaskStatus(task._id, task.status === 'Concluída' ? 'Pendente' : 'Concluída')}
+                                className="h-8"
                               >
-                                {pending.status === 'Resolvida' ? 'Reabrir' : 'Concluir'}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {}}
-                              >
-                                <Edit2 className="w-4 h-4" />
+                                {task.status === 'Concluída' ? (
+                                  <><RotateCcw className="w-3 h-3 mr-1" /> Reabrir</>
+                                ) : (
+                                  <><CheckSquare className="w-3 h-3 mr-1" /> Concluir</>
+                                )}
                               </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant={pending.status === 'Resolvida' ? 'default' : 'secondary'}>
-                              {pending.status}
-                            </Badge>
-                            <Badge variant="outline">{pending.priority}</Badge>
-                            {pending.categoria && <Badge>{pending.categoria}</Badge>}
-                            {pending.bloqueiaFase && <Badge variant="destructive">Bloqueia fase</Badge>}
-                          </div>
-                          {pending.dueDate && (
-                            <div className="flex items-center gap-1 mt-2 text-xs text-foreground/60">
-                              <Calendar className="w-3 h-3" />
-                              <span>Prazo: {new Date(pending.dueDate).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-heading text-lg mb-4">Tarefas</h3>
-                    <div className="space-y-3">
-                      {tasks.filter(t => t.atendimentoRef === selectedCase?._id).map(task => (
-                        <div key={task._id} className="bg-light-gray p-4 rounded-lg border border-border-gray">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <h4 className="font-paragraph font-semibold text-sm">{task.description}</h4>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUpdateTaskStatus(task._id, task.status === 'Concluída' ? 'Pendente' : 'Concluída')}
-                            >
-                              {task.status === 'Concluída' ? 'Reabrir' : 'Concluir'}
-                            </Button>
-                          </div>
-                          <div className="flex gap-2">
-                            <Badge variant={task.status === 'Concluída' ? 'default' : 'secondary'}>
-                              {task.status}
-                            </Badge>
-                            <Badge variant="outline">{task.responsibleType}</Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                        ))
+                      )}
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 {/* Documentos Tab */}
