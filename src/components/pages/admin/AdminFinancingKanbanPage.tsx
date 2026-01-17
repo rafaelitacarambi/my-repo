@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
 import { 
   Plus, 
   AlertCircle, 
@@ -38,7 +40,9 @@ import {
   Download,
   File,
   LayoutGrid,
-  ListTodo
+  ListTodo,
+  Palette,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -293,8 +297,21 @@ const DEFAULT_PROPONENT_DOCUMENTS = [
   { documentType: 'Declaração de Imposto de Renda', documentName: 'Declaração de Imposto de Renda (se houver)' }
 ];
 
+// Background options for Kanban
+const BACKGROUND_OPTIONS = [
+  { id: 'default', name: 'Padrão Claro', value: 'bg-light-gray', preview: '#F5F6F7' },
+  { id: 'dark', name: 'Escuro', value: 'bg-slate-800', preview: '#1e293b' },
+  { id: 'blue', name: 'Azul Suave', value: 'bg-blue-50', preview: '#eff6ff' },
+  { id: 'gradient-blue', name: 'Gradiente Azul', value: 'bg-gradient-to-br from-blue-50 to-indigo-100', preview: 'linear-gradient(135deg, #eff6ff, #e0e7ff)' },
+  { id: 'gradient-purple', name: 'Gradiente Roxo', value: 'bg-gradient-to-br from-purple-50 to-pink-100', preview: 'linear-gradient(135deg, #faf5ff, #fce7f3)' },
+  { id: 'gradient-green', name: 'Gradiente Verde', value: 'bg-gradient-to-br from-green-50 to-teal-100', preview: 'linear-gradient(135deg, #f0fdf4, #ccfbf1)' },
+  { id: 'image-office', name: 'Imagem: Escritório', value: 'bg-[url(https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920)] bg-cover bg-center', preview: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400' },
+  { id: 'image-minimal', name: 'Imagem: Minimalista', value: 'bg-[url(https://images.unsplash.com/photo-1557683316-973673baf926?w=1920)] bg-cover bg-center', preview: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400' }
+];
+
 export default function AdminFinancingKanbanPage() {
   const navigate = useNavigate();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [cases, setCases] = useState<FinancingCase[]>([]);
   const [pendings, setPendings] = useState<Pending[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -315,6 +332,9 @@ export default function AdminFinancingKanbanPage() {
   const [selectedVendorId, setSelectedVendorId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAgencia, setFilterAgencia] = useState('');
+  const [kanbanBackground, setKanbanBackground] = useState('bg-light-gray');
+  const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UsuriosdoSistema | null>(null);
 
   // Form states
   const [caseFormData, setCaseFormData] = useState<Partial<FinancingCase>>({
@@ -396,7 +416,32 @@ export default function AdminFinancingKanbanPage() {
   // Load data
   useEffect(() => {
     loadData();
+    loadUserBackground();
   }, []);
+
+  // Load user's background preference
+  const loadUserBackground = async () => {
+    try {
+      // In production, get current user from auth context
+      // For now, load from localStorage or use first user
+      const storedBg = localStorage.getItem('kanban-background');
+      if (storedBg) {
+        setKanbanBackground(storedBg);
+      }
+    } catch (error) {
+      console.error('Error loading background:', error);
+    }
+  };
+
+  // Save background preference
+  const handleChangeBackground = async (bgValue: string) => {
+    setKanbanBackground(bgValue);
+    localStorage.setItem('kanban-background', bgValue);
+    setShowBackgroundPicker(false);
+    
+    // In production, save to user profile in database
+    // await BaseCrudService.update('usuariossistema', { _id: currentUser._id, backgroundKanban: bgValue });
+  };
 
   const loadData = async () => {
     try {
@@ -810,11 +855,36 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
+  // Handle drag and drop
+  const handleDragEnd = async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    // Dropped outside the list
+    if (!destination) return;
+
+    // Dropped in the same position
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      return;
+    }
+
+    // Move case to new column
+    const newColumnId = destination.droppableId;
+    await handleMoveCase(draggableId, newColumnId);
+  };
+
   // Move case to different column
   const handleMoveCase = async (caseId: string, newColumn: string) => {
     try {
       const now = new Date().toISOString();
       
+      // Optimistic update
+      setCases(cases.map(c => c._id === caseId ? {
+        ...c,
+        faseAtual: newColumn,
+        dataEntradaFaseAtual: now,
+        diasNaFase: 0
+      } : c));
+
       await BaseCrudService.update<ServiceRecords>('atendimentos', {
         _id: caseId,
         faseFinanciamento: newColumn,
@@ -832,16 +902,10 @@ export default function AdminFinancingKanbanPage() {
         autorTipo: 'Sistema'
       });
 
-      // Update local state
-      setCases(cases.map(c => c._id === caseId ? {
-        ...c,
-        faseAtual: newColumn,
-        dataEntradaFaseAtual: now,
-        diasNaFase: 0
-      } : c));
-
     } catch (error) {
       console.error('Error moving case:', error);
+      // Revert on error
+      await loadData();
     }
   };
 
@@ -1550,49 +1614,133 @@ export default function AdminFinancingKanbanPage() {
     return (
       <div className="min-h-screen bg-light-gray">
         <Header />
-        <div className="max-w-[120rem] mx-auto px-6 lg:px-12 py-20">
-          <div className="animate-pulse space-y-8">
-            <div className="h-96 bg-primary rounded-2xl shadow-lg"></div>
+        <FinancingNavigation />
+        
+        {/* Skeleton Loading */}
+        <section className="w-full bg-gradient-to-br from-secondary via-secondary/90 to-buttonbackground py-16">
+          <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
+            <div className="animate-pulse space-y-4">
+              <div className="h-12 bg-white/20 rounded-lg w-2/3"></div>
+              <div className="h-8 bg-white/10 rounded-lg w-1/2"></div>
+              <div className="flex gap-4 mt-6">
+                <div className="h-12 bg-white/20 rounded-lg flex-1"></div>
+                <div className="h-12 bg-white/20 rounded-lg w-64"></div>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
+
+        <section className="w-full py-8">
+          <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
+            <div className="flex gap-4 overflow-x-auto pb-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex-shrink-0 w-[340px]">
+                  <div className="bg-white border-2 border-border-gray rounded-xl p-4 min-h-[600px] animate-pulse">
+                    <div className="h-6 bg-light-gray rounded mb-4"></div>
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((j) => (
+                        <div key={j} className="h-32 bg-light-gray rounded-lg"></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        
         <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-light-gray">
+    <div className={`min-h-screen ${kanbanBackground}`}>
       <Header />
       <FinancingNavigation />
 
-      {/* Hero Section */}
-      <section className="w-full bg-gradient-to-br from-secondary via-secondary/90 to-buttonbackground py-16">
+      {/* Fixed Header Section */}
+      <section className="w-full bg-gradient-to-br from-secondary via-secondary/90 to-buttonbackground py-8 sticky top-0 z-40 shadow-lg">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="font-heading text-5xl lg:text-6xl text-white mb-4">
-              Kanban de Financiamento Bancário
-            </h1>
-            <p className="font-paragraph text-lg text-white/90 mb-6">
-              Controle operacional completo do fluxo de financiamentos da R Sales Imóveis
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="font-heading text-3xl lg:text-4xl text-white mb-2">
+                  Kanban de Financiamento
+                </h1>
+                <p className="font-paragraph text-sm text-white/90">
+                  Controle operacional completo do fluxo de financiamentos
+                </p>
+              </div>
+              
+              {/* Background Picker Button */}
+              <div className="relative">
+                <Button
+                  onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}
+                  className="h-10 bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                >
+                  <Palette className="w-4 h-4 mr-2" />
+                  Personalizar Fundo
+                </Button>
+                
+                {showBackgroundPicker && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute right-0 top-12 bg-white rounded-xl shadow-2xl p-4 w-80 z-50 border-2 border-border-gray"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-heading text-sm font-bold text-foreground">Escolha o Fundo</h3>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowBackgroundPicker(false)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                      {BACKGROUND_OPTIONS.map((bg) => (
+                        <button
+                          key={bg.id}
+                          onClick={() => handleChangeBackground(bg.value)}
+                          className={`p-3 rounded-lg border-2 transition-all hover:scale-105 ${
+                            kanbanBackground === bg.value ? 'border-secondary shadow-lg' : 'border-border-gray'
+                          }`}
+                        >
+                          <div 
+                            className="w-full h-16 rounded-md mb-2"
+                            style={{ 
+                              background: bg.preview.startsWith('http') ? `url(${bg.preview}) center/cover` : bg.preview 
+                            }}
+                          />
+                          <p className="text-xs font-semibold text-foreground text-center">{bg.name}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </div>
             
             {/* Filters */}
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
               <div className="relative flex-1 min-w-[300px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Buscar por proponente, pasta ou CPF..."
-                  className="pl-10 h-12 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                  className="pl-10 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/60"
                 />
               </div>
               <Select value={filterAgencia} onValueChange={setFilterAgencia}>
-                <SelectTrigger className="w-[250px] h-12 bg-white/10 border-white/20 text-white">
+                <SelectTrigger className="w-[220px] h-11 bg-white/10 border-white/20 text-white">
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Filtrar por agência" />
                 </SelectTrigger>
@@ -1610,51 +1758,76 @@ export default function AdminFinancingKanbanPage() {
         </div>
       </section>
 
-      {/* Kanban Board */}
-      <section className="w-full py-8">
+      {/* Kanban Board with Drag & Drop */}
+      <section className="w-full py-6">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
-          <div className="flex gap-4 overflow-x-auto pb-6">
-            {FINANCING_COLUMNS.map((column) => {
-              const columnCases = getCasesByColumn(column.id);
-              return (
-                <motion.div
-                  key={column.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex-shrink-0 w-[340px]"
-                >
-                  <div className={`${column.color} border-2 rounded-xl p-4 min-h-[600px] flex flex-col shadow-md`}>
-                    <div className="mb-4">
-                      <h3 className="font-heading text-sm text-foreground font-bold uppercase tracking-wide mb-2">
-                        {column.name}
-                      </h3>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="text-xs">
-                          {columnCases.length} {columnCases.length === 1 ? 'caso' : 'casos'}
-                        </Badge>
-                      </div>
-                    </div>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div 
+              ref={scrollContainerRef}
+              className="flex gap-4 overflow-x-auto pb-6 scroll-smooth"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#005CA9 transparent'
+              }}
+            >
+              {FINANCING_COLUMNS.map((column) => {
+                const columnCases = getCasesByColumn(column.id);
+                return (
+                  <motion.div
+                    key={column.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex-shrink-0 w-[340px]"
+                  >
+                    <Droppable droppableId={column.id}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`${column.color} border-2 rounded-xl p-4 min-h-[600px] flex flex-col shadow-md transition-all ${
+                            snapshot.isDraggingOver ? 'ring-4 ring-secondary/50 scale-105' : ''
+                          }`}
+                        >
+                          <div className="mb-4">
+                            <h3 className="font-heading text-sm text-foreground font-bold uppercase tracking-wide mb-2">
+                              {column.name}
+                            </h3>
+                            <div className="flex items-center justify-between">
+                              <Badge variant="secondary" className="text-xs">
+                                {columnCases.length} {columnCases.length === 1 ? 'caso' : 'casos'}
+                              </Badge>
+                            </div>
+                          </div>
 
-                    <ScrollArea className="flex-1">
-                      <div className="space-y-3 pr-2">
-                        {columnCases.map((caseItem) => {
-                          const daysBadgeColor = caseItem.diasNaFase <= 3 ? 'bg-green-500' : caseItem.diasNaFase <= 7 ? 'bg-yellow-500' : 'bg-red-500';
-                          const hasActivityToday = [...pendings, ...tasks].some(item => {
-                            const itemDate = new Date(item.createdDate || '').toDateString();
-                            return itemDate === new Date().toDateString() && (item.atendimentoRef === caseItem._id);
-                          });
-                          
-                          return (
-                            <motion.div
-                              key={caseItem._id}
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              whileHover={{ scale: 1.02, boxShadow: '0 12px 24px rgba(0,0,0,0.15)' }}
-                              transition={{ duration: 0.2 }}
-                              onClick={() => handleOpenDetails(caseItem, 'dados')}
-                              className="bg-white rounded-xl p-4 border border-border-gray hover:shadow-xl transition-all cursor-pointer group relative"
-                            >
+                          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                            {columnCases.map((caseItem, index) => {
+                              const daysBadgeColor = caseItem.diasNaFase <= 3 ? 'bg-green-500' : caseItem.diasNaFase <= 7 ? 'bg-yellow-500' : 'bg-red-500';
+                              const hasActivityToday = [...pendings, ...tasks].some(item => {
+                                const itemDate = new Date(item.createdDate || '').toDateString();
+                                return itemDate === new Date().toDateString() && (item.atendimentoRef === caseItem._id);
+                              });
+                              
+                              return (
+                                <Draggable key={caseItem._id} draggableId={caseItem._id} index={index}>
+                                  {(provided, snapshot) => (
+                                    <motion.div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      whileHover={{ scale: snapshot.isDragging ? 1 : 1.02 }}
+                                      transition={{ duration: 0.2 }}
+                                      onClick={() => !snapshot.isDragging && handleOpenDetails(caseItem, 'dados')}
+                                      className={`bg-white rounded-xl p-4 border border-border-gray hover:shadow-xl transition-all cursor-grab active:cursor-grabbing group relative ${
+                                        snapshot.isDragging ? 'shadow-2xl ring-4 ring-secondary/50 rotate-2 scale-105' : ''
+                                      }`}
+                                      style={{
+                                        ...provided.draggableProps.style,
+                                        opacity: snapshot.isDragging ? 0.9 : 1
+                                      }}
+                                    >
                               {/* Activity indicator */}
                               <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${hasActivityToday ? 'bg-green-500' : 'bg-red-500'}`} 
                                    title={hasActivityToday ? 'Atividade hoje' : 'Sem atividade hoje'}>
@@ -1764,31 +1937,36 @@ export default function AdminFinancingKanbanPage() {
                                 )}
                               </div>
 
-                              {/* Move to column selector */}
-                              <div className="pt-3 border-t border-border-gray">
-                                <Select value={caseItem.faseAtual} onValueChange={(value) => handleMoveCase(caseItem._id, value)}>
-                                  <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
-                                    <SelectValue placeholder="Mover para..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {FINANCING_COLUMNS.map(col => (
-                                      <SelectItem key={col.id} value={col.id}>
-                                        {col.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+                                      {/* Move to column selector */}
+                                      <div className="pt-3 border-t border-border-gray">
+                                        <Select value={caseItem.faseAtual} onValueChange={(value) => handleMoveCase(caseItem._id, value)}>
+                                          <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                                            <SelectValue placeholder="Mover para..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {FINANCING_COLUMNS.map(col => (
+                                              <SelectItem key={col.id} value={col.id}>
+                                                {col.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </Draggable>
+                              );
+                            })}
+                            {provided.placeholder}
+                          </div>
+                        </div>
+                      )}
+                    </Droppable>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </DragDropContext>
         </div>
       </section>
 
