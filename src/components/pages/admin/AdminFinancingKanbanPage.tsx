@@ -54,6 +54,20 @@ import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis } from '@/entities';
 
+// Temporary interface for vendor documents collection
+interface FinanciamentoDocsVendedor {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  atendimentoRef?: string;
+  vendedorClienteRef?: string;
+  docTipo?: string;
+  recebido?: boolean;
+  arquivo?: string;
+  ativo?: boolean;
+  observacoes?: string;
+}
+
 // Temporary interface for the new collection until entities are regenerated
 interface ChecklistdosProponentes {
   _id: string;
@@ -190,14 +204,26 @@ interface ProponentChecklist {
   isFirstAcquisition?: boolean;
 }
 
-interface VendorChecklist {
-  _id?: string;
-  atendimentoRef: string;
-  vendorName: string;
+interface Vendor {
+  _id: string;
+  clientRef: string;
+  name: string;
   cpf: string;
-  bankData?: string;
-  documentUploaded?: boolean;
-  documentStatus?: string;
+  banco?: string;
+  agencia?: string;
+  conta?: string;
+  tipoConta?: string;
+  titular?: string;
+  cpfCnpjTitular?: string;
+}
+
+interface VendorDocument {
+  _id: string;
+  docTipo: string;
+  recebido: boolean;
+  arquivo?: string;
+  ativo: boolean;
+  observacoes?: string;
 }
 
 interface ProponentDocumentItem {
@@ -278,7 +304,9 @@ export default function AdminFinancingKanbanPage() {
   const [properties, setProperties] = useState<Imveis[]>([]);
   const [proponentChecklists, setProponentChecklists] = useState<Map<string, ProponentChecklist>>(new Map());
   const [proponentDocumentChecklists, setProponentDocumentChecklists] = useState<Map<string, ProponentDocumentChecklist>>(new Map());
-  const [vendorChecklists, setVendorChecklists] = useState<VendorChecklist[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendorDocuments, setVendorDocuments] = useState<Map<string, VendorDocument[]>>(new Map());
+  const [selectedVendorId, setSelectedVendorId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAgencia, setFilterAgencia] = useState('');
 
@@ -347,9 +375,15 @@ export default function AdminFinancingKanbanPage() {
   });
 
   const [newVendor, setNewVendor] = useState({
-    vendorName: '',
+    clientRef: '',
+    name: '',
     cpf: '',
-    bankData: ''
+    banco: '',
+    agencia: '',
+    conta: '',
+    tipoConta: 'Corrente',
+    titular: '',
+    cpfCnpjTitular: ''
   });
 
   // Proponents tab state
@@ -563,8 +597,84 @@ export default function AdminFinancingKanbanPage() {
       // Load document checklists for proponents
       await loadProponentDocumentChecklists(caseId, principalClientRef, filteredParticipants);
 
+      // Load vendors and their documents
+      await loadVendorsAndDocuments(caseId);
+
     } catch (error) {
       console.error('Error loading case details:', error);
+    }
+  };
+
+  // Load vendors and their documents
+  const loadVendorsAndDocuments = async (caseId: string) => {
+    try {
+      console.log('[DEBUG] Loading vendors for atendimento:', caseId);
+      
+      // Load vendors from ServiceParties with role "Vendedor"
+      const { items: allParticipants } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
+      const vendorParticipants = allParticipants.filter(
+        p => p.serviceRecordRef === caseId && p.roleInService === 'Vendedor'
+      );
+      
+      console.log('[DEBUG] Found vendor participants:', vendorParticipants.length);
+      
+      // Build vendors list with client data
+      const vendorsList: Vendor[] = [];
+      for (const vp of vendorParticipants) {
+        if (vp.clientRef) {
+          const client = clients.find(c => c._id === vp.clientRef);
+          if (client) {
+            vendorsList.push({
+              _id: vp._id,
+              clientRef: vp.clientRef,
+              name: client.clientName || client.nomeRazaoSocial || 'Vendedor',
+              cpf: client.cpfCnpj || '',
+              banco: '',
+              agencia: '',
+              conta: '',
+              tipoConta: 'Corrente',
+              titular: '',
+              cpfCnpjTitular: ''
+            });
+          }
+        }
+      }
+      
+      setVendors(vendorsList);
+      console.log('[DEBUG] Vendors loaded:', vendorsList.length);
+      
+      // Load vendor documents
+      const { items: allVendorDocs } = await BaseCrudService.getAll<FinanciamentoDocsVendedor>('financiamentodocsvendedor');
+      const caseVendorDocs = allVendorDocs.filter(d => d.atendimentoRef === caseId);
+      
+      console.log('[DEBUG] Found vendor documents:', caseVendorDocs.length);
+      
+      // Group documents by vendor
+      const docsMap = new Map<string, VendorDocument[]>();
+      caseVendorDocs.forEach(doc => {
+        if (doc.vendedorClienteRef) {
+          const existing = docsMap.get(doc.vendedorClienteRef) || [];
+          existing.push({
+            _id: doc._id,
+            docTipo: doc.docTipo || '',
+            recebido: doc.recebido || false,
+            arquivo: doc.arquivo,
+            ativo: doc.ativo !== false,
+            observacoes: doc.observacoes
+          });
+          docsMap.set(doc.vendedorClienteRef, existing);
+        }
+      });
+      
+      setVendorDocuments(docsMap);
+      
+      // Set first vendor as selected if exists
+      if (vendorsList.length > 0) {
+        setSelectedVendorId(vendorsList[0].clientRef);
+      }
+      
+    } catch (error) {
+      console.error('[ERROR] Error loading vendors and documents:', error);
     }
   };
 
@@ -778,6 +888,230 @@ export default function AdminFinancingKanbanPage() {
     } catch (error) {
       console.error('Error removing participant:', error);
     }
+  };
+
+  // Add vendor
+  const handleAddVendor = async () => {
+    if (!selectedCase || !newVendor.clientRef) return;
+
+    try {
+      console.log('[DEBUG] Adding vendor:', newVendor);
+      
+      // Create vendor as participant with role "Vendedor"
+      const vendorParticipant: ServiceParties = {
+        _id: crypto.randomUUID(),
+        serviceRecordRef: selectedCase._id,
+        clientRef: newVendor.clientRef,
+        roleInService: 'Vendedor',
+        participationPercentage: 0
+      };
+
+      await BaseCrudService.create('atendimentopartes', vendorParticipant);
+      
+      // Get client data
+      const client = clients.find(c => c._id === newVendor.clientRef);
+      
+      // Add to vendors list
+      const newVendorObj: Vendor = {
+        _id: vendorParticipant._id,
+        clientRef: newVendor.clientRef,
+        name: client?.clientName || client?.nomeRazaoSocial || 'Vendedor',
+        cpf: client?.cpfCnpj || '',
+        banco: newVendor.banco,
+        agencia: newVendor.agencia,
+        conta: newVendor.conta,
+        tipoConta: newVendor.tipoConta,
+        titular: newVendor.titular,
+        cpfCnpjTitular: newVendor.cpfCnpjTitular
+      };
+      
+      setVendors([...vendors, newVendorObj]);
+      
+      // Create default documents for vendor
+      const defaultDocs = ['IDENTIFICACAO', 'CERTIDAO', 'ENDERECO'];
+      const vendorDocs: VendorDocument[] = [];
+      
+      for (const docTipo of defaultDocs) {
+        const doc: FinanciamentoDocsVendedor = {
+          _id: crypto.randomUUID(),
+          atendimentoRef: selectedCase._id,
+          vendedorClienteRef: newVendor.clientRef,
+          docTipo,
+          recebido: false,
+          ativo: true,
+          observacoes: ''
+        };
+        
+        await BaseCrudService.create('financiamentodocsvendedor', doc);
+        
+        vendorDocs.push({
+          _id: doc._id,
+          docTipo,
+          recebido: false,
+          ativo: true,
+          observacoes: ''
+        });
+      }
+      
+      // Update vendor documents map
+      const newDocsMap = new Map(vendorDocuments);
+      newDocsMap.set(newVendor.clientRef, vendorDocs);
+      setVendorDocuments(newDocsMap);
+      
+      // Set as selected
+      setSelectedVendorId(newVendor.clientRef);
+      
+      console.log('[DEBUG] Vendor added successfully with', vendorDocs.length, 'documents');
+      
+      // Reset form
+      setNewVendor({
+        clientRef: '',
+        name: '',
+        cpf: '',
+        banco: '',
+        agencia: '',
+        conta: '',
+        tipoConta: 'Corrente',
+        titular: '',
+        cpfCnpjTitular: ''
+      });
+      
+      // Create history entry
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: selectedCase._id,
+        tipoEvento: 'Vendedor',
+        interactionType: 'Adição de vendedor',
+        interactionDescription: `Vendedor ${newVendorObj.name} adicionado ao processo`,
+        interactionDate: new Date().toISOString(),
+        autorTipo: 'Sistema'
+      });
+      
+    } catch (error) {
+      console.error('[ERROR] Error adding vendor:', error);
+    }
+  };
+
+  // Remove vendor
+  const handleRemoveVendor = async (vendorId: string) => {
+    try {
+      console.log('[DEBUG] Removing vendor:', vendorId);
+      
+      // Find vendor
+      const vendor = vendors.find(v => v._id === vendorId);
+      if (!vendor) return;
+      
+      // Delete participant
+      await BaseCrudService.delete('atendimentopartes', vendorId);
+      
+      // Mark all vendor documents as inactive
+      const docs = vendorDocuments.get(vendor.clientRef) || [];
+      for (const doc of docs) {
+        await BaseCrudService.update<FinanciamentoDocsVendedor>('financiamentodocsvendedor', {
+          _id: doc._id,
+          ativo: false
+        });
+      }
+      
+      // Update state
+      setVendors(vendors.filter(v => v._id !== vendorId));
+      
+      // Remove from selected if it was selected
+      if (selectedVendorId === vendor.clientRef) {
+        const remaining = vendors.filter(v => v._id !== vendorId);
+        setSelectedVendorId(remaining.length > 0 ? remaining[0].clientRef : '');
+      }
+      
+      console.log('[DEBUG] Vendor removed successfully');
+      
+    } catch (error) {
+      console.error('[ERROR] Error removing vendor:', error);
+    }
+  };
+
+  // Update vendor bank data
+  const handleUpdateVendorBankData = async (vendorClientRef: string, field: string, value: string) => {
+    const updatedVendors = vendors.map(v => 
+      v.clientRef === vendorClientRef ? { ...v, [field]: value } : v
+    );
+    setVendors(updatedVendors);
+    
+    // In production, you would save this to a dedicated vendor details collection
+    // For now, we'll store in localStorage
+    const storageKey = `vendor-bank-${selectedCase?._id}-${vendorClientRef}`;
+    const vendor = updatedVendors.find(v => v.clientRef === vendorClientRef);
+    if (vendor) {
+      localStorage.setItem(storageKey, JSON.stringify({
+        banco: vendor.banco,
+        agencia: vendor.agencia,
+        conta: vendor.conta,
+        tipoConta: vendor.tipoConta,
+        titular: vendor.titular,
+        cpfCnpjTitular: vendor.cpfCnpjTitular
+      }));
+    }
+  };
+
+  // Update vendor document
+  const handleUpdateVendorDocument = async (vendorClientRef: string, docId: string, updates: Partial<VendorDocument>) => {
+    if (!selectedCase) return;
+    
+    try {
+      console.log('[DEBUG] Updating vendor document:', docId, updates);
+      
+      // Update in database
+      await BaseCrudService.update<FinanciamentoDocsVendedor>('financiamentodocsvendedor', {
+        _id: docId,
+        ...updates
+      });
+      
+      // Update local state
+      const docs = vendorDocuments.get(vendorClientRef) || [];
+      const updatedDocs = docs.map(d => 
+        d._id === docId ? { ...d, ...updates } : d
+      );
+      
+      const newMap = new Map(vendorDocuments);
+      newMap.set(vendorClientRef, updatedDocs);
+      setVendorDocuments(newMap);
+      
+      // Create history entry
+      const vendor = vendors.find(v => v.clientRef === vendorClientRef);
+      const doc = updatedDocs.find(d => d._id === docId);
+      
+      if (vendor && doc) {
+        let description = '';
+        if (updates.recebido !== undefined) {
+          description = updates.recebido 
+            ? `Documento "${doc.docTipo}" marcado como RECEBIDO para vendedor ${vendor.name}`
+            : `Documento "${doc.docTipo}" marcado como NÃO RECEBIDO para vendedor ${vendor.name}`;
+        } else if (updates.ativo === false) {
+          description = `Documento "${doc.docTipo}" EXCLUÍDO do checklist do vendedor ${vendor.name}`;
+        }
+        
+        if (description) {
+          await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+            _id: crypto.randomUUID(),
+            atendimentoRef: selectedCase._id,
+            tipoEvento: 'Documento Vendedor',
+            interactionType: 'Atualização de documento',
+            interactionDescription: description,
+            interactionDate: new Date().toISOString(),
+            autorTipo: 'Sistema'
+          });
+        }
+      }
+      
+      console.log('[DEBUG] Vendor document updated successfully');
+      
+    } catch (error) {
+      console.error('[ERROR] Error updating vendor document:', error);
+    }
+  };
+
+  // Delete vendor document (mark as inactive)
+  const handleDeleteVendorDocument = async (vendorClientRef: string, docId: string) => {
+    await handleUpdateVendorDocument(vendorClientRef, docId, { ativo: false });
   };
 
   // Create or update pending
@@ -2304,51 +2638,372 @@ export default function AdminFinancingKanbanPage() {
 
                 {/* Vendedores Tab */}
                 <TabsContent value="vendedores" className="space-y-6">
-                  <div className="border border-border-gray rounded-lg p-4">
-                    <h3 className="font-heading text-lg mb-4">Vendedores do Imóvel</h3>
-                    
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      <Input
-                        value={newVendor.vendorName}
-                        onChange={(e) => setNewVendor({ ...newVendor, vendorName: e.target.value })}
-                        placeholder="Nome do vendedor"
-                        className="h-10"
-                      />
-                      <Input
-                        value={newVendor.cpf}
-                        onChange={(e) => setNewVendor({ ...newVendor, cpf: e.target.value })}
-                        placeholder="CPF"
-                        className="h-10"
-                      />
-                      <Input
-                        value={newVendor.bankData}
-                        onChange={(e) => setNewVendor({ ...newVendor, bankData: e.target.value })}
-                        placeholder="Dados bancários"
-                        className="h-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      {vendorChecklists.map(vendor => (
-                        <div key={vendor._id} className="p-4 bg-light-gray rounded-lg">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <p className="font-paragraph font-semibold">{vendor.vendorName}</p>
-                              <p className="text-xs text-foreground/60">CPF: {vendor.cpf}</p>
-                              <p className="text-xs text-foreground/60">{vendor.bankData}</p>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <UserCheck className="w-5 h-5 text-secondary" />
+                        Vendedores do Imóvel
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {(() => {
+                        if (vendors.length === 0) {
+                          return (
+                            <div className="text-center py-12 bg-light-gray/50 rounded-xl border-2 border-dashed border-border-gray">
+                              <UserCheck className="w-16 h-16 mx-auto mb-4 text-foreground/20" />
+                              <h4 className="font-heading text-lg font-semibold mb-2 text-foreground/80">
+                                Nenhum vendedor cadastrado
+                              </h4>
+                              <p className="text-sm text-foreground/60 mb-4">
+                                Adicione os vendedores do imóvel para gerenciar documentos e dados bancários
+                              </p>
                             </div>
-                            <Badge variant={vendor.documentStatus === 'Aprovado' ? 'default' : 'secondary'}>
-                              {vendor.documentStatus || 'Pendente'}
-                            </Badge>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-6">
+                            {/* Vendor Selector */}
+                            {vendors.length > 1 && (
+                              <div>
+                                <Label className="font-paragraph text-sm mb-2 block font-semibold">
+                                  Selecione o vendedor
+                                </Label>
+                                <Select 
+                                  value={selectedVendorId || vendors[0]?.clientRef} 
+                                  onValueChange={setSelectedVendorId}
+                                >
+                                  <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
+                                    <SelectValue placeholder="Escolha um vendedor" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {vendors.map((vendor) => (
+                                      <SelectItem key={vendor.clientRef} value={vendor.clientRef}>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-semibold">{vendor.name}</span>
+                                          <span className="text-xs text-foreground/60">
+                                            CPF: {vendor.cpf}
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+
+                            {/* Display selected vendor */}
+                            {(() => {
+                              const currentVendorClientRef = selectedVendorId || vendors[0]?.clientRef;
+                              const vendor = vendors.find(v => v.clientRef === currentVendorClientRef);
+                              const docs = vendorDocuments.get(currentVendorClientRef) || [];
+                              const activeDocs = docs.filter(d => d.ativo);
+                              
+                              if (!vendor) return null;
+
+                              return (
+                                <div className="border-2 border-secondary/20 rounded-xl p-6 bg-gradient-to-br from-white to-light-gray/30">
+                                  {/* Vendor Info Header */}
+                                  <div className="mb-6 pb-5 border-b-2 border-border-gray">
+                                    <div className="flex items-start justify-between mb-3">
+                                      <div className="flex-1">
+                                        <h4 className="font-heading text-xl font-bold text-secondary mb-2">
+                                          {vendor.name}
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                          {vendor.cpf && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-semibold text-foreground/70">CPF:</span>
+                                              <span className="text-foreground">{vendor.cpf}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleRemoveVendor(vendor._id)}
+                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Remover
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Bank Data Section */}
+                                  <div className="mb-8">
+                                    <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
+                                      <Building2 className="w-5 h-5 text-secondary" />
+                                      Dados Bancários
+                                    </h5>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">Banco</Label>
+                                        <Input
+                                          value={vendor.banco || ''}
+                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'banco', e.target.value)}
+                                          placeholder="Ex: Banco do Brasil"
+                                          className="h-10"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">Agência</Label>
+                                        <Input
+                                          value={vendor.agencia || ''}
+                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'agencia', e.target.value)}
+                                          placeholder="Ex: 1234-5"
+                                          className="h-10"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">Conta</Label>
+                                        <Input
+                                          value={vendor.conta || ''}
+                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'conta', e.target.value)}
+                                          placeholder="Ex: 12345-6"
+                                          className="h-10"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">Tipo de Conta</Label>
+                                        <Select 
+                                          value={vendor.tipoConta || 'Corrente'} 
+                                          onValueChange={(value) => handleUpdateVendorBankData(vendor.clientRef, 'tipoConta', value)}
+                                        >
+                                          <SelectTrigger className="h-10">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Corrente">Corrente</SelectItem>
+                                            <SelectItem value="Poupança">Poupança</SelectItem>
+                                            <SelectItem value="Salário">Salário</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">Titular da Conta</Label>
+                                        <Input
+                                          value={vendor.titular || ''}
+                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'titular', e.target.value)}
+                                          placeholder="Nome do titular"
+                                          className="h-10"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">CPF/CNPJ do Titular</Label>
+                                        <Input
+                                          value={vendor.cpfCnpjTitular || ''}
+                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'cpfCnpjTitular', e.target.value)}
+                                          placeholder="000.000.000-00"
+                                          className="h-10"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Document Checklist Section */}
+                                  <div className="mt-8 pt-8 border-t-2 border-border-gray">
+                                    <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
+                                      <FileCheck className="w-5 h-5 text-secondary" />
+                                      Checklist de Documentos do Vendedor
+                                    </h5>
+                                    
+                                    <div className="space-y-4">
+                                      {/* Progress indicator */}
+                                      <div className="bg-gradient-to-r from-secondary/10 to-secondary/5 p-4 rounded-lg border border-secondary/20">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="font-paragraph text-sm font-semibold text-foreground">
+                                            Progresso dos Documentos
+                                          </span>
+                                          <Badge className="bg-secondary text-secondary-foreground">
+                                            {activeDocs.filter(d => d.recebido).length} de {activeDocs.length} recebidos
+                                          </Badge>
+                                        </div>
+                                        <div className="w-full bg-white rounded-full h-3 overflow-hidden border border-border-gray">
+                                          <div 
+                                            className="bg-secondary h-full transition-all duration-500 ease-out"
+                                            style={{ width: `${activeDocs.length > 0 ? (activeDocs.filter(d => d.recebido).length / activeDocs.length) * 100 : 0}%` }}
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Document items */}
+                                      <div className="space-y-3">
+                                        {activeDocs.map((doc) => {
+                                          const docNames: Record<string, string> = {
+                                            'IDENTIFICACAO': 'Documento de Identificação (RG, CPF ou CNH)',
+                                            'CERTIDAO': 'Certidão de Casamento ou Nascimento',
+                                            'ENDERECO': 'Comprovante de Endereço'
+                                          };
+                                          
+                                          return (
+                                            <motion.div
+                                              key={doc._id}
+                                              initial={{ opacity: 0, y: 10 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              className={`p-4 rounded-lg border-2 transition-all ${
+                                                doc.recebido 
+                                                  ? 'bg-green-50 border-green-300' 
+                                                  : 'bg-white border-border-gray hover:border-secondary/40'
+                                              }`}
+                                            >
+                                              <div className="space-y-3">
+                                                {/* Document header */}
+                                                <div className="flex items-start justify-between gap-3">
+                                                  <div className="flex items-start gap-3 flex-1">
+                                                    <Checkbox
+                                                      checked={doc.recebido}
+                                                      onCheckedChange={(checked) => 
+                                                        handleUpdateVendorDocument(vendor.clientRef, doc._id, { 
+                                                          recebido: checked as boolean
+                                                        })
+                                                      }
+                                                      className="mt-1"
+                                                    />
+                                                    <div className="flex-1">
+                                                      <Label className={`font-paragraph text-sm font-semibold block mb-1 cursor-pointer ${
+                                                        doc.recebido ? 'text-green-700' : 'text-foreground'
+                                                      }`}>
+                                                        {docNames[doc.docTipo] || doc.docTipo}
+                                                      </Label>
+                                                      {doc.recebido && (
+                                                        <p className="text-xs text-green-600 flex items-center gap-1">
+                                                          <CheckCircle className="w-3 h-3" />
+                                                          Documento recebido
+                                                        </p>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => handleDeleteVendorDocument(vendor.clientRef, doc._id)}
+                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    title="Excluir item (não aplicável)"
+                                                  >
+                                                    <Trash2 className="w-4 h-4" />
+                                                  </Button>
+                                                </div>
+
+                                                {/* File upload section */}
+                                                <div className="ml-8 space-y-2">
+                                                  <div className="flex items-center gap-2">
+                                                    <Label className="text-xs text-foreground/70 font-semibold">
+                                                      Arquivo:
+                                                    </Label>
+                                                    {doc.arquivo ? (
+                                                      <div className="flex items-center gap-2">
+                                                        <a 
+                                                          href={doc.arquivo} 
+                                                          target="_blank" 
+                                                          rel="noopener noreferrer"
+                                                          className="text-xs text-secondary hover:underline flex items-center gap-1"
+                                                        >
+                                                          <Download className="w-3 h-3" />
+                                                          Ver arquivo
+                                                        </a>
+                                                        <Button
+                                                          size="sm"
+                                                          variant="ghost"
+                                                          onClick={() => handleUpdateVendorDocument(vendor.clientRef, doc._id, { arquivo: undefined })}
+                                                          className="h-6 w-6 p-0"
+                                                        >
+                                                          <X className="w-3 h-3" />
+                                                        </Button>
+                                                      </div>
+                                                    ) : (
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-7 text-xs"
+                                                        onClick={() => {
+                                                          // Simulate file upload - in production, implement actual file upload
+                                                          const fakeUrl = `https://example.com/vendor-docs/${doc._id}.pdf`;
+                                                          handleUpdateVendorDocument(vendor.clientRef, doc._id, { arquivo: fakeUrl });
+                                                        }}
+                                                      >
+                                                        <Upload className="w-3 h-3 mr-1" />
+                                                        Upload
+                                                      </Button>
+                                                    )}
+                                                  </div>
+
+                                                  {/* Notes field */}
+                                                  <div>
+                                                    <Label className="text-xs text-foreground/70 font-semibold mb-1 block">
+                                                      Observações:
+                                                    </Label>
+                                                    <Textarea
+                                                      value={doc.observacoes || ''}
+                                                      onChange={(e) => handleUpdateVendorDocument(vendor.clientRef, doc._id, { observacoes: e.target.value })}
+                                                      placeholder="Adicione observações sobre este documento..."
+                                                      rows={2}
+                                                      className="text-xs resize-none"
+                                                    />
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </motion.div>
+                                          );
+                                        })}
+                                      </div>
+
+                                      {/* Info message */}
+                                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                                        <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-xs text-blue-800">
+                                          <strong>Importante:</strong> Marque os documentos como recebidos conforme forem entregues pelo vendedor. 
+                                          Use o botão "Excluir item" para remover documentos não aplicáveis.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
-                          <div className="flex items-center gap-3">
-                            <Checkbox checked={vendor.documentUploaded || false} />
-                            <Label className="text-sm">Documento enviado</Label>
+                        );
+                      })()}
+
+                      {/* Add Vendor Section */}
+                      <div className="mt-6 pt-6 border-t-2 border-border-gray">
+                        <h4 className="font-heading text-base font-bold mb-4 flex items-center gap-2">
+                          <Plus className="w-5 h-5 text-secondary" />
+                          Adicionar Novo Vendedor
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2">
+                            <Label className="font-paragraph text-sm mb-2 block">Selecionar Cliente *</Label>
+                            <Select value={newVendor.clientRef} onValueChange={(value) => setNewVendor({ ...newVendor, clientRef: value })}>
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Escolha um cliente da lista" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {clients
+                                  .filter(c => !vendors.some(v => v.clientRef === c._id))
+                                  .map(client => (
+                                    <SelectItem key={client._id} value={client._id}>
+                                      {client.clientName || client.nomeRazaoSocial} {client.cpfCnpj ? `- ${client.cpfCnpj}` : ''}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="md:col-span-2">
+                            <Button 
+                              onClick={handleAddVendor} 
+                              disabled={!newVendor.clientRef}
+                              className="h-10 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Adicionar Vendedor
+                            </Button>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 {/* Pendências + Tarefas Tab */}

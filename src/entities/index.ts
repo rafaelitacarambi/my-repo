@@ -369,6 +369,31 @@ export interface DetalhesdoFinanciamento {
 
 
 /**
+ * Collection ID: financiamentodocsvendedor
+ * Interface for FinancingVendorDocuments
+ */
+export interface FinancingVendorDocuments {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  atendimentoRef?: string;
+  /** @wixFieldType text */
+  vendedorClienteRef?: string;
+  /** @wixFieldType text */
+  docTipo?: string;
+  /** @wixFieldType boolean */
+  recebido?: boolean;
+  /** @wixFieldType url */
+  arquivo?: string;
+  /** @wixFieldType boolean */
+  ativo?: boolean;
+  /** @wixFieldType text */
+  observacoes?: string;
+}
+
+
+/**
  * Collection ID: historicofinanciamento
  * Interface for HistricodeMovimentaesdoFinanciamento
  */
