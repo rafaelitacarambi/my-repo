@@ -79,7 +79,7 @@ export default function FinancingNavigation() {
   };
 
   return (
-    <div className="sticky top-0 z-40 bg-white border-b border-border-gray shadow-sm">
+    <div className="sticky top-0 z-50 bg-white border-b border-border-gray shadow-md">
       <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8">
         <nav className="flex items-center gap-1 sm:gap-2 py-3 overflow-x-auto">
           {navItems.map((item) => {
