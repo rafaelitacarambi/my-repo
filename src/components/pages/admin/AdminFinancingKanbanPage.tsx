@@ -1117,6 +1117,64 @@ export default function AdminFinancingKanbanPage() {
                     </CardContent>
                   </Card>
 
+                  {/* Participantes Vinculados */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <Users className="w-5 h-5 text-secondary" />
+                        Participantes Vinculados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <Select value={newParticipant.clientRef} onValueChange={(value) => setNewParticipant({ ...newParticipant, clientRef: value })}>
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Selecionar cliente" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clients.map(client => (
+                              <SelectItem key={client._id} value={client._id}>
+                                {client.clientName || client.nomeRazaoSocial}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          value={newParticipant.roleInService}
+                          onChange={(e) => setNewParticipant({ ...newParticipant, roleInService: e.target.value })}
+                          placeholder="Papel (ex: Dependente)"
+                          className="h-10"
+                        />
+                        <Button onClick={handleAddParticipant} className="h-10 bg-secondary text-secondary-foreground">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Adicionar
+                        </Button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {participants.map(participant => {
+                          const client = clients.find(c => c._id === participant.clientRef);
+                          return (
+                            <div key={participant._id} className="flex items-center justify-between bg-light-gray p-3 rounded-lg">
+                              <div>
+                                <p className="font-paragraph text-sm font-semibold">{client?.clientName || client?.nomeRazaoSocial}</p>
+                                <p className="text-xs text-foreground/60">{participant.roleInService}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveParticipant(participant._id)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Campos Bancários */}
                   <Card>
                     <CardHeader>
@@ -1331,64 +1389,6 @@ export default function AdminFinancingKanbanPage() {
                             </div>
                           </div>
                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Participantes */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg font-heading flex items-center gap-2">
-                        <Users className="w-5 h-5 text-secondary" />
-                        Participantes Vinculados
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-3 gap-3">
-                        <Select value={newParticipant.clientRef} onValueChange={(value) => setNewParticipant({ ...newParticipant, clientRef: value })}>
-                          <SelectTrigger className="h-10">
-                            <SelectValue placeholder="Selecionar cliente" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {clients.map(client => (
-                              <SelectItem key={client._id} value={client._id}>
-                                {client.clientName || client.nomeRazaoSocial}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          value={newParticipant.roleInService}
-                          onChange={(e) => setNewParticipant({ ...newParticipant, roleInService: e.target.value })}
-                          placeholder="Papel (ex: Dependente)"
-                          className="h-10"
-                        />
-                        <Button onClick={handleAddParticipant} className="h-10 bg-secondary text-secondary-foreground">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Adicionar
-                        </Button>
-                      </div>
-
-                      <div className="space-y-2">
-                        {participants.map(participant => {
-                          const client = clients.find(c => c._id === participant.clientRef);
-                          return (
-                            <div key={participant._id} className="flex items-center justify-between bg-light-gray p-3 rounded-lg">
-                              <div>
-                                <p className="font-paragraph text-sm font-semibold">{client?.clientName || client?.nomeRazaoSocial}</p>
-                                <p className="text-xs text-foreground/60">{participant.roleInService}</p>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveParticipant(participant._id)}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          );
-                        })}
                       </div>
                     </CardContent>
                   </Card>
