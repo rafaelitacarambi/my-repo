@@ -54,6 +54,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis } from '@/entities';
 
@@ -1511,35 +1512,7 @@ export default function AdminFinancingKanbanPage() {
   return (
     <div className="min-h-screen bg-light-gray">
       <Header />
-
-      {/* Fixed Navigation Bar */}
-      <nav className="sticky top-0 z-50 bg-white border-b-2 border-border-gray shadow-md">
-        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
-          <div className="flex items-center justify-center gap-2 py-4">
-            <button
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-heading font-semibold text-sm transition-all bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm hover:shadow-md"
-            >
-              <LayoutGrid className="w-5 h-5" />
-              <span className="hidden sm:inline">Kanban</span>
-            </button>
-            <button
-              onClick={() => navigate('/admin/financiamento-pendencias')}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-heading font-semibold text-sm transition-all bg-white text-foreground border-2 border-border-gray hover:bg-light-gray hover:border-secondary/40 shadow-sm hover:shadow-md"
-            >
-              <AlertTriangle className="w-5 h-5" />
-              <span className="hidden sm:inline">Pendências</span>
-            </button>
-            <button
-              onClick={() => navigate('/admin/financiamento-tarefas')}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg font-heading font-semibold text-sm transition-all bg-white text-foreground border-2 border-border-gray hover:bg-light-gray hover:border-secondary/40 shadow-sm hover:shadow-md"
-            >
-              <ListTodo className="w-5 h-5" />
-              <span className="hidden sm:inline">Tarefas</span>
-            </button>
-          </div>
-        </div>
-      </nav>
+      <FinancingNavigation />
 
       {/* Hero Section */}
       <section className="w-full bg-gradient-to-br from-secondary via-secondary/90 to-buttonbackground py-16">

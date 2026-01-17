@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
 import { FinancingTasks, ServiceRecords, UsuriosdoSistema } from '@/entities';
 import { format } from 'date-fns';
@@ -231,23 +232,13 @@ export default function AdminFinancingTarefasPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
+      <FinancingNavigation />
       
       <main className="flex-1 w-full">
         <div className="max-w-[100rem] mx-auto px-6 py-12">
           {/* Page Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  console.log('[AdminFinancingTarefasPage] Navigating back to /admin/financiamento');
-                  navigate('/admin/financiamento');
-                }}
-                className="mb-4 font-paragraph"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar ao Hub
-              </Button>
               <h1 className="font-heading text-4xl font-bold text-foreground mb-3">
                 Tarefas do Financiamento
               </h1>
