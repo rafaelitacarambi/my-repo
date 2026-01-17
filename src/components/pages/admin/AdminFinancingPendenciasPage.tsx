@@ -15,7 +15,8 @@ import {
   User,
   FileText,
   RotateCcw,
-  CheckSquare
+  CheckSquare,
+  History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -49,6 +51,7 @@ export default function AdminFinancingPendenciasPage() {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPendencia, setEditingPendencia] = useState<PendnciasdoFinanciamento | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('ativas');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -71,7 +74,7 @@ export default function AdminFinancingPendenciasPage() {
 
   useEffect(() => {
     filterPendencias();
-  }, [pendencias, searchTerm, statusFilter, priorityFilter]);
+  }, [pendencias, searchTerm, statusFilter, priorityFilter, activeTab]);
 
   const loadData = async () => {
     console.log('[AdminFinancingPendenciasPage] loadData() called');
@@ -94,6 +97,19 @@ export default function AdminFinancingPendenciasPage() {
 
   const filterPendencias = () => {
     let filtered = [...pendencias];
+
+    // Filter by tab (ativas = not resolved, historico = resolved)
+    if (activeTab === 'ativas') {
+      filtered = filtered.filter(p => p.status !== 'Resolvida');
+    } else if (activeTab === 'historico') {
+      filtered = filtered.filter(p => p.status === 'Resolvida');
+      // Sort by resolved date (most recent first)
+      filtered.sort((a, b) => {
+        const dateA = a.resolvedDate ? new Date(a.resolvedDate).getTime() : 0;
+        const dateB = b.resolvedDate ? new Date(b.resolvedDate).getTime() : 0;
+        return dateB - dateA;
+      });
+    }
 
     if (searchTerm) {
       filtered = filtered.filter(p => 
@@ -238,18 +254,20 @@ export default function AdminFinancingPendenciasPage() {
     const pendencia = pendencias.find(p => p._id === pendenciaId);
     if (!pendencia) return;
 
-    // Optimistic update
+    const now = new Date().toISOString();
+
+    // Optimistic update - remove from active list
     setPendencias(prev => prev.map(p => p._id === pendenciaId ? { 
       ...p, 
       status: 'Resolvida',
-      resolvedDate: new Date().toISOString()
+      resolvedDate: now
     } : p));
 
     try {
       await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
         _id: pendenciaId,
         status: 'Resolvida',
-        resolvedDate: new Date().toISOString()
+        resolvedDate: now
       });
 
       // Create history entry
@@ -260,14 +278,14 @@ export default function AdminFinancingPendenciasPage() {
           tipoEvento: 'Pendencia_Concluida',
           interactionType: 'Conclusão de pendência',
           interactionDescription: `Pendência "${pendencia.title}" foi concluída`,
-          interactionDate: new Date().toISOString(),
+          interactionDate: now,
           autorTipo: 'Sistema'
         });
       }
 
       toast({
         title: "✅ Pendência concluída",
-        description: `"${pendencia.title}" foi marcada como resolvida`,
+        description: `"${pendencia.title}" foi marcada como resolvida e movida para o histórico`,
       });
 
       await loadData();
@@ -289,14 +307,14 @@ export default function AdminFinancingPendenciasPage() {
     // Optimistic update
     setPendencias(prev => prev.map(p => p._id === pendenciaId ? { 
       ...p, 
-      status: 'Aberta',
+      status: 'Pendente',
       resolvedDate: undefined
     } : p));
 
     try {
       await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
         _id: pendenciaId,
-        status: 'Aberta',
+        status: 'Pendente',
         resolvedDate: undefined
       });
 
@@ -315,7 +333,7 @@ export default function AdminFinancingPendenciasPage() {
 
       toast({
         title: "🔄 Pendência reaberta",
-        description: `"${pendencia.title}" foi reaberta`,
+        description: `"${pendencia.title}" foi reaberta e movida para pendências ativas`,
       });
 
       await loadData();
@@ -328,6 +346,139 @@ export default function AdminFinancingPendenciasPage() {
       });
       await loadData(); // Revert on failure
     }
+  };
+
+  const renderPendenciasTable = () => {
+    if (isLoading) {
+      return (
+        <div className="p-12 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-buttonbackground"></div>
+        </div>
+      );
+    }
+
+    if (filteredPendencias.length === 0) {
+      return (
+        <div className="p-12 text-center text-dark-gray font-paragraph">
+          {activeTab === 'ativas' ? 'Nenhuma pendência ativa encontrada' : 'Nenhuma pendência concluída encontrada'}
+        </div>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="font-paragraph">Título</TableHead>
+            <TableHead className="font-paragraph">Status</TableHead>
+            <TableHead className="font-paragraph">Prioridade</TableHead>
+            <TableHead className="font-paragraph">Tipo</TableHead>
+            {activeTab === 'ativas' ? (
+              <TableHead className="font-paragraph">Prazo</TableHead>
+            ) : (
+              <TableHead className="font-paragraph">Data Conclusão</TableHead>
+            )}
+            <TableHead className="font-paragraph">Responsável</TableHead>
+            <TableHead className="font-paragraph text-right">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredPendencias.map((pendencia) => {
+            const overdueStatus = isOverdue(pendencia.dueDate, pendencia.status);
+            
+            return (
+              <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
+                <TableCell className="font-paragraph font-medium">
+                  <div>
+                    <div className={`flex items-center gap-2 ${overdueStatus ? 'text-red-700 font-bold' : ''}`}>
+                      {pendencia.title}
+                      {pendencia.bloqueiaFase && (
+                        <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
+                      )}
+                      {overdueStatus && (
+                        <Badge className="text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
+                      )}
+                    </div>
+                    {pendencia.description && (
+                      <div className="text-sm text-dark-gray mt-1 line-clamp-1">
+                        {pendencia.description}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
+                <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
+                <TableCell className="font-paragraph">{pendencia.tipo}</TableCell>
+                <TableCell className="font-paragraph">
+                  {activeTab === 'ativas' ? (
+                    pendencia.dueDate ? (
+                      <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
+                        {format(new Date(pendencia.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                        {overdueStatus && (
+                          <div className="text-xs">Atrasada</div>
+                        )}
+                      </div>
+                    ) : (
+                      '-'
+                    )
+                  ) : (
+                    pendencia.resolvedDate ? (
+                      <div>
+                        {format(new Date(pendencia.resolvedDate), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                      </div>
+                    ) : (
+                      '-'
+                    )
+                  )}
+                </TableCell>
+                <TableCell className="font-paragraph">
+                  {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '-'}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    {pendencia.status !== 'Resolvida' && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleConcluir(pendencia._id)}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <CheckSquare className="w-4 h-4 mr-1" />
+                        Concluir
+                      </Button>
+                    )}
+                    {pendencia.status === 'Resolvida' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReabrir(pendencia._id)}
+                      >
+                        <RotateCcw className="w-4 h-4 mr-1" />
+                        Reabrir
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(pendencia)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(pendencia._id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    );
   };
 
   return (
@@ -450,129 +601,45 @@ export default function AdminFinancingPendenciasPage() {
             </Card>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Atrasadas</CardTitle>
+                <CardTitle className="text-sm font-paragraph text-dark-gray">Concluídas</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold font-heading text-orange-600">
-                  {pendencias.filter(p => p.status !== 'Resolvida' && isOverdue(p.dueDate)).length}
+                <div className="text-3xl font-bold font-heading text-green-600">
+                  {pendencias.filter(p => p.status === 'Resolvida').length}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Table */}
-          <Card>
-            <CardContent className="p-0">
-              {isLoading ? (
-                <div className="p-12 text-center">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-buttonbackground"></div>
-                </div>
-              ) : filteredPendencias.length === 0 ? (
-                <div className="p-12 text-center text-dark-gray font-paragraph">
-                  Nenhuma pendência encontrada
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="font-paragraph">Título</TableHead>
-                      <TableHead className="font-paragraph">Status</TableHead>
-                      <TableHead className="font-paragraph">Prioridade</TableHead>
-                      <TableHead className="font-paragraph">Tipo</TableHead>
-                      <TableHead className="font-paragraph">Prazo</TableHead>
-                      <TableHead className="font-paragraph">Responsável</TableHead>
-                      <TableHead className="font-paragraph text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPendencias.map((pendencia) => {
-                      const overdueStatus = isOverdue(pendencia.dueDate, pendencia.status);
-                      
-                      return (
-                        <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
-                          <TableCell className="font-paragraph font-medium">
-                            <div>
-                              <div className={`flex items-center gap-2 ${overdueStatus ? 'text-red-700 font-bold' : ''}`}>
-                                {pendencia.title}
-                                {pendencia.bloqueiaFase && (
-                                  <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
-                                )}
-                                {overdueStatus && (
-                                  <Badge className="text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
-                                )}
-                              </div>
-                              {pendencia.description && (
-                                <div className="text-sm text-dark-gray mt-1 line-clamp-1">
-                                  {pendencia.description}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
-                          <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
-                          <TableCell className="font-paragraph">{pendencia.tipo}</TableCell>
-                          <TableCell className="font-paragraph">
-                            {pendencia.dueDate ? (
-                              <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
-                                {format(new Date(pendencia.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                                {overdueStatus && (
-                                  <div className="text-xs">Atrasada</div>
-                                )}
-                              </div>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell className="font-paragraph">
-                            {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '-'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              {pendencia.status !== 'Resolvida' && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => handleConcluir(pendencia._id)}
-                                  className="bg-green-600 hover:bg-green-700 text-white"
-                                >
-                                  <CheckSquare className="w-4 h-4 mr-1" />
-                                  Concluir
-                                </Button>
-                              )}
-                              {pendencia.status === 'Resolvida' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleReabrir(pendencia._id)}
-                                >
-                                  <RotateCcw className="w-4 h-4 mr-1" />
-                                  Reabrir
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(pendencia)}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(pendencia._id)}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          {/* Tabs for Active and History */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+              <TabsTrigger value="ativas" className="font-paragraph">
+                <Clock className="w-4 h-4 mr-2" />
+                Pendências Ativas
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="font-paragraph">
+                <History className="w-4 h-4 mr-2" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="ativas">
+              <Card>
+                <CardContent className="p-0">
+                  {renderPendenciasTable()}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="historico">
+              <Card>
+                <CardContent className="p-0">
+                  {renderPendenciasTable()}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
