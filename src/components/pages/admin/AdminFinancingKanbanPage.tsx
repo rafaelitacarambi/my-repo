@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
@@ -35,7 +36,9 @@ import {
   ChevronRight,
   Eye,
   Download,
-  File
+  File,
+  LayoutGrid,
+  ListTodo
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -290,6 +293,7 @@ const DEFAULT_PROPONENT_DOCUMENTS = [
 ];
 
 export default function AdminFinancingKanbanPage() {
+  const navigate = useNavigate();
   const [cases, setCases] = useState<FinancingCase[]>([]);
   const [pendings, setPendings] = useState<Pending[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -1543,6 +1547,35 @@ export default function AdminFinancingKanbanPage() {
   return (
     <div className="min-h-screen bg-light-gray">
       <Header />
+
+      {/* Fixed Navigation Bar */}
+      <nav className="sticky top-0 z-50 bg-white border-b-2 border-border-gray shadow-md">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
+          <div className="flex items-center justify-center gap-2 py-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-heading font-semibold text-sm transition-all bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm hover:shadow-md"
+            >
+              <LayoutGrid className="w-5 h-5" />
+              <span className="hidden sm:inline">Kanban</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/financiamento-pendencias')}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-heading font-semibold text-sm transition-all bg-white text-foreground border-2 border-border-gray hover:bg-light-gray hover:border-secondary/40 shadow-sm hover:shadow-md"
+            >
+              <AlertTriangle className="w-5 h-5" />
+              <span className="hidden sm:inline">Pendências</span>
+            </button>
+            <button
+              onClick={() => navigate('/admin/financiamento-tarefas')}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-heading font-semibold text-sm transition-all bg-white text-foreground border-2 border-border-gray hover:bg-light-gray hover:border-secondary/40 shadow-sm hover:shadow-md"
+            >
+              <ListTodo className="w-5 h-5" />
+              <span className="hidden sm:inline">Tarefas</span>
+            </button>
+          </div>
+        </div>
+      </nav>
 
       {/* Hero Section */}
       <section className="w-full bg-gradient-to-br from-secondary via-secondary/90 to-buttonbackground py-16">
