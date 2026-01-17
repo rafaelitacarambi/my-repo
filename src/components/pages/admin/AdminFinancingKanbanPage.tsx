@@ -34,7 +34,8 @@ import {
   Info,
   ChevronRight,
   Eye,
-  Download
+  Download,
+  File
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -199,6 +200,24 @@ interface VendorChecklist {
   documentStatus?: string;
 }
 
+interface ProponentDocumentItem {
+  _id: string;
+  documentType: string;
+  documentName: string;
+  isReceived: boolean;
+  isActive: boolean;
+  fileUrl?: string;
+  notes?: string;
+  uploadDate?: string;
+}
+
+interface ProponentDocumentChecklist {
+  _id?: string;
+  atendimentoRef: string;
+  clientRef: string;
+  documents: ProponentDocumentItem[];
+}
+
 // Financing Columns Configuration (exact order as requested)
 const FINANCING_COLUMNS: FinancingColumn[] = [
   { id: 'aguardando-imovel', name: 'Aguardando o imóvel', color: 'bg-slate-50 border-slate-200', bgColor: 'bg-slate-50', borderColor: 'border-slate-300' },
@@ -232,6 +251,17 @@ const PRIORITY_LEVELS = ['Alta', 'Média', 'Baixa'];
 const PENDING_STATUS = ['Aberta', 'Em Andamento', 'Resolvida', 'Cancelada'];
 const TASK_STATUS = ['Pendente', 'Em Progresso', 'Concluída', 'Atrasada'];
 
+// Default document types for each proponent
+const DEFAULT_PROPONENT_DOCUMENTS = [
+  { documentType: 'RG, CPF ou CNH', documentName: 'RG, CPF ou CNH' },
+  { documentType: 'Comprovante de residência atual', documentName: 'Comprovante de residência atual' },
+  { documentType: 'Certidão de nascimento ou casamento', documentName: 'Certidão de nascimento ou casamento' },
+  { documentType: 'Holerite dos últimos 2 meses', documentName: 'Holerite dos últimos 2 meses' },
+  { documentType: 'Pró-labore dos últimos 3 meses', documentName: 'Pró-labore dos últimos 3 meses (se houver)' },
+  { documentType: 'Extrato do FGTS', documentName: 'Extrato do FGTS (se houver)' },
+  { documentType: 'Declaração de Imposto de Renda', documentName: 'Declaração de Imposto de Renda (se houver)' }
+];
+
 export default function AdminFinancingKanbanPage() {
   const [cases, setCases] = useState<FinancingCase[]>([]);
   const [pendings, setPendings] = useState<Pending[]>([]);
@@ -247,6 +277,7 @@ export default function AdminFinancingKanbanPage() {
   const [history, setHistory] = useState<HistricodeInteraes[]>([]);
   const [properties, setProperties] = useState<Imveis[]>([]);
   const [proponentChecklists, setProponentChecklists] = useState<Map<string, ProponentChecklist>>(new Map());
+  const [proponentDocumentChecklists, setProponentDocumentChecklists] = useState<Map<string, ProponentDocumentChecklist>>(new Map());
   const [vendorChecklists, setVendorChecklists] = useState<VendorChecklist[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAgencia, setFilterAgencia] = useState('');
@@ -529,8 +560,80 @@ export default function AdminFinancingKanbanPage() {
       const { items: linkedPropsList } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
       setLinkedProperties(linkedPropsList.filter(lp => lp.atendimentoRef === caseId));
 
+      // Load document checklists for proponents
+      await loadProponentDocumentChecklists(caseId, principalClientRef, filteredParticipants);
+
     } catch (error) {
       console.error('Error loading case details:', error);
+    }
+  };
+
+  // Load or create document checklists for all proponents
+  const loadProponentDocumentChecklists = async (caseId: string, principalClientRef: string | undefined, participants: ServiceParties[]) => {
+    try {
+      // For now, we'll store document checklists in localStorage since we don't have a dedicated collection
+      // In production, you would create a new collection 'documentosproponentes'
+      const storageKey = `doc-checklist-${caseId}`;
+      const stored = localStorage.getItem(storageKey);
+      
+      const checklistsMap = new Map<string, ProponentDocumentChecklist>();
+      
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        Object.keys(parsed).forEach(clientRef => {
+          checklistsMap.set(clientRef, parsed[clientRef]);
+        });
+      }
+      
+      // Ensure principal proponent has document checklist
+      if (principalClientRef && !checklistsMap.has(principalClientRef)) {
+        const newChecklist: ProponentDocumentChecklist = {
+          _id: crypto.randomUUID(),
+          atendimentoRef: caseId,
+          clientRef: principalClientRef,
+          documents: DEFAULT_PROPONENT_DOCUMENTS.map(doc => ({
+            _id: crypto.randomUUID(),
+            documentType: doc.documentType,
+            documentName: doc.documentName,
+            isReceived: false,
+            isActive: true,
+            notes: ''
+          }))
+        };
+        checklistsMap.set(principalClientRef, newChecklist);
+      }
+      
+      // Ensure all participants have document checklists
+      for (const participant of participants) {
+        if (participant.clientRef && !checklistsMap.has(participant.clientRef)) {
+          const newChecklist: ProponentDocumentChecklist = {
+            _id: crypto.randomUUID(),
+            atendimentoRef: caseId,
+            clientRef: participant.clientRef,
+            documents: DEFAULT_PROPONENT_DOCUMENTS.map(doc => ({
+              _id: crypto.randomUUID(),
+              documentType: doc.documentType,
+              documentName: doc.documentName,
+              isReceived: false,
+              isActive: true,
+              notes: ''
+            }))
+          };
+          checklistsMap.set(participant.clientRef, newChecklist);
+        }
+      }
+      
+      setProponentDocumentChecklists(checklistsMap);
+      
+      // Save to localStorage
+      const toStore: Record<string, ProponentDocumentChecklist> = {};
+      checklistsMap.forEach((value, key) => {
+        toStore[key] = value;
+      });
+      localStorage.setItem(storageKey, JSON.stringify(toStore));
+      
+    } catch (error) {
+      console.error('Error loading proponent document checklists:', error);
     }
   };
 
@@ -884,6 +987,138 @@ export default function AdminFinancingKanbanPage() {
     }, 500);
 
     setDebounceTimer(timer);
+  };
+
+  // Update document checklist item
+  const handleUpdateDocumentItem = async (clientRef: string, documentId: string, updates: Partial<ProponentDocumentItem>) => {
+    if (!selectedCase) return;
+
+    const checklist = proponentDocumentChecklists.get(clientRef);
+    if (!checklist) return;
+
+    const updatedDocuments = checklist.documents.map(doc => 
+      doc._id === documentId ? { ...doc, ...updates } : doc
+    );
+
+    const updatedChecklist: ProponentDocumentChecklist = {
+      ...checklist,
+      documents: updatedDocuments
+    };
+
+    const newMap = new Map(proponentDocumentChecklists);
+    newMap.set(clientRef, updatedChecklist);
+    setProponentDocumentChecklists(newMap);
+
+    // Save to localStorage
+    const storageKey = `doc-checklist-${selectedCase._id}`;
+    const toStore: Record<string, ProponentDocumentChecklist> = {};
+    newMap.forEach((value, key) => {
+      toStore[key] = value;
+    });
+    localStorage.setItem(storageKey, JSON.stringify(toStore));
+
+    // Create history entry
+    const client = clients.find(c => c._id === clientRef);
+    const clientName = client?.clientName || client?.nomeRazaoSocial || 'Proponente';
+    const document = updatedDocuments.find(d => d._id === documentId);
+    
+    if (document) {
+      let description = '';
+      if (updates.isReceived !== undefined) {
+        description = updates.isReceived 
+          ? `Documento "${document.documentName}" marcado como RECEBIDO para ${clientName}`
+          : `Documento "${document.documentName}" marcado como NÃO RECEBIDO para ${clientName}`;
+      } else if (updates.isActive === false) {
+        description = `Documento "${document.documentName}" EXCLUÍDO do checklist de ${clientName}`;
+      }
+
+      if (description) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: selectedCase._id,
+          tipoEvento: 'Documento',
+          interactionType: 'Atualização de documento',
+          interactionDescription: description,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+    }
+
+    // Check and create/remove automatic pendings
+    await syncDocumentPendings(clientRef);
+  };
+
+  // Delete document item (mark as inactive)
+  const handleDeleteDocumentItem = async (clientRef: string, documentId: string) => {
+    await handleUpdateDocumentItem(clientRef, documentId, { isActive: false });
+  };
+
+  // Sync automatic pendings based on document checklist
+  const syncDocumentPendings = async (clientRef: string) => {
+    if (!selectedCase) return;
+
+    const checklist = proponentDocumentChecklists.get(clientRef);
+    if (!checklist) return;
+
+    const client = clients.find(c => c._id === clientRef);
+    const clientName = client?.clientName || client?.nomeRazaoSocial || 'Proponente';
+
+    // Get active documents that are not received
+    const missingDocs = checklist.documents.filter(doc => doc.isActive && !doc.isReceived);
+
+    // Get all existing document pendings for this client
+    const existingPendings = pendings.filter(p => 
+      p.atendimentoRef === selectedCase._id && 
+      p.categoria === 'Documento' &&
+      p.responsiblePartyDetails?.includes(clientName)
+    );
+
+    // Create pendings for missing documents
+    for (const doc of missingDocs) {
+      const pendingTitle = `Documento pendente: ${doc.documentName} - ${clientName}`;
+      const alreadyExists = existingPendings.some(p => p.title === pendingTitle);
+
+      if (!alreadyExists) {
+        const newPending: PendnciasdoFinanciamento = {
+          _id: crypto.randomUUID(),
+          atendimentoRef: selectedCase._id,
+          title: pendingTitle,
+          description: `Aguardando recebimento do documento "${doc.documentName}" do proponente ${clientName}`,
+          status: 'Aberta',
+          priority: 'Alta',
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+          responsiblePartyType: 'Cliente',
+          responsiblePartyDetails: clientName,
+          taskAutomaticallyCreated: true,
+          creationDate: new Date().toISOString(),
+          bloqueiaFase: false,
+          categoria: 'Documento',
+          tipo: 'Automática - Documento Proponente'
+        };
+
+        await BaseCrudService.create('pendenciasfinanciamento', newPending);
+        setPendings([...pendings, newPending as Pending]);
+      }
+    }
+
+    // Remove pendings for documents that are now received or deleted
+    for (const pending of existingPendings) {
+      const docName = pending.title.replace(`Documento pendente: `, '').replace(` - ${clientName}`, '');
+      const doc = checklist.documents.find(d => d.documentName === docName);
+
+      if (!doc || !doc.isActive || doc.isReceived) {
+        await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
+          _id: pending._id,
+          status: 'Resolvida',
+          resolvedDate: new Date().toISOString()
+        });
+        setPendings(pendings.map(p => p._id === pending._id ? { ...p, status: 'Resolvida' } : p));
+      }
+    }
+
+    // Reload data to update counts
+    await loadData();
   };
 
   // Upload document
@@ -1748,7 +1983,7 @@ export default function AdminFinancingKanbanPage() {
                                   </div>
 
                                   {/* Checklist Section */}
-                                  <div>
+                                  <div className="mb-8">
                                     <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
                                       <ClipboardList className="w-5 h-5 text-secondary" />
                                       Checklist Individual
@@ -1886,6 +2121,176 @@ export default function AdminFinancingKanbanPage() {
                                         </RadioGroup>
                                       </div>
                                     </div>
+                                  </div>
+
+                                  {/* Document Checklist Section */}
+                                  <div className="mt-8 pt-8 border-t-2 border-border-gray">
+                                    <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
+                                      <FileCheck className="w-5 h-5 text-secondary" />
+                                      Checklist de Documentos
+                                    </h5>
+                                    
+                                    {(() => {
+                                      const docChecklist = proponentDocumentChecklists.get(currentClientRef);
+                                      
+                                      if (!docChecklist) {
+                                        return (
+                                          <div className="text-center py-8 bg-light-gray/50 rounded-xl">
+                                            <File className="w-12 h-12 mx-auto mb-3 text-foreground/20" />
+                                            <p className="text-sm text-foreground/60">Carregando checklist de documentos...</p>
+                                          </div>
+                                        );
+                                      }
+
+                                      const activeDocuments = docChecklist.documents.filter(doc => doc.isActive);
+                                      const receivedCount = activeDocuments.filter(doc => doc.isReceived).length;
+                                      const totalCount = activeDocuments.length;
+
+                                      return (
+                                        <div className="space-y-4">
+                                          {/* Progress indicator */}
+                                          <div className="bg-gradient-to-r from-secondary/10 to-secondary/5 p-4 rounded-lg border border-secondary/20">
+                                            <div className="flex items-center justify-between mb-2">
+                                              <span className="font-paragraph text-sm font-semibold text-foreground">
+                                                Progresso dos Documentos
+                                              </span>
+                                              <Badge className="bg-secondary text-secondary-foreground">
+                                                {receivedCount} de {totalCount} recebidos
+                                              </Badge>
+                                            </div>
+                                            <div className="w-full bg-white rounded-full h-3 overflow-hidden border border-border-gray">
+                                              <div 
+                                                className="bg-secondary h-full transition-all duration-500 ease-out"
+                                                style={{ width: `${totalCount > 0 ? (receivedCount / totalCount) * 100 : 0}%` }}
+                                              />
+                                            </div>
+                                          </div>
+
+                                          {/* Document items */}
+                                          <div className="space-y-3">
+                                            {activeDocuments.map((doc) => (
+                                              <motion.div
+                                                key={doc._id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className={`p-4 rounded-lg border-2 transition-all ${
+                                                  doc.isReceived 
+                                                    ? 'bg-green-50 border-green-300' 
+                                                    : 'bg-white border-border-gray hover:border-secondary/40'
+                                                }`}
+                                              >
+                                                <div className="space-y-3">
+                                                  {/* Document header */}
+                                                  <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex items-start gap-3 flex-1">
+                                                      <Checkbox
+                                                        checked={doc.isReceived}
+                                                        onCheckedChange={(checked) => 
+                                                          handleUpdateDocumentItem(currentClientRef, doc._id, { 
+                                                            isReceived: checked as boolean,
+                                                            uploadDate: checked ? new Date().toISOString() : undefined
+                                                          })
+                                                        }
+                                                        className="mt-1"
+                                                      />
+                                                      <div className="flex-1">
+                                                        <Label className={`font-paragraph text-sm font-semibold block mb-1 cursor-pointer ${
+                                                          doc.isReceived ? 'text-green-700' : 'text-foreground'
+                                                        }`}>
+                                                          {doc.documentName}
+                                                        </Label>
+                                                        {doc.isReceived && doc.uploadDate && (
+                                                          <p className="text-xs text-green-600 flex items-center gap-1">
+                                                            <CheckCircle className="w-3 h-3" />
+                                                            Recebido em {new Date(doc.uploadDate).toLocaleDateString('pt-BR')}
+                                                          </p>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      onClick={() => handleDeleteDocumentItem(currentClientRef, doc._id)}
+                                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                      title="Excluir item (não aplicável)"
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                  </div>
+
+                                                  {/* File upload section */}
+                                                  <div className="ml-8 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                      <Label className="text-xs text-foreground/70 font-semibold">
+                                                        Arquivo:
+                                                      </Label>
+                                                      {doc.fileUrl ? (
+                                                        <div className="flex items-center gap-2">
+                                                          <a 
+                                                            href={doc.fileUrl} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="text-xs text-secondary hover:underline flex items-center gap-1"
+                                                          >
+                                                            <Download className="w-3 h-3" />
+                                                            Ver arquivo
+                                                          </a>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onClick={() => handleUpdateDocumentItem(currentClientRef, doc._id, { fileUrl: undefined })}
+                                                            className="h-6 w-6 p-0"
+                                                          >
+                                                            <X className="w-3 h-3" />
+                                                          </Button>
+                                                        </div>
+                                                      ) : (
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          className="h-7 text-xs"
+                                                          onClick={() => {
+                                                            // Simulate file upload - in production, implement actual file upload
+                                                            const fakeUrl = `https://example.com/docs/${doc._id}.pdf`;
+                                                            handleUpdateDocumentItem(currentClientRef, doc._id, { fileUrl: fakeUrl });
+                                                          }}
+                                                        >
+                                                          <Upload className="w-3 h-3 mr-1" />
+                                                          Upload
+                                                        </Button>
+                                                      )}
+                                                    </div>
+
+                                                    {/* Notes field */}
+                                                    <div>
+                                                      <Label className="text-xs text-foreground/70 font-semibold mb-1 block">
+                                                        Observações:
+                                                      </Label>
+                                                      <Textarea
+                                                        value={doc.notes || ''}
+                                                        onChange={(e) => handleUpdateDocumentItem(currentClientRef, doc._id, { notes: e.target.value })}
+                                                        placeholder="Adicione observações sobre este documento..."
+                                                        rows={2}
+                                                        className="text-xs resize-none"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </motion.div>
+                                            ))}
+                                          </div>
+
+                                          {/* Info message */}
+                                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                                            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                            <p className="text-xs text-blue-800">
+                                              <strong>Importante:</strong> Documentos ativos e não recebidos geram pendências automáticas. 
+                                              Use o botão "Excluir item" para remover documentos não aplicáveis a este proponente.
+                                            </p>
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                               );
