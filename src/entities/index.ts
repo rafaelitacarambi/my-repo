@@ -116,6 +116,33 @@ export interface ServiceRecords {
 
 
 /**
+ * Collection ID: checklistproponentes
+ * Interface for ChecklistdosProponentes
+ */
+export interface ChecklistdosProponentes {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  atendimentoRef?: string;
+  /** @wixFieldType text */
+  clientRef?: string;
+  /** @wixFieldType boolean */
+  hasFgtsContribution?: boolean;
+  /** @wixFieldType boolean */
+  hasDependent?: boolean;
+  /** @wixFieldType boolean */
+  declaresIncomeTax?: boolean;
+  /** @wixFieldType boolean */
+  ownsProperty?: boolean;
+  /** @wixFieldType boolean */
+  hasActiveFinancing?: boolean;
+  /** @wixFieldType boolean */
+  isFirstAcquisition?: boolean;
+}
+
+
+/**
  * Collection ID: clientes
  * Interface for Clients
  */
