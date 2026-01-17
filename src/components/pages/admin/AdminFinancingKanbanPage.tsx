@@ -320,6 +320,11 @@ export default function AdminFinancingKanbanPage() {
     bankData: ''
   });
 
+  // Proponents tab state
+  const [selectedProponentId, setSelectedProponentId] = useState<string>('');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+
   // Load data
   useEffect(() => {
     loadData();
@@ -473,6 +478,8 @@ export default function AdminFinancingKanbanPage() {
     setSelectedCase(caseItem);
     await loadCaseDetails(caseItem._id);
     setShowDetailsModal(true);
+    setModalTab('dados'); // Reset to first tab
+    setSelectedProponentId(''); // Reset selected proponent
   };
 
   // Save case details
@@ -735,38 +742,65 @@ export default function AdminFinancingKanbanPage() {
   const handleUpdateProponentChecklist = async (clientRef: string, field: keyof ProponentChecklist, value: boolean) => {
     if (!selectedCase) return;
 
-    try {
-      const existing = proponentChecklists.get(clientRef);
-      
-      if (existing && existing._id) {
-        // Update existing checklist
-        await BaseCrudService.update<ChecklistdosProponentes>('checklistproponentes', {
-          _id: existing._id,
-          [field]: value
-        });
-
-        const updated = { ...existing, [field]: value };
-        setProponentChecklists(new Map(proponentChecklists.set(clientRef, updated)));
-      } else {
-        // Create new checklist
-        const newChecklist: ChecklistdosProponentes = {
-          _id: crypto.randomUUID(),
-          atendimentoRef: selectedCase._id,
-          clientRef,
-          hasFgtsContribution: field === 'hasFgtsContribution' ? value : false,
-          hasDependent: field === 'hasDependent' ? value : false,
-          declaresIncomeTax: field === 'declaresIncomeTax' ? value : false,
-          ownsProperty: field === 'ownsProperty' ? value : false,
-          hasActiveFinancing: field === 'hasActiveFinancing' ? value : false,
-          isFirstAcquisition: field === 'isFirstAcquisition' ? value : false
-        };
-
-        await BaseCrudService.create('checklistproponentes', newChecklist);
-        setProponentChecklists(new Map(proponentChecklists.set(clientRef, newChecklist as ProponentChecklist)));
-      }
-    } catch (error) {
-      console.error('Error updating proponent checklist:', error);
+    // Clear existing timer
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
     }
+
+    // Update local state immediately
+    const existing = proponentChecklists.get(clientRef);
+    const updated = existing ? { ...existing, [field]: value } : {
+      _id: crypto.randomUUID(),
+      atendimentoRef: selectedCase._id,
+      clientRef,
+      hasFgtsContribution: field === 'hasFgtsContribution' ? value : false,
+      hasDependent: field === 'hasDependent' ? value : false,
+      declaresIncomeTax: field === 'declaresIncomeTax' ? value : false,
+      ownsProperty: field === 'ownsProperty' ? value : false,
+      hasActiveFinancing: field === 'hasActiveFinancing' ? value : false,
+      isFirstAcquisition: field === 'isFirstAcquisition' ? value : false
+    };
+    
+    setProponentChecklists(new Map(proponentChecklists.set(clientRef, updated)));
+    setSaveStatus('saving');
+
+    // Debounce save to database
+    const timer = setTimeout(async () => {
+      try {
+        if (existing && existing._id) {
+          // Update existing checklist
+          await BaseCrudService.update<ChecklistdosProponentes>('checklistproponentes', {
+            _id: existing._id,
+            [field]: value
+          });
+        } else {
+          // Create new checklist
+          const newChecklist: ChecklistdosProponentes = {
+            _id: updated._id!,
+            atendimentoRef: selectedCase._id,
+            clientRef,
+            hasFgtsContribution: updated.hasFgtsContribution,
+            hasDependent: updated.hasDependent,
+            declaresIncomeTax: updated.declaresIncomeTax,
+            ownsProperty: updated.ownsProperty,
+            hasActiveFinancing: updated.hasActiveFinancing,
+            isFirstAcquisition: updated.isFirstAcquisition
+          };
+
+          await BaseCrudService.create('checklistproponentes', newChecklist);
+        }
+        
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch (error) {
+        console.error('Error updating proponent checklist:', error);
+        setSaveStatus('idle');
+        // Reload to sync with server
+        await loadCaseDetails(selectedCase._id);
+      }
+    }, 500);
+
+    setDebounceTimer(timer);
   };
 
   // Upload document
@@ -1484,158 +1518,224 @@ export default function AdminFinancingKanbanPage() {
                 <TabsContent value="proponentes" className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg font-heading flex items-center gap-2">
-                        <Users className="w-5 h-5 text-secondary" />
-                        Dados dos Proponentes
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg font-heading flex items-center gap-2">
+                          <Users className="w-5 h-5 text-secondary" />
+                          Checklist dos Proponentes
+                        </CardTitle>
+                        {saveStatus === 'saved' && (
+                          <Badge className="bg-green-500 text-white">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Salvo
+                          </Badge>
+                        )}
+                        {saveStatus === 'saving' && (
+                          <Badge variant="outline" className="text-foreground/60">
+                            Salvando...
+                          </Badge>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent>
                       {participants.length === 0 ? (
-                        <div className="text-center py-8">
-                          <Users className="w-12 h-12 mx-auto mb-3 text-foreground/20" />
-                          <p className="text-foreground/60 mb-4">Nenhum proponente cadastrado</p>
-                          <p className="text-sm text-foreground/50">Adicione participantes na aba "Dados" para começar</p>
+                        <div className="text-center py-12 bg-light-gray/50 rounded-xl border-2 border-dashed border-border-gray">
+                          <Users className="w-16 h-16 mx-auto mb-4 text-foreground/20" />
+                          <h4 className="font-heading text-lg font-semibold mb-2 text-foreground/80">
+                            Nenhum proponente vinculado
+                          </h4>
+                          <p className="text-sm text-foreground/60 mb-4">
+                            Adicione participantes na aba 'Dados do Processo' para preencher o checklist
+                          </p>
+                          <Button 
+                            onClick={() => setModalTab('dados')}
+                            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Adicionar participante
+                          </Button>
                         </div>
                       ) : (
                         <div className="space-y-6">
-                          {participants.map(participant => {
-                            const client = clients.find(c => c._id === participant.clientRef);
-                            const checklist = proponentChecklists.get(participant.clientRef);
+                          {/* Participant Selector (only show if more than 1) */}
+                          {participants.length > 1 && (
+                            <div>
+                              <Label className="font-paragraph text-sm mb-2 block font-semibold">
+                                Selecione o participante
+                              </Label>
+                              <Select 
+                                value={selectedProponentId || participants[0]?.clientRef} 
+                                onValueChange={setSelectedProponentId}
+                              >
+                                <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
+                                  <SelectValue placeholder="Escolha um proponente" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {participants.map(participant => {
+                                    const client = clients.find(c => c._id === participant.clientRef);
+                                    return (
+                                      <SelectItem key={participant._id} value={participant.clientRef}>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-semibold">
+                                            {client?.clientName || client?.nomeRazaoSocial || 'Nome não disponível'}
+                                          </span>
+                                          <span className="text-xs text-foreground/60">
+                                            ({participant.roleInService})
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          {/* Display selected proponent or first one */}
+                          {(() => {
+                            const currentClientRef = selectedProponentId || participants[0]?.clientRef;
+                            const participant = participants.find(p => p.clientRef === currentClientRef);
+                            const client = clients.find(c => c._id === currentClientRef);
+                            const checklist = proponentChecklists.get(currentClientRef);
                             
+                            if (!participant || !client) return null;
+
                             return (
-                              <div key={participant._id} className="border-2 border-border-gray rounded-xl p-5 bg-light-gray/50">
-                                {/* Proponent Header */}
-                                <div className="mb-5 pb-4 border-b border-border-gray">
-                                  <div className="flex items-start justify-between">
-                                    <div>
-                                      <h4 className="font-heading text-lg font-bold text-secondary mb-1">
-                                        {client?.clientName || client?.nomeRazaoSocial || 'Nome não disponível'}
+                              <div className="border-2 border-secondary/20 rounded-xl p-6 bg-gradient-to-br from-white to-light-gray/30">
+                                {/* Proponent Info Header */}
+                                <div className="mb-6 pb-5 border-b-2 border-border-gray">
+                                  <div className="flex items-start justify-between mb-3">
+                                    <div className="flex-1">
+                                      <h4 className="font-heading text-xl font-bold text-secondary mb-2">
+                                        {client.clientName || client.nomeRazaoSocial || 'Nome não disponível'}
                                       </h4>
-                                      <div className="flex flex-wrap gap-2 text-sm text-foreground/70">
-                                        {client?.cpfCnpj && (
-                                          <span className="flex items-center gap-1">
-                                            <strong>CPF:</strong> {client.cpfCnpj}
-                                          </span>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                        {client.cpfCnpj && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-foreground/70">CPF:</span>
+                                            <span className="text-foreground">{client.cpfCnpj}</span>
+                                          </div>
                                         )}
-                                        {client?.emailPrincipal && (
-                                          <span className="flex items-center gap-1">
-                                            • <strong>Email:</strong> {client.emailPrincipal}
-                                          </span>
+                                        {client.emailPrincipal && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-foreground/70">Email:</span>
+                                            <span className="text-foreground">{client.emailPrincipal}</span>
+                                          </div>
                                         )}
-                                        {client?.telefonePrincipal && (
-                                          <span className="flex items-center gap-1">
-                                            • <strong>Tel:</strong> {client.telefonePrincipal}
-                                          </span>
+                                        {client.telefonePrincipal && (
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-foreground/70">Contato:</span>
+                                            <span className="text-foreground">{client.telefonePrincipal}</span>
+                                          </div>
                                         )}
                                       </div>
-                                      <Badge className="mt-2" variant="outline">
-                                        {participant.roleInService}
-                                      </Badge>
                                     </div>
+                                    <Badge className="bg-secondary text-secondary-foreground text-sm px-3 py-1">
+                                      {participant.roleInService}
+                                    </Badge>
                                   </div>
                                 </div>
 
                                 {/* Checklist Section */}
                                 <div>
-                                  <h5 className="font-heading text-base font-semibold mb-4 flex items-center gap-2">
-                                    <ClipboardList className="w-4 h-4 text-secondary" />
+                                  <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
+                                    <ClipboardList className="w-5 h-5 text-secondary" />
                                     Checklist Individual
                                   </h5>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-border-gray hover:border-secondary/30 transition-colors">
+                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
                                       <Checkbox
                                         id={`fgts-${participant._id}`}
                                         checked={checklist?.hasFgtsContribution || false}
                                         onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'hasFgtsContribution', checked as boolean)}
-                                        className="mt-0.5"
+                                        className="mt-1"
                                       />
                                       <div className="flex-1">
-                                        <Label htmlFor={`fgts-${participant._id}`} className="font-paragraph text-sm font-medium cursor-pointer leading-tight">
+                                        <Label htmlFor={`fgts-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
                                           Possui 3 anos de contribuição FGTS?
                                         </Label>
-                                        <p className="text-xs text-foreground/60 mt-1">Necessário para utilizar FGTS no financiamento</p>
+                                        <p className="text-xs text-foreground/60">Necessário para utilizar FGTS no financiamento</p>
                                       </div>
                                     </div>
 
-                                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-border-gray hover:border-secondary/30 transition-colors">
+                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
                                       <Checkbox
                                         id={`dependent-${participant._id}`}
                                         checked={checklist?.hasDependent || false}
                                         onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'hasDependent', checked as boolean)}
-                                        className="mt-0.5"
+                                        className="mt-1"
                                       />
                                       <div className="flex-1">
-                                        <Label htmlFor={`dependent-${participant._id}`} className="font-paragraph text-sm font-medium cursor-pointer leading-tight">
-                                          Possui dependente?
+                                        <Label htmlFor={`dependent-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
+                                          Possui dependente ou participante?
                                         </Label>
-                                        <p className="text-xs text-foreground/60 mt-1">Pode influenciar na análise de crédito</p>
+                                        <p className="text-xs text-foreground/60">Pode influenciar na análise de crédito</p>
                                       </div>
                                     </div>
 
-                                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-border-gray hover:border-secondary/30 transition-colors">
+                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
                                       <Checkbox
                                         id={`ir-${participant._id}`}
                                         checked={checklist?.declaresIncomeTax || false}
                                         onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'declaresIncomeTax', checked as boolean)}
-                                        className="mt-0.5"
+                                        className="mt-1"
                                       />
                                       <div className="flex-1">
-                                        <Label htmlFor={`ir-${participant._id}`} className="font-paragraph text-sm font-medium cursor-pointer leading-tight">
+                                        <Label htmlFor={`ir-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
                                           Declara imposto de renda?
                                         </Label>
-                                        <p className="text-xs text-foreground/60 mt-1">Documento necessário para comprovação de renda</p>
+                                        <p className="text-xs text-foreground/60">Documento necessário para comprovação de renda</p>
                                       </div>
                                     </div>
 
-                                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-border-gray hover:border-secondary/30 transition-colors">
+                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
                                       <Checkbox
                                         id={`property-${participant._id}`}
                                         checked={checklist?.ownsProperty || false}
                                         onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'ownsProperty', checked as boolean)}
-                                        className="mt-0.5"
+                                        className="mt-1"
                                       />
                                       <div className="flex-1">
-                                        <Label htmlFor={`property-${participant._id}`} className="font-paragraph text-sm font-medium cursor-pointer leading-tight">
+                                        <Label htmlFor={`property-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
                                           Possui imóvel?
                                         </Label>
-                                        <p className="text-xs text-foreground/60 mt-1">Pode afetar condições do financiamento</p>
+                                        <p className="text-xs text-foreground/60">Pode afetar condições do financiamento</p>
                                       </div>
                                     </div>
 
-                                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-border-gray hover:border-secondary/30 transition-colors">
+                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
                                       <Checkbox
                                         id={`financing-${participant._id}`}
                                         checked={checklist?.hasActiveFinancing || false}
                                         onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'hasActiveFinancing', checked as boolean)}
-                                        className="mt-0.5"
+                                        className="mt-1"
                                       />
                                       <div className="flex-1">
-                                        <Label htmlFor={`financing-${participant._id}`} className="font-paragraph text-sm font-medium cursor-pointer leading-tight">
+                                        <Label htmlFor={`financing-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
                                           Possui financiamento ativo?
                                         </Label>
-                                        <p className="text-xs text-foreground/60 mt-1">Impacta na capacidade de endividamento</p>
+                                        <p className="text-xs text-foreground/60">Impacta na capacidade de endividamento</p>
                                       </div>
                                     </div>
 
-                                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-border-gray hover:border-secondary/30 transition-colors">
+                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
                                       <Checkbox
                                         id={`first-${participant._id}`}
                                         checked={checklist?.isFirstAcquisition || false}
                                         onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'isFirstAcquisition', checked as boolean)}
-                                        className="mt-0.5"
+                                        className="mt-1"
                                       />
                                       <div className="flex-1">
-                                        <Label htmlFor={`first-${participant._id}`} className="font-paragraph text-sm font-medium cursor-pointer leading-tight">
+                                        <Label htmlFor={`first-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
                                           Primeira aquisição no âmbito SFH?
                                         </Label>
-                                        <p className="text-xs text-foreground/60 mt-1">Pode garantir melhores taxas de juros</p>
+                                        <p className="text-xs text-foreground/60">Pode garantir melhores taxas de juros</p>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
                             );
-                          })}
+                          })()}
                         </div>
                       )}
                     </CardContent>
