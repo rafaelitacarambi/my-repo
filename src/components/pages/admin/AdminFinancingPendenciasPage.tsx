@@ -98,11 +98,11 @@ export default function AdminFinancingPendenciasPage() {
   const filterPendencias = () => {
     let filtered = [...pendencias];
 
-    // Filter by tab (ativas = not resolved, historico = resolved)
+    // Filter by tab (ativas = not completed, historico = completed)
     if (activeTab === 'ativas') {
-      filtered = filtered.filter(p => p.status !== 'Resolvida');
+      filtered = filtered.filter(p => p.status !== 'Concluída');
     } else if (activeTab === 'historico') {
-      filtered = filtered.filter(p => p.status === 'Resolvida');
+      filtered = filtered.filter(p => p.status === 'Concluída');
       // Sort by resolved date (most recent first)
       filtered.sort((a, b) => {
         const dateA = a.resolvedDate ? new Date(a.resolvedDate).getTime() : 0;
@@ -226,7 +226,7 @@ export default function AdminFinancingPendenciasPage() {
     const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
       'Pendente': { variant: 'destructive', label: 'Pendente' },
       'Em Andamento': { variant: 'secondary', label: 'Em Andamento' },
-      'Resolvida': { variant: 'default', label: 'Resolvida' }
+      'Concluída': { variant: 'default', label: 'Concluída' }
     };
     const config = variants[status || 'Pendente'] || variants['Pendente'];
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -246,7 +246,7 @@ export default function AdminFinancingPendenciasPage() {
   };
 
   const isOverdue = (dueDate?: Date | string, status?: string) => {
-    if (!dueDate || status === 'Resolvida') return false;
+    if (!dueDate || status === 'Concluída') return false;
     return new Date(dueDate) < new Date();
   };
 
@@ -256,17 +256,17 @@ export default function AdminFinancingPendenciasPage() {
 
     const now = new Date().toISOString();
 
-    // Optimistic update - remove from active list
+    // Optimistic update - update status to 'Concluída' and set resolvedDate
     setPendencias(prev => prev.map(p => p._id === pendenciaId ? { 
       ...p, 
-      status: 'Resolvida',
+      status: 'Concluída',
       resolvedDate: now
     } : p));
 
     try {
       await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
         _id: pendenciaId,
-        status: 'Resolvida',
+        status: 'Concluída',
         resolvedDate: now
       });
 
@@ -285,9 +285,10 @@ export default function AdminFinancingPendenciasPage() {
 
       toast({
         title: "✅ Pendência concluída",
-        description: `"${pendencia.title}" foi marcada como resolvida e movida para o histórico`,
+        description: `"${pendencia.title}" foi marcada como concluída e movida para o histórico`,
       });
 
+      // Reload data to ensure consistency
       await loadData();
     } catch (error) {
       console.error('Error completing pending:', error);
@@ -436,7 +437,7 @@ export default function AdminFinancingPendenciasPage() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    {pendencia.status !== 'Resolvida' && (
+                    {pendencia.status !== 'Concluída' && (
                       <Button
                         variant="default"
                         size="sm"
@@ -447,7 +448,7 @@ export default function AdminFinancingPendenciasPage() {
                         Concluir
                       </Button>
                     )}
-                    {pendencia.status === 'Resolvida' && (
+                    {pendencia.status === 'Concluída' && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -533,7 +534,7 @@ export default function AdminFinancingPendenciasPage() {
                       <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="Pendente">Pendente</SelectItem>
                       <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                      <SelectItem value="Resolvida">Resolvida</SelectItem>
+                      <SelectItem value="Concluída">Concluída</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -605,7 +606,7 @@ export default function AdminFinancingPendenciasPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold font-heading text-green-600">
-                  {pendencias.filter(p => p.status === 'Resolvida').length}
+                  {pendencias.filter(p => p.status === 'Concluída').length}
                 </div>
               </CardContent>
             </Card>
@@ -684,7 +685,7 @@ export default function AdminFinancingPendenciasPage() {
                   <SelectContent>
                     <SelectItem value="Pendente">Pendente</SelectItem>
                     <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                    <SelectItem value="Resolvida">Resolvida</SelectItem>
+                    <SelectItem value="Concluída">Concluída</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
