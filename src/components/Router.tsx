@@ -30,6 +30,8 @@ import AdminFinanciamentoDetalhePage from '@/components/pages/admin/AdminFinanci
 import AdminUsuariosPage from '@/components/pages/admin/AdminUsuariosPage';
 import DiagnosticoUsuarioPage from '@/components/pages/DiagnosticoUsuarioPage';
 import AdminFinanciamentoHubPage from '@/components/pages/admin/AdminFinanciamentoHubPage';
+import AdminFinancingPendenciasPage from '@/components/pages/admin/AdminFinancingPendenciasPage';
+import AdminFinancingTarefasPage from '@/components/pages/admin/AdminFinancingTarefasPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -184,6 +186,22 @@ const router = createBrowserRouter([
         element: (
           <ProtectedAdminRoute>
             <AdminFinanciamentoDetalhePage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/financiamento-pendencias",
+        element: (
+          <ProtectedAdminRoute allowedProfiles={['Admin', 'Operacional', 'Financeiro']}>
+            <AdminFinancingPendenciasPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/financiamento-tarefas",
+        element: (
+          <ProtectedAdminRoute allowedProfiles={['Admin', 'Operacional', 'Financeiro']}>
+            <AdminFinancingTarefasPage />
           </ProtectedAdminRoute>
         ),
       },

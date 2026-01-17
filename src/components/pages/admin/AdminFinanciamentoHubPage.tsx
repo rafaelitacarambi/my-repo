@@ -11,16 +11,20 @@ import { BaseCrudService } from '@/integrations';
 import { PendnciasdoFinanciamento, FinancingTasks } from '@/entities';
 
 export default function AdminFinanciamentoHubPage() {
+  console.log('[AdminFinanciamentoHubPage] Component mounted');
+  
   const navigate = useNavigate();
   const [pendenciasAtrasadas, setPendenciasAtrasadas] = useState(0);
   const [tarefasAtrasadas, setTarefasAtrasadas] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('[AdminFinanciamentoHubPage] useEffect triggered - loading counts');
     loadCounts();
   }, []);
 
   const loadCounts = async () => {
+    console.log('[AdminFinanciamentoHubPage] loadCounts() called');
     setIsLoading(true);
     const now = new Date();
 
@@ -44,6 +48,11 @@ export default function AdminFinanciamentoHubPage() {
     setPendenciasAtrasadas(pendenciasCount);
     setTarefasAtrasadas(tarefasCount);
     setIsLoading(false);
+    
+    console.log('[AdminFinanciamentoHubPage] Counts loaded:', {
+      pendenciasAtrasadas: pendenciasCount,
+      tarefasAtrasadas: tarefasCount
+    });
   };
 
   const cards = [
@@ -108,7 +117,10 @@ export default function AdminFinanciamentoHubPage() {
                 >
                   <Card 
                     className="h-full cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-border-gray"
-                    onClick={() => navigate(card.route)}
+                    onClick={() => {
+                      console.log('[AdminFinanciamentoHubPage] Card clicked - navigating to:', card.route);
+                      navigate(card.route);
+                    }}
                   >
                     <CardHeader className="space-y-4">
                       <div className="flex items-start justify-between">
@@ -135,6 +147,7 @@ export default function AdminFinanciamentoHubPage() {
                         className="w-full bg-buttonbackground hover:bg-buttonbackground/90 text-white font-paragraph"
                         onClick={(e) => {
                           e.stopPropagation();
+                          console.log('[AdminFinanciamentoHubPage] Button clicked - navigating to:', card.route);
                           navigate(card.route);
                         }}
                       >

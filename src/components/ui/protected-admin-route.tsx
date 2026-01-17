@@ -22,8 +22,17 @@ function ProtectedAdminContent({
 }) {
   const { isValidating, isAuthorized, userProfile, error } = useAuthValidation();
 
+  console.log('[ProtectedAdminContent] Auth state:', {
+    isValidating,
+    isAuthorized,
+    userProfile: userProfile?.profile,
+    allowedProfiles,
+    error
+  });
+
   // Show loading state while validating
   if (isValidating) {
+    console.log('[ProtectedAdminContent] Validating user...');
     return (
       <div className="min-h-screen bg-primary">
         <Header />
@@ -37,6 +46,7 @@ function ProtectedAdminContent({
 
   // If not authorized, show error
   if (!isAuthorized) {
+    console.log('[ProtectedAdminContent] User not authorized:', error);
     return (
       <div className="min-h-screen bg-primary">
         <Header />
@@ -59,7 +69,14 @@ function ProtectedAdminContent({
       profile => profile.toLowerCase() === userProfileLower
     );
 
+    console.log('[ProtectedAdminContent] Profile check:', {
+      userProfile: userProfile.profile,
+      allowedProfiles,
+      hasAccess
+    });
+
     if (!hasAccess) {
+      console.log('[ProtectedAdminContent] User does not have required profile');
       return (
         <div className="min-h-screen bg-primary">
           <Header />
@@ -77,6 +94,7 @@ function ProtectedAdminContent({
   }
 
   // User is authorized and has correct profile
+  console.log('[ProtectedAdminContent] User authorized - rendering children');
   return <>{children}</>;
 }
 
@@ -85,6 +103,8 @@ export function ProtectedAdminRoute({
   allowedProfiles = [],
   messageToSignIn = "Faça login para acessar esta área"
 }: ProtectedAdminRouteProps) {
+  console.log('[ProtectedAdminRoute] Rendering with allowedProfiles:', allowedProfiles);
+  
   return (
     <MemberProtectedRoute messageToSignIn={messageToSignIn}>
       <ProtectedAdminContent allowedProfiles={allowedProfiles}>
