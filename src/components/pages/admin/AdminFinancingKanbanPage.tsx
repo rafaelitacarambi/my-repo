@@ -452,6 +452,34 @@ export default function AdminFinancingKanbanPage() {
         });
       setProponentChecklists(checklistsMap);
 
+      // Ensure Principal Proponent has a checklist entry
+      if (atendimento.clientePrincipalRef) {
+        const principalClientRef = atendimento.clientePrincipalRef;
+        
+        // Check if checklist exists for principal proponent
+        if (!checklistsMap.has(principalClientRef)) {
+          // Create empty checklist for principal proponent
+          const newChecklist: ChecklistdosProponentes = {
+            _id: crypto.randomUUID(),
+            atendimentoRef: caseId,
+            clientRef: principalClientRef,
+            hasFgtsContribution: false,
+            hasDependent: false,
+            declaresIncomeTax: false,
+            ownsProperty: false,
+            hasActiveFinancing: false,
+            isFirstAcquisition: false
+          };
+
+          await BaseCrudService.create('checklistproponentes', newChecklist);
+          checklistsMap.set(principalClientRef, newChecklist as ProponentChecklist);
+          setProponentChecklists(new Map(checklistsMap));
+        }
+
+        // Set principal proponent as selected by default
+        setSelectedProponentId(principalClientRef);
+      }
+
       // Load documents
       const { items: docsList } = await BaseCrudService.getAll<DocumentosdoFinanciamento>('documentosfinanciamento');
       setDocuments(docsList.filter(d => d.atendimentoRef === caseId));
@@ -479,7 +507,7 @@ export default function AdminFinancingKanbanPage() {
     await loadCaseDetails(caseItem._id);
     setShowDetailsModal(true);
     setModalTab('dados'); // Reset to first tab
-    setSelectedProponentId(''); // Reset selected proponent
+    // selectedProponentId is set in loadCaseDetails to principal proponent
   };
 
   // Save case details
@@ -1537,207 +1565,245 @@ export default function AdminFinancingKanbanPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {participants.length === 0 ? (
-                        <div className="text-center py-12 bg-light-gray/50 rounded-xl border-2 border-dashed border-border-gray">
-                          <Users className="w-16 h-16 mx-auto mb-4 text-foreground/20" />
-                          <h4 className="font-heading text-lg font-semibold mb-2 text-foreground/80">
-                            Nenhum proponente vinculado
-                          </h4>
-                          <p className="text-sm text-foreground/60 mb-4">
-                            Adicione participantes na aba 'Dados do Processo' para preencher o checklist
-                          </p>
-                          <Button 
-                            onClick={() => setModalTab('dados')}
-                            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                          >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Adicionar participante
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-6">
-                          {/* Participant Selector (only show if more than 1) */}
-                          {participants.length > 1 && (
-                            <div>
-                              <Label className="font-paragraph text-sm mb-2 block font-semibold">
-                                Selecione o participante
-                              </Label>
-                              <Select 
-                                value={selectedProponentId || participants[0]?.clientRef} 
-                                onValueChange={setSelectedProponentId}
+                      {(() => {
+                        // Build proponents list: Principal first, then participants (avoiding duplicates)
+                        const proponentsList: Array<{ clientRef: string; roleInService: string; isPrincipal: boolean }> = [];
+                        
+                        // Get principal proponent from atendimento
+                        const atendimento = cases.find(c => c._id === selectedCase?._id);
+                        const principalClientRef = atendimento ? (atendimento as any).clientePrincipalRef : null;
+                        
+                        // Add principal proponent first if exists
+                        if (principalClientRef) {
+                          proponentsList.push({
+                            clientRef: principalClientRef,
+                            roleInService: 'Proponente Principal',
+                            isPrincipal: true
+                          });
+                        }
+                        
+                        // Add participants (excluding principal if already added)
+                        participants.forEach(participant => {
+                          if (participant.clientRef !== principalClientRef) {
+                            proponentsList.push({
+                              clientRef: participant.clientRef,
+                              roleInService: participant.roleInService || 'Participante',
+                              isPrincipal: false
+                            });
+                          }
+                        });
+                        
+                        if (proponentsList.length === 0) {
+                          return (
+                            <div className="text-center py-12 bg-light-gray/50 rounded-xl border-2 border-dashed border-border-gray">
+                              <Users className="w-16 h-16 mx-auto mb-4 text-foreground/20" />
+                              <h4 className="font-heading text-lg font-semibold mb-2 text-foreground/80">
+                                Nenhum proponente vinculado
+                              </h4>
+                              <p className="text-sm text-foreground/60 mb-4">
+                                Adicione participantes na aba 'Dados do Processo' para preencher o checklist
+                              </p>
+                              <Button 
+                                onClick={() => setModalTab('dados')}
+                                className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
                               >
-                                <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
-                                  <SelectValue placeholder="Escolha um proponente" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {participants.map(participant => {
-                                    const client = clients.find(c => c._id === participant.clientRef);
-                                    return (
-                                      <SelectItem key={participant._id} value={participant.clientRef}>
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-semibold">
-                                            {client?.clientName || client?.nomeRazaoSocial || 'Nome não disponível'}
-                                          </span>
-                                          <span className="text-xs text-foreground/60">
-                                            ({participant.roleInService})
-                                          </span>
-                                        </div>
-                                      </SelectItem>
-                                    );
-                                  })}
-                                </SelectContent>
-                              </Select>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Adicionar participante
+                              </Button>
                             </div>
-                          )}
-
-                          {/* Display selected proponent or first one */}
-                          {(() => {
-                            const currentClientRef = selectedProponentId || participants[0]?.clientRef;
-                            const participant = participants.find(p => p.clientRef === currentClientRef);
-                            const client = clients.find(c => c._id === currentClientRef);
-                            const checklist = proponentChecklists.get(currentClientRef);
-                            
-                            if (!participant || !client) return null;
-
-                            return (
-                              <div className="border-2 border-secondary/20 rounded-xl p-6 bg-gradient-to-br from-white to-light-gray/30">
-                                {/* Proponent Info Header */}
-                                <div className="mb-6 pb-5 border-b-2 border-border-gray">
-                                  <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1">
-                                      <h4 className="font-heading text-xl font-bold text-secondary mb-2">
-                                        {client.clientName || client.nomeRazaoSocial || 'Nome não disponível'}
-                                      </h4>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                        {client.cpfCnpj && (
+                          );
+                        }
+                        
+                        return (
+                          <div className="space-y-6">
+                            {/* Participant Selector (only show if more than 1) */}
+                            {proponentsList.length > 1 && (
+                              <div>
+                                <Label className="font-paragraph text-sm mb-2 block font-semibold">
+                                  Selecione o participante
+                                </Label>
+                                <Select 
+                                  value={selectedProponentId || proponentsList[0]?.clientRef} 
+                                  onValueChange={setSelectedProponentId}
+                                >
+                                  <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
+                                    <SelectValue placeholder="Escolha um proponente" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {proponentsList.map((proponent, index) => {
+                                      const client = clients.find(c => c._id === proponent.clientRef);
+                                      return (
+                                        <SelectItem key={`${proponent.clientRef}-${index}`} value={proponent.clientRef}>
                                           <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-foreground/70">CPF:</span>
-                                            <span className="text-foreground">{client.cpfCnpj}</span>
+                                            {proponent.isPrincipal && (
+                                              <Badge className="bg-secondary text-secondary-foreground text-xs px-2 py-0">
+                                                Principal
+                                              </Badge>
+                                            )}
+                                            <span className="font-semibold">
+                                              {client?.clientName || client?.nomeRazaoSocial || 'Nome não disponível'}
+                                            </span>
+                                            <span className="text-xs text-foreground/60">
+                                              ({proponent.roleInService})
+                                            </span>
                                           </div>
-                                        )}
-                                        {client.emailPrincipal && (
-                                          <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-foreground/70">Email:</span>
-                                            <span className="text-foreground">{client.emailPrincipal}</span>
-                                          </div>
-                                        )}
-                                        {client.telefonePrincipal && (
-                                          <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-foreground/70">Contato:</span>
-                                            <span className="text-foreground">{client.telefonePrincipal}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <Badge className="bg-secondary text-secondary-foreground text-sm px-3 py-1">
-                                      {participant.roleInService}
-                                    </Badge>
-                                  </div>
-                                </div>
-
-                                {/* Checklist Section */}
-                                <div>
-                                  <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
-                                    <ClipboardList className="w-5 h-5 text-secondary" />
-                                    Checklist Individual
-                                  </h5>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                      <Checkbox
-                                        id={`fgts-${participant._id}`}
-                                        checked={checklist?.hasFgtsContribution || false}
-                                        onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'hasFgtsContribution', checked as boolean)}
-                                        className="mt-1"
-                                      />
-                                      <div className="flex-1">
-                                        <Label htmlFor={`fgts-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                          Possui 3 anos de contribuição FGTS?
-                                        </Label>
-                                        <p className="text-xs text-foreground/60">Necessário para utilizar FGTS no financiamento</p>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                      <Checkbox
-                                        id={`dependent-${participant._id}`}
-                                        checked={checklist?.hasDependent || false}
-                                        onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'hasDependent', checked as boolean)}
-                                        className="mt-1"
-                                      />
-                                      <div className="flex-1">
-                                        <Label htmlFor={`dependent-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                          Possui dependente ou participante?
-                                        </Label>
-                                        <p className="text-xs text-foreground/60">Pode influenciar na análise de crédito</p>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                      <Checkbox
-                                        id={`ir-${participant._id}`}
-                                        checked={checklist?.declaresIncomeTax || false}
-                                        onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'declaresIncomeTax', checked as boolean)}
-                                        className="mt-1"
-                                      />
-                                      <div className="flex-1">
-                                        <Label htmlFor={`ir-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                          Declara imposto de renda?
-                                        </Label>
-                                        <p className="text-xs text-foreground/60">Documento necessário para comprovação de renda</p>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                      <Checkbox
-                                        id={`property-${participant._id}`}
-                                        checked={checklist?.ownsProperty || false}
-                                        onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'ownsProperty', checked as boolean)}
-                                        className="mt-1"
-                                      />
-                                      <div className="flex-1">
-                                        <Label htmlFor={`property-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                          Possui imóvel?
-                                        </Label>
-                                        <p className="text-xs text-foreground/60">Pode afetar condições do financiamento</p>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                      <Checkbox
-                                        id={`financing-${participant._id}`}
-                                        checked={checklist?.hasActiveFinancing || false}
-                                        onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'hasActiveFinancing', checked as boolean)}
-                                        className="mt-1"
-                                      />
-                                      <div className="flex-1">
-                                        <Label htmlFor={`financing-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                          Possui financiamento ativo?
-                                        </Label>
-                                        <p className="text-xs text-foreground/60">Impacta na capacidade de endividamento</p>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                      <Checkbox
-                                        id={`first-${participant._id}`}
-                                        checked={checklist?.isFirstAcquisition || false}
-                                        onCheckedChange={(checked) => handleUpdateProponentChecklist(participant.clientRef, 'isFirstAcquisition', checked as boolean)}
-                                        className="mt-1"
-                                      />
-                                      <div className="flex-1">
-                                        <Label htmlFor={`first-${participant._id}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                          Primeira aquisição no âmbito SFH?
-                                        </Label>
-                                        <p className="text-xs text-foreground/60">Pode garantir melhores taxas de juros</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
+                                        </SelectItem>
+                                      );
+                                    })}
+                                  </SelectContent>
+                                </Select>
                               </div>
-                            );
-                          })()}
-                        </div>
-                      )}
+                            )}
+
+                            {/* Display selected proponent or first one */}
+                            {(() => {
+                              const currentClientRef = selectedProponentId || proponentsList[0]?.clientRef;
+                              const proponent = proponentsList.find(p => p.clientRef === currentClientRef);
+                              const client = clients.find(c => c._id === currentClientRef);
+                              const checklist = proponentChecklists.get(currentClientRef);
+                              
+                              if (!proponent || !client) return null;
+
+                              return (
+                                <div className="border-2 border-secondary/20 rounded-xl p-6 bg-gradient-to-br from-white to-light-gray/30">
+                                  {/* Proponent Info Header */}
+                                  <div className="mb-6 pb-5 border-b-2 border-border-gray">
+                                    <div className="flex items-start justify-between mb-3">
+                                      <div className="flex-1">
+                                        <h4 className="font-heading text-xl font-bold text-secondary mb-2">
+                                          {client.clientName || client.nomeRazaoSocial || 'Nome não disponível'}
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                          {client.cpfCnpj && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-semibold text-foreground/70">CPF:</span>
+                                              <span className="text-foreground">{client.cpfCnpj}</span>
+                                            </div>
+                                          )}
+                                          {client.emailPrincipal && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-semibold text-foreground/70">Email:</span>
+                                              <span className="text-foreground">{client.emailPrincipal}</span>
+                                            </div>
+                                          )}
+                                          {client.telefonePrincipal && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-semibold text-foreground/70">Contato:</span>
+                                              <span className="text-foreground">{client.telefonePrincipal}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <Badge className="bg-secondary text-secondary-foreground text-sm px-3 py-1">
+                                        {proponent.roleInService}
+                                      </Badge>
+                                    </div>
+                                  </div>
+
+                                  {/* Checklist Section */}
+                                  <div>
+                                    <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
+                                      <ClipboardList className="w-5 h-5 text-secondary" />
+                                      Checklist Individual
+                                    </h5>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Checkbox
+                                          id={`fgts-${proponent.clientRef}`}
+                                          checked={checklist?.hasFgtsContribution || false}
+                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'hasFgtsContribution', checked as boolean)}
+                                          className="mt-1"
+                                        />
+                                        <div className="flex-1">
+                                          <Label htmlFor={`fgts-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
+                                            Possui 3 anos de contribuição FGTS?
+                                          </Label>
+                                          <p className="text-xs text-foreground/60">Necessário para utilizar FGTS no financiamento</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Checkbox
+                                          id={`dependent-${proponent.clientRef}`}
+                                          checked={checklist?.hasDependent || false}
+                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'hasDependent', checked as boolean)}
+                                          className="mt-1"
+                                        />
+                                        <div className="flex-1">
+                                          <Label htmlFor={`dependent-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
+                                            Possui dependente ou participante?
+                                          </Label>
+                                          <p className="text-xs text-foreground/60">Pode influenciar na análise de crédito</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Checkbox
+                                          id={`ir-${proponent.clientRef}`}
+                                          checked={checklist?.declaresIncomeTax || false}
+                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'declaresIncomeTax', checked as boolean)}
+                                          className="mt-1"
+                                        />
+                                        <div className="flex-1">
+                                          <Label htmlFor={`ir-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
+                                            Declara imposto de renda?
+                                          </Label>
+                                          <p className="text-xs text-foreground/60">Documento necessário para comprovação de renda</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Checkbox
+                                          id={`property-${proponent.clientRef}`}
+                                          checked={checklist?.ownsProperty || false}
+                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'ownsProperty', checked as boolean)}
+                                          className="mt-1"
+                                        />
+                                        <div className="flex-1">
+                                          <Label htmlFor={`property-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
+                                            Possui imóvel?
+                                          </Label>
+                                          <p className="text-xs text-foreground/60">Pode afetar condições do financiamento</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Checkbox
+                                          id={`financing-${proponent.clientRef}`}
+                                          checked={checklist?.hasActiveFinancing || false}
+                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'hasActiveFinancing', checked as boolean)}
+                                          className="mt-1"
+                                        />
+                                        <div className="flex-1">
+                                          <Label htmlFor={`financing-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
+                                            Possui financiamento ativo?
+                                          </Label>
+                                          <p className="text-xs text-foreground/60">Impacta na capacidade de endividamento</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Checkbox
+                                          id={`first-${proponent.clientRef}`}
+                                          checked={checklist?.isFirstAcquisition || false}
+                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'isFirstAcquisition', checked as boolean)}
+                                          className="mt-1"
+                                        />
+                                        <div className="flex-1">
+                                          <Label htmlFor={`first-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
+                                            Primeira aquisição no âmbito SFH?
+                                          </Label>
+                                          <p className="text-xs text-foreground/60">Pode garantir melhores taxas de juros</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 </TabsContent>
