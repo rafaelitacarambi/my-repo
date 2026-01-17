@@ -1215,14 +1215,14 @@ export default function AdminFinancingKanbanPage() {
     setPendings(pendings.map(p => p._id === pendingId ? { 
       ...p, 
       status: newStatus,
-      resolvedDate: newStatus === 'Concluída' ? new Date().toISOString() : p.resolvedDate
+      resolvedDate: newStatus === 'Resolvida' ? new Date().toISOString() : undefined
     } : p));
 
     try {
       await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
         _id: pendingId,
         status: newStatus,
-        resolvedDate: newStatus === 'Concluída' ? new Date().toISOString() : undefined
+        resolvedDate: newStatus === 'Resolvida' ? new Date().toISOString() : undefined
       });
 
       // Create history entry
@@ -1277,6 +1277,15 @@ export default function AdminFinancingKanbanPage() {
       console.error('Error updating task status:', error);
       await loadData(); // Revert on failure
     }
+  };
+
+  // Get responsible name for task
+  const getTaskResponsibleName = (task: Task) => {
+    if (task.responsibleType === 'Interno' && task.internalResponsibleId) {
+      const usuario = users.find(u => u._id === task.internalResponsibleId);
+      return usuario?.name || 'Usuário não encontrado';
+    }
+    return task.externalResponsibleName || 'Não atribuído';
   };
 
   // Update proponent checklist
@@ -3273,84 +3282,87 @@ export default function AdminFinancingKanbanPage() {
                             );
                           }
 
-                          return casePendings.map(pending => (
-                            <div key={pending._id} className={`p-4 rounded-lg border-2 transition-all ${
-                              pending.status === 'Resolvida' ? 'bg-green-50 border-green-200' : 'bg-white border-border-gray shadow-sm'
-                            }`}>
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1">
-                                  <h4 className="font-paragraph font-bold text-sm mb-1">{pending.title}</h4>
-                                  {pending.description && (
-                                    <p className="text-xs text-foreground/70 mb-2">{pending.description}</p>
-                                  )}
-                                  <div className="flex flex-wrap gap-1.5">
-                                    <Badge variant={pending.status === 'Resolvida' ? 'default' : 'secondary'} className="text-xs">
-                                      {pending.status}
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs">{pending.priority}</Badge>
-                                    {pending.categoria && (
-                                      <Badge className="text-xs bg-secondary/10 text-secondary border-secondary/20">
-                                        {pending.categoria}
-                                      </Badge>
+                          return casePendings.map(pending => {
+                            // Check if overdue
+                            const isOverdue = pending.dueDate && new Date(pending.dueDate) < new Date() && pending.status !== 'Resolvida';
+                            
+                            return (
+                              <div key={pending._id} className={`p-4 rounded-lg border-2 transition-all ${
+                                isOverdue 
+                                  ? 'bg-red-50 border-red-300 shadow-md' 
+                                  : pending.status === 'Resolvida' 
+                                    ? 'bg-green-50 border-green-200' 
+                                    : 'bg-white border-border-gray shadow-sm'
+                              }`}>
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1">
+                                    <h4 className={`font-paragraph font-bold text-sm mb-1 ${isOverdue ? 'text-red-700' : ''}`}>
+                                      {pending.title}
+                                      {isOverdue && (
+                                        <Badge className="ml-2 text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
+                                      )}
+                                    </h4>
+                                    {pending.description && (
+                                      <p className="text-xs text-foreground/70 mb-2">{pending.description}</p>
                                     )}
-                                    {pending.bloqueiaFase && (
-                                      <Badge variant="destructive" className="text-xs">
-                                        🚫 Bloqueia fase
+                                    <div className="flex flex-wrap gap-1.5">
+                                      <Badge variant={pending.status === 'Resolvida' ? 'default' : 'secondary'} className="text-xs">
+                                        {pending.status}
                                       </Badge>
-                                    )}
-                                    <Badge variant="outline" className="text-xs">
-                                      {pending.responsiblePartyType}
-                                    </Badge>
-                                  </div>
-                                  {pending.dueDate && (
-                                    <div className="flex items-center gap-1 mt-2 text-xs text-foreground/60">
-                                      <Calendar className="w-3 h-3" />
-                                      <span>Prazo: {new Date(pending.dueDate).toLocaleDateString('pt-BR')}</span>
+                                      <Badge variant="outline" className="text-xs">{pending.priority}</Badge>
+                                      {pending.categoria && (
+                                        <Badge className="text-xs bg-secondary/10 text-secondary border-secondary/20">
+                                          {pending.categoria}
+                                        </Badge>
+                                      )}
+                                      {pending.bloqueiaFase && (
+                                        <Badge variant="destructive" className="text-xs">
+                                          🚫 Bloqueia fase
+                                        </Badge>
+                                      )}
+                                      <Badge variant="outline" className="text-xs">
+                                        {pending.responsiblePartyType}
+                                      </Badge>
                                     </div>
-                                  )}
-                                </div>
-                                <div className="flex gap-1 ml-3">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      console.log('[DEBUG] Updating pending status:', pending._id);
-                                      handleUpdatePendingStatus(pending._id, pending.status === 'Resolvida' ? 'Aberta' : 'Resolvida');
-                                    }}
-                                    className="h-8"
-                                  >
-                                    {pending.status === 'Resolvida' ? (
-                                      <><RotateCcw className="w-3 h-3 mr-1" /> Reabrir</>
-                                    ) : (
-                                      <><CheckSquare className="w-3 h-3 mr-1" /> Concluir</>
+                                    {pending.dueDate && (
+                                      <div className={`flex items-center gap-1 mt-2 text-xs ${isOverdue ? 'text-red-600 font-semibold' : 'text-foreground/60'}`}>
+                                        <Calendar className="w-3 h-3" />
+                                        <span>Prazo: {new Date(pending.dueDate).toLocaleDateString('pt-BR')}</span>
+                                      </div>
                                     )}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      console.log('[DEBUG] Editing pending:', pending._id);
-                                      handleEditPending(pending);
-                                    }}
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <Edit2 className="w-3 h-3" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      console.log('[DEBUG] Deleting pending:', pending._id);
-                                      handleDeletePending(pending._id);
-                                    }}
-                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
+                                  </div>
+                                  <div className="flex gap-1 ml-3">
+                                    <Button
+                                      size="sm"
+                                      variant={pending.status === 'Resolvida' ? 'outline' : 'default'}
+                                      onClick={() => {
+                                        console.log('[DEBUG] Updating pending status:', pending._id);
+                                        handleUpdatePendingStatus(pending._id, pending.status === 'Resolvida' ? 'Aberta' : 'Resolvida');
+                                      }}
+                                      className={pending.status === 'Resolvida' ? 'h-8' : 'h-8 bg-green-600 hover:bg-green-700 text-white'}
+                                    >
+                                      {pending.status === 'Resolvida' ? (
+                                        <><RotateCcw className="w-3 h-3 mr-1" /> Reabrir</>
+                                      ) : (
+                                        <><CheckSquare className="w-3 h-3 mr-1" /> Concluir</>
+                                      )}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        console.log('[DEBUG] Deleting pending:', pending._id);
+                                        handleDeletePending(pending._id);
+                                      }}
+                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ));
+                            );
+                          });
                         })()}
                       </div>
                     </CardContent>
@@ -3395,6 +3407,7 @@ export default function AdminFinancingKanbanPage() {
                           const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'Concluída';
                           // Check if has activity today
                           const hasActivityToday = task.creationDate && new Date(task.creationDate).toDateString() === new Date().toDateString();
+                          const responsibleName = getTaskResponsibleName(task);
                           
                           return (
                             <div key={task._id} className={`p-4 rounded-lg border-2 ${
@@ -3416,6 +3429,11 @@ export default function AdminFinancingKanbanPage() {
                                       {task.status}
                                     </Badge>
                                     <Badge variant="outline" className="text-xs">{task.responsibleType}</Badge>
+                                    {responsibleName && (
+                                      <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-300">
+                                        👤 {responsibleName}
+                                      </Badge>
+                                    )}
                                     {task.dueDate && (
                                       <Badge variant="outline" className={`text-xs ${isOverdue ? 'bg-red-100 text-red-700 border-red-300' : ''}`}>
                                         <Calendar className="w-3 h-3 mr-1" />
@@ -3438,12 +3456,12 @@ export default function AdminFinancingKanbanPage() {
                                   {task.status === 'Aberta' && (
                                     <Button
                                       size="sm"
-                                      variant="outline"
+                                      variant="default"
                                       onClick={() => {
                                         console.log('[DEBUG] Starting task:', task._id);
                                         handleUpdateTaskStatus(task._id, 'Em andamento');
                                       }}
-                                      className="h-8 bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                                      className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
                                     >
                                       <Clock className="w-3 h-3 mr-1" /> Iniciar
                                     </Button>

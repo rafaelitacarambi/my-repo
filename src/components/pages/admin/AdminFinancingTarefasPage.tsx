@@ -62,7 +62,8 @@ export default function AdminFinancingTarefasPage() {
     externalResponsibleName: '',
     externalResponsibleContact: '',
     canalNotificacao: 'WhatsApp',
-    dueDate: ''
+    dueDate: '',
+    responsavelExternoRef: ''
   });
 
   useEffect(() => {
@@ -131,7 +132,8 @@ export default function AdminFinancingTarefasPage() {
       externalResponsibleName: '',
       externalResponsibleContact: '',
       canalNotificacao: 'WhatsApp',
-      dueDate: ''
+      dueDate: '',
+      responsavelExternoRef: ''
     });
     setIsDialogOpen(true);
   };
@@ -150,7 +152,8 @@ export default function AdminFinancingTarefasPage() {
       externalResponsibleName: tarefa.externalResponsibleName || '',
       externalResponsibleContact: tarefa.externalResponsibleContact || '',
       canalNotificacao: tarefa.canalNotificacao || 'WhatsApp',
-      dueDate: tarefa.dueDate ? format(new Date(tarefa.dueDate), 'yyyy-MM-dd') : ''
+      dueDate: tarefa.dueDate ? format(new Date(tarefa.dueDate), 'yyyy-MM-dd') : '',
+      responsavelExternoRef: tarefa.responsavelExternoRef || ''
     });
     setIsDialogOpen(true);
   };
@@ -181,7 +184,8 @@ export default function AdminFinancingTarefasPage() {
       externalResponsibleContact: formData.externalResponsibleContact,
       canalNotificacao: formData.canalNotificacao,
       dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-      creationDate: editingTarefa ? undefined : new Date().toISOString()
+      creationDate: editingTarefa ? undefined : new Date().toISOString(),
+      responsavelExternoRef: formData.responsavelExternoRef
     };
 
     if (editingTarefa) {
@@ -230,17 +234,17 @@ export default function AdminFinancingTarefasPage() {
     return new Date(creationDate).toDateString() === new Date().toDateString();
   };
 
-  const handleUpdateStatus = async (tarefaId: string, newStatus: string) => {
+  const handleIniciar = async (tarefaId: string) => {
     const tarefa = tarefas.find(t => t._id === tarefaId);
     if (!tarefa) return;
 
     // Optimistic update
-    setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: newStatus } : t));
+    setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: 'Em andamento' } : t));
 
     try {
       await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
         _id: tarefaId,
-        status: newStatus
+        status: 'Em andamento'
       });
 
       // Create history entry
@@ -248,25 +252,111 @@ export default function AdminFinancingTarefasPage() {
         await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
           _id: crypto.randomUUID(),
           atendimentoRef: tarefa.atendimentoRef,
-          tipoEvento: 'Tarefa_Atualizada',
-          interactionType: 'Mudança de status',
-          interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" alterada para: ${newStatus}`,
+          tipoEvento: 'Tarefa_Iniciada',
+          interactionType: 'Início de tarefa',
+          interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi iniciada`,
           interactionDate: new Date().toISOString(),
           autorTipo: 'Sistema'
         });
       }
 
       toast({
-        title: "Tarefa atualizada",
-        description: `Status alterado para: ${newStatus}`,
+        title: "▶️ Tarefa iniciada",
+        description: `"${tarefa.titulo || tarefa.description}" está em andamento`,
       });
 
       await loadData();
     } catch (error) {
-      console.error('Error updating task status:', error);
+      console.error('Error starting task:', error);
       toast({
-        title: "Erro ao atualizar",
-        description: "Não foi possível atualizar a tarefa",
+        title: "Erro ao iniciar",
+        description: "Não foi possível iniciar a tarefa",
+        variant: "destructive"
+      });
+      await loadData(); // Revert on failure
+    }
+  };
+
+  const handleConcluir = async (tarefaId: string) => {
+    const tarefa = tarefas.find(t => t._id === tarefaId);
+    if (!tarefa) return;
+
+    // Optimistic update
+    setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: 'Concluída' } : t));
+
+    try {
+      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
+        _id: tarefaId,
+        status: 'Concluída'
+      });
+
+      // Create history entry
+      if (tarefa.atendimentoRef) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: tarefa.atendimentoRef,
+          tipoEvento: 'Tarefa_Concluida',
+          interactionType: 'Conclusão de tarefa',
+          interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi concluída`,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+
+      toast({
+        title: "✅ Tarefa concluída",
+        description: `"${tarefa.titulo || tarefa.description}" foi finalizada`,
+      });
+
+      await loadData();
+    } catch (error) {
+      console.error('Error completing task:', error);
+      toast({
+        title: "Erro ao concluir",
+        description: "Não foi possível concluir a tarefa",
+        variant: "destructive"
+      });
+      await loadData(); // Revert on failure
+    }
+  };
+
+  const handleReabrir = async (tarefaId: string) => {
+    const tarefa = tarefas.find(t => t._id === tarefaId);
+    if (!tarefa) return;
+
+    // Optimistic update
+    setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: 'Aberta' } : t));
+
+    try {
+      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
+        _id: tarefaId,
+        status: 'Aberta'
+      });
+
+      // Create history entry
+      if (tarefa.atendimentoRef) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: tarefa.atendimentoRef,
+          tipoEvento: 'Tarefa_Reaberta',
+          interactionType: 'Reabertura de tarefa',
+          interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi reaberta`,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+
+      toast({
+        title: "🔄 Tarefa reaberta",
+        description: `"${tarefa.titulo || tarefa.description}" foi reaberta`,
+      });
+
+      await loadData();
+    } catch (error) {
+      console.error('Error reopening task:', error);
+      toast({
+        title: "Erro ao reabrir",
+        description: "Não foi possível reabrir a tarefa",
         variant: "destructive"
       });
       await loadData(); // Revert on failure
@@ -274,6 +364,17 @@ export default function AdminFinancingTarefasPage() {
   };
 
   const getResponsibleName = (tarefa: FinancingTasks) => {
+    // Priority: responsavelExternoRef (R Sales team) > internalResponsibleId (system users) > externalResponsibleName
+    if (tarefa.responsavelExternoRef) {
+      // Map to R Sales team members
+      const rsalesMap: Record<string, string> = {
+        'catarina': 'Catarina',
+        'rafael': 'Rafael',
+        'gabriela': 'Gabriela',
+        'isabela': 'Isabela'
+      };
+      return rsalesMap[tarefa.responsavelExternoRef.toLowerCase()] || tarefa.responsavelExternoRef;
+    }
     if (tarefa.responsibleType === 'Interno' && tarefa.internalResponsibleId) {
       const usuario = usuarios.find(u => u._id === tarefa.internalResponsibleId);
       return usuario?.name || 'Usuário não encontrado';
@@ -464,9 +565,9 @@ export default function AdminFinancingTarefasPage() {
                           <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
                           <TableCell className="font-paragraph">
                             <div>
-                              <div>{getResponsibleName(tarefa)}</div>
+                              <div className="font-semibold">{getResponsibleName(tarefa)}</div>
                               <div className="text-xs text-dark-gray">
-                                {tarefa.responsibleType === 'Interno' ? 'Interno' : 'Externo'}
+                                {tarefa.responsavelExternoRef ? 'R Sales' : tarefa.responsibleType === 'Interno' ? 'Interno' : 'Externo'}
                               </div>
                             </div>
                           </TableCell>
@@ -494,7 +595,7 @@ export default function AdminFinancingTarefasPage() {
                                 <Button
                                   variant="default"
                                   size="sm"
-                                  onClick={() => handleUpdateStatus(tarefa._id, 'Em andamento')}
+                                  onClick={() => handleIniciar(tarefa._id)}
                                   className="bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                   <Play className="w-4 h-4 mr-1" />
@@ -505,7 +606,7 @@ export default function AdminFinancingTarefasPage() {
                                 <Button
                                   variant="default"
                                   size="sm"
-                                  onClick={() => handleUpdateStatus(tarefa._id, 'Concluída')}
+                                  onClick={() => handleConcluir(tarefa._id)}
                                   className="bg-green-600 hover:bg-green-700 text-white"
                                 >
                                   <CheckSquare className="w-4 h-4 mr-1" />
@@ -516,7 +617,7 @@ export default function AdminFinancingTarefasPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleUpdateStatus(tarefa._id, 'Aberta')}
+                                  onClick={() => handleReabrir(tarefa._id)}
                                 >
                                   <RotateCcw className="w-4 h-4 mr-1" />
                                   Reabrir
@@ -611,19 +712,21 @@ export default function AdminFinancingTarefasPage() {
 
             {formData.responsibleType === 'Interno' ? (
               <div>
-                <Label className="font-paragraph">Responsável Interno (R Sales)</Label>
-                <Select value={formData.internalResponsibleId} onValueChange={(value) => setFormData({ ...formData, internalResponsibleId: value })}>
+                <Label className="font-paragraph">Responsável Interno (R Sales) *</Label>
+                <Select value={formData.responsavelExternoRef} onValueChange={(value) => setFormData({ ...formData, responsavelExternoRef: value })}>
                   <SelectTrigger className="font-paragraph">
                     <SelectValue placeholder="Selecione um responsável" />
                   </SelectTrigger>
                   <SelectContent>
-                    {usuarios.map((usuario) => (
-                      <SelectItem key={usuario._id} value={usuario._id}>
-                        {usuario.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="catarina">Catarina</SelectItem>
+                    <SelectItem value="rafael">Rafael</SelectItem>
+                    <SelectItem value="gabriela">Gabriela</SelectItem>
+                    <SelectItem value="isabela">Isabela</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-dark-gray mt-1">
+                  Selecione o membro da equipe R Sales responsável por esta tarefa
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">

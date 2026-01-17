@@ -230,26 +230,26 @@ export default function AdminFinancingPendenciasPage() {
   };
 
   const isOverdue = (dueDate?: Date | string, status?: string) => {
-    if (!dueDate || status === 'Concluída') return false;
+    if (!dueDate || status === 'Resolvida') return false;
     return new Date(dueDate) < new Date();
   };
 
-  const handleUpdateStatus = async (pendenciaId: string, newStatus: string) => {
+  const handleConcluir = async (pendenciaId: string) => {
     const pendencia = pendencias.find(p => p._id === pendenciaId);
     if (!pendencia) return;
 
     // Optimistic update
     setPendencias(prev => prev.map(p => p._id === pendenciaId ? { 
       ...p, 
-      status: newStatus,
-      resolvedDate: newStatus === 'Concluída' ? new Date().toISOString() : undefined
+      status: 'Resolvida',
+      resolvedDate: new Date().toISOString()
     } : p));
 
     try {
       await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
         _id: pendenciaId,
-        status: newStatus,
-        resolvedDate: newStatus === 'Concluída' ? new Date().toISOString() : undefined
+        status: 'Resolvida',
+        resolvedDate: new Date().toISOString()
       });
 
       // Create history entry
@@ -257,30 +257,77 @@ export default function AdminFinancingPendenciasPage() {
         await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
           _id: crypto.randomUUID(),
           atendimentoRef: pendencia.atendimentoRef,
-          tipoEvento: 'Pendencia_Atualizada',
-          interactionType: 'Mudança de status',
-          interactionDescription: `Pendência "${pendencia.title}" alterada para: ${newStatus}`,
+          tipoEvento: 'Pendencia_Concluida',
+          interactionType: 'Conclusão de pendência',
+          interactionDescription: `Pendência "${pendencia.title}" foi concluída`,
           interactionDate: new Date().toISOString(),
           autorTipo: 'Sistema'
         });
       }
 
       toast({
-        title: "Pendência atualizada",
-        description: `Status alterado para: ${newStatus}`,
+        title: "✅ Pendência concluída",
+        description: `"${pendencia.title}" foi marcada como resolvida`,
       });
 
       await loadData();
     } catch (error) {
-      console.error('Error updating pending status:', error);
+      console.error('Error completing pending:', error);
       toast({
-        title: "Erro ao atualizar",
-        description: "Não foi possível atualizar a pendência",
+        title: "Erro ao concluir",
+        description: "Não foi possível concluir a pendência",
         variant: "destructive"
       });
       await loadData(); // Revert on failure
     }
   };
+
+  const handleReabrir = async (pendenciaId: string) => {
+    const pendencia = pendencias.find(p => p._id === pendenciaId);
+    if (!pendencia) return;
+
+    // Optimistic update
+    setPendencias(prev => prev.map(p => p._id === pendenciaId ? { 
+      ...p, 
+      status: 'Aberta',
+      resolvedDate: undefined
+    } : p));
+
+    try {
+      await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
+        _id: pendenciaId,
+        status: 'Aberta',
+        resolvedDate: undefined
+      });
+
+      // Create history entry
+      if (pendencia.atendimentoRef) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: pendencia.atendimentoRef,
+          tipoEvento: 'Pendencia_Reaberta',
+          interactionType: 'Reabertura de pendência',
+          interactionDescription: `Pendência "${pendencia.title}" foi reaberta`,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+
+      toast({
+        title: "🔄 Pendência reaberta",
+        description: `"${pendencia.title}" foi reaberta`,
+      });
+
+      await loadData();
+    } catch (error) {
+      console.error('Error reopening pending:', error);
+      toast({
+        title: "Erro ao reabrir",
+        description: "Não foi possível reabrir a pendência",
+        variant: "destructive"
+      });
+      await loadData(); // Revert on failure
+    }
   };
 
   return (
@@ -481,22 +528,22 @@ export default function AdminFinancingPendenciasPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              {pendencia.status !== 'Concluída' && (
+                              {pendencia.status !== 'Resolvida' && (
                                 <Button
                                   variant="default"
                                   size="sm"
-                                  onClick={() => handleUpdateStatus(pendencia._id, 'Concluída')}
+                                  onClick={() => handleConcluir(pendencia._id)}
                                   className="bg-green-600 hover:bg-green-700 text-white"
                                 >
                                   <CheckSquare className="w-4 h-4 mr-1" />
                                   Concluir
                                 </Button>
                               )}
-                              {pendencia.status === 'Concluída' && (
+                              {pendencia.status === 'Resolvida' && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleUpdateStatus(pendencia._id, 'Pendente')}
+                                  onClick={() => handleReabrir(pendencia._id)}
                                 >
                                   <RotateCcw className="w-4 h-4 mr-1" />
                                   Reabrir
