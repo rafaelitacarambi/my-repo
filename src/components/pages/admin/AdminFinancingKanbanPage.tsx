@@ -350,14 +350,9 @@ export default function AdminFinancingKanbanPage() {
   });
 
   const [newPendingData, setNewPendingData] = useState({
-    title: '',
     description: '',
-    priority: 'Média',
-    dueDate: '',
     responsiblePartyType: 'Interno',
-    responsiblePartyDetails: '',
-    categoria: '',
-    bloqueiaFase: false
+    averageDaysToComplete: 7
   });
 
   const [editingPending, setEditingPending] = useState<Pending | null>(null);
@@ -1134,96 +1129,61 @@ export default function AdminFinancingKanbanPage() {
 
   // Create or update pending
   const handleSavePending = async () => {
-    if (!selectedCase || !newPendingData.title) return;
+    if (!selectedCase || !newPendingData.description) return;
 
     try {
-      if (editingPending) {
-        // Update existing pending
-        await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
-          _id: editingPending._id,
-          title: newPendingData.title,
-          description: newPendingData.description,
-          priority: newPendingData.priority,
-          dueDate: newPendingData.dueDate,
-          responsiblePartyType: newPendingData.responsiblePartyType,
-          responsiblePartyDetails: newPendingData.responsiblePartyDetails,
-          bloqueiaFase: newPendingData.bloqueiaFase,
-          categoria: newPendingData.categoria
-        });
-
-        setPendings(pendings.map(p => p._id === editingPending._id ? { ...p, ...newPendingData } : p));
-        setEditingPending(null);
-      } else {
-        // Create new pending
-        const newPending: PendnciasdoFinanciamento = {
-          _id: crypto.randomUUID(),
-          atendimentoRef: selectedCase._id,
-          title: newPendingData.title,
-          description: newPendingData.description,
-          status: 'Aberta',
-          priority: newPendingData.priority,
-          dueDate: newPendingData.dueDate,
-          responsiblePartyType: newPendingData.responsiblePartyType,
-          responsiblePartyDetails: newPendingData.responsiblePartyDetails,
-          taskAutomaticallyCreated: true,
-          creationDate: new Date().toISOString(),
-          bloqueiaFase: newPendingData.bloqueiaFase,
-          categoria: newPendingData.categoria
-        };
-
-        await BaseCrudService.create('pendenciasfinanciamento', newPending);
-
-        // Create associated task automatically
-        const newTask: FinancingTasks = {
-          _id: crypto.randomUUID(),
-          description: `Tarefa: ${newPendingData.title}`,
-          atendimentoRef: selectedCase._id,
-          pendenciaRef: newPending._id,
-          responsibleType: newPendingData.responsiblePartyType,
-          externalResponsibleName: newPendingData.responsiblePartyDetails,
-          dueDate: newPendingData.dueDate,
-          status: 'Pendente',
-          creationDate: new Date().toISOString()
-        };
-
-        await BaseCrudService.create('tarefasfinanciamento', newTask);
-
-        setPendings([...pendings, newPending as Pending]);
-        setTasks([...tasks, newTask as Task]);
-      }
+      console.log('[DEBUG] Creating pending with data:', newPendingData);
+      console.log('[DEBUG] atendimentoRef:', selectedCase._id);
       
-      setNewPendingData({
-        title: '',
-        description: '',
+      // Calculate due date based on average days
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + (newPendingData.averageDaysToComplete || 7));
+      
+      // Create new pending with minimal required fields
+      const newPending: PendnciasdoFinanciamento = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: selectedCase._id,
+        title: newPendingData.description.substring(0, 100), // Use description as title (truncated)
+        description: newPendingData.description,
+        status: 'Aberta',
         priority: 'Média',
-        dueDate: '',
-        responsiblePartyType: 'Interno',
+        dueDate: dueDate.toISOString(),
+        responsiblePartyType: newPendingData.responsiblePartyType,
         responsiblePartyDetails: '',
-        categoria: '',
-        bloqueiaFase: false
+        taskAutomaticallyCreated: false,
+        creationDate: new Date().toISOString(),
+        bloqueiaFase: false,
+        categoria: ''
+      };
+
+      console.log('[DEBUG] Saving pending to database:', newPending);
+      await BaseCrudService.create('pendenciasfinanciamento', newPending);
+      console.log('[DEBUG] Pending saved successfully');
+
+      // Update local state optimistically
+      setPendings([...pendings, newPending as Pending]);
+      
+      // Reset form
+      setNewPendingData({
+        description: '',
+        responsiblePartyType: 'Interno',
+        averageDaysToComplete: 7
       });
       setShowPendingForm(false);
 
+      // Reload data to sync with backend (including hook-created tasks)
+      console.log('[DEBUG] Reloading data after pending creation');
       await loadData();
+      console.log('[DEBUG] Data reloaded successfully');
     } catch (error) {
-      console.error('Error saving pending:', error);
+      console.error('[ERROR] Error saving pending:', error);
     }
   };
 
   // Edit pending
   const handleEditPending = (pending: Pending) => {
-    setEditingPending(pending);
-    setNewPendingData({
-      title: pending.title,
-      description: pending.description,
-      priority: pending.priority,
-      dueDate: pending.dueDate,
-      responsiblePartyType: pending.responsiblePartyType,
-      responsiblePartyDetails: pending.responsiblePartyDetails || '',
-      categoria: pending.categoria || '',
-      bloqueiaFase: pending.bloqueiaFase || false
-    });
-    setShowPendingForm(true);
+    // Not used in minimalist form - removed editing functionality
+    console.log('[INFO] Edit pending not available in minimalist form');
   };
 
   // Delete pending
@@ -3164,18 +3124,13 @@ export default function AdminFinancingKanbanPage() {
                         </CardTitle>
                         <Button 
                           onClick={() => {
-                            console.log('[DEBUG] Creating new pending for case:', selectedCase?._id);
+                            console.log('[DEBUG] Opening new pending form for case:', selectedCase?._id);
                             setShowPendingForm(true);
                             setEditingPending(null);
                             setNewPendingData({
-                              title: '',
                               description: '',
-                              priority: 'Média',
-                              dueDate: '',
                               responsiblePartyType: 'Interno',
-                              responsiblePartyDetails: '',
-                              categoria: '',
-                              bloqueiaFase: false
+                              averageDaysToComplete: 7
                             });
                           }} 
                           className="h-9 bg-secondary text-secondary-foreground"
@@ -3188,10 +3143,11 @@ export default function AdminFinancingKanbanPage() {
                     <CardContent className="space-y-4">
                       {/* Pending Form */}
                       {showPendingForm && (
-                        <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg space-y-3">
-                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-heading text-sm font-bold">
-                              {editingPending ? 'Editar Pendência' : 'Nova Pendência'}
+                        <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-blue-300 rounded-xl space-y-4 shadow-md">
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="font-heading text-base font-bold text-secondary flex items-center gap-2">
+                              <Plus className="w-5 h-5" />
+                              Nova Pendência
                             </h4>
                             <Button
                               size="sm"
@@ -3200,99 +3156,69 @@ export default function AdminFinancingKanbanPage() {
                                 setShowPendingForm(false);
                                 setEditingPending(null);
                               }}
+                              className="h-8 w-8 p-0"
                             >
                               <X className="w-4 h-4" />
                             </Button>
                           </div>
                           
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="col-span-2">
-                              <Label className="text-xs mb-1 block">Título *</Label>
-                              <Input
-                                value={newPendingData.title}
-                                onChange={(e) => setNewPendingData({ ...newPendingData, title: e.target.value })}
-                                placeholder="Ex: Aguardando documento do cliente"
-                                className="h-9"
-                              />
+                          <div className="space-y-4">
+                            <div>
+                              <Label className="text-sm mb-2 block font-semibold">Responsável *</Label>
+                              <Select 
+                                value={newPendingData.responsiblePartyType} 
+                                onValueChange={(value) => setNewPendingData({ ...newPendingData, responsiblePartyType: value })}
+                              >
+                                <SelectTrigger className="h-11 bg-white border-2 border-border-gray">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Interno">Interno</SelectItem>
+                                  <SelectItem value="Cliente">Cliente</SelectItem>
+                                  <SelectItem value="Parceiro Externo">Parceiro Externo</SelectItem>
+                                  <SelectItem value="Construtora">Construtora</SelectItem>
+                                  <SelectItem value="Caixa">Caixa</SelectItem>
+                                  <SelectItem value="Cartório">Cartório</SelectItem>
+                                  <SelectItem value="Sistema/Prazo legal">Sistema/Prazo legal</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </div>
-                            <div className="col-span-2">
-                              <Label className="text-xs mb-1 block">Descrição</Label>
+                            
+                            <div>
+                              <Label className="text-sm mb-2 block font-semibold">Descrição *</Label>
                               <Textarea
                                 value={newPendingData.description}
                                 onChange={(e) => setNewPendingData({ ...newPendingData, description: e.target.value })}
-                                placeholder="Detalhes da pendência..."
-                                rows={2}
-                                className="resize-none text-sm"
+                                placeholder="Descreva a pendência de forma clara e objetiva..."
+                                rows={4}
+                                className="resize-none text-sm bg-white border-2 border-border-gray"
                               />
                             </div>
+                            
                             <div>
-                              <Label className="text-xs mb-1 block">Categoria</Label>
-                              <Select value={newPendingData.categoria} onValueChange={(value) => setNewPendingData({ ...newPendingData, categoria: value })}>
-                                <SelectTrigger className="h-9">
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Documento">📄 Documento</SelectItem>
-                                  <SelectItem value="Caixa">🏦 Caixa</SelectItem>
-                                  <SelectItem value="Cartório">🏛 Cartório</SelectItem>
-                                  <SelectItem value="Cliente">👤 Cliente</SelectItem>
-                                  <SelectItem value="Engenharia">🏗 Engenharia</SelectItem>
-                                  <SelectItem value="Formulários">📑 Formulários</SelectItem>
-                                  <SelectItem value="Restrição">🔍 Restrição</SelectItem>
-                                  <SelectItem value="FGTS">💰 FGTS</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label className="text-xs mb-1 block">Prioridade</Label>
-                              <Select value={newPendingData.priority} onValueChange={(value) => setNewPendingData({ ...newPendingData, priority: value })}>
-                                <SelectTrigger className="h-9">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {PRIORITY_LEVELS.map(p => (
-                                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label className="text-xs mb-1 block">Responsável</Label>
-                              <Select value={newPendingData.responsiblePartyType} onValueChange={(value) => setNewPendingData({ ...newPendingData, responsiblePartyType: value })}>
-                                <SelectTrigger className="h-9">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {RESPONSIBLE_TYPES.map(r => (
-                                    <SelectItem key={r} value={r}>{r}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label className="text-xs mb-1 block">Prazo</Label>
+                              <Label className="text-sm mb-2 block font-semibold">Prazo Médio para Conclusão (dias) *</Label>
                               <Input
-                                type="date"
-                                value={newPendingData.dueDate}
-                                onChange={(e) => setNewPendingData({ ...newPendingData, dueDate: e.target.value })}
-                                className="h-9"
+                                type="number"
+                                value={newPendingData.averageDaysToComplete}
+                                onChange={(e) => setNewPendingData({ ...newPendingData, averageDaysToComplete: parseInt(e.target.value) || 7 })}
+                                placeholder="7"
+                                min="1"
+                                className="h-11 bg-white border-2 border-border-gray"
                               />
-                            </div>
-                            <div className="col-span-2">
-                              <div className="flex items-center gap-2">
-                                <Checkbox
-                                  checked={newPendingData.bloqueiaFase}
-                                  onCheckedChange={(checked) => setNewPendingData({ ...newPendingData, bloqueiaFase: checked as boolean })}
-                                />
-                                <Label className="text-xs cursor-pointer">Bloqueia mudança de fase</Label>
-                              </div>
+                              <p className="text-xs text-foreground/60 mt-1">
+                                Data de vencimento será calculada automaticamente
+                              </p>
                             </div>
                           </div>
                           
-                          <div className="flex gap-2 pt-2">
-                            <Button onClick={handleSavePending} className="h-9 bg-secondary text-secondary-foreground">
+                          <div className="flex gap-3 pt-3 border-t-2 border-blue-200">
+                            <Button 
+                              onClick={handleSavePending} 
+                              disabled={!newPendingData.description}
+                              className="h-11 flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold"
+                            >
                               <Save className="w-4 h-4 mr-2" />
-                              {editingPending ? 'Salvar Alterações' : 'Criar Pendência'}
+                              Criar Pendência
                             </Button>
                             <Button 
                               variant="outline" 
@@ -3300,7 +3226,7 @@ export default function AdminFinancingKanbanPage() {
                                 setShowPendingForm(false);
                                 setEditingPending(null);
                               }}
-                              className="h-9"
+                              className="h-11 px-6 border-2"
                             >
                               Cancelar
                             </Button>
