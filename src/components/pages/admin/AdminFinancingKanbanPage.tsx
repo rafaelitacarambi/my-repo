@@ -253,32 +253,32 @@ interface ProponentDocumentChecklist {
   documents: ProponentDocumentItem[];
 }
 
-// Financing Columns Configuration (exact order as requested)
+// Financing Columns Configuration - Trello-style (neutral colors)
 const FINANCING_COLUMNS: FinancingColumn[] = [
-  { id: 'aguardando-imovel', name: 'Aguardando o imóvel', color: 'bg-slate-50 border-slate-200', bgColor: 'bg-slate-50', borderColor: 'border-slate-300' },
-  { id: 'condicionados', name: 'Condicionados', color: 'bg-orange-50 border-orange-200', bgColor: 'bg-orange-50', borderColor: 'border-orange-300' },
-  { id: 'pendencia', name: 'Pendência', color: 'bg-red-50 border-red-200', bgColor: 'bg-red-50', borderColor: 'border-red-300' },
-  { id: 'consultar-restricao', name: 'Consultar restrição', color: 'bg-yellow-50 border-yellow-200', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-300' },
-  { id: 'novos-clientes', name: 'Novos clientes', color: 'bg-blue-50 border-blue-200', bgColor: 'bg-blue-50', borderColor: 'border-blue-300' },
-  { id: 'analise-documentos', name: 'Análise de documentos', color: 'bg-indigo-50 border-indigo-200', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-300' },
-  { id: 'cadastro-cliente', name: 'Cadastro de cliente', color: 'bg-cyan-50 border-cyan-200', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-300' },
-  { id: 'avaliacao-risco', name: 'Avaliação de risco', color: 'bg-purple-50 border-purple-200', bgColor: 'bg-purple-50', borderColor: 'border-purple-300' },
-  { id: 'engenharia', name: 'Engenharia', color: 'bg-violet-50 border-violet-200', bgColor: 'bg-violet-50', borderColor: 'border-violet-300' },
-  { id: 'fgts', name: 'FGTS', color: 'bg-green-50 border-green-200', bgColor: 'bg-green-50', borderColor: 'border-green-300' },
-  { id: 'formularios', name: 'Formulários', color: 'bg-teal-50 border-teal-200', bgColor: 'bg-teal-50', borderColor: 'border-teal-300' },
-  { id: 'siopi', name: 'SIOPI', color: 'bg-sky-50 border-sky-200', bgColor: 'bg-sky-50', borderColor: 'border-sky-300' },
-  { id: 'solicitar-reserva', name: 'Solicitar reserva orçamentária', color: 'bg-lime-50 border-lime-200', bgColor: 'bg-lime-50', borderColor: 'border-lime-300' },
-  { id: 'sictd', name: 'SICTD', color: 'bg-emerald-50 border-emerald-200', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-300' },
-  { id: 'conformidade', name: 'Conformidade', color: 'bg-amber-50 border-amber-200', bgColor: 'bg-amber-50', borderColor: 'border-amber-300' },
-  { id: 'entrevista', name: 'Entrevista', color: 'bg-rose-50 border-rose-200', bgColor: 'bg-rose-50', borderColor: 'border-rose-300' },
-  { id: 'assinatura-minuta', name: 'Assinatura minuta', color: 'bg-pink-50 border-pink-200', bgColor: 'bg-pink-50', borderColor: 'border-pink-300' },
-  { id: 'itbi', name: 'ITBI', color: 'bg-fuchsia-50 border-fuchsia-200', bgColor: 'bg-fuchsia-50', borderColor: 'border-fuchsia-300' },
-  { id: 'cartorio-rsales', name: 'Cartório (R Sales)', color: 'bg-purple-50 border-purple-200', bgColor: 'bg-purple-50', borderColor: 'border-purple-300' },
-  { id: 'cartorio-cliente', name: 'Cartório por conta do cliente', color: 'bg-indigo-50 border-indigo-200', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-300' },
-  { id: 'garantia', name: 'Garantia', color: 'bg-blue-50 border-blue-200', bgColor: 'bg-blue-50', borderColor: 'border-blue-300' },
-  { id: 'concluido', name: 'Concluído', color: 'bg-green-50 border-green-200', bgColor: 'bg-green-50', borderColor: 'border-green-300' },
-  { id: 'acompanhamento-obra', name: 'Acompanhamento de obra', color: 'bg-yellow-50 border-yellow-200', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-300' },
-  { id: 'reprovados', name: 'Reprovados', color: 'bg-red-50 border-red-200', bgColor: 'bg-red-50', borderColor: 'border-red-300' }
+  { id: 'aguardando-imovel', name: 'Aguardando o imóvel', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'condicionados', name: 'Condicionados', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'pendencia', name: 'Pendência', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'consultar-restricao', name: 'Consultar restrição', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'novos-clientes', name: 'Novos clientes', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'analise-documentos', name: 'Análise de documentos', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'cadastro-cliente', name: 'Cadastro de cliente', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'avaliacao-risco', name: 'Avaliação de risco', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'engenharia', name: 'Engenharia', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'fgts', name: 'FGTS', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'formularios', name: 'Formulários', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'siopi', name: 'SIOPI', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'solicitar-reserva', name: 'Solicitar reserva orçamentária', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'sictd', name: 'SICTD', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'conformidade', name: 'Conformidade', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'entrevista', name: 'Entrevista', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'assinatura-minuta', name: 'Assinatura minuta', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'itbi', name: 'ITBI', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'cartorio-rsales', name: 'Cartório (R Sales)', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'cartorio-cliente', name: 'Cartório por conta do cliente', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'garantia', name: 'Garantia', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'concluido', name: 'Concluído', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'acompanhamento-obra', name: 'Acompanhamento de obra', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { id: 'reprovados', name: 'Reprovados', color: 'bg-gray-100 border-gray-300', bgColor: 'bg-gray-100', borderColor: 'border-gray-300' }
 ];
 
 const RESPONSIBLE_TYPES = ['Interno', 'Cliente', 'Parceiro Externo', 'Construtora', 'Caixa', 'Cartório', 'Sistema/Prazo legal'];
@@ -1764,10 +1764,12 @@ export default function AdminFinancingKanbanPage() {
           <DragDropContext onDragEnd={handleDragEnd}>
             <div 
               ref={scrollContainerRef}
-              className="flex gap-4 overflow-x-auto pb-6 scroll-smooth"
+              className="flex gap-4 pb-6 scroll-smooth"
               style={{
+                overflowX: 'scroll',
+                overflowY: 'visible',
                 scrollbarWidth: 'thin',
-                scrollbarColor: '#005CA9 transparent'
+                scrollbarColor: '#005CA9 #E5E7EB'
               }}
             >
               {FINANCING_COLUMNS.map((column) => {
@@ -1785,22 +1787,23 @@ export default function AdminFinancingKanbanPage() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`${column.color} border-2 rounded-xl p-4 min-h-[600px] flex flex-col shadow-md transition-all ${
+                          className={`${column.color} border-2 rounded-xl p-4 flex flex-col shadow-md transition-all ${
                             snapshot.isDraggingOver ? 'ring-4 ring-secondary/50 scale-105' : ''
                           }`}
+                          style={{ minHeight: 'auto', height: 'auto' }}
                         >
                           <div className="mb-4">
                             <h3 className="font-heading text-sm text-foreground font-bold uppercase tracking-wide mb-2">
                               {column.name}
                             </h3>
                             <div className="flex items-center justify-between">
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs bg-gray-200 text-gray-700 border-gray-300">
                                 {columnCases.length} {columnCases.length === 1 ? 'caso' : 'casos'}
                               </Badge>
                             </div>
                           </div>
 
-                          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                          <div className="flex-1 space-y-3 pr-2">
                             {columnCases.map((caseItem, index) => {
                               const daysBadgeColor = caseItem.diasNaFase <= 3 ? 'bg-green-500' : caseItem.diasNaFase <= 7 ? 'bg-yellow-500' : 'bg-red-500';
                               const hasActivityToday = [...pendings, ...tasks].some(item => {
