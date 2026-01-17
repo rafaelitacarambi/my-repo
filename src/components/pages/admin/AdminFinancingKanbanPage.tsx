@@ -44,6 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1753,94 +1754,136 @@ export default function AdminFinancingKanbanPage() {
                                       Checklist Individual
                                     </h5>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                        <Checkbox
-                                          id={`fgts-${proponent.clientRef}`}
-                                          checked={checklist?.hasFgtsContribution || false}
-                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'hasFgtsContribution', checked as boolean)}
-                                          className="mt-1"
-                                        />
-                                        <div className="flex-1">
-                                          <Label htmlFor={`fgts-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                            Possui 3 anos de contribuição FGTS?
-                                          </Label>
-                                          <p className="text-xs text-foreground/60">Necessário para utilizar FGTS no financiamento</p>
-                                        </div>
+                                      {/* FGTS 3 anos */}
+                                      <div className="p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Label className="font-paragraph text-sm font-semibold leading-tight block mb-2">
+                                          Possui 3 anos de contribuição FGTS?
+                                        </Label>
+                                        <p className="text-xs text-foreground/60 mb-3">Necessário para utilizar FGTS no financiamento</p>
+                                        <RadioGroup
+                                          value={checklist?.hasFgtsContribution === true ? 'sim' : checklist?.hasFgtsContribution === false ? 'nao' : ''}
+                                          onValueChange={(value) => handleUpdateProponentChecklist(proponent.clientRef, 'hasFgtsContribution', value === 'sim')}
+                                          className="flex gap-4"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="sim" id={`fgts-sim-${proponent.clientRef}`} />
+                                            <Label htmlFor={`fgts-sim-${proponent.clientRef}`} className="cursor-pointer font-medium">SIM</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="nao" id={`fgts-nao-${proponent.clientRef}`} />
+                                            <Label htmlFor={`fgts-nao-${proponent.clientRef}`} className="cursor-pointer font-medium">NÃO</Label>
+                                          </div>
+                                        </RadioGroup>
                                       </div>
 
-                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                        <Checkbox
-                                          id={`dependent-${proponent.clientRef}`}
-                                          checked={checklist?.hasDependent || false}
-                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'hasDependent', checked as boolean)}
-                                          className="mt-1"
-                                        />
-                                        <div className="flex-1">
-                                          <Label htmlFor={`dependent-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                            Possui dependente ou participante?
-                                          </Label>
-                                          <p className="text-xs text-foreground/60">Pode influenciar na análise de crédito</p>
-                                        </div>
+                                      {/* Dependente */}
+                                      <div className="p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Label className="font-paragraph text-sm font-semibold leading-tight block mb-2">
+                                          Possui dependente ou participante?
+                                        </Label>
+                                        <p className="text-xs text-foreground/60 mb-3">Pode influenciar na análise de crédito</p>
+                                        <RadioGroup
+                                          value={checklist?.hasDependent === true ? 'sim' : checklist?.hasDependent === false ? 'nao' : ''}
+                                          onValueChange={(value) => handleUpdateProponentChecklist(proponent.clientRef, 'hasDependent', value === 'sim')}
+                                          className="flex gap-4"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="sim" id={`dependent-sim-${proponent.clientRef}`} />
+                                            <Label htmlFor={`dependent-sim-${proponent.clientRef}`} className="cursor-pointer font-medium">SIM</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="nao" id={`dependent-nao-${proponent.clientRef}`} />
+                                            <Label htmlFor={`dependent-nao-${proponent.clientRef}`} className="cursor-pointer font-medium">NÃO</Label>
+                                          </div>
+                                        </RadioGroup>
                                       </div>
 
-                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                        <Checkbox
-                                          id={`ir-${proponent.clientRef}`}
-                                          checked={checklist?.declaresIncomeTax || false}
-                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'declaresIncomeTax', checked as boolean)}
-                                          className="mt-1"
-                                        />
-                                        <div className="flex-1">
-                                          <Label htmlFor={`ir-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                            Declara imposto de renda?
-                                          </Label>
-                                          <p className="text-xs text-foreground/60">Documento necessário para comprovação de renda</p>
-                                        </div>
+                                      {/* Imposto de Renda */}
+                                      <div className="p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Label className="font-paragraph text-sm font-semibold leading-tight block mb-2">
+                                          Declara imposto de renda?
+                                        </Label>
+                                        <p className="text-xs text-foreground/60 mb-3">Documento necessário para comprovação de renda</p>
+                                        <RadioGroup
+                                          value={checklist?.declaresIncomeTax === true ? 'sim' : checklist?.declaresIncomeTax === false ? 'nao' : ''}
+                                          onValueChange={(value) => handleUpdateProponentChecklist(proponent.clientRef, 'declaresIncomeTax', value === 'sim')}
+                                          className="flex gap-4"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="sim" id={`ir-sim-${proponent.clientRef}`} />
+                                            <Label htmlFor={`ir-sim-${proponent.clientRef}`} className="cursor-pointer font-medium">SIM</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="nao" id={`ir-nao-${proponent.clientRef}`} />
+                                            <Label htmlFor={`ir-nao-${proponent.clientRef}`} className="cursor-pointer font-medium">NÃO</Label>
+                                          </div>
+                                        </RadioGroup>
                                       </div>
 
-                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                        <Checkbox
-                                          id={`property-${proponent.clientRef}`}
-                                          checked={checklist?.ownsProperty || false}
-                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'ownsProperty', checked as boolean)}
-                                          className="mt-1"
-                                        />
-                                        <div className="flex-1">
-                                          <Label htmlFor={`property-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                            Possui imóvel?
-                                          </Label>
-                                          <p className="text-xs text-foreground/60">Pode afetar condições do financiamento</p>
-                                        </div>
+                                      {/* Possui Imóvel */}
+                                      <div className="p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Label className="font-paragraph text-sm font-semibold leading-tight block mb-2">
+                                          Possui imóvel?
+                                        </Label>
+                                        <p className="text-xs text-foreground/60 mb-3">Pode afetar condições do financiamento</p>
+                                        <RadioGroup
+                                          value={checklist?.ownsProperty === true ? 'sim' : checklist?.ownsProperty === false ? 'nao' : ''}
+                                          onValueChange={(value) => handleUpdateProponentChecklist(proponent.clientRef, 'ownsProperty', value === 'sim')}
+                                          className="flex gap-4"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="sim" id={`property-sim-${proponent.clientRef}`} />
+                                            <Label htmlFor={`property-sim-${proponent.clientRef}`} className="cursor-pointer font-medium">SIM</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="nao" id={`property-nao-${proponent.clientRef}`} />
+                                            <Label htmlFor={`property-nao-${proponent.clientRef}`} className="cursor-pointer font-medium">NÃO</Label>
+                                          </div>
+                                        </RadioGroup>
                                       </div>
 
-                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                        <Checkbox
-                                          id={`financing-${proponent.clientRef}`}
-                                          checked={checklist?.hasActiveFinancing || false}
-                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'hasActiveFinancing', checked as boolean)}
-                                          className="mt-1"
-                                        />
-                                        <div className="flex-1">
-                                          <Label htmlFor={`financing-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                            Possui financiamento ativo?
-                                          </Label>
-                                          <p className="text-xs text-foreground/60">Impacta na capacidade de endividamento</p>
-                                        </div>
+                                      {/* Financiamento Ativo */}
+                                      <div className="p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Label className="font-paragraph text-sm font-semibold leading-tight block mb-2">
+                                          Possui financiamento ativo?
+                                        </Label>
+                                        <p className="text-xs text-foreground/60 mb-3">Impacta na capacidade de endividamento</p>
+                                        <RadioGroup
+                                          value={checklist?.hasActiveFinancing === true ? 'sim' : checklist?.hasActiveFinancing === false ? 'nao' : ''}
+                                          onValueChange={(value) => handleUpdateProponentChecklist(proponent.clientRef, 'hasActiveFinancing', value === 'sim')}
+                                          className="flex gap-4"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="sim" id={`financing-sim-${proponent.clientRef}`} />
+                                            <Label htmlFor={`financing-sim-${proponent.clientRef}`} className="cursor-pointer font-medium">SIM</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="nao" id={`financing-nao-${proponent.clientRef}`} />
+                                            <Label htmlFor={`financing-nao-${proponent.clientRef}`} className="cursor-pointer font-medium">NÃO</Label>
+                                          </div>
+                                        </RadioGroup>
                                       </div>
 
-                                      <div className="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
-                                        <Checkbox
-                                          id={`first-${proponent.clientRef}`}
-                                          checked={checklist?.isFirstAcquisition || false}
-                                          onCheckedChange={(checked) => handleUpdateProponentChecklist(proponent.clientRef, 'isFirstAcquisition', checked as boolean)}
-                                          className="mt-1"
-                                        />
-                                        <div className="flex-1">
-                                          <Label htmlFor={`first-${proponent.clientRef}`} className="font-paragraph text-sm font-semibold cursor-pointer leading-tight block mb-1">
-                                            Primeira aquisição no âmbito SFH?
-                                          </Label>
-                                          <p className="text-xs text-foreground/60">Pode garantir melhores taxas de juros</p>
-                                        </div>
+                                      {/* Primeira Aquisição SFH */}
+                                      <div className="p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
+                                        <Label className="font-paragraph text-sm font-semibold leading-tight block mb-2">
+                                          Primeira aquisição no âmbito SFH?
+                                        </Label>
+                                        <p className="text-xs text-foreground/60 mb-3">Pode garantir melhores taxas de juros</p>
+                                        <RadioGroup
+                                          value={checklist?.isFirstAcquisition === true ? 'sim' : checklist?.isFirstAcquisition === false ? 'nao' : ''}
+                                          onValueChange={(value) => handleUpdateProponentChecklist(proponent.clientRef, 'isFirstAcquisition', value === 'sim')}
+                                          className="flex gap-4"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="sim" id={`first-sim-${proponent.clientRef}`} />
+                                            <Label htmlFor={`first-sim-${proponent.clientRef}`} className="cursor-pointer font-medium">SIM</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="nao" id={`first-nao-${proponent.clientRef}`} />
+                                            <Label htmlFor={`first-nao-${proponent.clientRef}`} className="cursor-pointer font-medium">NÃO</Label>
+                                          </div>
+                                        </RadioGroup>
                                       </div>
                                     </div>
                                   </div>
