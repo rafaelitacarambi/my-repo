@@ -23,7 +23,9 @@ import {
   History,
   RotateCcw,
   Check,
-  X
+  X,
+  CreditCard,
+  Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,12 +86,18 @@ interface Vendedor {
   _id: string;
   nome: string;
   cpfCnpj: string;
-  whatsapp: string;
-  dadosBancarios: string;
+  tipoPessoa: 'PF' | 'PJ';
+  banco: string;
+  agencia: string;
+  conta: string;
+  tipoConta: 'Corrente' | 'Poupança';
+  titularConta: string;
+  cpfCnpjTitular: string;
   documentos: {
     tipo: string;
-    status: string;
+    status: 'Pendente' | 'Recebido';
     arquivo?: string;
+    dataRecebimento?: string;
   }[];
 }
 
@@ -135,6 +143,7 @@ export default function AdminFinanciamentoDetalhePage() {
   const [showAddPendenciaDialog, setShowAddPendenciaDialog] = useState(false);
   const [showAddTarefaDialog, setShowAddTarefaDialog] = useState(false);
   const [showAddDocumentoDialog, setShowAddDocumentoDialog] = useState(false);
+  const [selectedVendedor, setSelectedVendedor] = useState<string | null>(null);
 
   // New item forms
   const [newProponente, setNewProponente] = useState<Proponente>({
@@ -151,9 +160,18 @@ export default function AdminFinanciamentoDetalhePage() {
     _id: '',
     nome: '',
     cpfCnpj: '',
-    whatsapp: '',
-    dadosBancarios: '',
-    documentos: []
+    tipoPessoa: 'PF',
+    banco: '',
+    agencia: '',
+    conta: '',
+    tipoConta: 'Corrente',
+    titularConta: '',
+    cpfCnpjTitular: '',
+    documentos: [
+      { tipo: 'Documento de identificação', status: 'Pendente' },
+      { tipo: 'Certidão de nascimento/casamento', status: 'Pendente' },
+      { tipo: 'Comprovante de endereço', status: 'Pendente' }
+    ]
   });
 
   const [newPendencia, setNewPendencia] = useState({
@@ -356,11 +374,123 @@ export default function AdminFinanciamentoDetalhePage() {
       _id: '',
       nome: '',
       cpfCnpj: '',
-      whatsapp: '',
-      dadosBancarios: '',
-      documentos: []
+      tipoPessoa: 'PF',
+      banco: '',
+      agencia: '',
+      conta: '',
+      tipoConta: 'Corrente',
+      titularConta: '',
+      cpfCnpjTitular: '',
+      documentos: [
+        { tipo: 'Documento de identificação', status: 'Pendente' },
+        { tipo: 'Certidão de nascimento/casamento', status: 'Pendente' },
+        { tipo: 'Comprovante de endereço', status: 'Pendente' }
+      ]
     });
     setShowAddVendedorDialog(false);
+  };
+
+  // Remove vendedor
+  const handleRemoveVendedor = (id: string) => {
+    const vendedor = vendedores.find(v => v._id === id);
+    setVendedores(vendedores.filter(v => v._id !== id));
+    if (vendedor) {
+      createHistoryEntry(`Vendedor removido: ${vendedor.nome}`);
+    }
+  };
+
+  // Toggle documento status for vendedor
+  const handleToggleVendedorDocumento = async (vendedorId: string, documentoTipo: string) => {
+    const vendedor = vendedores.find(v => v._id === vendedorId);
+    if (!vendedor) return;
+
+    const updatedVendedores = vendedores.map(v => {
+      if (v._id === vendedorId) {
+        const updatedDocumentos = v.documentos.map(doc => {
+          if (doc.tipo === documentoTipo) {
+            const newStatus = doc.status === 'Pendente' ? 'Recebido' : 'Pendente';
+            return {
+              ...doc,
+              status: newStatus as 'Pendente' | 'Recebido',
+              dataRecebimento: newStatus === 'Recebido' ? new Date().toISOString() : undefined
+            };
+          }
+          return doc;
+        });
+        return { ...v, documentos: updatedDocumentos };
+      }
+      return v;
+    });
+
+    setVendedores(updatedVendedores);
+
+    const documento = vendedor.documentos.find(d => d.tipo === documentoTipo);
+    if (documento) {
+      const newStatus = documento.status === 'Pendente' ? 'Recebido' : 'Pendente';
+      await createHistoryEntry(`Documento "${documentoTipo}" do vendedor ${vendedor.nome} marcado como ${newStatus}`);
+    }
+  };
+
+  // Upload documento for vendedor
+  const handleUploadVendedorDocumento = (vendedorId: string, documentoTipo: string) => {
+    // Placeholder for file upload functionality
+    const vendedor = vendedores.find(v => v._id === vendedorId);
+    if (vendedor) {
+      createHistoryEntry(`Upload de documento "${documentoTipo}" para vendedor ${vendedor.nome}`);
+    }
+  };
+
+  // Remove documento file for vendedor
+  const handleRemoveVendedorDocumentoFile = async (vendedorId: string, documentoTipo: string) => {
+    const vendedor = vendedores.find(v => v._id === vendedorId);
+    if (!vendedor) return;
+
+    const updatedVendedores = vendedores.map(v => {
+      if (v._id === vendedorId) {
+        const updatedDocumentos = v.documentos.map(doc => {
+          if (doc.tipo === documentoTipo) {
+            return { ...doc, arquivo: undefined };
+          }
+          return doc;
+        });
+        return { ...v, documentos: updatedDocumentos };
+      }
+      return v;
+    });
+
+    setVendedores(updatedVendedores);
+    await createHistoryEntry(`Arquivo do documento "${documentoTipo}" do vendedor ${vendedor.nome} removido`);
+  };
+
+  // Create pendencia from vendedor documento
+  const handleCreatePendenciaFromVendedorDoc = async (vendedorId: string, documentoTipo: string) => {
+    if (!atendimento) return;
+
+    const vendedor = vendedores.find(v => v._id === vendedorId);
+    if (!vendedor) return;
+
+    try {
+      const pendencia: PendnciasdoFinanciamento = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: atendimento._id,
+        title: `Documento pendente: ${documentoTipo} - Vendedor ${vendedor.nome}`,
+        description: `Documento "${documentoTipo}" do vendedor ${vendedor.nome} está pendente de recebimento.`,
+        status: 'Aberta',
+        priority: 'Alta',
+        responsiblePartyType: 'Cliente',
+        responsiblePartyDetails: vendedor.nome,
+        bloqueiaFase: false,
+        creationDate: new Date().toISOString(),
+        tipo: 'Documento',
+        categoria: 'Vendedor'
+      };
+
+      await BaseCrudService.create('pendenciasfinanciamento', pendencia);
+      setPendencias([...pendencias, pendencia]);
+      await createHistoryEntry(`Pendência criada automaticamente: ${pendencia.title}`);
+    } catch (error) {
+      console.error('Error creating pendencia:', error);
+    }
   };
 
   // Add pendencia
@@ -916,7 +1046,7 @@ export default function AdminFinanciamentoDetalhePage() {
             {/* Tab: Vendedores */}
             <TabsContent value="vendedores" className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="font-heading text-2xl text-primary-foreground">Lista de Vendedores</h2>
+                <h2 className="font-heading text-2xl text-primary-foreground">Vendedores do Processo</h2>
                 <Dialog open={showAddVendedorDialog} onOpenChange={setShowAddVendedorDialog}>
                   <DialogTrigger asChild>
                     <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
@@ -924,103 +1054,350 @@ export default function AdminFinanciamentoDetalhePage() {
                       Adicionar Vendedor
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Novo Vendedor</DialogTitle>
+                      <DialogTitle className="font-heading text-xl">Novo Vendedor</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="font-paragraph text-sm mb-2 block">Nome do Vendedor</Label>
-                        <Input
-                          value={newVendedor.nome}
-                          onChange={(e) => setNewVendedor({ ...newVendedor, nome: e.target.value })}
-                          className="h-10 bg-primary border-border-gray"
-                        />
+                    <div className="space-y-6">
+                      {/* Dados Principais */}
+                      <div className="space-y-4">
+                        <h3 className="font-heading text-base font-semibold text-secondary flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          Dados Principais
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Nome Completo *</Label>
+                            <Input
+                              value={newVendedor.nome}
+                              onChange={(e) => setNewVendedor({ ...newVendedor, nome: e.target.value })}
+                              placeholder="Nome do vendedor"
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Tipo de Pessoa *</Label>
+                            <Select value={newVendedor.tipoPessoa} onValueChange={(value: 'PF' | 'PJ') => setNewVendedor({ ...newVendedor, tipoPessoa: value })}>
+                              <SelectTrigger className="h-10 bg-primary border-border-gray">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="PF">Pessoa Física</SelectItem>
+                                <SelectItem value="PJ">Pessoa Jurídica</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="md:col-span-2">
+                            <Label className="font-paragraph text-sm mb-2 block">
+                              {newVendedor.tipoPessoa === 'PF' ? 'CPF *' : 'CNPJ *'}
+                            </Label>
+                            <Input
+                              value={newVendedor.cpfCnpj}
+                              onChange={(e) => setNewVendedor({ ...newVendedor, cpfCnpj: e.target.value })}
+                              placeholder={newVendedor.tipoPessoa === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'}
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="font-paragraph text-sm mb-2 block">CPF ou CNPJ</Label>
-                        <Input
-                          value={newVendedor.cpfCnpj}
-                          onChange={(e) => setNewVendedor({ ...newVendedor, cpfCnpj: e.target.value })}
-                          className="h-10 bg-primary border-border-gray"
-                        />
+
+                      {/* Dados Bancários */}
+                      <div className="space-y-4 border-t pt-4">
+                        <h3 className="font-heading text-base font-semibold text-secondary flex items-center gap-2">
+                          <CreditCard className="w-4 h-4" />
+                          Dados Bancários
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Banco *</Label>
+                            <Input
+                              value={newVendedor.banco}
+                              onChange={(e) => setNewVendedor({ ...newVendedor, banco: e.target.value })}
+                              placeholder="Ex: Banco do Brasil"
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Agência *</Label>
+                            <Input
+                              value={newVendedor.agencia}
+                              onChange={(e) => setNewVendedor({ ...newVendedor, agencia: e.target.value })}
+                              placeholder="0000"
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Conta *</Label>
+                            <Input
+                              value={newVendedor.conta}
+                              onChange={(e) => setNewVendedor({ ...newVendedor, conta: e.target.value })}
+                              placeholder="00000-0"
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Tipo de Conta *</Label>
+                            <Select value={newVendedor.tipoConta} onValueChange={(value: 'Corrente' | 'Poupança') => setNewVendedor({ ...newVendedor, tipoConta: value })}>
+                              <SelectTrigger className="h-10 bg-primary border-border-gray">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Corrente">Conta Corrente</SelectItem>
+                                <SelectItem value="Poupança">Conta Poupança</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">Titular da Conta *</Label>
+                            <Input
+                              value={newVendedor.titularConta}
+                              onChange={(e) => setNewVendedor({ ...newVendedor, titularConta: e.target.value })}
+                              placeholder="Nome do titular"
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                          <div>
+                            <Label className="font-paragraph text-sm mb-2 block">CPF/CNPJ do Titular *</Label>
+                            <Input
+                              value={newVendedor.cpfCnpjTitular}
+                              onChange={(e) => setNewVendedor({ ...newVendedor, cpfCnpjTitular: e.target.value })}
+                              placeholder="000.000.000-00"
+                              className="h-10 bg-primary border-border-gray"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <Label className="font-paragraph text-sm mb-2 block">Contato WhatsApp</Label>
-                        <Input
-                          value={newVendedor.whatsapp}
-                          onChange={(e) => setNewVendedor({ ...newVendedor, whatsapp: e.target.value })}
-                          placeholder="(11) 98765-4321"
-                          className="h-10 bg-primary border-border-gray"
-                        />
-                      </div>
-                      <div>
-                        <Label className="font-paragraph text-sm mb-2 block">Dados Bancários</Label>
-                        <Textarea
-                          value={newVendedor.dadosBancarios}
-                          onChange={(e) => setNewVendedor({ ...newVendedor, dadosBancarios: e.target.value })}
-                          placeholder="Banco, Agência, Conta"
-                          rows={3}
-                          className="bg-primary border-border-gray resize-none"
-                        />
-                      </div>
-                      <Button onClick={handleAddVendedor} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">
-                        Adicionar
+
+                      <Button 
+                        onClick={handleAddVendedor} 
+                        className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                        disabled={!newVendedor.nome || !newVendedor.cpfCnpj || !newVendedor.banco || !newVendedor.agencia || !newVendedor.conta || !newVendedor.titularConta || !newVendedor.cpfCnpjTitular}
+                      >
+                        Adicionar Vendedor
                       </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
               </div>
 
-              <div className="space-y-4">
-                {vendedores.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <p className="font-paragraph text-primary-foreground/60">Nenhum vendedor cadastrado</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  vendedores.map((vendedor) => (
-                    <Card key={vendedor._id}>
-                      <CardContent className="py-4">
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Nome</p>
-                              <p className="font-paragraph text-sm font-semibold">{vendedor.nome}</p>
-                            </div>
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">CPF/CNPJ</p>
-                              <p className="font-paragraph text-sm">{vendedor.cpfCnpj}</p>
-                            </div>
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">WhatsApp</p>
-                              <p className="font-paragraph text-sm">{vendedor.whatsapp}</p>
-                            </div>
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Dados Bancários</p>
-                              <p className="font-paragraph text-sm">{vendedor.dadosBancarios}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="border-t pt-4">
-                            <h4 className="font-heading text-sm font-semibold mb-3">Checklist de Documentos</h4>
-                            <div className="space-y-2">
-                              {['Documento de identificação', 'Certidão de casamento ou nascimento', 'Comprovante de residência'].map((doc) => (
-                                <div key={doc} className="flex items-center gap-3 p-2 bg-light-gray rounded">
-                                  <Checkbox />
-                                  <span className="font-paragraph text-sm flex-1">{doc}</span>
-                                  <Badge className="bg-yellow-500 text-white">Pendente</Badge>
+              {vendedores.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Building2 className="w-12 h-12 text-primary-foreground/30 mx-auto mb-3" />
+                    <p className="font-paragraph text-primary-foreground/60">Nenhum vendedor cadastrado</p>
+                    <p className="font-paragraph text-sm text-primary-foreground/40 mt-1">Adicione vendedores para gerenciar a documentação</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {vendedores.map((vendedor) => {
+                    const isSelected = selectedVendedor === vendedor._id;
+                    const totalDocs = vendedor.documentos.length;
+                    const recebidos = vendedor.documentos.filter(d => d.status === 'Recebido').length;
+                    const isComplete = recebidos === totalDocs;
+                    const hasPending = recebidos < totalDocs;
+
+                    return (
+                      <motion.div
+                        key={vendedor._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative"
+                      >
+                        <Card 
+                          className={`cursor-pointer transition-all border-2 ${
+                            isSelected 
+                              ? 'border-secondary shadow-lg' 
+                              : isComplete 
+                                ? 'border-green-300 bg-green-50/50' 
+                                : hasPending 
+                                  ? 'border-red-300 bg-red-50/50' 
+                                  : 'border-border-gray'
+                          }`}
+                          onClick={() => setSelectedVendedor(isSelected ? null : vendedor._id)}
+                        >
+                          <CardContent className="py-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                    isComplete ? 'bg-green-500' : hasPending ? 'bg-red-500' : 'bg-gray-400'
+                                  }`}>
+                                    <User className="w-5 h-5 text-white" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h3 className="font-heading text-lg font-semibold text-primary-foreground">{vendedor.nome}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge className="text-xs">{vendedor.tipoPessoa}</Badge>
+                                      <Badge className={`text-xs ${isComplete ? 'bg-green-500' : 'bg-red-500'}`}>
+                                        {recebidos}/{totalDocs} documentos
+                                      </Badge>
+                                    </div>
+                                  </div>
                                 </div>
-                              ))}
+
+                                {isSelected && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="space-y-6 mt-4 pt-4 border-t"
+                                  >
+                                    {/* Dados Principais */}
+                                    <div>
+                                      <h4 className="font-heading text-sm font-semibold text-secondary mb-3 flex items-center gap-2">
+                                        <User className="w-4 h-4" />
+                                        Dados Principais
+                                      </h4>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-light-gray p-3 rounded">
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Nome</p>
+                                          <p className="font-paragraph text-sm font-semibold">{vendedor.nome}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Tipo</p>
+                                          <p className="font-paragraph text-sm">{vendedor.tipoPessoa === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">{vendedor.tipoPessoa === 'PF' ? 'CPF' : 'CNPJ'}</p>
+                                          <p className="font-paragraph text-sm">{vendedor.cpfCnpj}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Dados Bancários */}
+                                    <div>
+                                      <h4 className="font-heading text-sm font-semibold text-secondary mb-3 flex items-center gap-2">
+                                        <CreditCard className="w-4 h-4" />
+                                        Dados Bancários
+                                      </h4>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-light-gray p-3 rounded">
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Banco</p>
+                                          <p className="font-paragraph text-sm font-semibold">{vendedor.banco}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Agência</p>
+                                          <p className="font-paragraph text-sm">{vendedor.agencia}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Conta</p>
+                                          <p className="font-paragraph text-sm">{vendedor.conta}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Tipo de Conta</p>
+                                          <p className="font-paragraph text-sm">{vendedor.tipoConta}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Titular</p>
+                                          <p className="font-paragraph text-sm">{vendedor.titularConta}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">CPF/CNPJ Titular</p>
+                                          <p className="font-paragraph text-sm">{vendedor.cpfCnpjTitular}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Checklist de Documentos */}
+                                    <div>
+                                      <h4 className="font-heading text-sm font-semibold text-secondary mb-3 flex items-center gap-2">
+                                        <FileText className="w-4 h-4" />
+                                        Checklist de Documentos
+                                      </h4>
+                                      <div className="space-y-2">
+                                        {vendedor.documentos.map((doc) => (
+                                          <div 
+                                            key={doc.tipo} 
+                                            className={`p-3 rounded border-2 transition-all ${
+                                              doc.status === 'Recebido' 
+                                                ? 'bg-green-50 border-green-300' 
+                                                : 'bg-red-50 border-red-300'
+                                            }`}
+                                          >
+                                            <div className="flex items-start gap-3">
+                                              <Checkbox
+                                                checked={doc.status === 'Recebido'}
+                                                onCheckedChange={() => handleToggleVendedorDocumento(vendedor._id, doc.tipo)}
+                                                className="mt-1"
+                                              />
+                                              <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                  <FileText className={`w-4 h-4 ${doc.status === 'Recebido' ? 'text-green-600' : 'text-red-600'}`} />
+                                                  <span className="font-paragraph text-sm font-semibold">{doc.tipo}</span>
+                                                  <Badge className={`text-xs ml-auto ${doc.status === 'Recebido' ? 'bg-green-500' : 'bg-red-500'}`}>
+                                                    {doc.status}
+                                                  </Badge>
+                                                </div>
+                                                {doc.dataRecebimento && (
+                                                  <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
+                                                    Recebido em: {new Date(doc.dataRecebimento).toLocaleDateString('pt-BR')}
+                                                  </p>
+                                                )}
+                                                <div className="flex gap-2">
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => handleUploadVendedorDocumento(vendedor._id, doc.tipo)}
+                                                    className="h-8 text-xs"
+                                                  >
+                                                    <Upload className="w-3 h-3 mr-1" />
+                                                    Upload
+                                                  </Button>
+                                                  {doc.arquivo && (
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleRemoveVendedorDocumentoFile(vendedor._id, doc.tipo)}
+                                                      className="h-8 text-xs text-destructive"
+                                                    >
+                                                      <X className="w-3 h-3 mr-1" />
+                                                      Remover
+                                                    </Button>
+                                                  )}
+                                                  {doc.status === 'Pendente' && (
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleCreatePendenciaFromVendedorDoc(vendedor._id, doc.tipo)}
+                                                      className="h-8 text-xs"
+                                                    >
+                                                      <AlertCircle className="w-3 h-3 mr-1" />
+                                                      Criar Pendência
+                                                    </Button>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </div>
+
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveVendedor(vendedor._id);
+                                  }}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
             </TabsContent>
 
             {/* Tab: Pendências e Tarefas */}
