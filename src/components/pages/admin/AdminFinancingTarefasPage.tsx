@@ -13,7 +13,9 @@ import {
   Calendar,
   User,
   FileText,
-  CheckCircle
+  CheckCircle,
+  RotateCcw,
+  Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,11 +26,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
-import { FinancingTasks, ServiceRecords, UsuriosdoSistema } from '@/entities';
+import { FinancingTasks, ServiceRecords, UsuriosdoSistema, HistricodeInteraes } from '@/entities';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -36,6 +39,7 @@ export default function AdminFinancingTarefasPage() {
   console.log('[AdminFinancingTarefasPage] Component mounted');
   
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [tarefas, setTarefas] = useState<FinancingTasks[]>([]);
   const [filteredTarefas, setFilteredTarefas] = useState<FinancingTasks[]>([]);
   const [atendimentos, setAtendimentos] = useState<ServiceRecords[]>([]);
@@ -50,7 +54,7 @@ export default function AdminFinancingTarefasPage() {
   const [formData, setFormData] = useState({
     titulo: '',
     description: '',
-    status: 'Pendente',
+    status: 'Aberta',
     atendimentoRef: '',
     pendenciaRef: '',
     responsibleType: 'Interno',
@@ -119,7 +123,7 @@ export default function AdminFinancingTarefasPage() {
     setFormData({
       titulo: '',
       description: '',
-      status: 'Pendente',
+      status: 'Aberta',
       atendimentoRef: '',
       pendenciaRef: '',
       responsibleType: 'Interno',
@@ -138,7 +142,7 @@ export default function AdminFinancingTarefasPage() {
     setFormData({
       titulo: tarefa.titulo || '',
       description: tarefa.description || '',
-      status: tarefa.status || 'Pendente',
+      status: tarefa.status || 'Aberta',
       atendimentoRef: tarefa.atendimentoRef || '',
       pendenciaRef: tarefa.pendenciaRef || '',
       responsibleType: tarefa.responsibleType || 'Interno',
@@ -208,17 +212,65 @@ export default function AdminFinancingTarefasPage() {
 
   const getStatusBadge = (status?: string) => {
     const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
-      'Pendente': { variant: 'destructive', label: 'Pendente' },
-      'Em Andamento': { variant: 'secondary', label: 'Em Andamento' },
+      'Aberta': { variant: 'destructive', label: 'Aberta' },
+      'Em andamento': { variant: 'secondary', label: 'Em andamento' },
       'Concluída': { variant: 'default', label: 'Concluída' }
     };
-    const config = variants[status || 'Pendente'] || variants['Pendente'];
+    const config = variants[status || 'Aberta'] || variants['Aberta'];
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const isOverdue = (dueDate?: Date | string) => {
-    if (!dueDate) return false;
+  const isOverdue = (dueDate?: Date | string, status?: string) => {
+    if (!dueDate || status === 'Concluída') return false;
     return new Date(dueDate) < new Date();
+  };
+
+  const hasActivityToday = (creationDate?: Date | string) => {
+    if (!creationDate) return false;
+    return new Date(creationDate).toDateString() === new Date().toDateString();
+  };
+
+  const handleUpdateStatus = async (tarefaId: string, newStatus: string) => {
+    const tarefa = tarefas.find(t => t._id === tarefaId);
+    if (!tarefa) return;
+
+    // Optimistic update
+    setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: newStatus } : t));
+
+    try {
+      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
+        _id: tarefaId,
+        status: newStatus
+      });
+
+      // Create history entry
+      if (tarefa.atendimentoRef) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: tarefa.atendimentoRef,
+          tipoEvento: 'Tarefa_Atualizada',
+          interactionType: 'Mudança de status',
+          interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" alterada para: ${newStatus}`,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+
+      toast({
+        title: "Tarefa atualizada",
+        description: `Status alterado para: ${newStatus}`,
+      });
+
+      await loadData();
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar a tarefa",
+        variant: "destructive"
+      });
+      await loadData(); // Revert on failure
+    }
   };
 
   const getResponsibleName = (tarefa: FinancingTasks) => {
@@ -279,8 +331,8 @@ export default function AdminFinancingTarefasPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Pendente">Pendente</SelectItem>
-                      <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                      <SelectItem value="Aberta">Aberta</SelectItem>
+                      <SelectItem value="Em andamento">Em andamento</SelectItem>
                       <SelectItem value="Concluída">Concluída</SelectItem>
                     </SelectContent>
                   </Select>
@@ -328,11 +380,11 @@ export default function AdminFinancingTarefasPage() {
             </Card>
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Pendentes</CardTitle>
+                <CardTitle className="text-sm font-paragraph text-dark-gray">Abertas</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold font-heading text-red-600">
-                  {tarefas.filter(t => t.status === 'Pendente').length}
+                  {tarefas.filter(t => t.status === 'Aberta').length}
                 </div>
               </CardContent>
             </Card>
@@ -342,7 +394,7 @@ export default function AdminFinancingTarefasPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold font-heading text-yellow-600">
-                  {tarefas.filter(t => t.status === 'Em Andamento').length}
+                  {tarefas.filter(t => t.status === 'Em andamento').length}
                 </div>
               </CardContent>
             </Card>
@@ -383,65 +435,112 @@ export default function AdminFinancingTarefasPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTarefas.map((tarefa) => (
-                      <TableRow key={tarefa._id}>
-                        <TableCell className="font-paragraph font-medium">
-                          <div>
-                            <div>{tarefa.titulo}</div>
-                            {tarefa.description && (
-                              <div className="text-sm text-dark-gray mt-1 line-clamp-1">
-                                {tarefa.description}
+                    {filteredTarefas.map((tarefa) => {
+                      const overdueStatus = isOverdue(tarefa.dueDate, tarefa.status);
+                      const todayActivity = hasActivityToday(tarefa.creationDate);
+                      
+                      return (
+                        <TableRow key={tarefa._id} className={
+                          overdueStatus ? 'bg-red-50' : todayActivity ? 'bg-green-50' : ''
+                        }>
+                          <TableCell className="font-paragraph font-medium">
+                            <div>
+                              <div className={overdueStatus ? 'text-red-700 font-bold' : ''}>
+                                {tarefa.titulo}
+                                {overdueStatus && (
+                                  <Badge className="ml-2 text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
+                                )}
+                                {todayActivity && (
+                                  <Badge className="ml-2 text-xs bg-green-600 text-white">✓ HOJE</Badge>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
-                        <TableCell className="font-paragraph">
-                          <div>
-                            <div>{getResponsibleName(tarefa)}</div>
-                            <div className="text-xs text-dark-gray">
-                              {tarefa.responsibleType === 'Interno' ? 'Interno' : 'Externo'}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-paragraph">
-                          {tarefa.responsibleType || '-'}
-                        </TableCell>
-                        <TableCell className="font-paragraph">
-                          {tarefa.dueDate ? (
-                            <div className={isOverdue(tarefa.dueDate) && tarefa.status !== 'Concluída' ? 'text-red-600 font-semibold' : ''}>
-                              {format(new Date(tarefa.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                              {isOverdue(tarefa.dueDate) && tarefa.status !== 'Concluída' && (
-                                <div className="text-xs">Atrasada</div>
+                              {tarefa.description && (
+                                <div className="text-sm text-dark-gray mt-1 line-clamp-1">
+                                  {tarefa.description}
+                                </div>
                               )}
                             </div>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell className="font-paragraph">
-                          {tarefa.canalNotificacao || '-'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(tarefa)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(tarefa._id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
+                          <TableCell className="font-paragraph">
+                            <div>
+                              <div>{getResponsibleName(tarefa)}</div>
+                              <div className="text-xs text-dark-gray">
+                                {tarefa.responsibleType === 'Interno' ? 'Interno' : 'Externo'}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-paragraph">
+                            {tarefa.responsibleType || '-'}
+                          </TableCell>
+                          <TableCell className="font-paragraph">
+                            {tarefa.dueDate ? (
+                              <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
+                                {format(new Date(tarefa.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                                {overdueStatus && (
+                                  <div className="text-xs">Atrasada</div>
+                                )}
+                              </div>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="font-paragraph">
+                            {tarefa.canalNotificacao || '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              {tarefa.status === 'Aberta' && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(tarefa._id, 'Em andamento')}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                >
+                                  <Play className="w-4 h-4 mr-1" />
+                                  Iniciar
+                                </Button>
+                              )}
+                              {(tarefa.status === 'Aberta' || tarefa.status === 'Em andamento') && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(tarefa._id, 'Concluída')}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <CheckSquare className="w-4 h-4 mr-1" />
+                                  Concluir
+                                </Button>
+                              )}
+                              {tarefa.status === 'Concluída' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(tarefa._id, 'Aberta')}
+                                >
+                                  <RotateCcw className="w-4 h-4 mr-1" />
+                                  Reabrir
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(tarefa)}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(tarefa._id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -489,8 +588,8 @@ export default function AdminFinancingTarefasPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Pendente">Pendente</SelectItem>
-                    <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                    <SelectItem value="Aberta">Aberta</SelectItem>
+                    <SelectItem value="Em andamento">Em andamento</SelectItem>
                     <SelectItem value="Concluída">Concluída</SelectItem>
                   </SelectContent>
                 </Select>
@@ -512,10 +611,10 @@ export default function AdminFinancingTarefasPage() {
 
             {formData.responsibleType === 'Interno' ? (
               <div>
-                <Label className="font-paragraph">Responsável Interno</Label>
+                <Label className="font-paragraph">Responsável Interno (R Sales)</Label>
                 <Select value={formData.internalResponsibleId} onValueChange={(value) => setFormData({ ...formData, internalResponsibleId: value })}>
                   <SelectTrigger className="font-paragraph">
-                    <SelectValue placeholder="Selecione um usuário" />
+                    <SelectValue placeholder="Selecione um responsável" />
                   </SelectTrigger>
                   <SelectContent>
                     {usuarios.map((usuario) => (

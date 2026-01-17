@@ -1206,34 +1206,76 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
-  // Update pending status
+  // Update pending status with history tracking
   const handleUpdatePendingStatus = async (pendingId: string, newStatus: string) => {
+    const pending = pendings.find(p => p._id === pendingId);
+    if (!pending) return;
+
+    // Optimistic update
+    setPendings(pendings.map(p => p._id === pendingId ? { 
+      ...p, 
+      status: newStatus,
+      resolvedDate: newStatus === 'Concluída' ? new Date().toISOString() : p.resolvedDate
+    } : p));
+
     try {
       await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
         _id: pendingId,
         status: newStatus,
-        resolvedDate: newStatus === 'Resolvida' ? new Date().toISOString() : undefined
+        resolvedDate: newStatus === 'Concluída' ? new Date().toISOString() : undefined
       });
 
-      setPendings(pendings.map(p => p._id === pendingId ? { ...p, status: newStatus } : p));
+      // Create history entry
+      if (pending.atendimentoRef) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: pending.atendimentoRef,
+          tipoEvento: 'Pendencia_Atualizada',
+          interactionType: 'Mudança de status',
+          interactionDescription: `Pendência "${pending.title}" alterada para: ${newStatus}`,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+
       await loadData();
     } catch (error) {
       console.error('Error updating pending status:', error);
+      await loadData(); // Revert on failure
     }
   };
 
-  // Update task status
+  // Update task status with history tracking
   const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
+    const task = tasks.find(t => t._id === taskId);
+    if (!task) return;
+
+    // Optimistic update
+    setTasks(tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
+
     try {
       await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
         _id: taskId,
         status: newStatus
       });
 
-      setTasks(tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
+      // Create history entry
+      if (task.atendimentoRef) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: task.atendimentoRef,
+          tipoEvento: 'Tarefa_Atualizada',
+          interactionType: 'Mudança de status',
+          interactionDescription: `Tarefa "${task.description || task.titulo}" alterada para: ${newStatus}`,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+
       await loadData();
     } catch (error) {
       console.error('Error updating task status:', error);
+      await loadData(); // Revert on failure
     }
   };
 
@@ -3348,44 +3390,95 @@ export default function AdminFinancingKanbanPage() {
                           );
                         }
 
-                        return caseTasks.map(task => (
-                          <div key={task._id} className={`p-4 rounded-lg border-2 ${
-                            task.status === 'Concluída' ? 'bg-green-50 border-green-200' : 'bg-white border-border-gray'
-                          }`}>
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-paragraph font-semibold text-sm mb-2">{task.description || task.titulo}</h4>
-                                <div className="flex gap-2">
-                                  <Badge variant={task.status === 'Concluída' ? 'default' : 'secondary'} className="text-xs">
-                                    {task.status}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-xs">{task.responsibleType}</Badge>
-                                  {task.dueDate && (
-                                    <Badge variant="outline" className="text-xs">
-                                      <Calendar className="w-3 h-3 mr-1" />
-                                      {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                        return caseTasks.map(task => {
+                          // Check if overdue
+                          const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'Concluída';
+                          // Check if has activity today
+                          const hasActivityToday = task.creationDate && new Date(task.creationDate).toDateString() === new Date().toDateString();
+                          
+                          return (
+                            <div key={task._id} className={`p-4 rounded-lg border-2 ${
+                              isOverdue 
+                                ? 'bg-red-50 border-red-300 shadow-md' 
+                                : hasActivityToday 
+                                  ? 'bg-green-50 border-green-300 shadow-md'
+                                  : task.status === 'Concluída' 
+                                    ? 'bg-gray-50 border-gray-200' 
+                                    : 'bg-white border-border-gray'
+                            }`}>
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h4 className={`font-paragraph font-semibold text-sm mb-2 ${isOverdue ? 'text-red-700' : ''}`}>
+                                    {task.description || task.titulo}
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    <Badge variant={task.status === 'Concluída' ? 'default' : 'secondary'} className="text-xs">
+                                      {task.status}
                                     </Badge>
+                                    <Badge variant="outline" className="text-xs">{task.responsibleType}</Badge>
+                                    {task.dueDate && (
+                                      <Badge variant="outline" className={`text-xs ${isOverdue ? 'bg-red-100 text-red-700 border-red-300' : ''}`}>
+                                        <Calendar className="w-3 h-3 mr-1" />
+                                        {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                                      </Badge>
+                                    )}
+                                    {isOverdue && (
+                                      <Badge className="text-xs bg-red-600 text-white">
+                                        ⚠️ ATRASADA
+                                      </Badge>
+                                    )}
+                                    {hasActivityToday && (
+                                      <Badge className="text-xs bg-green-600 text-white">
+                                        ✓ HOJE
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex gap-1 ml-3">
+                                  {task.status === 'Aberta' && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        console.log('[DEBUG] Starting task:', task._id);
+                                        handleUpdateTaskStatus(task._id, 'Em andamento');
+                                      }}
+                                      className="h-8 bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                                    >
+                                      <Clock className="w-3 h-3 mr-1" /> Iniciar
+                                    </Button>
+                                  )}
+                                  {(task.status === 'Aberta' || task.status === 'Em andamento') && (
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      onClick={() => {
+                                        console.log('[DEBUG] Completing task:', task._id);
+                                        handleUpdateTaskStatus(task._id, 'Concluída');
+                                      }}
+                                      className="h-8 bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                      <CheckSquare className="w-3 h-3 mr-1" /> Concluir
+                                    </Button>
+                                  )}
+                                  {task.status === 'Concluída' && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        console.log('[DEBUG] Reopening task:', task._id);
+                                        handleUpdateTaskStatus(task._id, 'Aberta');
+                                      }}
+                                      className="h-8"
+                                    >
+                                      <RotateCcw className="w-3 h-3 mr-1" /> Reabrir
+                                    </Button>
                                   )}
                                 </div>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  console.log('[DEBUG] Updating task status:', task._id);
-                                  handleUpdateTaskStatus(task._id, task.status === 'Concluída' ? 'Pendente' : 'Concluída');
-                                }}
-                                className="h-8"
-                              >
-                                {task.status === 'Concluída' ? (
-                                  <><RotateCcw className="w-3 h-3 mr-1" /> Reabrir</>
-                                ) : (
-                                  <><CheckSquare className="w-3 h-3 mr-1" /> Concluir</>
-                                )}
-                              </Button>
                             </div>
-                          </div>
-                        ));
+                          );
+                        });
                       })()}
                     </CardContent>
                   </Card>

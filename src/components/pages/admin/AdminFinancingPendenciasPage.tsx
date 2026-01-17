@@ -13,7 +13,9 @@ import {
   ArrowLeft,
   Calendar,
   User,
-  FileText
+  FileText,
+  RotateCcw,
+  CheckSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,11 +26,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
-import { PendnciasdoFinanciamento, ServiceRecords } from '@/entities';
+import { PendnciasdoFinanciamento, ServiceRecords, HistricodeInteraes } from '@/entities';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -36,6 +39,7 @@ export default function AdminFinancingPendenciasPage() {
   console.log('[AdminFinancingPendenciasPage] Component mounted');
   
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [pendencias, setPendencias] = useState<PendnciasdoFinanciamento[]>([]);
   const [filteredPendencias, setFilteredPendencias] = useState<PendnciasdoFinanciamento[]>([]);
   const [atendimentos, setAtendimentos] = useState<ServiceRecords[]>([]);
@@ -225,9 +229,58 @@ export default function AdminFinancingPendenciasPage() {
     );
   };
 
-  const isOverdue = (dueDate?: Date | string) => {
-    if (!dueDate) return false;
+  const isOverdue = (dueDate?: Date | string, status?: string) => {
+    if (!dueDate || status === 'Concluída') return false;
     return new Date(dueDate) < new Date();
+  };
+
+  const handleUpdateStatus = async (pendenciaId: string, newStatus: string) => {
+    const pendencia = pendencias.find(p => p._id === pendenciaId);
+    if (!pendencia) return;
+
+    // Optimistic update
+    setPendencias(prev => prev.map(p => p._id === pendenciaId ? { 
+      ...p, 
+      status: newStatus,
+      resolvedDate: newStatus === 'Concluída' ? new Date().toISOString() : undefined
+    } : p));
+
+    try {
+      await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
+        _id: pendenciaId,
+        status: newStatus,
+        resolvedDate: newStatus === 'Concluída' ? new Date().toISOString() : undefined
+      });
+
+      // Create history entry
+      if (pendencia.atendimentoRef) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: pendencia.atendimentoRef,
+          tipoEvento: 'Pendencia_Atualizada',
+          interactionType: 'Mudança de status',
+          interactionDescription: `Pendência "${pendencia.title}" alterada para: ${newStatus}`,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+
+      toast({
+        title: "Pendência atualizada",
+        description: `Status alterado para: ${newStatus}`,
+      });
+
+      await loadData();
+    } catch (error) {
+      console.error('Error updating pending status:', error);
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar a pendência",
+        variant: "destructive"
+      });
+      await loadData(); // Revert on failure
+    }
+  };
   };
 
   return (
@@ -385,61 +438,89 @@ export default function AdminFinancingPendenciasPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPendencias.map((pendencia) => (
-                      <TableRow key={pendencia._id}>
-                        <TableCell className="font-paragraph font-medium">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              {pendencia.title}
-                              {pendencia.bloqueiaFase && (
-                                <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
-                              )}
-                            </div>
-                            {pendencia.description && (
-                              <div className="text-sm text-dark-gray mt-1 line-clamp-1">
-                                {pendencia.description}
+                    {filteredPendencias.map((pendencia) => {
+                      const overdueStatus = isOverdue(pendencia.dueDate, pendencia.status);
+                      
+                      return (
+                        <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
+                          <TableCell className="font-paragraph font-medium">
+                            <div>
+                              <div className={`flex items-center gap-2 ${overdueStatus ? 'text-red-700 font-bold' : ''}`}>
+                                {pendencia.title}
+                                {pendencia.bloqueiaFase && (
+                                  <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
+                                )}
+                                {overdueStatus && (
+                                  <Badge className="text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
-                        <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
-                        <TableCell className="font-paragraph">{pendencia.tipo}</TableCell>
-                        <TableCell className="font-paragraph">
-                          {pendencia.dueDate ? (
-                            <div className={isOverdue(pendencia.dueDate) && pendencia.status !== 'Resolvida' ? 'text-red-600 font-semibold' : ''}>
-                              {format(new Date(pendencia.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                              {isOverdue(pendencia.dueDate) && pendencia.status !== 'Resolvida' && (
-                                <div className="text-xs">Atrasada</div>
+                              {pendencia.description && (
+                                <div className="text-sm text-dark-gray mt-1 line-clamp-1">
+                                  {pendencia.description}
+                                </div>
                               )}
                             </div>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell className="font-paragraph">
-                          {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '-'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(pendencia)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(pendencia._id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
+                          <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
+                          <TableCell className="font-paragraph">{pendencia.tipo}</TableCell>
+                          <TableCell className="font-paragraph">
+                            {pendencia.dueDate ? (
+                              <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
+                                {format(new Date(pendencia.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                                {overdueStatus && (
+                                  <div className="text-xs">Atrasada</div>
+                                )}
+                              </div>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="font-paragraph">
+                            {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              {pendencia.status !== 'Concluída' && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(pendencia._id, 'Concluída')}
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <CheckSquare className="w-4 h-4 mr-1" />
+                                  Concluir
+                                </Button>
+                              )}
+                              {pendencia.status === 'Concluída' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(pendencia._id, 'Pendente')}
+                                >
+                                  <RotateCcw className="w-4 h-4 mr-1" />
+                                  Reabrir
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(pendencia)}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(pendencia._id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
