@@ -428,6 +428,7 @@ export default function AdminFinancingKanbanPage() {
         setCaseFormData({
           ...caseData,
           proponentePrincipal: atendimento.contactName || '',
+          cpfProponentePrincipal: caseData.cpfProponentePrincipal || '',
           email: atendimento.contactEmail || '',
           phoneNumber: atendimento.contactPhone || '',
           responsibleInternalId: atendimento.responsavelInternoId || '',
@@ -438,7 +439,8 @@ export default function AdminFinancingKanbanPage() {
 
       // Load participants
       const { items: participantsList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
-      setParticipants(participantsList.filter(p => p.serviceRecordRef === caseId));
+      const filteredParticipants = participantsList.filter(p => p.serviceRecordRef === caseId);
+      setParticipants(filteredParticipants);
 
       // Load proponent checklists
       const { items: checklistsList } = await BaseCrudService.getAll<ChecklistdosProponentes>('checklistproponentes');
@@ -453,9 +455,18 @@ export default function AdminFinancingKanbanPage() {
       setProponentChecklists(checklistsMap);
 
       // Ensure Principal Proponent has a checklist entry
-      if (atendimento.clientePrincipalRef) {
-        const principalClientRef = atendimento.clientePrincipalRef;
-        
+      // Use clientePrincipalRef if available, otherwise use first participant or create virtual principal
+      let principalClientRef = atendimento.clientePrincipalRef;
+      
+      if (!principalClientRef && filteredParticipants.length > 0) {
+        // If no principal ref but has participants, use first participant as principal
+        principalClientRef = filteredParticipants[0].clientRef;
+      } else if (!principalClientRef) {
+        // Create a virtual principal proponent ID based on the case ID
+        principalClientRef = `principal-${caseId}`;
+      }
+      
+      if (principalClientRef) {
         // Check if checklist exists for principal proponent
         if (!checklistsMap.has(principalClientRef)) {
           // Create empty checklist for principal proponent
@@ -478,6 +489,27 @@ export default function AdminFinancingKanbanPage() {
 
         // Set principal proponent as selected by default
         setSelectedProponentId(principalClientRef);
+      }
+
+      // Also ensure checklist exists for all participants
+      for (const participant of filteredParticipants) {
+        if (participant.clientRef && !checklistsMap.has(participant.clientRef)) {
+          const newChecklist: ChecklistdosProponentes = {
+            _id: crypto.randomUUID(),
+            atendimentoRef: caseId,
+            clientRef: participant.clientRef,
+            hasFgtsContribution: false,
+            hasDependent: false,
+            declaresIncomeTax: false,
+            ownsProperty: false,
+            hasActiveFinancing: false,
+            isFirstAcquisition: false
+          };
+
+          await BaseCrudService.create('checklistproponentes', newChecklist);
+          checklistsMap.set(participant.clientRef, newChecklist as ProponentChecklist);
+          setProponentChecklists(new Map(checklistsMap));
+        }
       }
 
       // Load documents
@@ -602,6 +634,28 @@ export default function AdminFinancingKanbanPage() {
 
       await BaseCrudService.create('atendimentopartes', participant);
       setParticipants([...participants, participant]);
+      
+      // Create checklist for the new participant
+      const existingChecklist = proponentChecklists.get(newParticipant.clientRef);
+      if (!existingChecklist) {
+        const newChecklist: ChecklistdosProponentes = {
+          _id: crypto.randomUUID(),
+          atendimentoRef: selectedCase._id,
+          clientRef: newParticipant.clientRef,
+          hasFgtsContribution: false,
+          hasDependent: false,
+          declaresIncomeTax: false,
+          ownsProperty: false,
+          hasActiveFinancing: false,
+          isFirstAcquisition: false
+        };
+
+        await BaseCrudService.create('checklistproponentes', newChecklist);
+        const updatedChecklists = new Map(proponentChecklists);
+        updatedChecklists.set(newParticipant.clientRef, newChecklist as ProponentChecklist);
+        setProponentChecklists(updatedChecklists);
+      }
+      
       setNewParticipant({
         clientRef: '',
         roleInService: 'Participante/Dependente',
@@ -1567,29 +1621,37 @@ export default function AdminFinancingKanbanPage() {
                     <CardContent>
                       {(() => {
                         // Build proponents list: Principal first, then participants (avoiding duplicates)
-                        const proponentsList: Array<{ clientRef: string; roleInService: string; isPrincipal: boolean }> = [];
+                        const proponentsList: Array<{ clientRef: string; name: string; cpf: string; roleInService: string; isPrincipal: boolean }> = [];
                         
-                        // Get principal proponent from atendimento
-                        const atendimento = cases.find(c => c._id === selectedCase?._id);
-                        const principalClientRef = atendimento ? (atendimento as any).clientePrincipalRef : null;
-                        
-                        // Add principal proponent first if exists
-                        if (principalClientRef) {
+                        // Add principal proponent first (from form data)
+                        if (caseFormData.proponentePrincipal) {
+                          const principalKey = `principal-${selectedCase?._id}`;
                           proponentsList.push({
-                            clientRef: principalClientRef,
+                            clientRef: principalKey,
+                            name: caseFormData.proponentePrincipal,
+                            cpf: caseFormData.cpfProponentePrincipal || '',
                             roleInService: 'Proponente Principal',
                             isPrincipal: true
                           });
                         }
                         
-                        // Add participants (excluding principal if already added)
+                        // Add participants (excluding principal if duplicate)
                         participants.forEach(participant => {
-                          if (participant.clientRef !== principalClientRef) {
-                            proponentsList.push({
-                              clientRef: participant.clientRef,
-                              roleInService: participant.roleInService || 'Participante',
-                              isPrincipal: false
-                            });
+                          const client = clients.find(c => c._id === participant.clientRef);
+                          if (client) {
+                            // Check if this participant is the same as principal (by CPF)
+                            const isDuplicate = caseFormData.cpfProponentePrincipal && 
+                                               client.cpfCnpj === caseFormData.cpfProponentePrincipal;
+                            
+                            if (!isDuplicate) {
+                              proponentsList.push({
+                                clientRef: participant.clientRef,
+                                name: client.clientName || client.nomeRazaoSocial || 'Nome não disponível',
+                                cpf: client.cpfCnpj || '',
+                                roleInService: participant.roleInService || 'Participante',
+                                isPrincipal: false
+                              });
+                            }
                           }
                         });
                         
@@ -1598,17 +1660,17 @@ export default function AdminFinancingKanbanPage() {
                             <div className="text-center py-12 bg-light-gray/50 rounded-xl border-2 border-dashed border-border-gray">
                               <Users className="w-16 h-16 mx-auto mb-4 text-foreground/20" />
                               <h4 className="font-heading text-lg font-semibold mb-2 text-foreground/80">
-                                Nenhum proponente vinculado
+                                Nenhum proponente configurado
                               </h4>
                               <p className="text-sm text-foreground/60 mb-4">
-                                Adicione participantes na aba 'Dados do Processo' para preencher o checklist
+                                Preencha o nome e CPF do Proponente Principal na aba 'Dados' para começar
                               </p>
                               <Button 
                                 onClick={() => setModalTab('dados')}
                                 className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
                               >
                                 <Plus className="w-4 h-4 mr-2" />
-                                Adicionar participante
+                                Ir para Dados
                               </Button>
                             </div>
                           );
@@ -1630,26 +1692,23 @@ export default function AdminFinancingKanbanPage() {
                                     <SelectValue placeholder="Escolha um proponente" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {proponentsList.map((proponent, index) => {
-                                      const client = clients.find(c => c._id === proponent.clientRef);
-                                      return (
-                                        <SelectItem key={`${proponent.clientRef}-${index}`} value={proponent.clientRef}>
-                                          <div className="flex items-center gap-2">
-                                            {proponent.isPrincipal && (
-                                              <Badge className="bg-secondary text-secondary-foreground text-xs px-2 py-0">
-                                                Principal
-                                              </Badge>
-                                            )}
-                                            <span className="font-semibold">
-                                              {client?.clientName || client?.nomeRazaoSocial || 'Nome não disponível'}
-                                            </span>
-                                            <span className="text-xs text-foreground/60">
-                                              ({proponent.roleInService})
-                                            </span>
-                                          </div>
-                                        </SelectItem>
-                                      );
-                                    })}
+                                    {proponentsList.map((proponent, index) => (
+                                      <SelectItem key={`${proponent.clientRef}-${index}`} value={proponent.clientRef}>
+                                        <div className="flex items-center gap-2">
+                                          {proponent.isPrincipal && (
+                                            <Badge className="bg-secondary text-secondary-foreground text-xs px-2 py-0">
+                                              Principal
+                                            </Badge>
+                                          )}
+                                          <span className="font-semibold">
+                                            {proponent.name}
+                                          </span>
+                                          <span className="text-xs text-foreground/60">
+                                            ({proponent.roleInService})
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1659,10 +1718,9 @@ export default function AdminFinancingKanbanPage() {
                             {(() => {
                               const currentClientRef = selectedProponentId || proponentsList[0]?.clientRef;
                               const proponent = proponentsList.find(p => p.clientRef === currentClientRef);
-                              const client = clients.find(c => c._id === currentClientRef);
                               const checklist = proponentChecklists.get(currentClientRef);
                               
-                              if (!proponent || !client) return null;
+                              if (!proponent) return null;
 
                               return (
                                 <div className="border-2 border-secondary/20 rounded-xl p-6 bg-gradient-to-br from-white to-light-gray/30">
@@ -1671,25 +1729,13 @@ export default function AdminFinancingKanbanPage() {
                                     <div className="flex items-start justify-between mb-3">
                                       <div className="flex-1">
                                         <h4 className="font-heading text-xl font-bold text-secondary mb-2">
-                                          {client.clientName || client.nomeRazaoSocial || 'Nome não disponível'}
+                                          {proponent.name}
                                         </h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                          {client.cpfCnpj && (
+                                          {proponent.cpf && (
                                             <div className="flex items-center gap-2">
                                               <span className="font-semibold text-foreground/70">CPF:</span>
-                                              <span className="text-foreground">{client.cpfCnpj}</span>
-                                            </div>
-                                          )}
-                                          {client.emailPrincipal && (
-                                            <div className="flex items-center gap-2">
-                                              <span className="font-semibold text-foreground/70">Email:</span>
-                                              <span className="text-foreground">{client.emailPrincipal}</span>
-                                            </div>
-                                          )}
-                                          {client.telefonePrincipal && (
-                                            <div className="flex items-center gap-2">
-                                              <span className="font-semibold text-foreground/70">Contato:</span>
-                                              <span className="text-foreground">{client.telefonePrincipal}</span>
+                                              <span className="text-foreground">{proponent.cpf}</span>
                                             </div>
                                           )}
                                         </div>
