@@ -209,12 +209,13 @@ interface Vendor {
   clientRef: string;
   name: string;
   cpf: string;
+  contato?: string;
+  email?: string;
   banco?: string;
   agencia?: string;
   conta?: string;
   tipoConta?: string;
-  titular?: string;
-  cpfCnpjTitular?: string;
+  chavePix?: string;
 }
 
 interface VendorDocument {
@@ -378,12 +379,13 @@ export default function AdminFinancingKanbanPage() {
     clientRef: '',
     name: '',
     cpf: '',
+    contato: '',
+    email: '',
     banco: '',
     agencia: '',
     conta: '',
     tipoConta: 'Corrente',
-    titular: '',
-    cpfCnpjTitular: ''
+    chavePix: ''
   });
 
   // Proponents tab state
@@ -624,17 +626,23 @@ export default function AdminFinancingKanbanPage() {
         if (vp.clientRef) {
           const client = clients.find(c => c._id === vp.clientRef);
           if (client) {
+            // Load stored bank data from localStorage
+            const storageKey = `vendor-bank-${caseId}-${vp.clientRef}`;
+            const storedData = localStorage.getItem(storageKey);
+            const bankData = storedData ? JSON.parse(storedData) : {};
+            
             vendorsList.push({
               _id: vp._id,
               clientRef: vp.clientRef,
               name: client.clientName || client.nomeRazaoSocial || 'Vendedor',
               cpf: client.cpfCnpj || '',
-              banco: '',
-              agencia: '',
-              conta: '',
-              tipoConta: 'Corrente',
-              titular: '',
-              cpfCnpjTitular: ''
+              contato: bankData.contato || client.telefonePrincipal || client.whatsAppPrincipal || '',
+              email: bankData.email || client.emailPrincipal || '',
+              banco: bankData.banco || '',
+              agencia: bankData.agencia || '',
+              conta: bankData.conta || '',
+              tipoConta: bankData.tipoConta || 'Corrente',
+              chavePix: bankData.chavePix || ''
             });
           }
         }
@@ -917,12 +925,13 @@ export default function AdminFinancingKanbanPage() {
         clientRef: newVendor.clientRef,
         name: client?.clientName || client?.nomeRazaoSocial || 'Vendedor',
         cpf: client?.cpfCnpj || '',
+        contato: newVendor.contato,
+        email: newVendor.email,
         banco: newVendor.banco,
         agencia: newVendor.agencia,
         conta: newVendor.conta,
         tipoConta: newVendor.tipoConta,
-        titular: newVendor.titular,
-        cpfCnpjTitular: newVendor.cpfCnpjTitular
+        chavePix: newVendor.chavePix
       };
       
       setVendors([...vendors, newVendorObj]);
@@ -968,12 +977,13 @@ export default function AdminFinancingKanbanPage() {
         clientRef: '',
         name: '',
         cpf: '',
+        contato: '',
+        email: '',
         banco: '',
         agencia: '',
         conta: '',
         tipoConta: 'Corrente',
-        titular: '',
-        cpfCnpjTitular: ''
+        chavePix: ''
       });
       
       // Create history entry
@@ -1036,18 +1046,18 @@ export default function AdminFinancingKanbanPage() {
     );
     setVendors(updatedVendors);
     
-    // In production, you would save this to a dedicated vendor details collection
-    // For now, we'll store in localStorage
+    // Save to localStorage
     const storageKey = `vendor-bank-${selectedCase?._id}-${vendorClientRef}`;
     const vendor = updatedVendors.find(v => v.clientRef === vendorClientRef);
     if (vendor) {
       localStorage.setItem(storageKey, JSON.stringify({
+        contato: vendor.contato,
+        email: vendor.email,
         banco: vendor.banco,
         agencia: vendor.agencia,
         conta: vendor.conta,
         tipoConta: vendor.tipoConta,
-        titular: vendor.titular,
-        cpfCnpjTitular: vendor.cpfCnpjTitular
+        chavePix: vendor.chavePix
       }));
     }
   };
@@ -2717,6 +2727,18 @@ export default function AdminFinancingKanbanPage() {
                                               <span className="text-foreground">{vendor.cpf}</span>
                                             </div>
                                           )}
+                                          {vendor.contato && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-semibold text-foreground/70">Contato:</span>
+                                              <span className="text-foreground">{vendor.contato}</span>
+                                            </div>
+                                          )}
+                                          {vendor.email && (
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-semibold text-foreground/70">E-mail:</span>
+                                              <span className="text-foreground">{vendor.email}</span>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                       <Button
@@ -2731,6 +2753,50 @@ export default function AdminFinancingKanbanPage() {
                                     </div>
                                   </div>
 
+                                  {/* Dados do Vendedor Section */}
+                                  <div className="mb-8">
+                                    <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
+                                      <UserCheck className="w-5 h-5 text-secondary" />
+                                      Dados do Vendedor
+                                    </h5>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">Nome *</Label>
+                                        <Input
+                                          value={vendor.name}
+                                          disabled
+                                          className="h-10 bg-light-gray/50"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">CPF *</Label>
+                                        <Input
+                                          value={vendor.cpf}
+                                          disabled
+                                          className="h-10 bg-light-gray/50"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">Contato (Telefone/WhatsApp) *</Label>
+                                        <Input
+                                          value={vendor.contato || ''}
+                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'contato', e.target.value)}
+                                          placeholder="(00) 00000-0000"
+                                          className="h-10"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="font-paragraph text-sm mb-2 block">E-mail *</Label>
+                                        <Input
+                                          value={vendor.email || ''}
+                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'email', e.target.value)}
+                                          placeholder="email@exemplo.com"
+                                          className="h-10"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
                                   {/* Bank Data Section */}
                                   <div className="mb-8">
                                     <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
@@ -2739,7 +2805,7 @@ export default function AdminFinancingKanbanPage() {
                                     </h5>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div>
-                                        <Label className="font-paragraph text-sm mb-2 block">Banco</Label>
+                                        <Label className="font-paragraph text-sm mb-2 block">Banco *</Label>
                                         <Input
                                           value={vendor.banco || ''}
                                           onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'banco', e.target.value)}
@@ -2748,7 +2814,7 @@ export default function AdminFinancingKanbanPage() {
                                         />
                                       </div>
                                       <div>
-                                        <Label className="font-paragraph text-sm mb-2 block">Agência</Label>
+                                        <Label className="font-paragraph text-sm mb-2 block">Agência *</Label>
                                         <Input
                                           value={vendor.agencia || ''}
                                           onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'agencia', e.target.value)}
@@ -2757,7 +2823,7 @@ export default function AdminFinancingKanbanPage() {
                                         />
                                       </div>
                                       <div>
-                                        <Label className="font-paragraph text-sm mb-2 block">Conta</Label>
+                                        <Label className="font-paragraph text-sm mb-2 block">Conta *</Label>
                                         <Input
                                           value={vendor.conta || ''}
                                           onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'conta', e.target.value)}
@@ -2766,7 +2832,7 @@ export default function AdminFinancingKanbanPage() {
                                         />
                                       </div>
                                       <div>
-                                        <Label className="font-paragraph text-sm mb-2 block">Tipo de Conta</Label>
+                                        <Label className="font-paragraph text-sm mb-2 block">Tipo de Conta *</Label>
                                         <Select 
                                           value={vendor.tipoConta || 'Corrente'} 
                                           onValueChange={(value) => handleUpdateVendorBankData(vendor.clientRef, 'tipoConta', value)}
@@ -2777,25 +2843,15 @@ export default function AdminFinancingKanbanPage() {
                                           <SelectContent>
                                             <SelectItem value="Corrente">Corrente</SelectItem>
                                             <SelectItem value="Poupança">Poupança</SelectItem>
-                                            <SelectItem value="Salário">Salário</SelectItem>
                                           </SelectContent>
                                         </Select>
                                       </div>
-                                      <div>
-                                        <Label className="font-paragraph text-sm mb-2 block">Titular da Conta</Label>
+                                      <div className="md:col-span-2">
+                                        <Label className="font-paragraph text-sm mb-2 block">Chave Pix (se houver)</Label>
                                         <Input
-                                          value={vendor.titular || ''}
-                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'titular', e.target.value)}
-                                          placeholder="Nome do titular"
-                                          className="h-10"
-                                        />
-                                      </div>
-                                      <div>
-                                        <Label className="font-paragraph text-sm mb-2 block">CPF/CNPJ do Titular</Label>
-                                        <Input
-                                          value={vendor.cpfCnpjTitular || ''}
-                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'cpfCnpjTitular', e.target.value)}
-                                          placeholder="000.000.000-00"
+                                          value={vendor.chavePix || ''}
+                                          onChange={(e) => handleUpdateVendorBankData(vendor.clientRef, 'chavePix', e.target.value)}
+                                          placeholder="CPF, e-mail, telefone ou chave aleatória"
                                           className="h-10"
                                         />
                                       </div>
