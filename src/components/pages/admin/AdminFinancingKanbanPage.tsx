@@ -760,11 +760,15 @@ export default function AdminFinancingKanbanPage() {
   };
 
   // Open details modal
-  const handleOpenDetails = async (caseItem: FinancingCase) => {
+  const handleOpenDetails = async (caseItem: FinancingCase, initialTab: string = 'dados') => {
+    console.log('[DEBUG] Opening details modal for case:', caseItem._id);
+    console.log('[DEBUG] Initial tab:', initialTab);
+    console.log('[DEBUG] Case data:', caseItem);
+    
     setSelectedCase(caseItem);
     await loadCaseDetails(caseItem._id);
     setShowDetailsModal(true);
-    setModalTab('dados'); // Reset to first tab
+    setModalTab(initialTab); // Set initial tab
     // selectedProponentId is set in loadCaseDetails to principal proponent
   };
 
@@ -1664,12 +1668,36 @@ export default function AdminFinancingKanbanPage() {
                               animate={{ opacity: 1, scale: 1 }}
                               whileHover={{ scale: 1.02, boxShadow: '0 12px 24px rgba(0,0,0,0.15)' }}
                               transition={{ duration: 0.2 }}
-                              onClick={() => handleOpenDetails(caseItem)}
+                              onClick={() => handleOpenDetails(caseItem, 'dados')}
                               className="bg-white rounded-xl p-4 border border-border-gray hover:shadow-xl transition-all cursor-pointer group relative"
                             >
                               {/* Activity indicator */}
                               <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${hasActivityToday ? 'bg-green-500' : 'bg-red-500'}`} 
                                    title={hasActivityToday ? 'Atividade hoje' : 'Sem atividade hoje'}>
+                              </div>
+                              
+                              {/* Quick action icons - top right corner */}
+                              <div className="absolute top-3 right-8 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenDetails(caseItem, 'pendencias');
+                                  }}
+                                  className="p-1.5 bg-orange-100 rounded hover:bg-orange-200 transition-colors"
+                                  title="Abrir Pendências"
+                                >
+                                  <AlertTriangle className="w-3.5 h-3.5 text-orange-600" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenDetails(caseItem, 'pendencias');
+                                  }}
+                                  className="p-1.5 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
+                                  title="Abrir Tarefas"
+                                >
+                                  <ListTodo className="w-3.5 h-3.5 text-blue-600" />
+                                </button>
                               </div>
                               
                               {/* Header */}
@@ -1829,9 +1857,22 @@ export default function AdminFinancingKanbanPage() {
                     <UserCheck className="w-4 h-4 mr-1" />
                     Vendedores
                   </TabsTrigger>
-                  <TabsTrigger value="pendencias" className="text-xs">
+                  <TabsTrigger value="pendencias" className="text-xs relative">
                     <ClipboardList className="w-4 h-4 mr-1" />
                     Pendências + Tarefas
+                    {(() => {
+                      const casePendings = pendings.filter(p => p.atendimentoRef === selectedCase?._id && p.status !== 'Resolvida');
+                      const caseTasks = tasks.filter(t => t.atendimentoRef === selectedCase?._id && t.status !== 'Concluída');
+                      const totalOpen = casePendings.length + caseTasks.length;
+                      if (totalOpen > 0) {
+                        return (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                            {totalOpen}
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </TabsTrigger>
                   <TabsTrigger value="docs" className="text-xs">
                     <FileCheck className="w-4 h-4 mr-1" />
@@ -3097,16 +3138,33 @@ export default function AdminFinancingKanbanPage() {
 
                 {/* Pendências + Tarefas Tab */}
                 <TabsContent value="pendencias" className="space-y-6">
+                  {/* Debug Info */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <p className="text-xs text-blue-800 font-mono">
+                      <strong>DEBUG:</strong> atendimentoId = {selectedCase?._id || 'undefined'}
+                    </p>
+                    <p className="text-xs text-blue-800 font-mono mt-1">
+                      <strong>DEBUG:</strong> Total Pendências = {pendings.filter(p => p.atendimentoRef === selectedCase?._id).length}
+                    </p>
+                    <p className="text-xs text-blue-800 font-mono mt-1">
+                      <strong>DEBUG:</strong> Total Tarefas = {tasks.filter(t => t.atendimentoRef === selectedCase?._id).length}
+                    </p>
+                  </div>
+
                   {/* Pendências Section */}
                   <Card>
                     <CardHeader>
                       <div className="flex justify-between items-center">
                         <CardTitle className="text-lg font-heading flex items-center gap-2">
                           <AlertTriangle className="w-5 h-5 text-secondary" />
-                          Pendências (Totalmente Editável)
+                          Pendências
+                          <Badge className="ml-2 bg-orange-500 text-white">
+                            {pendings.filter(p => p.atendimentoRef === selectedCase?._id && p.status !== 'Resolvida').length} abertas
+                          </Badge>
                         </CardTitle>
                         <Button 
                           onClick={() => {
+                            console.log('[DEBUG] Creating new pending for case:', selectedCase?._id);
                             setShowPendingForm(true);
                             setEditingPending(null);
                             setNewPendingData({
@@ -3252,13 +3310,29 @@ export default function AdminFinancingKanbanPage() {
 
                       {/* Pending List */}
                       <div className="space-y-3">
-                        {pendings.filter(p => p.atendimentoRef === selectedCase?._id).length === 0 ? (
-                          <div className="text-center py-8 text-foreground/60">
-                            <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                            <p className="text-sm">Nenhuma pendência cadastrada</p>
-                          </div>
-                        ) : (
-                          pendings.filter(p => p.atendimentoRef === selectedCase?._id).map(pending => (
+                        {(() => {
+                          const casePendings = pendings
+                            .filter(p => p.atendimentoRef === selectedCase?._id)
+                            .sort((a, b) => {
+                              // Sort by dueDate (earliest first)
+                              if (!a.dueDate && !b.dueDate) return 0;
+                              if (!a.dueDate) return 1;
+                              if (!b.dueDate) return -1;
+                              return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                            });
+
+                          console.log('[DEBUG] Filtered pendings for case:', selectedCase?._id, 'Count:', casePendings.length);
+
+                          if (casePendings.length === 0) {
+                            return (
+                              <div className="text-center py-8 text-foreground/60">
+                                <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">Nenhuma pendência cadastrada</p>
+                              </div>
+                            );
+                          }
+
+                          return casePendings.map(pending => (
                             <div key={pending._id} className={`p-4 rounded-lg border-2 transition-all ${
                               pending.status === 'Resolvida' ? 'bg-green-50 border-green-200' : 'bg-white border-border-gray shadow-sm'
                             }`}>
@@ -3298,7 +3372,10 @@ export default function AdminFinancingKanbanPage() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => handleUpdatePendingStatus(pending._id, pending.status === 'Resolvida' ? 'Aberta' : 'Resolvida')}
+                                    onClick={() => {
+                                      console.log('[DEBUG] Updating pending status:', pending._id);
+                                      handleUpdatePendingStatus(pending._id, pending.status === 'Resolvida' ? 'Aberta' : 'Resolvida');
+                                    }}
                                     className="h-8"
                                   >
                                     {pending.status === 'Resolvida' ? (
@@ -3310,7 +3387,10 @@ export default function AdminFinancingKanbanPage() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => handleEditPending(pending)}
+                                    onClick={() => {
+                                      console.log('[DEBUG] Editing pending:', pending._id);
+                                      handleEditPending(pending);
+                                    }}
                                     className="h-8 w-8 p-0"
                                   >
                                     <Edit2 className="w-3 h-3" />
@@ -3318,7 +3398,10 @@ export default function AdminFinancingKanbanPage() {
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => handleDeletePending(pending._id)}
+                                    onClick={() => {
+                                      console.log('[DEBUG] Deleting pending:', pending._id);
+                                      handleDeletePending(pending._id);
+                                    }}
                                     className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                   >
                                     <Trash2 className="w-3 h-3" />
@@ -3326,8 +3409,8 @@ export default function AdminFinancingKanbanPage() {
                                 </div>
                               </div>
                             </div>
-                          ))
-                        )}
+                          ));
+                        })()}
                       </div>
                     </CardContent>
                   </Card>
@@ -3338,22 +3421,41 @@ export default function AdminFinancingKanbanPage() {
                       <CardTitle className="text-lg font-heading flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-secondary" />
                         Tarefas Automáticas
+                        <Badge className="ml-2 bg-blue-500 text-white">
+                          {tasks.filter(t => t.atendimentoRef === selectedCase?._id && t.status !== 'Concluída').length} abertas
+                        </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {tasks.filter(t => t.atendimentoRef === selectedCase?._id).length === 0 ? (
-                        <div className="text-center py-8 text-foreground/60">
-                          <ClipboardList className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p className="text-sm">Nenhuma tarefa gerada</p>
-                        </div>
-                      ) : (
-                        tasks.filter(t => t.atendimentoRef === selectedCase?._id).map(task => (
+                      {(() => {
+                        const caseTasks = tasks
+                          .filter(t => t.atendimentoRef === selectedCase?._id)
+                          .sort((a, b) => {
+                            // Sort by dueDate (earliest first)
+                            if (!a.dueDate && !b.dueDate) return 0;
+                            if (!a.dueDate) return 1;
+                            if (!b.dueDate) return -1;
+                            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                          });
+
+                        console.log('[DEBUG] Filtered tasks for case:', selectedCase?._id, 'Count:', caseTasks.length);
+
+                        if (caseTasks.length === 0) {
+                          return (
+                            <div className="text-center py-8 text-foreground/60">
+                              <ClipboardList className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                              <p className="text-sm">Nenhuma tarefa gerada</p>
+                            </div>
+                          );
+                        }
+
+                        return caseTasks.map(task => (
                           <div key={task._id} className={`p-4 rounded-lg border-2 ${
                             task.status === 'Concluída' ? 'bg-green-50 border-green-200' : 'bg-white border-border-gray'
                           }`}>
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h4 className="font-paragraph font-semibold text-sm mb-2">{task.description}</h4>
+                                <h4 className="font-paragraph font-semibold text-sm mb-2">{task.description || task.titulo}</h4>
                                 <div className="flex gap-2">
                                   <Badge variant={task.status === 'Concluída' ? 'default' : 'secondary'} className="text-xs">
                                     {task.status}
@@ -3370,7 +3472,10 @@ export default function AdminFinancingKanbanPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleUpdateTaskStatus(task._id, task.status === 'Concluída' ? 'Pendente' : 'Concluída')}
+                                onClick={() => {
+                                  console.log('[DEBUG] Updating task status:', task._id);
+                                  handleUpdateTaskStatus(task._id, task.status === 'Concluída' ? 'Pendente' : 'Concluída');
+                                }}
                                 className="h-8"
                               >
                                 {task.status === 'Concluída' ? (
@@ -3381,8 +3486,8 @@ export default function AdminFinancingKanbanPage() {
                               </Button>
                             </div>
                           </div>
-                        ))
-                      )}
+                        ));
+                      })()}
                     </CardContent>
                   </Card>
                 </TabsContent>
