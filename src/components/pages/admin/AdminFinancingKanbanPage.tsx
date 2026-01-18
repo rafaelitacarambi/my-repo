@@ -2033,7 +2033,7 @@ export default function AdminFinancingKanbanPage() {
                                       whileHover={{ scale: snapshot.isDragging ? 1 : 1.02 }}
                                       transition={{ duration: 0.2 }}
                                       onClick={() => !snapshot.isDragging && handleOpenDetails(caseItem, 'dados')}
-                                      className={`bg-white rounded-xl p-3 border border-border-gray hover:shadow-lg transition-all cursor-grab active:cursor-grabbing group relative ${
+                                      className={`bg-white rounded-xl p-4 border border-border-gray hover:shadow-xl transition-all cursor-grab active:cursor-grabbing group relative ${
                                         snapshot.isDragging ? 'shadow-2xl ring-4 ring-secondary/50 rotate-2 scale-105' : ''
                                       }`}
                                       style={{
@@ -2041,127 +2041,260 @@ export default function AdminFinancingKanbanPage() {
                                         opacity: snapshot.isDragging ? 0.9 : 1
                                       }}
                                     >
-                              {/* Nome do Cliente */}
-                              <div className="mb-2">
-                                <h4 className="font-heading text-sm text-foreground font-bold line-clamp-1">
+                              {/* Activity indicator */}
+                              <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${hasActivityToday ? 'bg-green-500' : 'bg-red-500'}`} 
+                                   title={hasActivityToday ? 'Atividade hoje' : 'Sem atividade hoje'}>
+                              </div>
+                              
+                              {/* Quick action icons - top right corner */}
+                              <div className="absolute top-3 right-8 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenDetails(caseItem, 'pendencias');
+                                  }}
+                                  className="p-1.5 bg-orange-100 rounded hover:bg-orange-200 transition-colors"
+                                  title="Abrir Pendências"
+                                >
+                                  <AlertTriangle className="w-3.5 h-3.5 text-orange-600" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenDetails(caseItem, 'tarefas');
+                                  }}
+                                  className="p-1.5 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
+                                  title="Abrir Tarefas"
+                                >
+                                  <ListTodo className="w-3.5 h-3.5 text-blue-600" />
+                                </button>
+                              </div>
+                              
+                              {/* Header */}
+                              <div className="mb-3">
+                                <h4 className="font-heading text-base text-foreground font-bold mb-1 pr-6 line-clamp-1">
                                   {caseItem.proponentePrincipal}
                                 </h4>
-                              </div>
-
-                              {/* Agência e Pasta Interna */}
-                              <div className="mb-2 space-y-0.5">
-                                {caseItem.agencia && (
-                                  <div className="text-xs text-foreground/70">
-                                    Agência: <span className="font-semibold">{caseItem.agencia}</span>
-                                  </div>
-                                )}
-                                {caseItem.pastaInterna && (
-                                  <div className="text-xs text-foreground/70">
-                                    Pasta: <span className="font-semibold">{caseItem.pastaInterna}</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Fase Atual */}
-                              <div className="mb-3">
-                                <Badge className="text-xs font-semibold bg-secondary text-secondary-foreground">
-                                  {FINANCING_COLUMNS.find(c => c.id === caseItem.faseAtual)?.name || caseItem.faseAtual}
-                                </Badge>
-                              </div>
-
-                              {/* Ícones de Alerta */}
-                              {(caseItem.bloqueioDocumento || caseItem.bloqueioCaixa || caseItem.bloqueioCartorio || 
-                                caseItem.bloqueioCliente || caseItem.bloqueioEngenharia || caseItem.bloqueioFormularios || 
-                                caseItem.bloqueioRestricao || caseItem.bloqueioFgts || 
-                                caseItem.pendenciasAbertas > 0 || caseItem.tarefasAbertas > 0) && (
-                                <div className="flex flex-wrap gap-1.5 mb-3">
-                                  {caseItem.bloqueioDocumento && (
-                                    <div className="p-1 bg-red-100 rounded" title="Documento pendente">
-                                      <FileText className="w-3.5 h-3.5 text-red-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.bloqueioCaixa && (
-                                    <div className="p-1 bg-blue-100 rounded" title="Caixa">
-                                      <Building2 className="w-3.5 h-3.5 text-blue-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.bloqueioCartorio && (
-                                    <div className="p-1 bg-purple-100 rounded" title="Cartório">
-                                      <Landmark className="w-3.5 h-3.5 text-purple-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.bloqueioCliente && (
-                                    <div className="p-1 bg-orange-100 rounded" title="Cliente">
-                                      <UserCheck className="w-3.5 h-3.5 text-orange-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.bloqueioEngenharia && (
-                                    <div className="p-1 bg-yellow-100 rounded" title="Engenharia">
-                                      <Wrench className="w-3.5 h-3.5 text-yellow-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.bloqueioFormularios && (
-                                    <div className="p-1 bg-green-100 rounded" title="Formulários">
-                                      <FileCheck className="w-3.5 h-3.5 text-green-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.bloqueioRestricao && (
-                                    <div className="p-1 bg-red-100 rounded" title="Restrição">
-                                      <Ban className="w-3.5 h-3.5 text-red-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.bloqueioFgts && (
-                                    <div className="p-1 bg-teal-100 rounded" title="FGTS">
-                                      <Folder className="w-3.5 h-3.5 text-teal-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.pendenciasAbertas > 0 && (
-                                    <div className="p-1 bg-orange-100 rounded" title={`${caseItem.pendenciasAbertas} pendências abertas`}>
-                                      <AlertCircle className="w-3.5 h-3.5 text-orange-600" />
-                                    </div>
-                                  )}
-                                  {caseItem.tarefasAbertas > 0 && (
-                                    <div className="p-1 bg-blue-100 rounded" title={`${caseItem.tarefasAbertas} tarefas abertas`}>
-                                      <ListTodo className="w-3.5 h-3.5 text-blue-600" />
-                                    </div>
-                                  )}
+                                <div className="flex flex-wrap gap-1 text-xs text-foreground/60">
+                                  {caseItem.agencia && <span>Agência: {caseItem.agencia}</span>}
+                                  {caseItem.pastaInterna && <span>• Pasta: {caseItem.pastaInterna}</span>}
                                 </div>
-                              )}
-
-                              {/* Botões de Ação */}
-                              <div className="flex gap-1.5 pt-2 border-t border-border-gray">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenDetails(caseItem, 'dados');
-                                  }}
-                                  className="flex-1 px-2 py-1.5 bg-secondary/10 hover:bg-secondary/20 text-secondary rounded text-xs font-semibold transition-colors flex items-center justify-center gap-1"
-                                  title="Abrir detalhes"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                  Abrir
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenDetails(caseItem, 'dados');
-                                  }}
-                                  className="flex-1 px-2 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition-colors flex items-center justify-center gap-1"
-                                  title="Editar"
-                                >
-                                  <Edit2 className="w-3 h-3" />
-                                  Editar
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                  }}
-                                  className="px-2 py-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded text-xs font-semibold transition-colors"
-                                  title="Mover"
-                                >
-                                  <ChevronRight className="w-3 h-3" />
-                                </button>
                               </div>
+
+                              {/* Status and Phase */}
+                              <div className="mb-3 space-y-1">
+                                <Badge className="text-xs font-semibold">
+                                  {caseItem.status}
+                                </Badge>
+                                <div className="flex items-center gap-1 text-xs text-foreground/70">
+                                  <Clock className="w-3 h-3" />
+                                  <span className={`font-bold px-2 py-0.5 rounded ${daysBadgeColor} text-white`}>
+                                    {caseItem.diasNaFase} {caseItem.diasNaFase === 1 ? 'dia' : 'dias'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Pendings and Tasks with Mini-List */}
+                              <div className="mb-3 space-y-2">
+                                {/* Counters with Quick Action Buttons */}
+                                <div className="flex items-center justify-between gap-2 text-xs">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1">
+                                      <AlertCircle className={`w-4 h-4 ${caseItem.pendenciasAbertas > 0 ? 'text-red-500' : 'text-green-500'}`} />
+                                      <span className="font-semibold">{caseItem.pendenciasAbertas} pend.</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <ListTodo className={`w-4 h-4 ${caseItem.tarefasAbertas > 0 ? 'text-blue-500' : 'text-green-500'}`} />
+                                      <span className="font-semibold">{caseItem.tarefasAbertas} tarefas</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setQuickActionCaseId(caseItem._id);
+                                        setShowQuickPendingModal(true);
+                                      }}
+                                      className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-semibold hover:bg-orange-200 transition-colors"
+                                      title="Criar Pendência"
+                                    >
+                                      + Pend.
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setQuickActionCaseId(caseItem._id);
+                                        setShowQuickTaskModal(true);
+                                      }}
+                                      className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold hover:bg-blue-200 transition-colors"
+                                      title="Criar Tarefa"
+                                    >
+                                      + Tarefa
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Mini Pending List (show first 2 open pendings) */}
+                                {(() => {
+                                  const casePendings = pendings.filter(p => 
+                                    p.atendimentoRef === caseItem._id && 
+                                    p.status !== 'Resolvida' && 
+                                    p.status !== 'Concluída'
+                                  ).slice(0, 2);
+                                  if (casePendings.length > 0) {
+                                    return (
+                                      <div className="space-y-1 pl-1">
+                                        <div className="text-xs font-semibold text-orange-600 mb-1">Pendências:</div>
+                                        {casePendings.map(pending => (
+                                          <div key={pending._id} className="flex items-start justify-between gap-1.5 text-xs bg-orange-50 p-1.5 rounded">
+                                            <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                                              <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-orange-500" />
+                                              <span className="line-clamp-1 flex-1 text-foreground/80">{pending.title}</span>
+                                            </div>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUpdatePendingStatus(pending._id, 'Resolvida');
+                                              }}
+                                              className="px-1.5 py-0.5 bg-green-600 text-white rounded text-[10px] font-semibold hover:bg-green-700 transition-colors flex-shrink-0"
+                                              title="Concluir Pendência"
+                                            >
+                                              Tratar
+                                            </button>
+                                          </div>
+                                        ))}
+                                        {caseItem.pendenciasAbertas > 2 && (
+                                          <div className="text-xs text-foreground/50 pl-4">
+                                            +{caseItem.pendenciasAbertas - 2} mais...
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+
+                                {/* Mini Task List (show first 2 open tasks) */}
+                                {(() => {
+                                  const caseTasks = tasks.filter(t => 
+                                    t.atendimentoRef === caseItem._id && 
+                                    t.status !== 'Concluída'
+                                  ).slice(0, 2);
+                                  if (caseTasks.length > 0) {
+                                    return (
+                                      <div className="space-y-1 pl-1">
+                                        <div className="text-xs font-semibold text-blue-600 mb-1">Tarefas:</div>
+                                        {caseTasks.map(task => {
+                                          const isStarted = task.status === 'Em Andamento' || task.status === 'Em andamento';
+                                          return (
+                                            <div key={task._id} className="flex items-start justify-between gap-1.5 text-xs bg-blue-50 p-1.5 rounded">
+                                              <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                                                <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-blue-500" />
+                                                <div className="flex-1 min-w-0">
+                                                  <span className="line-clamp-1 text-foreground/80">{task.titulo || task.description}</span>
+                                                  <div className="text-[10px] text-foreground/60 mt-0.5">
+                                                    {task.responsibleType} • {task.status}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div className="flex gap-1 flex-shrink-0">
+                                                {!isStarted && (
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleUpdateTaskStatus(task._id, 'Em Andamento');
+                                                    }}
+                                                    className="px-1.5 py-0.5 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors"
+                                                    title="Iniciar Tarefa"
+                                                  >
+                                                    Iniciar
+                                                  </button>
+                                                )}
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleUpdateTaskStatus(task._id, 'Concluída');
+                                                  }}
+                                                  className="px-1.5 py-0.5 bg-green-600 text-white rounded text-[10px] font-semibold hover:bg-green-700 transition-colors"
+                                                  title="Concluir Tarefa"
+                                                >
+                                                  Concluir
+                                                </button>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                        {caseItem.tarefasAbertas > 2 && (
+                                          <div className="text-xs text-foreground/50 pl-4">
+                                            +{caseItem.tarefasAbertas - 2} mais...
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+
+                              {/* Bloqueio Icons */}
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {caseItem.bloqueioDocumento && (
+                                  <div className="p-1.5 bg-red-100 rounded cursor-pointer hover:bg-red-200" title="Documento pendente">
+                                    <FileText className="w-4 h-4 text-red-600" />
+                                  </div>
+                                )}
+                                {caseItem.bloqueioCaixa && (
+                                  <div className="p-1.5 bg-blue-100 rounded cursor-pointer hover:bg-blue-200" title="Caixa">
+                                    <Building2 className="w-4 h-4 text-blue-600" />
+                                  </div>
+                                )}
+                                {caseItem.bloqueioCartorio && (
+                                  <div className="p-1.5 bg-purple-100 rounded cursor-pointer hover:bg-purple-200" title="Cartório">
+                                    <Landmark className="w-4 h-4 text-purple-600" />
+                                  </div>
+                                )}
+                                {caseItem.bloqueioCliente && (
+                                  <div className="p-1.5 bg-orange-100 rounded cursor-pointer hover:bg-orange-200" title="Cliente">
+                                    <UserCheck className="w-4 h-4 text-orange-600" />
+                                  </div>
+                                )}
+                                {caseItem.bloqueioEngenharia && (
+                                  <div className="p-1.5 bg-yellow-100 rounded cursor-pointer hover:bg-yellow-200" title="Engenharia">
+                                    <Wrench className="w-4 h-4 text-yellow-600" />
+                                  </div>
+                                )}
+                                {caseItem.bloqueioFormularios && (
+                                  <div className="p-1.5 bg-green-100 rounded cursor-pointer hover:bg-green-200" title="Formulários">
+                                    <FileCheck className="w-4 h-4 text-green-600" />
+                                  </div>
+                                )}
+                                {caseItem.bloqueioRestricao && (
+                                  <div className="p-1.5 bg-red-100 rounded cursor-pointer hover:bg-red-200" title="Restrição">
+                                    <Ban className="w-4 h-4 text-red-600" />
+                                  </div>
+                                )}
+                                {caseItem.bloqueioFgts && (
+                                  <div className="p-1.5 bg-teal-100 rounded cursor-pointer hover:bg-teal-200" title="FGTS">
+                                    <Folder className="w-4 h-4 text-teal-600" />
+                                  </div>
+                                )}
+                              </div>
+
+                                      {/* Move to column selector */}
+                                      <div className="pt-3 border-t border-border-gray">
+                                        <Select value={caseItem.faseAtual} onValueChange={(value) => handleMoveCase(caseItem._id, value)}>
+                                          <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                                            <SelectValue placeholder="Mover para..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {FINANCING_COLUMNS.map(col => (
+                                              <SelectItem key={col.id} value={col.id}>
+                                                {col.name}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
                                     </motion.div>
                                   )}
                                 </Draggable>
