@@ -335,6 +335,11 @@ export default function AdminFinancingKanbanPage() {
   const [kanbanBackground, setKanbanBackground] = useState('bg-light-gray');
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
   const [currentUser, setCurrentUser] = useState<UsuriosdoSistema | null>(null);
+  
+  // Quick action modals for card
+  const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
+  const [showQuickPendingModal, setShowQuickPendingModal] = useState(false);
+  const [quickActionCaseId, setQuickActionCaseId] = useState<string | null>(null);
 
   // Form states
   const [caseFormData, setCaseFormData] = useState<Partial<FinancingCase>>({
@@ -495,15 +500,26 @@ export default function AdminFinancingKanbanPage() {
       const { items: pendingsList } = await BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento');
       const { items: tasksList } = await BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento');
 
-      // Count open pendings and tasks for each case
+      // Count open pendings and tasks for each case (excluding completed ones)
       financingCases.forEach(c => {
-        c.pendenciasAbertas = pendingsList.filter(p => p.atendimentoRef === c._id && p.status !== 'Resolvida').length;
-        c.tarefasAbertas = tasksList.filter(t => t.atendimentoRef === c._id && t.status !== 'Concluída').length;
+        c.pendenciasAbertas = pendingsList.filter(p => 
+          p.atendimentoRef === c._id && 
+          p.status !== 'Resolvida' && 
+          p.status !== 'Concluída'
+        ).length;
+        c.tarefasAbertas = tasksList.filter(t => 
+          t.atendimentoRef === c._id && 
+          t.status !== 'Concluída'
+        ).length;
         
-        // Set bloqueio icons based on pending categories
-        const casePendings = pendingsList.filter(p => p.atendimentoRef === c._id && p.status !== 'Resolvida');
-        c.bloqueioDocumento = casePendings.some(p => p.categoria === 'Documento');
-        c.bloqueioCaixa = casePendings.some(p => p.categoria === 'Caixa');
+        // Set bloqueio icons based on pending categories (only active pendings)
+        const casePendings = pendingsList.filter(p => 
+          p.atendimentoRef === c._id && 
+          p.status !== 'Resolvida' && 
+          p.status !== 'Concluída'
+        );
+        c.bloqueioDocumento = casePendings.some(p => p.categoria === 'Documento' || p.categoria === 'Proponente' || p.categoria === 'Documentação');
+        c.bloqueioCaixa = casePendings.some(p => p.categoria === 'Caixa' || p.categoria === 'Banco');
         c.bloqueioCartorio = casePendings.some(p => p.categoria === 'Cartório');
         c.bloqueioCliente = casePendings.some(p => p.categoria === 'Cliente');
         c.bloqueioEngenharia = casePendings.some(p => p.categoria === 'Engenharia');
@@ -1203,6 +1219,7 @@ export default function AdminFinancingKanbanPage() {
       // Calculate due date based on average days
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + (newPendingData.averageDaysToComplete || 7));
+      const now = new Date().toISOString();
       
       // Create new pending with minimal required fields
       const newPending: PendnciasdoFinanciamento = {
@@ -1210,13 +1227,13 @@ export default function AdminFinancingKanbanPage() {
         atendimentoRef: selectedCase._id,
         title: newPendingData.description.substring(0, 100), // Use description as title (truncated)
         description: newPendingData.description,
-        status: 'Aberta',
+        status: 'Pendente',
         priority: 'Média',
         dueDate: dueDate.toISOString(),
         responsiblePartyType: newPendingData.responsiblePartyType,
         responsiblePartyDetails: '',
         taskAutomaticallyCreated: false,
-        creationDate: new Date().toISOString(),
+        creationDate: now,
         bloqueiaFase: false,
         categoria: ''
       };
@@ -1225,8 +1242,38 @@ export default function AdminFinancingKanbanPage() {
       await BaseCrudService.create('pendenciasfinanciamento', newPending);
       console.log('[DEBUG] Pending saved successfully');
 
+      // Create automatic task linked to this pendência
+      const newTarefa = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: selectedCase._id,
+        pendenciaRef: newPending._id,
+        titulo: `Resolver: ${newPending.title}`,
+        description: newPendingData.description,
+        status: 'A Fazer',
+        responsibleType: newPendingData.responsiblePartyType,
+        internalResponsibleId: undefined,
+        externalResponsibleName: undefined,
+        dueDate: dueDate.toISOString(),
+        creationDate: now
+      } as FinancingTasks;
+
+      await BaseCrudService.create('tarefasfinanciamento', newTarefa);
+      console.log('[DEBUG] Automatic task created successfully');
+
+      // Create history entry
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: selectedCase._id,
+        tipoEvento: 'Pendencia_Criada',
+        interactionType: 'Criação de pendência',
+        interactionDescription: `Nova pendência criada: "${newPending.title}" (Tarefa automática gerada)`,
+        interactionDate: now,
+        autorTipo: 'Sistema'
+      });
+
       // Update local state optimistically
       setPendings([...pendings, newPending as Pending]);
+      setTasks([...tasks, newTarefa as Task]);
       
       // Reset form
       setNewPendingData({
@@ -1236,7 +1283,7 @@ export default function AdminFinancingKanbanPage() {
       });
       setShowPendingForm(false);
 
-      // Reload data to sync with backend (including hook-created tasks)
+      // Reload data to sync with backend and update counters
       console.log('[DEBUG] Reloading data after pending creation');
       await loadData();
       console.log('[DEBUG] Data reloaded successfully');
@@ -1275,18 +1322,20 @@ export default function AdminFinancingKanbanPage() {
     const pending = pendings.find(p => p._id === pendingId);
     if (!pending) return;
 
+    const now = new Date().toISOString();
+
     // Optimistic update
     setPendings(pendings.map(p => p._id === pendingId ? { 
       ...p, 
       status: newStatus,
-      resolvedDate: newStatus === 'Resolvida' ? new Date().toISOString() : undefined
+      resolvedDate: newStatus === 'Resolvida' ? now : undefined
     } : p));
 
     try {
       await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
         _id: pendingId,
         status: newStatus,
-        resolvedDate: newStatus === 'Resolvida' ? new Date().toISOString() : undefined
+        resolvedDate: newStatus === 'Resolvida' ? now : undefined
       });
 
       // Create history entry
@@ -1294,12 +1343,23 @@ export default function AdminFinancingKanbanPage() {
         await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
           _id: crypto.randomUUID(),
           atendimentoRef: pending.atendimentoRef,
-          tipoEvento: 'Pendencia_Atualizada',
-          interactionType: 'Mudança de status',
+          tipoEvento: newStatus === 'Resolvida' ? 'Pendencia_Concluida' : 'Pendencia_Atualizada',
+          interactionType: newStatus === 'Resolvida' ? 'Conclusão de pendência' : 'Mudança de status',
           interactionDescription: `Pendência "${pending.title}" alterada para: ${newStatus}`,
-          interactionDate: new Date().toISOString(),
+          interactionDate: now,
           autorTipo: 'Sistema'
         });
+      }
+
+      // If pending is resolved, also complete linked tasks
+      if (newStatus === 'Resolvida' && pending._id) {
+        const linkedTasks = tasks.filter(t => t.pendenciaRef === pendingId && t.status !== 'Concluída');
+        for (const task of linkedTasks) {
+          await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
+            _id: task._id,
+            status: 'Concluída'
+          });
+        }
       }
 
       await loadData();
@@ -1314,24 +1374,37 @@ export default function AdminFinancingKanbanPage() {
     const task = tasks.find(t => t._id === taskId);
     if (!task) return;
 
+    const now = new Date().toISOString();
+    const updates: any = { _id: taskId, status: newStatus };
+    
+    // Track start date when moving to "Em Andamento"
+    if (newStatus === 'Em Andamento' || newStatus === 'Em andamento') {
+      updates.dataInicio = now;
+    }
+    
+    // Track completion date when completing
+    if (newStatus === 'Concluída') {
+      updates.dataConclusao = now;
+    }
+
     // Optimistic update
-    setTasks(tasks.map(t => t._id === taskId ? { ...t, status: newStatus } : t));
+    setTasks(tasks.map(t => t._id === taskId ? { ...t, ...updates } : t));
 
     try {
-      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
-        _id: taskId,
-        status: newStatus
-      });
+      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', updates);
 
       // Create history entry
       if (task.atendimentoRef) {
+        const eventType = newStatus === 'Concluída' ? 'Tarefa_Concluida' : 
+                         newStatus === 'Em Andamento' || newStatus === 'Em andamento' ? 'Tarefa_Iniciada' : 'Tarefa_Atualizada';
+        
         await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
           _id: crypto.randomUUID(),
           atendimentoRef: task.atendimentoRef,
-          tipoEvento: 'Tarefa_Atualizada',
+          tipoEvento: eventType,
           interactionType: 'Mudança de status',
-          interactionDescription: `Tarefa "${task.description || task.titulo}" alterada para: ${newStatus}`,
-          interactionDate: new Date().toISOString(),
+          interactionDescription: `Tarefa "${(task as any).titulo || task.description}" alterada para: ${newStatus}`,
+          interactionDate: now,
           autorTipo: 'Sistema'
         });
       }
@@ -1342,9 +1415,146 @@ export default function AdminFinancingKanbanPage() {
       await loadData(); // Revert on failure
     }
   };
+  
+  // Quick create task from card
+  const handleQuickCreateTask = async () => {
+    if (!quickActionCaseId || !newTaskData.description) return;
+
+    try {
+      const now = new Date().toISOString();
+      const dueDate = newTaskData.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      const newTask: FinancingTasks = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: quickActionCaseId,
+        titulo: newTaskData.description.substring(0, 100),
+        description: newTaskData.description,
+        status: 'A Fazer',
+        responsibleType: newTaskData.responsibleType,
+        internalResponsibleId: newTaskData.internalResponsibleId || undefined,
+        externalResponsibleName: newTaskData.externalResponsibleName || undefined,
+        externalResponsibleContact: newTaskData.externalResponsibleContact || undefined,
+        dueDate,
+        creationDate: now
+      };
+
+      await BaseCrudService.create('tarefasfinanciamento', newTask);
+
+      // Create history entry
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: quickActionCaseId,
+        tipoEvento: 'Tarefa_Criada',
+        interactionType: 'Criação de tarefa',
+        interactionDescription: `Nova tarefa criada: "${newTask.titulo}"`,
+        interactionDate: now,
+        autorTipo: 'Sistema'
+      });
+
+      // Update local state
+      setTasks([...tasks, newTask as Task]);
+      
+      // Reset and close
+      setNewTaskData({
+        description: '',
+        responsibleType: 'Interno',
+        internalResponsibleId: '',
+        externalResponsibleName: '',
+        externalResponsibleContact: '',
+        dueDate: ''
+      });
+      setShowQuickTaskModal(false);
+      setQuickActionCaseId(null);
+      
+      await loadData();
+    } catch (error) {
+      console.error('Error creating quick task:', error);
+    }
+  };
+  
+  // Quick create pending from card
+  const handleQuickCreatePending = async () => {
+    if (!quickActionCaseId || !newPendingData.description) return;
+
+    try {
+      const now = new Date().toISOString();
+      const dueDate = new Date(Date.now() + (newPendingData.averageDaysToComplete || 7) * 24 * 60 * 60 * 1000).toISOString();
+      
+      const newPending: PendnciasdoFinanciamento = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: quickActionCaseId,
+        title: newPendingData.description.substring(0, 100),
+        description: newPendingData.description,
+        status: 'Pendente',
+        priority: 'Média',
+        dueDate,
+        responsiblePartyType: newPendingData.responsiblePartyType,
+        responsiblePartyDetails: '',
+        taskAutomaticallyCreated: false,
+        creationDate: now,
+        bloqueiaFase: false,
+        categoria: ''
+      };
+
+      await BaseCrudService.create('pendenciasfinanciamento', newPending);
+
+      // Create automatic task
+      const newTarefa: FinancingTasks = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: quickActionCaseId,
+        pendenciaRef: newPending._id,
+        titulo: `Resolver: ${newPending.title}`,
+        description: newPendingData.description,
+        status: 'A Fazer',
+        responsibleType: newPendingData.responsiblePartyType,
+        dueDate,
+        creationDate: now
+      };
+
+      await BaseCrudService.create('tarefasfinanciamento', newTarefa);
+
+      // Create history entry
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: quickActionCaseId,
+        tipoEvento: 'Pendencia_Criada',
+        interactionType: 'Criação de pendência',
+        interactionDescription: `Nova pendência criada: "${newPending.title}" (Tarefa automática gerada)`,
+        interactionDate: now,
+        autorTipo: 'Sistema'
+      });
+
+      // Update local state
+      setPendings([...pendings, newPending as Pending]);
+      setTasks([...tasks, newTarefa as Task]);
+      
+      // Reset and close
+      setNewPendingData({
+        description: '',
+        responsiblePartyType: 'Interno',
+        averageDaysToComplete: 7
+      });
+      setShowQuickPendingModal(false);
+      setQuickActionCaseId(null);
+      
+      await loadData();
+    } catch (error) {
+      console.error('Error creating quick pending:', error);
+    }
+  };
 
   // Get responsible name for task
   const getTaskResponsibleName = (task: Task) => {
+    // Check for responsavelExternoRef (R Sales team) first
+    if ((task as any).responsavelExternoRef) {
+      const rsalesMap: Record<string, string> = {
+        'catarina': 'Catarina',
+        'rafael': 'Rafael',
+        'gabriela': 'Gabriela',
+        'isabela': 'Isabela'
+      };
+      return rsalesMap[(task as any).responsavelExternoRef.toLowerCase()] || (task as any).responsavelExternoRef;
+    }
     if (task.responsibleType === 'Interno' && task.internalResponsibleId) {
       const usuario = users.find(u => u._id === task.internalResponsibleId);
       return usuario?.name || 'Usuário não encontrado';
@@ -1886,33 +2096,134 @@ export default function AdminFinancingKanbanPage() {
 
                               {/* Pendings and Tasks with Mini-List */}
                               <div className="mb-3 space-y-2">
-                                {/* Counters */}
-                                <div className="flex items-center gap-3 text-xs">
-                                  <div className="flex items-center gap-1">
-                                    <AlertCircle className={`w-4 h-4 ${caseItem.pendenciasAbertas > 0 ? 'text-red-500' : 'text-green-500'}`} />
-                                    <span className="font-semibold">{caseItem.pendenciasAbertas} pend.</span>
+                                {/* Counters with Quick Action Buttons */}
+                                <div className="flex items-center justify-between gap-2 text-xs">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1">
+                                      <AlertCircle className={`w-4 h-4 ${caseItem.pendenciasAbertas > 0 ? 'text-red-500' : 'text-green-500'}`} />
+                                      <span className="font-semibold">{caseItem.pendenciasAbertas} pend.</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <ListTodo className={`w-4 h-4 ${caseItem.tarefasAbertas > 0 ? 'text-blue-500' : 'text-green-500'}`} />
+                                      <span className="font-semibold">{caseItem.tarefasAbertas} tarefas</span>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center gap-1 cursor-pointer hover:text-secondary" onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/admin/financiamento-tarefas`);
-                                  }}>
-                                    <ListTodo className={`w-4 h-4 ${caseItem.tarefasAbertas > 0 ? 'text-blue-500' : 'text-green-500'}`} />
-                                    <span className="font-semibold">{caseItem.tarefasAbertas} tarefas</span>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setQuickActionCaseId(caseItem._id);
+                                        setShowQuickPendingModal(true);
+                                      }}
+                                      className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-semibold hover:bg-orange-200 transition-colors"
+                                      title="Criar Pendência"
+                                    >
+                                      + Pend.
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setQuickActionCaseId(caseItem._id);
+                                        setShowQuickTaskModal(true);
+                                      }}
+                                      className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold hover:bg-blue-200 transition-colors"
+                                      title="Criar Tarefa"
+                                    >
+                                      + Tarefa
+                                    </button>
                                   </div>
                                 </div>
 
+                                {/* Mini Pending List (show first 2 open pendings) */}
+                                {(() => {
+                                  const casePendings = pendings.filter(p => 
+                                    p.atendimentoRef === caseItem._id && 
+                                    p.status !== 'Resolvida' && 
+                                    p.status !== 'Concluída'
+                                  ).slice(0, 2);
+                                  if (casePendings.length > 0) {
+                                    return (
+                                      <div className="space-y-1 pl-1">
+                                        <div className="text-xs font-semibold text-orange-600 mb-1">Pendências:</div>
+                                        {casePendings.map(pending => (
+                                          <div key={pending._id} className="flex items-start justify-between gap-1.5 text-xs bg-orange-50 p-1.5 rounded">
+                                            <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                                              <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-orange-500" />
+                                              <span className="line-clamp-1 flex-1 text-foreground/80">{pending.title}</span>
+                                            </div>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUpdatePendingStatus(pending._id, 'Resolvida');
+                                              }}
+                                              className="px-1.5 py-0.5 bg-green-600 text-white rounded text-[10px] font-semibold hover:bg-green-700 transition-colors flex-shrink-0"
+                                              title="Concluir Pendência"
+                                            >
+                                              Tratar
+                                            </button>
+                                          </div>
+                                        ))}
+                                        {caseItem.pendenciasAbertas > 2 && (
+                                          <div className="text-xs text-foreground/50 pl-4">
+                                            +{caseItem.pendenciasAbertas - 2} mais...
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+
                                 {/* Mini Task List (show first 2 open tasks) */}
                                 {(() => {
-                                  const caseTasks = tasks.filter(t => t.atendimentoRef === caseItem._id && t.status !== 'Concluída').slice(0, 2);
+                                  const caseTasks = tasks.filter(t => 
+                                    t.atendimentoRef === caseItem._id && 
+                                    t.status !== 'Concluída'
+                                  ).slice(0, 2);
                                   if (caseTasks.length > 0) {
                                     return (
                                       <div className="space-y-1 pl-1">
-                                        {caseTasks.map(task => (
-                                          <div key={task._id} className="flex items-start gap-1.5 text-xs text-foreground/70 hover:text-foreground transition-colors">
-                                            <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-blue-500" />
-                                            <span className="line-clamp-1 flex-1">{task.titulo || task.description}</span>
-                                          </div>
-                                        ))}
+                                        <div className="text-xs font-semibold text-blue-600 mb-1">Tarefas:</div>
+                                        {caseTasks.map(task => {
+                                          const isStarted = task.status === 'Em Andamento' || task.status === 'Em andamento';
+                                          return (
+                                            <div key={task._id} className="flex items-start justify-between gap-1.5 text-xs bg-blue-50 p-1.5 rounded">
+                                              <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                                                <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-blue-500" />
+                                                <div className="flex-1 min-w-0">
+                                                  <span className="line-clamp-1 text-foreground/80">{task.titulo || task.description}</span>
+                                                  <div className="text-[10px] text-foreground/60 mt-0.5">
+                                                    {task.responsibleType} • {task.status}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div className="flex gap-1 flex-shrink-0">
+                                                {!isStarted && (
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleUpdateTaskStatus(task._id, 'Em Andamento');
+                                                    }}
+                                                    className="px-1.5 py-0.5 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition-colors"
+                                                    title="Iniciar Tarefa"
+                                                  >
+                                                    Iniciar
+                                                  </button>
+                                                )}
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleUpdateTaskStatus(task._id, 'Concluída');
+                                                  }}
+                                                  className="px-1.5 py-0.5 bg-green-600 text-white rounded text-[10px] font-semibold hover:bg-green-700 transition-colors"
+                                                  title="Concluir Tarefa"
+                                                >
+                                                  Concluir
+                                                </button>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
                                         {caseItem.tarefasAbertas > 2 && (
                                           <div className="text-xs text-foreground/50 pl-4">
                                             +{caseItem.tarefasAbertas - 2} mais...
@@ -3353,7 +3664,7 @@ export default function AdminFinancingKanbanPage() {
                           <AlertTriangle className="w-5 h-5 text-secondary" />
                           Pendências
                           <Badge className="ml-2 bg-orange-500 text-white">
-                            {pendings.filter(p => p.atendimentoRef === selectedCase?._id && p.status !== 'Resolvida').length} abertas
+                            {pendings.filter(p => p.atendimentoRef === selectedCase?._id && p.status !== 'Resolvida' && p.status !== 'Concluída').length} abertas
                           </Badge>
                         </CardTitle>
                         <Button 
@@ -3776,6 +4087,197 @@ export default function AdminFinancingKanbanPage() {
               </Tabs>
             </div>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Task Creation Modal */}
+      <Dialog open={showQuickTaskModal} onOpenChange={setShowQuickTaskModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl text-secondary">
+              Nova Tarefa
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-sm mb-2 block font-semibold">Responsável *</Label>
+              <Select 
+                value={newTaskData.responsibleType} 
+                onValueChange={(value) => setNewTaskData({ ...newTaskData, responsibleType: value })}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Interno">Interno</SelectItem>
+                  <SelectItem value="Cliente">Cliente</SelectItem>
+                  <SelectItem value="Parceiro Externo">Parceiro Externo</SelectItem>
+                  <SelectItem value="Construtora">Construtora</SelectItem>
+                  <SelectItem value="Caixa">Caixa</SelectItem>
+                  <SelectItem value="Cartório">Cartório</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {newTaskData.responsibleType === 'Interno' && (
+              <div>
+                <Label className="text-sm mb-2 block font-semibold">Usuário Responsável</Label>
+                <Select 
+                  value={newTaskData.internalResponsibleId} 
+                  onValueChange={(value) => setNewTaskData({ ...newTaskData, internalResponsibleId: value })}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(user => (
+                      <SelectItem key={user._id} value={user._id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            <div>
+              <Label className="text-sm mb-2 block font-semibold">Descrição *</Label>
+              <Textarea
+                value={newTaskData.description}
+                onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
+                placeholder="Descreva a tarefa..."
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+            
+            <div>
+              <Label className="text-sm mb-2 block font-semibold">Prazo</Label>
+              <Input
+                type="date"
+                value={newTaskData.dueDate ? new Date(newTaskData.dueDate).toISOString().split('T')[0] : ''}
+                onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                className="h-11"
+              />
+              <p className="text-xs text-foreground/60 mt-1">
+                Se não informado, será definido para 7 dias
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button 
+              onClick={handleQuickCreateTask} 
+              disabled={!newTaskData.description}
+              className="h-11 flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Criar Tarefa
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowQuickTaskModal(false);
+                setQuickActionCaseId(null);
+                setNewTaskData({
+                  description: '',
+                  responsibleType: 'Interno',
+                  internalResponsibleId: '',
+                  externalResponsibleName: '',
+                  externalResponsibleContact: '',
+                  dueDate: ''
+                });
+              }}
+              className="h-11 px-6"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Pending Creation Modal */}
+      <Dialog open={showQuickPendingModal} onOpenChange={setShowQuickPendingModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl text-secondary">
+              Nova Pendência
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-sm mb-2 block font-semibold">Responsável *</Label>
+              <Select 
+                value={newPendingData.responsiblePartyType} 
+                onValueChange={(value) => setNewPendingData({ ...newPendingData, responsiblePartyType: value })}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Interno">Interno</SelectItem>
+                  <SelectItem value="Cliente">Cliente</SelectItem>
+                  <SelectItem value="Parceiro Externo">Parceiro Externo</SelectItem>
+                  <SelectItem value="Construtora">Construtora</SelectItem>
+                  <SelectItem value="Caixa">Caixa</SelectItem>
+                  <SelectItem value="Cartório">Cartório</SelectItem>
+                  <SelectItem value="Sistema/Prazo legal">Sistema/Prazo legal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label className="text-sm mb-2 block font-semibold">Descrição *</Label>
+              <Textarea
+                value={newPendingData.description}
+                onChange={(e) => setNewPendingData({ ...newPendingData, description: e.target.value })}
+                placeholder="Descreva a pendência de forma clara e objetiva..."
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            
+            <div>
+              <Label className="text-sm mb-2 block font-semibold">Prazo Médio para Conclusão (dias) *</Label>
+              <Input
+                type="number"
+                value={newPendingData.averageDaysToComplete}
+                onChange={(e) => setNewPendingData({ ...newPendingData, averageDaysToComplete: parseInt(e.target.value) || 7 })}
+                placeholder="7"
+                min="1"
+                className="h-11"
+              />
+              <p className="text-xs text-foreground/60 mt-1">
+                Data de vencimento será calculada automaticamente
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button 
+              onClick={handleQuickCreatePending} 
+              disabled={!newPendingData.description}
+              className="h-11 flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Criar Pendência
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowQuickPendingModal(false);
+                setQuickActionCaseId(null);
+                setNewPendingData({
+                  description: '',
+                  responsiblePartyType: 'Interno',
+                  averageDaysToComplete: 7
+                });
+              }}
+              className="h-11 px-6"
+            >
+              Cancelar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

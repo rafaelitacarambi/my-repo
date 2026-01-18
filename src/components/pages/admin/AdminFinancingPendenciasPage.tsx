@@ -33,7 +33,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
-import { PendnciasdoFinanciamento, ServiceRecords, HistricodeInteraes } from '@/entities';
+import { PendnciasdoFinanciamento, ServiceRecords, HistricodeInteraes, FinancingTasks } from '@/entities';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -181,6 +181,16 @@ export default function AdminFinancingPendenciasPage() {
     e.preventDefault();
     console.log('[AdminFinancingPendenciasPage] handleSubmit() - Form data:', formData);
 
+    // Validate required fields
+    if (!formData.title || !formData.atendimentoRef) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha o título e selecione um processo",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const pendenciaData: Partial<PendnciasdoFinanciamento> = {
       title: formData.title,
       description: formData.description,
@@ -206,6 +216,11 @@ export default function AdminFinancingPendenciasPage() {
         _id: editingPendencia._id,
         ...pendenciaData
       });
+
+      toast({
+        title: "✅ Pendência atualizada",
+        description: "As alterações foram salvas com sucesso"
+      });
     } else {
       console.log('[AdminFinancingPendenciasPage] Creating new pendência');
       const newPendencia = {
@@ -216,10 +231,46 @@ export default function AdminFinancingPendenciasPage() {
       setPendencias(prev => [newPendencia, ...prev]);
       
       await BaseCrudService.create('pendenciasfinanciamento', newPendencia);
+
+      // Create automatic task linked to this pendência
+      const newTarefa = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: formData.atendimentoRef,
+        pendenciaRef: newPendencia._id,
+        titulo: `Resolver: ${formData.title}`,
+        description: formData.description,
+        status: 'A Fazer',
+        responsibleType: formData.responsiblePartyType,
+        internalResponsibleId: formData.responsiblePartyType === 'Interno' ? undefined : undefined,
+        externalResponsibleName: formData.responsiblePartyDetails || undefined,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
+        creationDate: new Date().toISOString()
+      } as FinancingTasks;
+
+      await BaseCrudService.create('tarefasfinanciamento', newTarefa);
+
+      // Create history entry
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: formData.atendimentoRef,
+        tipoEvento: 'Pendencia_Criada',
+        interactionType: 'Criação de pendência',
+        interactionDescription: `Nova pendência criada: "${formData.title}" (Tarefa automática gerada)`,
+        interactionDate: new Date().toISOString(),
+        autorTipo: 'Sistema'
+      });
+
+      toast({
+        title: "✅ Pendência criada",
+        description: "Pendência registrada e tarefa automática gerada com sucesso"
+      });
     }
 
     setIsDialogOpen(false);
     console.log('[AdminFinancingPendenciasPage] Operation completed successfully');
+    
+    // Reload data to update counters
+    await loadData();
   };
 
   const getStatusBadge = (status?: string) => {

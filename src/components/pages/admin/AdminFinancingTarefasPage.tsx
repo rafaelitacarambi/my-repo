@@ -57,7 +57,7 @@ const getColumnForStatus = (status?: string): string => {
 const getStatusForColumn = (columnId: string): string => {
   if (columnId === 'done') return 'Concluída';
   if (columnId === 'in-progress') return 'Em andamento';
-  return 'Aberta';
+  return 'A Fazer';
 };
 
 export default function AdminFinancingTarefasPage() {
@@ -102,9 +102,19 @@ export default function AdminFinancingTarefasPage() {
     setIsLoading(false);
   };
 
-  // Get filtered tasks by column and filters
+  // Get filtered tasks by column and filters (only active tasks - not completed)
   const getTasksByColumn = (columnId: string) => {
-    let filtered = tarefas.filter(t => getColumnForStatus(t.status) === columnId);
+    // Filter out completed tasks from active columns
+    let filtered = tarefas.filter(t => {
+      const taskColumn = getColumnForStatus(t.status);
+      // Only show completed tasks in the 'done' column
+      if (columnId === 'done') {
+        return taskColumn === 'done';
+      } else {
+        // For active columns, exclude completed tasks
+        return taskColumn === columnId && t.status !== 'Concluída';
+      }
+    });
 
     if (searchTerm) {
       filtered = filtered.filter(t => 
@@ -175,15 +185,16 @@ export default function AdminFinancingTarefasPage() {
       return;
     }
 
-    const tarefaData: Partial<FinancingTasks> = {
+    const tarefaData = {
       titulo: formData.titulo,
       description: formData.description,
-      status: 'Aberta',
+      status: 'A Fazer',
       atendimentoRef: formData.atendimentoRef,
       responsibleType: formData.responsibleType,
-      responsavelExternoRef: formData.responsavelExternoRef,
-      externalResponsibleName: formData.externalResponsibleName,
-      externalResponsibleContact: formData.externalResponsibleContact,
+      responsavelExternoRef: formData.responsavelExternoRef || undefined,
+      internalResponsibleId: formData.responsibleType === 'Interno' ? formData.responsavelExternoRef : undefined,
+      externalResponsibleName: formData.externalResponsibleName || undefined,
+      externalResponsibleContact: formData.externalResponsibleContact || undefined,
       dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
       creationDate: editingTarefa ? undefined : new Date().toISOString()
     };
@@ -199,7 +210,7 @@ export default function AdminFinancingTarefasPage() {
       });
 
       toast({
-        title: "Tarefa atualizada",
+        title: "✅ Tarefa atualizada",
         description: "As alterações foram salvas"
       });
     } else {
@@ -218,19 +229,22 @@ export default function AdminFinancingTarefasPage() {
           atendimentoRef: newTarefa.atendimentoRef,
           tipoEvento: 'Tarefa_Criada',
           interactionType: 'Criação de tarefa',
-          interactionDescription: `Nova tarefa criada: "${newTarefa.titulo}"`,
+          interactionDescription: `Nova tarefa criada manualmente: "${newTarefa.titulo}"`,
           interactionDate: new Date().toISOString(),
           autorTipo: 'Sistema'
         });
       }
 
       toast({
-        title: "Tarefa criada",
+        title: "✅ Tarefa criada",
         description: "A nova tarefa foi adicionada ao processo"
       });
     }
 
     setIsDialogOpen(false);
+    
+    // Reload data to update counters
+    await loadData();
   };
 
   const handleIniciar = async (tarefaId: string) => {
@@ -257,7 +271,7 @@ export default function AdminFinancingTarefasPage() {
     }
 
     toast({
-      title: "Tarefa iniciada",
+      title: "▶️ Tarefa iniciada",
       description: `"${tarefa.titulo || tarefa.description}" está em andamento`
     });
   };
@@ -286,20 +300,23 @@ export default function AdminFinancingTarefasPage() {
     }
 
     toast({
-      title: "Tarefa concluída",
-      description: `"${tarefa.titulo || tarefa.description}" foi finalizada`
+      title: "✅ Tarefa concluída",
+      description: `"${tarefa.titulo || tarefa.description}" foi finalizada e movida para o histórico`
     });
+    
+    // Reload data to update counters
+    await loadData();
   };
 
   const handleReabrir = async (tarefaId: string) => {
     const tarefa = tarefas.find(t => t._id === tarefaId);
     if (!tarefa) return;
 
-    setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: 'Aberta' } : t));
+    setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: 'A Fazer' } : t));
 
     await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
       _id: tarefaId,
-      status: 'Aberta'
+      status: 'A Fazer'
     });
 
     if (tarefa.atendimentoRef) {
@@ -315,9 +332,12 @@ export default function AdminFinancingTarefasPage() {
     }
 
     toast({
-      title: "Tarefa reaberta",
-      description: `"${tarefa.titulo || tarefa.description}" foi reaberta`
+      title: "🔄 Tarefa reaberta",
+      description: `"${tarefa.titulo || tarefa.description}" foi reaberta e movida para 'A Fazer'`
     });
+    
+    // Reload data to update counters
+    await loadData();
   };
 
   // Handle drag and drop
@@ -349,6 +369,14 @@ export default function AdminFinancingTarefasPage() {
         autorTipo: 'Sistema'
       });
     }
+
+    toast({
+      title: "📋 Tarefa movida",
+      description: `Movida para: ${TASK_COLUMNS.find(c => c.id === destination.droppableId)?.name}`
+    });
+    
+    // Reload data to update counters
+    await loadData();
   };
 
   const getResponsibleName = (tarefa: FinancingTasks) => {
