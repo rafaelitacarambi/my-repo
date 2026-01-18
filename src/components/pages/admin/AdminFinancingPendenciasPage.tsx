@@ -232,22 +232,8 @@ export default function AdminFinancingPendenciasPage() {
       
       await BaseCrudService.create('pendenciasfinanciamento', newPendencia);
 
-      // Create automatic task linked to this pendência
-      const newTarefa = {
-        _id: crypto.randomUUID(),
-        atendimentoRef: formData.atendimentoRef,
-        pendenciaRef: newPendencia._id,
-        titulo: `Resolver: ${formData.title}`,
-        description: formData.description,
-        status: 'A Fazer',
-        responsibleType: formData.responsiblePartyType,
-        internalResponsibleId: formData.responsiblePartyType === 'Interno' ? undefined : undefined,
-        externalResponsibleName: formData.responsiblePartyDetails || undefined,
-        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-        creationDate: new Date().toISOString()
-      } as FinancingTasks;
-
-      await BaseCrudService.create('tarefasfinanciamento', newTarefa);
+      // AUTOMAÇÃO DESATIVADA: Não criar tarefa automaticamente
+      // Tarefas devem ser criadas manualmente pelo usuário
 
       // Create history entry
       await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
@@ -255,14 +241,14 @@ export default function AdminFinancingPendenciasPage() {
         atendimentoRef: formData.atendimentoRef,
         tipoEvento: 'Pendencia_Criada',
         interactionType: 'Criação de pendência',
-        interactionDescription: `Nova pendência criada: "${formData.title}" (Tarefa automática gerada)`,
+        interactionDescription: `Nova pendência criada: "${formData.title}"`,
         interactionDate: new Date().toISOString(),
         autorTipo: 'Sistema'
       });
 
       toast({
         title: "✅ Pendência criada",
-        description: "Pendência registrada e tarefa automática gerada com sucesso"
+        description: "Pendência registrada com sucesso"
       });
     }
 

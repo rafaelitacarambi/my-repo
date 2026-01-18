@@ -1,7 +1,9 @@
 /**
  * Hook: Pendências → Tarefas
  * 
- * Automação: Ao criar uma Pendência, criar Tarefa automaticamente
+ * AUTOMAÇÃO DESATIVADA: Pendências e Tarefas são entidades independentes
+ * - Tarefas devem ser criadas manualmente pelo usuário
+ * - Pendências não geram Tarefas automaticamente
  * - Se bloqueiaFase = true, impedir avanço de fase do Atendimento
  * - Gerar registro em Histórico
  */
@@ -11,32 +13,13 @@ import { v4 as uuid } from 'uuid';
 
 /**
  * Trigger: afterInsert em pendenciasfinanciamento
- * Cria tarefa automaticamente quando uma pendência é criada
+ * APENAS registra a pendência no histórico - NÃO cria tarefa automaticamente
  */
 export async function pendenciasfinanciamento_afterInsert(item) {
   try {
     console.log('🔔 Pendência criada:', item._id);
 
-    // 1. Criar Tarefa automaticamente
-    const tarefa = {
-      _id: uuid(),
-      pendenciaRef: item._id,
-      atendimentoRef: item.atendimentoRef,
-      titulo: `Tarefa: ${item.title}`,
-      description: item.description,
-      responsavelExternoRef: item.responsavelExternoRef,
-      responsavelInternoRef: item.responsavelInternoRef,
-      responsibleType: item.responsiblePartyType,
-      dueDate: item.dueDate,
-      status: 'Aberta',
-      creationDate: new Date().toISOString(),
-      canalNotificacao: 'Email'
-    };
-
-    await wixData.insert('tarefasfinanciamento', tarefa);
-    console.log('✅ Tarefa criada:', tarefa._id);
-
-    // 2. Se bloqueiaFase = true, impedir avanço de fase
+    // 1. Se bloqueiaFase = true, impedir avanço de fase
     if (item.bloqueiaFase) {
       const atendimento = await wixData.get('atendimentos', item.atendimentoRef);
       
@@ -50,7 +33,7 @@ export async function pendenciasfinanciamento_afterInsert(item) {
       }
     }
 
-    // 3. Registrar em Histórico
+    // 2. Registrar em Histórico (SEM criar tarefa automática)
     const historico = {
       _id: uuid(),
       atendimentoRef: item.atendimentoRef,
@@ -69,9 +52,9 @@ export async function pendenciasfinanciamento_afterInsert(item) {
 
     return {
       success: true,
-      tarefaId: tarefa._id,
       historicoId: historico._id,
-      bloqueado: item.bloqueiaFase
+      bloqueado: item.bloqueiaFase,
+      tarefaAutomatica: false // Flag indicando que NÃO foi criada tarefa automática
     };
 
   } catch (error) {
@@ -87,7 +70,7 @@ export async function pendenciasfinanciamento_afterInsert(item) {
         autorRef: 'sistema-automacao',
         interactionDate: new Date().toISOString(),
         interactionType: 'Erro',
-        interactionDescription: `Erro ao criar tarefa para pendência: ${error.message}`,
+        interactionDescription: `Erro ao processar pendência: ${error.message}`,
         interactionOutcome: 'Erro',
         interactionMedium: 'Sistema'
       });
