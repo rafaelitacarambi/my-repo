@@ -540,9 +540,16 @@ export default function AdminFinanciamentoDetalhePage() {
 
   // Mark pendencia as resolved
   const handleResolvePendencia = async (id: string) => {
+    const pendencia = pendencias.find(p => p._id === id);
+    if (!pendencia) return;
+
     try {
       const now = new Date().toISOString();
       
+      // Optimistic update - remove from active list immediately
+      setPendencias(pendencias.filter(p => p._id !== id));
+      
+      // Update pendencia status in database
       await BaseCrudService.update('pendenciasfinanciamento', {
         _id: id,
         status: 'CONCLUÍDA',
@@ -552,44 +559,53 @@ export default function AdminFinanciamentoDetalhePage() {
         dataUltimaAtualizacao: now
       });
       
-      // Optimistic update - remove from active list immediately
-      const updatedPendencias = pendencias.map(p => 
-        p._id === id ? { 
-          ...p, 
-          status: 'CONCLUÍDA', 
-          resolvedDate: now,
-          dataHoraConclusao: now,
-          concluidoPorRef: 'current-user-id',
-          dataUltimaAtualizacao: now
-        } : p
-      );
-      setPendencias(updatedPendencias);
+      // Create detailed history entry with type 'Pendencia_Concluida'
+      const clientName = atendimento?.contactName || 'Cliente não identificado';
+      const responsibleName = pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || 'Não informado';
       
-      const pendencia = pendencias.find(p => p._id === id);
-      if (pendencia) {
-        // Create history entry with type 'Pendencia_Concluida'
-        const historyEntry: HistricodeInteraes = {
-          _id: crypto.randomUUID(),
-          atendimentoRef: atendimento?._id || '',
-          interactionDate: now,
-          interactionType: 'Pendencia_Concluida',
-          interactionDescription: `Pendência concluída: ${pendencia.title}`,
-          autorTipo: 'Sistema',
-          tipoEvento: 'Pendencia_Concluida'
-        };
-        
-        await BaseCrudService.create('historicointeracoes', historyEntry);
-        setHistorico([historyEntry, ...historico]);
-      }
+      const historyEntry: HistricodeInteraes = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: atendimento?._id || '',
+        interactionDate: now,
+        interactionType: 'Pendencia_Concluida',
+        interactionDescription: `Pendência concluída: ${pendencia.title} | Cliente: ${clientName} | Responsável: ${responsibleName} | Descrição: ${pendencia.description || 'Sem descrição'} | Criada em: ${pendencia.creationDate ? new Date(pendencia.creationDate).toLocaleDateString('pt-BR') : 'N/A'}`,
+        autorTipo: 'Sistema',
+        tipoEvento: 'Pendencia_Concluida'
+      };
+      
+      await BaseCrudService.create('historicointeracoes', historyEntry);
+      setHistorico([historyEntry, ...historico]);
+      
+      await createHistoryEntry(`Pendência "${pendencia.title}" marcada como concluída`);
     } catch (error) {
       console.error('Error resolving pendencia:', error);
+      // Revert optimistic update on error
+      const loadPendencias = async () => {
+        const pendenciasRes = await BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento');
+        setPendencias(pendenciasRes.items.filter(p => p.atendimentoRef === atendimentoId));
+      };
+      loadPendencias();
     }
   };
 
   // Reopen pendencia
   const handleReopenPendencia = async (id: string) => {
+    const pendencia = pendencias.find(p => p._id === id);
+    if (!pendencia) return;
+
     try {
       const now = new Date().toISOString();
+      
+      // Optimistic update - add back to active list immediately
+      const reopenedPendencia = { 
+        ...pendencia, 
+        status: 'PENDENTE', 
+        dataUltimaAtualizacao: now,
+        resolvedDate: undefined,
+        dataHoraConclusao: undefined,
+        concluidoPorRef: undefined
+      };
+      setPendencias([...pendencias.filter(p => p._id !== id), reopenedPendencia]);
       
       await BaseCrudService.update('pendenciasfinanciamento', {
         _id: id,
@@ -597,16 +613,7 @@ export default function AdminFinanciamentoDetalhePage() {
         dataUltimaAtualizacao: now
       });
       
-      // Optimistic update
-      const updatedPendencias = pendencias.map(p => 
-        p._id === id ? { ...p, status: 'PENDENTE', dataUltimaAtualizacao: now } : p
-      );
-      setPendencias(updatedPendencias);
-      
-      const pendencia = pendencias.find(p => p._id === id);
-      if (pendencia) {
-        await createHistoryEntry(`Pendência reaberta: ${pendencia.title}`);
-      }
+      await createHistoryEntry(`Pendência reaberta: ${pendencia.title}`);
     } catch (error) {
       console.error('Error reopening pendencia:', error);
     }
@@ -1914,41 +1921,65 @@ export default function AdminFinanciamentoDetalhePage() {
                 ) : (
                   <div className="relative">
                     <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border-gray"></div>
-                    {historico.map((entry, index) => (
-                      <motion.div
-                        key={entry._id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="relative pl-12 pb-8"
-                      >
-                        <div className="absolute left-2 top-1 w-4 h-4 rounded-full bg-secondary border-2 border-primary"></div>
-                        <Card>
-                          <CardContent className="py-3">
-                            <div className="flex items-start justify-between gap-4 mb-2">
-                              <h4 className="font-heading text-sm font-semibold">{entry.interactionDescription}</h4>
-                              <Badge className="text-xs">{entry.interactionType}</Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-xs text-primary-foreground/60">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                <span>{new Date(entry.interactionDate || '').toLocaleDateString('pt-BR')}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>{new Date(entry.interactionDate || '').toLocaleTimeString('pt-BR')}</span>
-                              </div>
-                              {entry.autorTipo && (
-                                <div className="flex items-center gap-1">
-                                  <User className="w-3 h-3" />
-                                  <span>{entry.autorTipo}</span>
+                    {historico.map((entry, index) => {
+                      const isPendenciaConcluida = entry.interactionType === 'Pendencia_Concluida';
+                      
+                      return (
+                        <motion.div
+                          key={entry._id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="relative pl-12 pb-8"
+                        >
+                          <div className={`absolute left-2 top-1 w-4 h-4 rounded-full border-2 border-primary ${
+                            isPendenciaConcluida ? 'bg-green-500' : 'bg-secondary'
+                          }`}></div>
+                          <Card className={isPendenciaConcluida ? 'border-2 border-green-300 bg-green-50/30' : ''}>
+                            <CardContent className="py-3">
+                              <div className="flex items-start justify-between gap-4 mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-heading text-sm font-semibold">
+                                      {isPendenciaConcluida ? 'Pendência Concluída' : entry.interactionDescription}
+                                    </h4>
+                                    {isPendenciaConcluida && (
+                                      <CheckCircle className="w-4 h-4 text-green-600" />
+                                    )}
+                                  </div>
+                                  {isPendenciaConcluida && (
+                                    <div className="mt-2 space-y-1 text-xs text-primary-foreground/70">
+                                      {entry.interactionDescription?.split(' | ').map((part, i) => (
+                                        <p key={i} className="font-paragraph">{part}</p>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    ))}
+                                <Badge className={`text-xs ${isPendenciaConcluida ? 'bg-green-500' : ''}`}>
+                                  {entry.interactionType}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-primary-foreground/60">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  <span>{new Date(entry.interactionDate || '').toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>{new Date(entry.interactionDate || '').toLocaleTimeString('pt-BR')}</span>
+                                </div>
+                                {entry.autorTipo && (
+                                  <div className="flex items-center gap-1">
+                                    <User className="w-3 h-3" />
+                                    <span>{entry.autorTipo}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

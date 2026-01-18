@@ -645,7 +645,13 @@ export interface PendnciasdoFinanciamento {
   _createdDate?: Date;
   _updatedDate?: Date;
   /** @wixFieldType text */
+  concluidoPorRef?: string;
+  /** @wixFieldType datetime */
+  dataUltimaAtualizacao?: Date | string;
+  /** @wixFieldType text */
   responsavelExternoRef?: string;
+  /** @wixFieldType datetime */
+  dataHoraConclusao?: Date | string;
   /** @wixFieldType text */
   responsavelEntidadeTexto?: string;
   /** @wixFieldType text */
