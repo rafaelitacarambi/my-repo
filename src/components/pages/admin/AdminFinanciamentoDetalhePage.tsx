@@ -25,7 +25,9 @@ import {
   Check,
   X,
   CreditCard,
-  Building2
+  Building2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,6 +146,7 @@ export default function AdminFinanciamentoDetalhePage() {
   const [showAddTarefaDialog, setShowAddTarefaDialog] = useState(false);
   const [showAddDocumentoDialog, setShowAddDocumentoDialog] = useState(false);
   const [selectedVendedor, setSelectedVendedor] = useState<string | null>(null);
+  const [showHistoricoPendencias, setShowHistoricoPendencias] = useState(false);
 
   // New item forms
   const [newProponente, setNewProponente] = useState<Proponente>({
@@ -470,19 +473,21 @@ export default function AdminFinanciamentoDetalhePage() {
     if (!vendedor) return;
 
     try {
+      const now = new Date().toISOString();
       const pendencia: PendnciasdoFinanciamento = {
         _id: crypto.randomUUID(),
         atendimentoRef: atendimento._id,
         title: `Documento pendente: ${documentoTipo} - Vendedor ${vendedor.nome}`,
         description: `Documento "${documentoTipo}" do vendedor ${vendedor.nome} está pendente de recebimento.`,
-        status: 'Aberta',
+        status: 'PENDENTE',
         priority: 'Alta',
         responsiblePartyType: 'Cliente',
         responsiblePartyDetails: vendedor.nome,
         bloqueiaFase: false,
-        creationDate: new Date().toISOString(),
+        creationDate: now,
         tipo: 'Documento',
-        categoria: 'Vendedor'
+        categoria: 'Vendedor',
+        dataUltimaAtualizacao: now
       };
 
       await BaseCrudService.create('pendenciasfinanciamento', pendencia);
@@ -498,18 +503,20 @@ export default function AdminFinanciamentoDetalhePage() {
     if (!atendimento || !newPendencia.title) return;
     
     try {
+      const now = new Date().toISOString();
       const pendencia: PendnciasdoFinanciamento = {
         _id: crypto.randomUUID(),
         atendimentoRef: atendimento._id,
         title: newPendencia.title,
         description: newPendencia.description,
-        status: 'Aberta',
+        status: 'PENDENTE',
         priority: newPendencia.priority,
         dueDate: newPendencia.dueDate,
         responsiblePartyType: newPendencia.responsiblePartyType,
         responsiblePartyDetails: newPendencia.responsiblePartyDetails,
         bloqueiaFase: newPendencia.bloqueiaFase,
-        creationDate: new Date().toISOString()
+        creationDate: now,
+        dataUltimaAtualizacao: now
       };
       
       await BaseCrudService.create('pendenciasfinanciamento', pendencia);
@@ -534,20 +541,45 @@ export default function AdminFinanciamentoDetalhePage() {
   // Mark pendencia as resolved
   const handleResolvePendencia = async (id: string) => {
     try {
+      const now = new Date().toISOString();
+      
       await BaseCrudService.update('pendenciasfinanciamento', {
         _id: id,
-        status: 'Resolvida',
-        resolvedDate: new Date().toISOString()
+        status: 'CONCLUÍDA',
+        resolvedDate: now,
+        dataHoraConclusao: now,
+        concluidoPorRef: 'current-user-id', // TODO: Replace with actual user ID from auth context
+        dataUltimaAtualizacao: now
       });
       
+      // Optimistic update - remove from active list immediately
       const updatedPendencias = pendencias.map(p => 
-        p._id === id ? { ...p, status: 'Resolvida', resolvedDate: new Date().toISOString() } : p
+        p._id === id ? { 
+          ...p, 
+          status: 'CONCLUÍDA', 
+          resolvedDate: now,
+          dataHoraConclusao: now,
+          concluidoPorRef: 'current-user-id',
+          dataUltimaAtualizacao: now
+        } : p
       );
       setPendencias(updatedPendencias);
       
       const pendencia = pendencias.find(p => p._id === id);
       if (pendencia) {
-        await createHistoryEntry(`Pendência resolvida: ${pendencia.title}`);
+        // Create history entry with type 'Pendencia_Concluida'
+        const historyEntry: HistricodeInteraes = {
+          _id: crypto.randomUUID(),
+          atendimentoRef: atendimento?._id || '',
+          interactionDate: now,
+          interactionType: 'Pendencia_Concluida',
+          interactionDescription: `Pendência concluída: ${pendencia.title}`,
+          autorTipo: 'Sistema',
+          tipoEvento: 'Pendencia_Concluida'
+        };
+        
+        await BaseCrudService.create('historicointeracoes', historyEntry);
+        setHistorico([historyEntry, ...historico]);
       }
     } catch (error) {
       console.error('Error resolving pendencia:', error);
@@ -557,13 +589,17 @@ export default function AdminFinanciamentoDetalhePage() {
   // Reopen pendencia
   const handleReopenPendencia = async (id: string) => {
     try {
+      const now = new Date().toISOString();
+      
       await BaseCrudService.update('pendenciasfinanciamento', {
         _id: id,
-        status: 'Aberta'
+        status: 'PENDENTE',
+        dataUltimaAtualizacao: now
       });
       
+      // Optimistic update
       const updatedPendencias = pendencias.map(p => 
-        p._id === id ? { ...p, status: 'Aberta' } : p
+        p._id === id ? { ...p, status: 'PENDENTE', dataUltimaAtualizacao: now } : p
       );
       setPendencias(updatedPendencias);
       
@@ -1406,7 +1442,7 @@ export default function AdminFinanciamentoDetalhePage() {
                 {/* Pendências Column */}
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-heading text-xl text-secondary font-semibold">Pendências</h3>
+                    <h3 className="font-heading text-xl text-secondary font-semibold">Pendências Ativas</h3>
                     <Dialog open={showAddPendenciaDialog} onOpenChange={setShowAddPendenciaDialog}>
                       <DialogTrigger asChild>
                         <Button size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90">
@@ -1487,52 +1523,120 @@ export default function AdminFinanciamentoDetalhePage() {
                   </div>
 
                   <div className="space-y-3">
-                    {pendencias.length === 0 ? (
+                    {pendencias.filter(p => p.status !== 'CONCLUÍDA').length === 0 ? (
                       <Card>
                         <CardContent className="py-8 text-center">
-                          <p className="font-paragraph text-primary-foreground/60 text-sm">Nenhuma pendência</p>
+                          <p className="font-paragraph text-primary-foreground/60 text-sm">Nenhuma pendência ativa</p>
                         </CardContent>
                       </Card>
                     ) : (
-                      pendencias.map((pendencia) => {
-                        const isOverdue = new Date(pendencia.dueDate || '') < new Date() && pendencia.status !== 'Resolvida';
-                        const bgColor = pendencia.status === 'Resolvida' ? 'bg-green-50 border-green-300' : isOverdue ? 'bg-red-50 border-red-300' : 'bg-yellow-50 border-yellow-300';
-                        
-                        return (
-                          <Card key={pendencia._id} className={`border-2 ${bgColor}`}>
-                            <CardContent className="py-3">
-                              <div className="flex items-start justify-between gap-3 mb-2">
-                                <h4 className="font-heading text-sm font-semibold flex-1">{pendencia.title}</h4>
-                                {isOverdue && <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />}
-                              </div>
-                              <p className="font-paragraph text-xs text-primary-foreground/70 mb-2">{pendencia.description}</p>
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                <Badge className="text-xs">{pendencia.priority}</Badge>
-                                <Badge className="text-xs">{pendencia.status}</Badge>
-                                <Badge className="text-xs">{pendencia.responsiblePartyType}</Badge>
-                              </div>
-                              {pendencia.dueDate && (
-                                <p className="font-paragraph text-xs text-primary-foreground/60 mb-3">
-                                  Prazo: {new Date(pendencia.dueDate).toLocaleDateString('pt-BR')}
-                                </p>
-                              )}
-                              <div className="flex gap-2">
-                                {pendencia.status !== 'Resolvida' ? (
+                      pendencias
+                        .filter(p => p.status !== 'CONCLUÍDA')
+                        .sort((a, b) => {
+                          // Sort by overdue first, then by due date
+                          const aOverdue = new Date(a.dueDate || '') < new Date();
+                          const bOverdue = new Date(b.dueDate || '') < new Date();
+                          if (aOverdue && !bOverdue) return -1;
+                          if (!aOverdue && bOverdue) return 1;
+                          return new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
+                        })
+                        .map((pendencia) => {
+                          const isOverdue = new Date(pendencia.dueDate || '') < new Date();
+                          const bgColor = isOverdue ? 'bg-red-50 border-red-300' : 'bg-yellow-50 border-yellow-300';
+                          
+                          return (
+                            <Card key={pendencia._id} className={`border-2 ${bgColor}`}>
+                              <CardContent className="py-3">
+                                <div className="flex items-start justify-between gap-3 mb-2">
+                                  <h4 className="font-heading text-sm font-semibold flex-1">{pendencia.title}</h4>
+                                  {isOverdue && <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />}
+                                </div>
+                                <p className="font-paragraph text-xs text-primary-foreground/70 mb-2">{pendencia.description}</p>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                  <Badge className="text-xs">{pendencia.priority}</Badge>
+                                  <Badge className="text-xs">{pendencia.status || 'PENDENTE'}</Badge>
+                                  <Badge className="text-xs">{pendencia.responsiblePartyType}</Badge>
+                                </div>
+                                {pendencia.dueDate && (
+                                  <p className="font-paragraph text-xs text-primary-foreground/60 mb-3">
+                                    Prazo: {new Date(pendencia.dueDate).toLocaleDateString('pt-BR')}
+                                  </p>
+                                )}
+                                <div className="flex gap-2">
                                   <Button size="sm" variant="outline" onClick={() => handleResolvePendencia(pendencia._id)} className="flex-1 h-8 text-xs">
                                     <Check className="w-3 h-3 mr-1" />
-                                    Marcar como tratada
+                                    Marcar como concluída
                                   </Button>
-                                ) : (
-                                  <Button size="sm" variant="outline" onClick={() => handleReopenPendencia(pendencia._id)} className="flex-1 h-8 text-xs">
-                                    <RotateCcw className="w-3 h-3 mr-1" />
-                                    Reabrir
-                                  </Button>
-                                )}
-                              </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })
+                    )}
+                  </div>
+
+                  {/* Histórico de Pendências Concluídas */}
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setShowHistoricoPendencias(!showHistoricoPendencias)}
+                      className="w-full flex items-center justify-between p-3 bg-light-gray rounded hover:bg-primary-foreground/10 transition-colors"
+                    >
+                      <h4 className="font-heading text-sm font-semibold text-primary-foreground">
+                        Histórico de Pendências (Concluídas)
+                      </h4>
+                      {showHistoricoPendencias ? (
+                        <ChevronUp className="w-4 h-4 text-primary-foreground" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-primary-foreground" />
+                      )}
+                    </button>
+
+                    {showHistoricoPendencias && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-3 mt-3"
+                      >
+                        {pendencias.filter(p => p.status === 'CONCLUÍDA').length === 0 ? (
+                          <Card>
+                            <CardContent className="py-8 text-center">
+                              <p className="font-paragraph text-primary-foreground/60 text-sm">Nenhuma pendência concluída</p>
                             </CardContent>
                           </Card>
-                        );
-                      })
+                        ) : (
+                          pendencias
+                            .filter(p => p.status === 'CONCLUÍDA')
+                            .sort((a, b) => new Date(b.dataHoraConclusao || b.resolvedDate || '').getTime() - new Date(a.dataHoraConclusao || a.resolvedDate || '').getTime())
+                            .map((pendencia) => (
+                              <Card key={pendencia._id} className="border-2 bg-green-50 border-green-300">
+                                <CardContent className="py-3">
+                                  <div className="flex items-start justify-between gap-3 mb-2">
+                                    <h4 className="font-heading text-sm font-semibold flex-1">{pendencia.title}</h4>
+                                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                  </div>
+                                  <p className="font-paragraph text-xs text-primary-foreground/70 mb-2">{pendencia.description}</p>
+                                  <div className="flex flex-wrap gap-2 mb-3">
+                                    <Badge className="text-xs bg-green-500">{pendencia.status}</Badge>
+                                    <Badge className="text-xs">{pendencia.priority}</Badge>
+                                    <Badge className="text-xs">{pendencia.responsiblePartyType}</Badge>
+                                  </div>
+                                  {(pendencia.dataHoraConclusao || pendencia.resolvedDate) && (
+                                    <p className="font-paragraph text-xs text-primary-foreground/60 mb-3">
+                                      Concluída em: {new Date(pendencia.dataHoraConclusao || pendencia.resolvedDate || '').toLocaleDateString('pt-BR')} às {new Date(pendencia.dataHoraConclusao || pendencia.resolvedDate || '').toLocaleTimeString('pt-BR')}
+                                    </p>
+                                  )}
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" onClick={() => handleReopenPendencia(pendencia._id)} className="flex-1 h-8 text-xs">
+                                      <RotateCcw className="w-3 h-3 mr-1" />
+                                      Reabrir
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))
+                        )}
+                      </motion.div>
                     )}
                   </div>
                 </div>
