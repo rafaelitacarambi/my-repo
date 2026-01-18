@@ -155,6 +155,9 @@ export default function AdminFinanciamentoDetalhePage() {
     creationDate: new Date().toISOString()
   });
 
+  // Track if we've already attempted to create the principal proponent
+  const [principalProponentCreated, setPrincipalProponentCreated] = useState(false);
+
   // Dialog states
   const [showAddProponenteDialog, setShowAddProponenteDialog] = useState(false);
   const [showAddVendedorDialog, setShowAddVendedorDialog] = useState(false);
@@ -236,6 +239,92 @@ export default function AdminFinanciamentoDetalhePage() {
     description: ''
   });
 
+  // Function to auto-create or update principal proponent
+  const ensurePrincipalProponent = async (atend: ServiceRecords, cpfValue: string) => {
+    if (!atend.contactName || !cpfValue) {
+      return;
+    }
+
+    try {
+      // Check if principal proponent already exists
+      const existingProponentePrincipal = proponentes.find(p => p.isPrincipal);
+      
+      if (!existingProponentePrincipal) {
+        // Create new principal proponent
+        const proponentePrincipal: Proponente = {
+          _id: crypto.randomUUID(),
+          nome: atend.contactName,
+          cpf: cpfValue,
+          telefone: atend.contactPhone || '',
+          renda: 0,
+          estadoCivil: 'Solteiro(a)',
+          possuiFgts: false,
+          isPrincipal: true,
+          checklist: {
+            hasFgtsContribution: false,
+            hasDependent: false,
+            declaresIncomeTax: false,
+            ownsProperty: false,
+            hasActiveFinancing: false,
+            isFirstAcquisition: false
+          },
+          documentos: [
+            { tipo: 'RG, CPF ou CNH', status: 'Pendente' },
+            { tipo: 'Comprovante de residência', status: 'Pendente' },
+            { tipo: 'Certidão de nascimento ou casamento', status: 'Pendente' },
+            { tipo: 'Holerite dos últimos 2 meses', status: 'Pendente' },
+            { tipo: 'Pró-labore dos últimos 3 meses', status: 'Pendente' },
+            { tipo: 'Extrato do FGTS', status: 'Pendente' },
+            { tipo: 'Declaração de Imposto de Renda', status: 'Pendente' }
+          ]
+        };
+        
+        setProponentes([proponentePrincipal, ...proponentes]);
+        
+        // Create checklist in database
+        const checklistData: ChecklistdosProponentes = {
+          _id: crypto.randomUUID(),
+          atendimentoRef: atend._id,
+          clientRef: proponentePrincipal._id,
+          hasFgtsContribution: false,
+          hasDependent: false,
+          declaresIncomeTax: false,
+          ownsProperty: false,
+          hasActiveFinancing: false,
+          isFirstAcquisition: false
+        };
+        await BaseCrudService.create('checklistproponentes', checklistData);
+        
+        await createHistoryEntry(`Proponente principal criado automaticamente: ${proponentePrincipal.nome}`);
+        setPrincipalProponentCreated(true);
+      } else {
+        // Update existing principal proponent if data changed
+        const hasChanges = 
+          existingProponentePrincipal.nome !== atend.contactName ||
+          existingProponentePrincipal.cpf !== cpfValue ||
+          existingProponentePrincipal.telefone !== (atend.contactPhone || '');
+        
+        if (hasChanges) {
+          const updatedProponentes = proponentes.map(p => {
+            if (p.isPrincipal) {
+              return {
+                ...p,
+                nome: atend.contactName || p.nome,
+                cpf: cpfValue,
+                telefone: atend.contactPhone || ''
+              };
+            }
+            return p;
+          });
+          setProponentes(updatedProponentes);
+          await createHistoryEntry(`Proponente principal atualizado automaticamente`);
+        }
+      }
+    } catch (error) {
+      console.error('Error ensuring principal proponent:', error);
+    }
+  };
+
   // Load data
   useEffect(() => {
     const loadData = async () => {
@@ -288,57 +377,6 @@ export default function AdminFinanciamentoDetalhePage() {
           new Date(b.interactionDate || '').getTime() - new Date(a.interactionDate || '').getTime()
         ));
 
-        // Auto-create proponente principal if contactName and CPF exist
-        if (atend.contactName && formData.cpf) {
-          const existingProponentePrincipal = proponentes.find(p => p.isPrincipal);
-          if (!existingProponentePrincipal) {
-            const proponentePrincipal: Proponente = {
-              _id: crypto.randomUUID(),
-              nome: atend.contactName,
-              cpf: formData.cpf,
-              telefone: atend.contactPhone || '',
-              renda: 0,
-              estadoCivil: 'Solteiro(a)',
-              possuiFgts: false,
-              isPrincipal: true,
-              checklist: {
-                hasFgtsContribution: false,
-                hasDependent: false,
-                declaresIncomeTax: false,
-                ownsProperty: false,
-                hasActiveFinancing: false,
-                isFirstAcquisition: false
-              },
-              documentos: [
-                { tipo: 'RG, CPF ou CNH', status: 'Pendente' },
-                { tipo: 'Comprovante de residência', status: 'Pendente' },
-                { tipo: 'Certidão de nascimento ou casamento', status: 'Pendente' },
-                { tipo: 'Holerite dos últimos 2 meses', status: 'Pendente' },
-                { tipo: 'Pró-labore dos últimos 3 meses', status: 'Pendente' },
-                { tipo: 'Extrato do FGTS', status: 'Pendente' },
-                { tipo: 'Declaração de Imposto de Renda', status: 'Pendente' }
-              ]
-            };
-            setProponentes([proponentePrincipal]);
-            
-            // Create checklist in database
-            const checklistData: ChecklistdosProponentes = {
-              _id: crypto.randomUUID(),
-              atendimentoRef: atendimentoId,
-              clientRef: proponentePrincipal._id,
-              hasFgtsContribution: false,
-              hasDependent: false,
-              declaresIncomeTax: false,
-              ownsProperty: false,
-              hasActiveFinancing: false,
-              isFirstAcquisition: false
-            };
-            await BaseCrudService.create('checklistproponentes', checklistData);
-            
-            await createHistoryEntry(`Proponente principal criado automaticamente: ${proponentePrincipal.nome}`);
-          }
-        }
-
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -367,76 +405,25 @@ export default function AdminFinanciamentoDetalhePage() {
       setAtendimento({ ...atendimento, ...updates });
       
       // Auto-create or update proponente principal when contactName or CPF changes
-      if ((field === 'contactName' || field === 'cpf') && formData.contactName && formData.cpf) {
-        const existingProponentePrincipal = proponentes.find(p => p.isPrincipal);
+      if (field === 'contactName' || field === 'cpf') {
+        const updatedAtendimento = { ...atendimento, ...updates };
+        const cpfValue = field === 'cpf' ? value : formData.cpf;
         
-        if (!existingProponentePrincipal) {
-          // Create new proponente principal
-          const proponentePrincipal: Proponente = {
-            _id: crypto.randomUUID(),
-            nome: field === 'contactName' ? value : formData.contactName,
-            cpf: field === 'cpf' ? value : formData.cpf,
-            telefone: formData.contactPhone || '',
-            renda: 0,
-            estadoCivil: 'Solteiro(a)',
-            possuiFgts: false,
-            isPrincipal: true,
-            checklist: {
-              hasFgtsContribution: false,
-              hasDependent: false,
-              declaresIncomeTax: false,
-              ownsProperty: false,
-              hasActiveFinancing: false,
-              isFirstAcquisition: false
-            },
-            documentos: [
-              { tipo: 'RG, CPF ou CNH', status: 'Pendente' },
-              { tipo: 'Comprovante de residência', status: 'Pendente' },
-              { tipo: 'Certidão de nascimento ou casamento', status: 'Pendente' },
-              { tipo: 'Holerite dos últimos 2 meses', status: 'Pendente' },
-              { tipo: 'Pró-labore dos últimos 3 meses', status: 'Pendente' },
-              { tipo: 'Extrato do FGTS', status: 'Pendente' },
-              { tipo: 'Declaração de Imposto de Renda', status: 'Pendente' }
-            ]
-          };
-          setProponentes([proponentePrincipal, ...proponentes]);
-          
-          // Create checklist in database
-          const checklistData: ChecklistdosProponentes = {
-            _id: crypto.randomUUID(),
-            atendimentoRef: atendimento._id,
-            clientRef: proponentePrincipal._id,
-            hasFgtsContribution: false,
-            hasDependent: false,
-            declaresIncomeTax: false,
-            ownsProperty: false,
-            hasActiveFinancing: false,
-            isFirstAcquisition: false
-          };
-          await BaseCrudService.create('checklistproponentes', checklistData);
-          
-          await createHistoryEntry(`Proponente principal criado automaticamente: ${proponentePrincipal.nome}`);
-        } else {
-          // Update existing proponente principal
-          const updatedProponentes = proponentes.map(p => {
-            if (p.isPrincipal) {
-              return {
-                ...p,
-                nome: field === 'contactName' ? value : p.nome,
-                cpf: field === 'cpf' ? value : p.cpf,
-                telefone: field === 'contactPhone' ? value : p.telefone
-              };
-            }
-            return p;
-          });
-          setProponentes(updatedProponentes);
-          await createHistoryEntry(`Proponente principal atualizado automaticamente`);
+        if (updatedAtendimento.contactName && cpfValue) {
+          await ensurePrincipalProponent(updatedAtendimento, cpfValue);
         }
       }
     } catch (error) {
       console.error('Error auto-saving:', error);
     }
   };
+
+  // Auto-create principal proponent when both contactName and CPF are filled
+  useEffect(() => {
+    if (atendimento && formData.contactName && formData.cpf && !principalProponentCreated && !loading) {
+      ensurePrincipalProponent(atendimento, formData.cpf);
+    }
+  }, [atendimento, formData.contactName, formData.cpf, principalProponentCreated, loading]);
 
   // Create history entry
   const createHistoryEntry = async (description: string) => {
@@ -1167,7 +1154,10 @@ export default function AdminFinanciamentoDetalhePage() {
                       <Label className="font-paragraph text-sm mb-2 block">CPF</Label>
                       <Input
                         value={formData.cpf}
-                        onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, cpf: e.target.value });
+                          handleAutoSave('cpf', e.target.value);
+                        }}
                         placeholder="000.000.000-00"
                         className="h-10 bg-primary border-border-gray"
                       />
@@ -1362,7 +1352,11 @@ export default function AdminFinanciamentoDetalhePage() {
                     <CardContent className="py-12 text-center">
                       <User className="w-12 h-12 text-primary-foreground/30 mx-auto mb-3" />
                       <p className="font-paragraph text-primary-foreground/60">Nenhum proponente cadastrado</p>
-                      <p className="font-paragraph text-sm text-primary-foreground/40 mt-1">O proponente principal será criado automaticamente ao preencher os dados do processo</p>
+                      <p className="font-paragraph text-sm text-primary-foreground/40 mt-1">
+                        {formData.contactName && formData.cpf 
+                          ? 'O proponente principal será criado automaticamente ao salvar os dados do processo'
+                          : 'Preencha o Nome do Cliente Principal e CPF em "Dados do Processo" para habilitar esta aba'}
+                      </p>
                     </CardContent>
                   </Card>
                 ) : (
