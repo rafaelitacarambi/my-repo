@@ -52,7 +52,8 @@ import {
   DocumentosdoFinanciamento,
   HistricodeInteraes,
   ServiceParties,
-  Imveis
+  Imveis,
+  ChecklistdosProponentes
 } from '@/entities';
 
 // Financing Phases Configuration
@@ -82,6 +83,21 @@ interface Proponente {
   renda: number;
   estadoCivil: string;
   possuiFgts: boolean;
+  isPrincipal?: boolean;
+  checklist?: {
+    hasFgtsContribution: boolean;
+    hasDependent: boolean;
+    declaresIncomeTax: boolean;
+    ownsProperty: boolean;
+    hasActiveFinancing: boolean;
+    isFirstAcquisition: boolean;
+  };
+  documentos?: {
+    tipo: string;
+    status: 'Pendente' | 'Recebido';
+    arquivo?: string;
+    dataRecebimento?: string;
+  }[];
 }
 
 interface Vendedor {
@@ -156,7 +172,25 @@ export default function AdminFinanciamentoDetalhePage() {
     telefone: '',
     renda: 0,
     estadoCivil: 'Solteiro(a)',
-    possuiFgts: false
+    possuiFgts: false,
+    isPrincipal: false,
+    checklist: {
+      hasFgtsContribution: false,
+      hasDependent: false,
+      declaresIncomeTax: false,
+      ownsProperty: false,
+      hasActiveFinancing: false,
+      isFirstAcquisition: false
+    },
+    documentos: [
+      { tipo: 'RG, CPF ou CNH', status: 'Pendente' },
+      { tipo: 'Comprovante de residência', status: 'Pendente' },
+      { tipo: 'Certidão de nascimento ou casamento', status: 'Pendente' },
+      { tipo: 'Holerite dos últimos 2 meses', status: 'Pendente' },
+      { tipo: 'Pró-labore dos últimos 3 meses', status: 'Pendente' },
+      { tipo: 'Extrato do FGTS', status: 'Pendente' },
+      { tipo: 'Declaração de Imposto de Renda', status: 'Pendente' }
+    ]
   });
 
   const [newVendedor, setNewVendedor] = useState<Vendedor>({
@@ -235,13 +269,14 @@ export default function AdminFinanciamentoDetalhePage() {
         });
 
         // Load related data
-        const [clientesRes, usuariosRes, pendenciasRes, tarefasRes, documentosRes, historicoRes] = await Promise.all([
+        const [clientesRes, usuariosRes, pendenciasRes, tarefasRes, documentosRes, historicoRes, checklistRes] = await Promise.all([
           BaseCrudService.getAll<Clients>('clientes'),
           BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema'),
           BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento'),
           BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento'),
           BaseCrudService.getAll<DocumentosdoFinanciamento>('documentosfinanciamento'),
-          BaseCrudService.getAll<HistricodeInteraes>('historicointeracoes')
+          BaseCrudService.getAll<HistricodeInteraes>('historicointeracoes'),
+          BaseCrudService.getAll<ChecklistdosProponentes>('checklistproponentes')
         ]);
 
         setClientes(clientesRes.items);
@@ -252,6 +287,57 @@ export default function AdminFinanciamentoDetalhePage() {
         setHistorico(historicoRes.items.filter(h => h.atendimentoRef === atendimentoId).sort((a, b) => 
           new Date(b.interactionDate || '').getTime() - new Date(a.interactionDate || '').getTime()
         ));
+
+        // Auto-create proponente principal if contactName and CPF exist
+        if (atend.contactName && formData.cpf) {
+          const existingProponentePrincipal = proponentes.find(p => p.isPrincipal);
+          if (!existingProponentePrincipal) {
+            const proponentePrincipal: Proponente = {
+              _id: crypto.randomUUID(),
+              nome: atend.contactName,
+              cpf: formData.cpf,
+              telefone: atend.contactPhone || '',
+              renda: 0,
+              estadoCivil: 'Solteiro(a)',
+              possuiFgts: false,
+              isPrincipal: true,
+              checklist: {
+                hasFgtsContribution: false,
+                hasDependent: false,
+                declaresIncomeTax: false,
+                ownsProperty: false,
+                hasActiveFinancing: false,
+                isFirstAcquisition: false
+              },
+              documentos: [
+                { tipo: 'RG, CPF ou CNH', status: 'Pendente' },
+                { tipo: 'Comprovante de residência', status: 'Pendente' },
+                { tipo: 'Certidão de nascimento ou casamento', status: 'Pendente' },
+                { tipo: 'Holerite dos últimos 2 meses', status: 'Pendente' },
+                { tipo: 'Pró-labore dos últimos 3 meses', status: 'Pendente' },
+                { tipo: 'Extrato do FGTS', status: 'Pendente' },
+                { tipo: 'Declaração de Imposto de Renda', status: 'Pendente' }
+              ]
+            };
+            setProponentes([proponentePrincipal]);
+            
+            // Create checklist in database
+            const checklistData: ChecklistdosProponentes = {
+              _id: crypto.randomUUID(),
+              atendimentoRef: atendimentoId,
+              clientRef: proponentePrincipal._id,
+              hasFgtsContribution: false,
+              hasDependent: false,
+              declaresIncomeTax: false,
+              ownsProperty: false,
+              hasActiveFinancing: false,
+              isFirstAcquisition: false
+            };
+            await BaseCrudService.create('checklistproponentes', checklistData);
+            
+            await createHistoryEntry(`Proponente principal criado automaticamente: ${proponentePrincipal.nome}`);
+          }
+        }
 
       } catch (error) {
         console.error('Error loading data:', error);
@@ -279,6 +365,74 @@ export default function AdminFinanciamentoDetalhePage() {
       await createHistoryEntry(`Campo "${field}" atualizado`);
       
       setAtendimento({ ...atendimento, ...updates });
+      
+      // Auto-create or update proponente principal when contactName or CPF changes
+      if ((field === 'contactName' || field === 'cpf') && formData.contactName && formData.cpf) {
+        const existingProponentePrincipal = proponentes.find(p => p.isPrincipal);
+        
+        if (!existingProponentePrincipal) {
+          // Create new proponente principal
+          const proponentePrincipal: Proponente = {
+            _id: crypto.randomUUID(),
+            nome: field === 'contactName' ? value : formData.contactName,
+            cpf: field === 'cpf' ? value : formData.cpf,
+            telefone: formData.contactPhone || '',
+            renda: 0,
+            estadoCivil: 'Solteiro(a)',
+            possuiFgts: false,
+            isPrincipal: true,
+            checklist: {
+              hasFgtsContribution: false,
+              hasDependent: false,
+              declaresIncomeTax: false,
+              ownsProperty: false,
+              hasActiveFinancing: false,
+              isFirstAcquisition: false
+            },
+            documentos: [
+              { tipo: 'RG, CPF ou CNH', status: 'Pendente' },
+              { tipo: 'Comprovante de residência', status: 'Pendente' },
+              { tipo: 'Certidão de nascimento ou casamento', status: 'Pendente' },
+              { tipo: 'Holerite dos últimos 2 meses', status: 'Pendente' },
+              { tipo: 'Pró-labore dos últimos 3 meses', status: 'Pendente' },
+              { tipo: 'Extrato do FGTS', status: 'Pendente' },
+              { tipo: 'Declaração de Imposto de Renda', status: 'Pendente' }
+            ]
+          };
+          setProponentes([proponentePrincipal, ...proponentes]);
+          
+          // Create checklist in database
+          const checklistData: ChecklistdosProponentes = {
+            _id: crypto.randomUUID(),
+            atendimentoRef: atendimento._id,
+            clientRef: proponentePrincipal._id,
+            hasFgtsContribution: false,
+            hasDependent: false,
+            declaresIncomeTax: false,
+            ownsProperty: false,
+            hasActiveFinancing: false,
+            isFirstAcquisition: false
+          };
+          await BaseCrudService.create('checklistproponentes', checklistData);
+          
+          await createHistoryEntry(`Proponente principal criado automaticamente: ${proponentePrincipal.nome}`);
+        } else {
+          // Update existing proponente principal
+          const updatedProponentes = proponentes.map(p => {
+            if (p.isPrincipal) {
+              return {
+                ...p,
+                nome: field === 'contactName' ? value : p.nome,
+                cpf: field === 'cpf' ? value : p.cpf,
+                telefone: field === 'contactPhone' ? value : p.telefone
+              };
+            }
+            return p;
+          });
+          setProponentes(updatedProponentes);
+          await createHistoryEntry(`Proponente principal atualizado automaticamente`);
+        }
+      }
     } catch (error) {
       console.error('Error auto-saving:', error);
     }
@@ -343,9 +497,26 @@ export default function AdminFinanciamentoDetalhePage() {
   };
 
   // Add proponente
-  const handleAddProponente = () => {
+  const handleAddProponente = async () => {
     const proponente = { ...newProponente, _id: crypto.randomUUID() };
     setProponentes([...proponentes, proponente]);
+    
+    // Create checklist in database
+    if (atendimento) {
+      const checklistData: ChecklistdosProponentes = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: atendimento._id,
+        clientRef: proponente._id,
+        hasFgtsContribution: proponente.checklist?.hasFgtsContribution || false,
+        hasDependent: proponente.checklist?.hasDependent || false,
+        declaresIncomeTax: proponente.checklist?.declaresIncomeTax || false,
+        ownsProperty: proponente.checklist?.ownsProperty || false,
+        hasActiveFinancing: proponente.checklist?.hasActiveFinancing || false,
+        isFirstAcquisition: proponente.checklist?.isFirstAcquisition || false
+      };
+      await BaseCrudService.create('checklistproponentes', checklistData);
+    }
+    
     createHistoryEntry(`Proponente adicionado: ${proponente.nome}`);
     setNewProponente({
       _id: '',
@@ -354,7 +525,25 @@ export default function AdminFinanciamentoDetalhePage() {
       telefone: '',
       renda: 0,
       estadoCivil: 'Solteiro(a)',
-      possuiFgts: false
+      possuiFgts: false,
+      isPrincipal: false,
+      checklist: {
+        hasFgtsContribution: false,
+        hasDependent: false,
+        declaresIncomeTax: false,
+        ownsProperty: false,
+        hasActiveFinancing: false,
+        isFirstAcquisition: false
+      },
+      documentos: [
+        { tipo: 'RG, CPF ou CNH', status: 'Pendente' },
+        { tipo: 'Comprovante de residência', status: 'Pendente' },
+        { tipo: 'Certidão de nascimento ou casamento', status: 'Pendente' },
+        { tipo: 'Holerite dos últimos 2 meses', status: 'Pendente' },
+        { tipo: 'Pró-labore dos últimos 3 meses', status: 'Pendente' },
+        { tipo: 'Extrato do FGTS', status: 'Pendente' },
+        { tipo: 'Declaração de Imposto de Renda', status: 'Pendente' }
+      ]
     });
     setShowAddProponenteDialog(false);
   };
@@ -362,9 +551,143 @@ export default function AdminFinanciamentoDetalhePage() {
   // Remove proponente
   const handleRemoveProponente = (id: string) => {
     const proponente = proponentes.find(p => p._id === id);
+    if (proponente?.isPrincipal) {
+      alert('Não é possível remover o proponente principal. Altere os dados do processo primeiro.');
+      return;
+    }
     setProponentes(proponentes.filter(p => p._id !== id));
     if (proponente) {
       createHistoryEntry(`Proponente removido: ${proponente.nome}`);
+    }
+  };
+
+  // Update proponente checklist
+  const handleUpdateProponenteChecklist = async (proponenteId: string, field: keyof Proponente['checklist'], value: boolean) => {
+    const updatedProponentes = proponentes.map(p => {
+      if (p._id === proponenteId && p.checklist) {
+        return {
+          ...p,
+          checklist: {
+            ...p.checklist,
+            [field]: value
+          }
+        };
+      }
+      return p;
+    });
+    setProponentes(updatedProponentes);
+    
+    // Update in database
+    if (atendimento) {
+      const checklistRes = await BaseCrudService.getAll<ChecklistdosProponentes>('checklistproponentes');
+      const existingChecklist = checklistRes.items.find(c => c.clientRef === proponenteId && c.atendimentoRef === atendimento._id);
+      
+      if (existingChecklist) {
+        await BaseCrudService.update('checklistproponentes', {
+          _id: existingChecklist._id,
+          [field]: value
+        });
+      }
+    }
+    
+    const proponente = proponentes.find(p => p._id === proponenteId);
+    if (proponente) {
+      await createHistoryEntry(`Checklist do proponente ${proponente.nome} atualizado: ${field} = ${value ? 'Sim' : 'Não'}`);
+    }
+  };
+
+  // Toggle proponente documento
+  const handleToggleProponenteDocumento = async (proponenteId: string, documentoTipo: string) => {
+    const proponente = proponentes.find(p => p._id === proponenteId);
+    if (!proponente) return;
+
+    const updatedProponentes = proponentes.map(p => {
+      if (p._id === proponenteId && p.documentos) {
+        const updatedDocumentos = p.documentos.map(doc => {
+          if (doc.tipo === documentoTipo) {
+            const newStatus = doc.status === 'Pendente' ? 'Recebido' : 'Pendente';
+            return {
+              ...doc,
+              status: newStatus as 'Pendente' | 'Recebido',
+              dataRecebimento: newStatus === 'Recebido' ? new Date().toISOString() : undefined
+            };
+          }
+          return doc;
+        });
+        return { ...p, documentos: updatedDocumentos };
+      }
+      return p;
+    });
+
+    setProponentes(updatedProponentes);
+
+    const documento = proponente.documentos?.find(d => d.tipo === documentoTipo);
+    if (documento) {
+      const newStatus = documento.status === 'Pendente' ? 'Recebido' : 'Pendente';
+      await createHistoryEntry(`Documento "${documentoTipo}" do proponente ${proponente.nome} marcado como ${newStatus}`);
+    }
+  };
+
+  // Upload documento for proponente
+  const handleUploadProponenteDocumento = (proponenteId: string, documentoTipo: string) => {
+    const proponente = proponentes.find(p => p._id === proponenteId);
+    if (proponente) {
+      createHistoryEntry(`Upload de documento "${documentoTipo}" para proponente ${proponente.nome}`);
+    }
+  };
+
+  // Remove documento file for proponente
+  const handleRemoveProponenteDocumentoFile = async (proponenteId: string, documentoTipo: string) => {
+    const proponente = proponentes.find(p => p._id === proponenteId);
+    if (!proponente) return;
+
+    const updatedProponentes = proponentes.map(p => {
+      if (p._id === proponenteId && p.documentos) {
+        const updatedDocumentos = p.documentos.map(doc => {
+          if (doc.tipo === documentoTipo) {
+            return { ...doc, arquivo: undefined };
+          }
+          return doc;
+        });
+        return { ...p, documentos: updatedDocumentos };
+      }
+      return p;
+    });
+
+    setProponentes(updatedProponentes);
+    await createHistoryEntry(`Arquivo do documento "${documentoTipo}" do proponente ${proponente.nome} removido`);
+  };
+
+  // Create pendencia from proponente documento
+  const handleCreatePendenciaFromProponenteDoc = async (proponenteId: string, documentoTipo: string) => {
+    if (!atendimento) return;
+
+    const proponente = proponentes.find(p => p._id === proponenteId);
+    if (!proponente) return;
+
+    try {
+      const now = new Date().toISOString();
+      const pendencia: PendnciasdoFinanciamento = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: atendimento._id,
+        title: `Documento pendente: ${documentoTipo} - Proponente ${proponente.nome}`,
+        description: `Documento "${documentoTipo}" do proponente ${proponente.nome} está pendente de recebimento.`,
+        status: 'PENDENTE',
+        priority: 'Alta',
+        responsiblePartyType: 'Cliente',
+        responsiblePartyDetails: proponente.nome,
+        bloqueiaFase: false,
+        creationDate: now,
+        tipo: 'Documento',
+        categoria: 'Proponente',
+        dataUltimaAtualizacao: now
+      };
+
+      await BaseCrudService.create('pendenciasfinanciamento', pendencia);
+      setPendencias([...pendencias, pendencia]);
+      await createHistoryEntry(`Pendência criada automaticamente: ${pendencia.title}`);
+    } catch (error) {
+      console.error('Error creating pendencia:', error);
     }
   };
 
@@ -1037,51 +1360,263 @@ export default function AdminFinanciamentoDetalhePage() {
                 {proponentes.length === 0 ? (
                   <Card>
                     <CardContent className="py-12 text-center">
+                      <User className="w-12 h-12 text-primary-foreground/30 mx-auto mb-3" />
                       <p className="font-paragraph text-primary-foreground/60">Nenhum proponente cadastrado</p>
+                      <p className="font-paragraph text-sm text-primary-foreground/40 mt-1">O proponente principal será criado automaticamente ao preencher os dados do processo</p>
                     </CardContent>
                   </Card>
                 ) : (
-                  proponentes.map((proponente) => (
-                    <Card key={proponente._id}>
-                      <CardContent className="py-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Nome</p>
-                              <p className="font-paragraph text-sm font-semibold">{proponente.nome}</p>
+                  proponentes.map((proponente) => {
+                    const totalDocs = proponente.documentos?.length || 0;
+                    const recebidos = proponente.documentos?.filter(d => d.status === 'Recebido').length || 0;
+                    const isComplete = totalDocs > 0 && recebidos === totalDocs;
+                    const hasPending = totalDocs > 0 && recebidos < totalDocs;
+                    const isExpanded = selectedVendedor === proponente._id;
+
+                    return (
+                      <motion.div
+                        key={proponente._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative"
+                      >
+                        <Card 
+                          className={`cursor-pointer transition-all border-2 ${
+                            isExpanded 
+                              ? 'border-secondary shadow-lg' 
+                              : isComplete 
+                                ? 'border-green-300 bg-green-50/50' 
+                                : hasPending 
+                                  ? 'border-yellow-300 bg-yellow-50/50' 
+                                  : 'border-border-gray'
+                          }`}
+                          onClick={() => setSelectedVendedor(isExpanded ? null : proponente._id)}
+                        >
+                          <CardContent className="py-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                    proponente.isPrincipal ? 'bg-secondary' : isComplete ? 'bg-green-500' : hasPending ? 'bg-yellow-500' : 'bg-gray-400'
+                                  }`}>
+                                    <User className="w-5 h-5 text-white" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="font-heading text-lg font-semibold text-primary-foreground">{proponente.nome}</h3>
+                                      {proponente.isPrincipal && (
+                                        <Badge className="text-xs bg-secondary">Principal</Badge>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <p className="font-paragraph text-xs text-primary-foreground/60">{proponente.cpf}</p>
+                                      {totalDocs > 0 && (
+                                        <Badge className={`text-xs ${isComplete ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                          {recebidos}/{totalDocs} documentos
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {isExpanded && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="space-y-6 mt-4 pt-4 border-t"
+                                  >
+                                    {/* Dados Principais */}
+                                    <div>
+                                      <h4 className="font-heading text-sm font-semibold text-secondary mb-3 flex items-center gap-2">
+                                        <User className="w-4 h-4" />
+                                        Dados Principais
+                                      </h4>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-light-gray p-3 rounded">
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Nome</p>
+                                          <p className="font-paragraph text-sm font-semibold">{proponente.nome}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">CPF</p>
+                                          <p className="font-paragraph text-sm">{proponente.cpf}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Telefone</p>
+                                          <p className="font-paragraph text-sm">{proponente.telefone}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Renda</p>
+                                          <p className="font-paragraph text-sm">R$ {proponente.renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Estado Civil</p>
+                                          <p className="font-paragraph text-sm">{proponente.estadoCivil}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">FGTS</p>
+                                          <Badge className={proponente.possuiFgts ? 'bg-green-500' : 'bg-gray-400'}>
+                                            {proponente.possuiFgts ? 'Sim' : 'Não'}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Checklist de Perguntas */}
+                                    {proponente.checklist && (
+                                      <div>
+                                        <h4 className="font-heading text-sm font-semibold text-secondary mb-3 flex items-center gap-2">
+                                          <CheckCircle className="w-4 h-4" />
+                                          Checklist de Perguntas
+                                        </h4>
+                                        <div className="space-y-2">
+                                          <div className="flex items-center gap-3 p-2 bg-light-gray rounded">
+                                            <Checkbox
+                                              checked={proponente.checklist.hasFgtsContribution}
+                                              onCheckedChange={(checked) => handleUpdateProponenteChecklist(proponente._id, 'hasFgtsContribution', checked as boolean)}
+                                            />
+                                            <Label className="font-paragraph text-sm flex-1">Possui 3 anos de contribuição FGTS?</Label>
+                                          </div>
+                                          <div className="flex items-center gap-3 p-2 bg-light-gray rounded">
+                                            <Checkbox
+                                              checked={proponente.checklist.hasDependent}
+                                              onCheckedChange={(checked) => handleUpdateProponenteChecklist(proponente._id, 'hasDependent', checked as boolean)}
+                                            />
+                                            <Label className="font-paragraph text-sm flex-1">Possui dependente ou participante?</Label>
+                                          </div>
+                                          <div className="flex items-center gap-3 p-2 bg-light-gray rounded">
+                                            <Checkbox
+                                              checked={proponente.checklist.declaresIncomeTax}
+                                              onCheckedChange={(checked) => handleUpdateProponenteChecklist(proponente._id, 'declaresIncomeTax', checked as boolean)}
+                                            />
+                                            <Label className="font-paragraph text-sm flex-1">Declara imposto de renda?</Label>
+                                          </div>
+                                          <div className="flex items-center gap-3 p-2 bg-light-gray rounded">
+                                            <Checkbox
+                                              checked={proponente.checklist.ownsProperty}
+                                              onCheckedChange={(checked) => handleUpdateProponenteChecklist(proponente._id, 'ownsProperty', checked as boolean)}
+                                            />
+                                            <Label className="font-paragraph text-sm flex-1">Possui imóvel?</Label>
+                                          </div>
+                                          <div className="flex items-center gap-3 p-2 bg-light-gray rounded">
+                                            <Checkbox
+                                              checked={proponente.checklist.hasActiveFinancing}
+                                              onCheckedChange={(checked) => handleUpdateProponenteChecklist(proponente._id, 'hasActiveFinancing', checked as boolean)}
+                                            />
+                                            <Label className="font-paragraph text-sm flex-1">Possui financiamento ativo?</Label>
+                                          </div>
+                                          <div className="flex items-center gap-3 p-2 bg-light-gray rounded">
+                                            <Checkbox
+                                              checked={proponente.checklist.isFirstAcquisition}
+                                              onCheckedChange={(checked) => handleUpdateProponenteChecklist(proponente._id, 'isFirstAcquisition', checked as boolean)}
+                                            />
+                                            <Label className="font-paragraph text-sm flex-1">Primeira aquisição no âmbito SFH?</Label>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Checklist de Documentos */}
+                                    {proponente.documentos && proponente.documentos.length > 0 && (
+                                      <div>
+                                        <h4 className="font-heading text-sm font-semibold text-secondary mb-3 flex items-center gap-2">
+                                          <FileText className="w-4 h-4" />
+                                          Checklist de Documentos
+                                        </h4>
+                                        <div className="space-y-2">
+                                          {proponente.documentos.map((doc) => (
+                                            <div 
+                                              key={doc.tipo} 
+                                              className={`p-3 rounded border-2 transition-all ${
+                                                doc.status === 'Recebido' 
+                                                  ? 'bg-green-50 border-green-300' 
+                                                  : 'bg-yellow-50 border-yellow-300'
+                                              }`}
+                                            >
+                                              <div className="flex items-start gap-3">
+                                                <Checkbox
+                                                  checked={doc.status === 'Recebido'}
+                                                  onCheckedChange={() => handleToggleProponenteDocumento(proponente._id, doc.tipo)}
+                                                  className="mt-1"
+                                                />
+                                                <div className="flex-1">
+                                                  <div className="flex items-center gap-2 mb-2">
+                                                    <FileText className={`w-4 h-4 ${doc.status === 'Recebido' ? 'text-green-600' : 'text-yellow-600'}`} />
+                                                    <span className="font-paragraph text-sm font-semibold">{doc.tipo}</span>
+                                                    <Badge className={`text-xs ml-auto ${doc.status === 'Recebido' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                                      {doc.status}
+                                                    </Badge>
+                                                  </div>
+                                                  {doc.dataRecebimento && (
+                                                    <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
+                                                      Recebido em: {new Date(doc.dataRecebimento).toLocaleDateString('pt-BR')}
+                                                    </p>
+                                                  )}
+                                                  <div className="flex gap-2">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleUploadProponenteDocumento(proponente._id, doc.tipo)}
+                                                      className="h-8 text-xs"
+                                                    >
+                                                      <Upload className="w-3 h-3 mr-1" />
+                                                      Upload
+                                                    </Button>
+                                                    {doc.arquivo && (
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleRemoveProponenteDocumentoFile(proponente._id, doc.tipo)}
+                                                        className="h-8 text-xs text-destructive"
+                                                      >
+                                                        <X className="w-3 h-3 mr-1" />
+                                                        Remover
+                                                      </Button>
+                                                    )}
+                                                    {doc.status === 'Pendente' && (
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleCreatePendenciaFromProponenteDoc(proponente._id, doc.tipo)}
+                                                        className="h-8 text-xs"
+                                                      >
+                                                        <AlertCircle className="w-3 h-3 mr-1" />
+                                                        Criar Pendência
+                                                      </Button>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                )}
+                              </div>
+
+                              <div className="flex flex-col gap-2">
+                                {!proponente.isPrincipal && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveProponente(proponente._id);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">CPF</p>
-                              <p className="font-paragraph text-sm">{proponente.cpf}</p>
-                            </div>
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Telefone</p>
-                              <p className="font-paragraph text-sm">{proponente.telefone}</p>
-                            </div>
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Renda</p>
-                              <p className="font-paragraph text-sm">R$ {proponente.renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                            </div>
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Estado Civil</p>
-                              <p className="font-paragraph text-sm">{proponente.estadoCivil}</p>
-                            </div>
-                            <div>
-                              <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">FGTS</p>
-                              <Badge className={proponente.possuiFgts ? 'bg-green-500' : 'bg-gray-400'}>
-                                {proponente.possuiFgts ? 'Sim' : 'Não'}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleRemoveProponente(proponente._id)}>
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })
                 )}
               </div>
             </TabsContent>
