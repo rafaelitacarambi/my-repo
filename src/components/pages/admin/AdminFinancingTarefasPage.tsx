@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
 import { 
   CheckSquare, 
   Plus, 
@@ -9,13 +11,16 @@ import {
   Clock,
   Search,
   Filter,
-  ArrowLeft,
   Calendar,
-  User,
   FileText,
   CheckCircle,
   RotateCcw,
-  Play
+  Play,
+  ExternalLink,
+  AlertCircle,
+  X,
+  Save,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,59 +29,65 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
 import { FinancingTasks, ServiceRecords, UsuriosdoSistema, HistricodeInteraes } from '@/entities';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Kanban columns for tasks (Trello-style)
+const TASK_COLUMNS = [
+  { id: 'todo', name: 'A Fazer', color: 'bg-gray-50', borderColor: 'border-gray-300' },
+  { id: 'in-progress', name: 'Em Andamento', color: 'bg-blue-50', borderColor: 'border-blue-300' },
+  { id: 'done', name: 'Concluídas', color: 'bg-green-50', borderColor: 'border-green-300' }
+];
+
+// Map task status to column
+const getColumnForStatus = (status?: string): string => {
+  if (status === 'Concluída') return 'done';
+  if (status === 'Em andamento' || status === 'Em Progresso') return 'in-progress';
+  return 'todo';
+};
+
+// Map column to status
+const getStatusForColumn = (columnId: string): string => {
+  if (columnId === 'done') return 'Concluída';
+  if (columnId === 'in-progress') return 'Em andamento';
+  return 'Aberta';
+};
+
 export default function AdminFinancingTarefasPage() {
-  console.log('[AdminFinancingTarefasPage] Component mounted');
-  
   const navigate = useNavigate();
   const { toast } = useToast();
   const [tarefas, setTarefas] = useState<FinancingTasks[]>([]);
-  const [filteredTarefas, setFilteredTarefas] = useState<FinancingTasks[]>([]);
   const [atendimentos, setAtendimentos] = useState<ServiceRecords[]>([]);
   const [usuarios, setUsuarios] = useState<UsuriosdoSistema[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
+  const [atendimentoFilter, setAtendimentoFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTarefa, setEditingTarefa] = useState<FinancingTasks | null>(null);
 
   const [formData, setFormData] = useState({
     titulo: '',
     description: '',
-    status: 'Aberta',
     atendimentoRef: '',
-    pendenciaRef: '',
     responsibleType: 'Interno',
-    internalResponsibleId: '',
+    responsavelExternoRef: '',
     externalResponsibleName: '',
     externalResponsibleContact: '',
-    canalNotificacao: 'WhatsApp',
-    dueDate: '',
-    responsavelExternoRef: ''
+    dueDate: ''
   });
 
   useEffect(() => {
-    console.log('[AdminFinancingTarefasPage] useEffect triggered - loading data');
     loadData();
   }, []);
 
-  useEffect(() => {
-    filterTarefas();
-  }, [tarefas, searchTerm, statusFilter, responsibleFilter]);
-
   const loadData = async () => {
-    console.log('[AdminFinancingTarefasPage] loadData() called');
     setIsLoading(true);
     
     const [tarefasResult, atendimentosResult, usuariosResult] = await Promise.all([
@@ -85,20 +96,15 @@ export default function AdminFinancingTarefasPage() {
       BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema')
     ]);
 
-    console.log('[AdminFinancingTarefasPage] Data loaded:', {
-      tarefasCount: tarefasResult.items.length,
-      atendimentosCount: atendimentosResult.items.length,
-      usuariosCount: usuariosResult.items.length
-    });
-
     setTarefas(tarefasResult.items);
-    setAtendimentos(atendimentosResult.items);
+    setAtendimentos(atendimentosResult.items.filter(a => a.serviceType === 'Financiamento'));
     setUsuarios(usuariosResult.items.filter(u => u.ativo));
     setIsLoading(false);
   };
 
-  const filterTarefas = () => {
-    let filtered = [...tarefas];
+  // Get filtered tasks by column and filters
+  const getTasksByColumn = (columnId: string) => {
+    let filtered = tarefas.filter(t => getColumnForStatus(t.status) === columnId);
 
     if (searchTerm) {
       filtered = filtered.filter(t => 
@@ -107,89 +113,82 @@ export default function AdminFinancingTarefasPage() {
       );
     }
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(t => t.status === statusFilter);
+    if (atendimentoFilter !== 'all') {
+      filtered = filtered.filter(t => t.atendimentoRef === atendimentoFilter);
     }
 
-    if (responsibleFilter !== 'all') {
-      filtered = filtered.filter(t => t.responsibleType === responsibleFilter);
-    }
-
-    setFilteredTarefas(filtered);
+    return filtered;
   };
 
   const handleCreate = () => {
-    console.log('[AdminFinancingTarefasPage] handleCreate() - Opening dialog');
     setEditingTarefa(null);
     setFormData({
       titulo: '',
       description: '',
-      status: 'Aberta',
       atendimentoRef: '',
-      pendenciaRef: '',
       responsibleType: 'Interno',
-      internalResponsibleId: '',
+      responsavelExternoRef: '',
       externalResponsibleName: '',
       externalResponsibleContact: '',
-      canalNotificacao: 'WhatsApp',
-      dueDate: '',
-      responsavelExternoRef: ''
+      dueDate: ''
     });
     setIsDialogOpen(true);
   };
 
   const handleEdit = (tarefa: FinancingTasks) => {
-    console.log('[AdminFinancingTarefasPage] handleEdit() - Editing:', tarefa._id);
     setEditingTarefa(tarefa);
     setFormData({
       titulo: tarefa.titulo || '',
       description: tarefa.description || '',
-      status: tarefa.status || 'Aberta',
       atendimentoRef: tarefa.atendimentoRef || '',
-      pendenciaRef: tarefa.pendenciaRef || '',
       responsibleType: tarefa.responsibleType || 'Interno',
-      internalResponsibleId: tarefa.internalResponsibleId || '',
+      responsavelExternoRef: tarefa.responsavelExternoRef || '',
       externalResponsibleName: tarefa.externalResponsibleName || '',
       externalResponsibleContact: tarefa.externalResponsibleContact || '',
-      canalNotificacao: tarefa.canalNotificacao || 'WhatsApp',
-      dueDate: tarefa.dueDate ? format(new Date(tarefa.dueDate), 'yyyy-MM-dd') : '',
-      responsavelExternoRef: tarefa.responsavelExternoRef || ''
+      dueDate: tarefa.dueDate ? format(new Date(tarefa.dueDate), 'yyyy-MM-dd') : ''
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    console.log('[AdminFinancingTarefasPage] handleDelete() - Deleting:', id);
     if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
 
     setTarefas(prev => prev.filter(t => t._id !== id));
     
     await BaseCrudService.delete('tarefasfinanciamento', id);
-    console.log('[AdminFinancingTarefasPage] Tarefa deleted successfully');
+    
+    toast({
+      title: "Tarefa excluída",
+      description: "A tarefa foi removida com sucesso"
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[AdminFinancingTarefasPage] handleSubmit() - Form data:', formData);
+
+    if (!formData.titulo || !formData.atendimentoRef) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha o título e selecione um processo",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const tarefaData: Partial<FinancingTasks> = {
       titulo: formData.titulo,
       description: formData.description,
-      status: formData.status,
+      status: 'Aberta',
       atendimentoRef: formData.atendimentoRef,
-      pendenciaRef: formData.pendenciaRef,
       responsibleType: formData.responsibleType,
-      internalResponsibleId: formData.internalResponsibleId,
+      responsavelExternoRef: formData.responsavelExternoRef,
       externalResponsibleName: formData.externalResponsibleName,
       externalResponsibleContact: formData.externalResponsibleContact,
-      canalNotificacao: formData.canalNotificacao,
       dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-      creationDate: editingTarefa ? undefined : new Date().toISOString(),
-      responsavelExternoRef: formData.responsavelExternoRef
+      creationDate: editingTarefa ? undefined : new Date().toISOString()
     };
 
     if (editingTarefa) {
-      console.log('[AdminFinancingTarefasPage] Updating tarefa:', editingTarefa._id);
       setTarefas(prev => prev.map(t => 
         t._id === editingTarefa._id ? { ...t, ...tarefaData } : t
       ));
@@ -198,8 +197,12 @@ export default function AdminFinancingTarefasPage() {
         _id: editingTarefa._id,
         ...tarefaData
       });
+
+      toast({
+        title: "Tarefa atualizada",
+        description: "As alterações foram salvas"
+      });
     } else {
-      console.log('[AdminFinancingTarefasPage] Creating new tarefa');
       const newTarefa = {
         _id: crypto.randomUUID(),
         ...tarefaData
@@ -208,165 +211,148 @@ export default function AdminFinancingTarefasPage() {
       setTarefas(prev => [newTarefa, ...prev]);
       
       await BaseCrudService.create('tarefasfinanciamento', newTarefa);
+
+      if (newTarefa.atendimentoRef) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: newTarefa.atendimentoRef,
+          tipoEvento: 'Tarefa_Criada',
+          interactionType: 'Criação de tarefa',
+          interactionDescription: `Nova tarefa criada: "${newTarefa.titulo}"`,
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+      }
+
+      toast({
+        title: "Tarefa criada",
+        description: "A nova tarefa foi adicionada ao processo"
+      });
     }
 
     setIsDialogOpen(false);
-    console.log('[AdminFinancingTarefasPage] Operation completed successfully');
-  };
-
-  const getStatusBadge = (status?: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
-      'Aberta': { variant: 'destructive', label: 'Aberta' },
-      'Em andamento': { variant: 'secondary', label: 'Em andamento' },
-      'Concluída': { variant: 'default', label: 'Concluída' }
-    };
-    const config = variants[status || 'Aberta'] || variants['Aberta'];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const isOverdue = (dueDate?: Date | string, status?: string) => {
-    if (!dueDate || status === 'Concluída') return false;
-    return new Date(dueDate) < new Date();
-  };
-
-  const hasActivityToday = (creationDate?: Date | string) => {
-    if (!creationDate) return false;
-    return new Date(creationDate).toDateString() === new Date().toDateString();
   };
 
   const handleIniciar = async (tarefaId: string) => {
     const tarefa = tarefas.find(t => t._id === tarefaId);
     if (!tarefa) return;
 
-    // Optimistic update
     setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: 'Em andamento' } : t));
 
-    try {
-      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
-        _id: tarefaId,
-        status: 'Em andamento'
-      });
+    await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
+      _id: tarefaId,
+      status: 'Em andamento'
+    });
 
-      // Create history entry
-      if (tarefa.atendimentoRef) {
-        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-          _id: crypto.randomUUID(),
-          atendimentoRef: tarefa.atendimentoRef,
-          tipoEvento: 'Tarefa_Iniciada',
-          interactionType: 'Início de tarefa',
-          interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi iniciada`,
-          interactionDate: new Date().toISOString(),
-          autorTipo: 'Sistema'
-        });
-      }
-
-      toast({
-        title: "▶️ Tarefa iniciada",
-        description: `"${tarefa.titulo || tarefa.description}" está em andamento`,
+    if (tarefa.atendimentoRef) {
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: tarefa.atendimentoRef,
+        tipoEvento: 'Tarefa_Iniciada',
+        interactionType: 'Início de tarefa',
+        interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi iniciada`,
+        interactionDate: new Date().toISOString(),
+        autorTipo: 'Sistema'
       });
-
-      await loadData();
-    } catch (error) {
-      console.error('Error starting task:', error);
-      toast({
-        title: "Erro ao iniciar",
-        description: "Não foi possível iniciar a tarefa",
-        variant: "destructive"
-      });
-      await loadData(); // Revert on failure
     }
+
+    toast({
+      title: "Tarefa iniciada",
+      description: `"${tarefa.titulo || tarefa.description}" está em andamento`
+    });
   };
 
   const handleConcluir = async (tarefaId: string) => {
     const tarefa = tarefas.find(t => t._id === tarefaId);
     if (!tarefa) return;
 
-    // Optimistic update
     setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: 'Concluída' } : t));
 
-    try {
-      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
-        _id: tarefaId,
-        status: 'Concluída'
-      });
+    await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
+      _id: tarefaId,
+      status: 'Concluída'
+    });
 
-      // Create history entry
-      if (tarefa.atendimentoRef) {
-        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-          _id: crypto.randomUUID(),
-          atendimentoRef: tarefa.atendimentoRef,
-          tipoEvento: 'Tarefa_Concluida',
-          interactionType: 'Conclusão de tarefa',
-          interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi concluída`,
-          interactionDate: new Date().toISOString(),
-          autorTipo: 'Sistema'
-        });
-      }
-
-      toast({
-        title: "✅ Tarefa concluída",
-        description: `"${tarefa.titulo || tarefa.description}" foi finalizada`,
+    if (tarefa.atendimentoRef) {
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: tarefa.atendimentoRef,
+        tipoEvento: 'Tarefa_Concluida',
+        interactionType: 'Conclusão de tarefa',
+        interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi concluída`,
+        interactionDate: new Date().toISOString(),
+        autorTipo: 'Sistema'
       });
-
-      await loadData();
-    } catch (error) {
-      console.error('Error completing task:', error);
-      toast({
-        title: "Erro ao concluir",
-        description: "Não foi possível concluir a tarefa",
-        variant: "destructive"
-      });
-      await loadData(); // Revert on failure
     }
+
+    toast({
+      title: "Tarefa concluída",
+      description: `"${tarefa.titulo || tarefa.description}" foi finalizada`
+    });
   };
 
   const handleReabrir = async (tarefaId: string) => {
     const tarefa = tarefas.find(t => t._id === tarefaId);
     if (!tarefa) return;
 
-    // Optimistic update
     setTarefas(prev => prev.map(t => t._id === tarefaId ? { ...t, status: 'Aberta' } : t));
 
-    try {
-      await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
-        _id: tarefaId,
-        status: 'Aberta'
-      });
+    await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
+      _id: tarefaId,
+      status: 'Aberta'
+    });
 
-      // Create history entry
-      if (tarefa.atendimentoRef) {
-        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-          _id: crypto.randomUUID(),
-          atendimentoRef: tarefa.atendimentoRef,
-          tipoEvento: 'Tarefa_Reaberta',
-          interactionType: 'Reabertura de tarefa',
-          interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi reaberta`,
-          interactionDate: new Date().toISOString(),
-          autorTipo: 'Sistema'
-        });
-      }
-
-      toast({
-        title: "🔄 Tarefa reaberta",
-        description: `"${tarefa.titulo || tarefa.description}" foi reaberta`,
+    if (tarefa.atendimentoRef) {
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: tarefa.atendimentoRef,
+        tipoEvento: 'Tarefa_Reaberta',
+        interactionType: 'Reabertura de tarefa',
+        interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" foi reaberta`,
+        interactionDate: new Date().toISOString(),
+        autorTipo: 'Sistema'
       });
+    }
 
-      await loadData();
-    } catch (error) {
-      console.error('Error reopening task:', error);
-      toast({
-        title: "Erro ao reabrir",
-        description: "Não foi possível reabrir a tarefa",
-        variant: "destructive"
+    toast({
+      title: "Tarefa reaberta",
+      description: `"${tarefa.titulo || tarefa.description}" foi reaberta`
+    });
+  };
+
+  // Handle drag and drop
+  const handleDragEnd = async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    const newStatus = getStatusForColumn(destination.droppableId);
+    const tarefa = tarefas.find(t => t._id === draggableId);
+    if (!tarefa) return;
+
+    setTarefas(prev => prev.map(t => t._id === draggableId ? { ...t, status: newStatus } : t));
+
+    await BaseCrudService.update<FinancingTasks>('tarefasfinanciamento', {
+      _id: draggableId,
+      status: newStatus
+    });
+
+    if (tarefa.atendimentoRef) {
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: tarefa.atendimentoRef,
+        tipoEvento: 'Tarefa_Movida',
+        interactionType: 'Mudança de status',
+        interactionDescription: `Tarefa "${tarefa.titulo || tarefa.description}" movida para: ${TASK_COLUMNS.find(c => c.id === destination.droppableId)?.name}`,
+        interactionDate: new Date().toISOString(),
+        autorTipo: 'Sistema'
       });
-      await loadData(); // Revert on failure
     }
   };
 
   const getResponsibleName = (tarefa: FinancingTasks) => {
-    // Priority: responsavelExternoRef (R Sales team) > internalResponsibleId (system users) > externalResponsibleName
     if (tarefa.responsavelExternoRef) {
-      // Map to R Sales team members
       const rsalesMap: Record<string, string> = {
         'catarina': 'Catarina',
         'rafael': 'Rafael',
@@ -382,273 +368,301 @@ export default function AdminFinancingTarefasPage() {
     return tarefa.externalResponsibleName || 'Não atribuído';
   };
 
+  const isOverdue = (dueDate?: Date | string, status?: string) => {
+    if (!dueDate || status === 'Concluída') return false;
+    return new Date(dueDate) < new Date();
+  };
+
+  const getDaysOpen = (creationDate?: Date | string) => {
+    if (!creationDate) return 0;
+    return differenceInDays(new Date(), new Date(creationDate));
+  };
+
+  const getAtendimentoName = (atendimentoRef?: string) => {
+    if (!atendimentoRef) return 'Sem processo';
+    const atendimento = atendimentos.find(a => a._id === atendimentoRef);
+    return atendimento?.contactName || `Processo ${atendimentoRef.substring(0, 8)}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-light-gray">
+        <Header />
+        <FinancingNavigation />
+        <div className="flex items-center justify-center py-24">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-secondary"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-light-gray">
       <Header />
       <FinancingNavigation />
-      
-      <main className="flex-1 w-full">
-        <div className="max-w-[100rem] mx-auto px-6 py-12">
-          {/* Page Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="font-heading text-4xl font-bold text-foreground mb-3">
-                Tarefas do Financiamento
-              </h1>
-              <p className="font-paragraph text-lg text-dark-gray">
-                Gerencie todas as tarefas dos processos de financiamento
-              </p>
-            </div>
-            <Button
-              onClick={handleCreate}
-              className="bg-buttonbackground hover:bg-buttonbackground/90 text-white font-paragraph"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Tarefa
-            </Button>
-          </div>
 
-          {/* Filters */}
-          <Card className="mb-8">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label className="font-paragraph mb-2">Buscar</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-dark-gray w-4 h-4" />
-                    <Input
-                      placeholder="Buscar tarefas..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 font-paragraph"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="font-paragraph mb-2">Status</Label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Aberta">Aberta</SelectItem>
-                      <SelectItem value="Em andamento">Em andamento</SelectItem>
-                      <SelectItem value="Concluída">Concluída</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="font-paragraph mb-2">Responsável</Label>
-                  <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Interno">Interno</SelectItem>
-                      <SelectItem value="Externo">Externo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setStatusFilter('all');
-                      setResponsibleFilter('all');
-                    }}
-                    className="w-full font-paragraph"
-                  >
-                    <Filter className="w-4 h-4 mr-2" />
-                    Limpar Filtros
-                  </Button>
-                </div>
+      {/* Header Section */}
+      <section className="w-full bg-gradient-to-br from-secondary via-secondary/90 to-buttonbackground py-8 sticky top-0 z-40 shadow-lg">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="font-heading text-3xl lg:text-4xl text-white mb-2">
+                  Tarefas do Financiamento
+                </h1>
+                <p className="font-paragraph text-sm text-white/90">
+                  Controle operacional estilo Trello - Arraste cartões entre colunas
+                </p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Total</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold font-heading">{tarefas.length}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Abertas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold font-heading text-red-600">
-                  {tarefas.filter(t => t.status === 'Aberta').length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Em Andamento</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold font-heading text-yellow-600">
-                  {tarefas.filter(t => t.status === 'Em andamento').length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Atrasadas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold font-heading text-orange-600">
-                  {tarefas.filter(t => t.status !== 'Concluída' && isOverdue(t.dueDate)).length}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Table */}
-          <Card>
-            <CardContent className="p-0">
-              {isLoading ? (
-                <div className="p-12 text-center">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-buttonbackground"></div>
-                </div>
-              ) : filteredTarefas.length === 0 ? (
-                <div className="p-12 text-center text-dark-gray font-paragraph">
-                  Nenhuma tarefa encontrada
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="font-paragraph">Título</TableHead>
-                      <TableHead className="font-paragraph">Status</TableHead>
-                      <TableHead className="font-paragraph">Responsável</TableHead>
-                      <TableHead className="font-paragraph">Tipo</TableHead>
-                      <TableHead className="font-paragraph">Prazo</TableHead>
-                      <TableHead className="font-paragraph">Canal</TableHead>
-                      <TableHead className="font-paragraph text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTarefas.map((tarefa) => {
-                      const overdueStatus = isOverdue(tarefa.dueDate, tarefa.status);
-                      const todayActivity = hasActivityToday(tarefa.creationDate);
-                      
-                      return (
-                        <TableRow key={tarefa._id} className={
-                          overdueStatus ? 'bg-red-50' : todayActivity ? 'bg-green-50' : ''
-                        }>
-                          <TableCell className="font-paragraph font-medium">
-                            <div>
-                              <div className={overdueStatus ? 'text-red-700 font-bold' : ''}>
-                                {tarefa.titulo}
-                                {overdueStatus && (
-                                  <Badge className="ml-2 text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
-                                )}
-                                {todayActivity && (
-                                  <Badge className="ml-2 text-xs bg-green-600 text-white">✓ HOJE</Badge>
-                                )}
-                              </div>
-                              {tarefa.description && (
-                                <div className="text-sm text-dark-gray mt-1 line-clamp-1">
-                                  {tarefa.description}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>{getStatusBadge(tarefa.status)}</TableCell>
-                          <TableCell className="font-paragraph">
-                            <div>
-                              <div className="font-semibold">{getResponsibleName(tarefa)}</div>
-                              <div className="text-xs text-dark-gray">
-                                {tarefa.responsavelExternoRef ? 'R Sales' : tarefa.responsibleType === 'Interno' ? 'Interno' : 'Externo'}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-paragraph">
-                            {tarefa.responsibleType || '-'}
-                          </TableCell>
-                          <TableCell className="font-paragraph">
-                            {tarefa.dueDate ? (
-                              <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
-                                {format(new Date(tarefa.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                                {overdueStatus && (
-                                  <div className="text-xs">Atrasada</div>
-                                )}
-                              </div>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell className="font-paragraph">
-                            {tarefa.canalNotificacao || '-'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              {tarefa.status === 'Aberta' && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => handleIniciar(tarefa._id)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                                >
-                                  <Play className="w-4 h-4 mr-1" />
-                                  Iniciar
-                                </Button>
-                              )}
-                              {(tarefa.status === 'Aberta' || tarefa.status === 'Em andamento') && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => handleConcluir(tarefa._id)}
-                                  className="bg-green-600 hover:bg-green-700 text-white"
-                                >
-                                  <CheckSquare className="w-4 h-4 mr-1" />
-                                  Concluir
-                                </Button>
-                              )}
-                              {tarefa.status === 'Concluída' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleReabrir(tarefa._id)}
-                                >
-                                  <RotateCcw className="w-4 h-4 mr-1" />
-                                  Reabrir
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(tarefa)}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(tarefa._id)}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+              
+              <Button
+                onClick={handleCreate}
+                className="h-11 bg-white text-secondary hover:bg-white/90 font-semibold"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Tarefa
+              </Button>
+            </div>
+            
+            {/* Filters */}
+            <div className="flex flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[300px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar tarefas..."
+                  className="pl-10 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                />
+              </div>
+              <Select value={atendimentoFilter} onValueChange={setAtendimentoFilter}>
+                <SelectTrigger className="w-[280px] h-11 bg-white/10 border-white/20 text-white">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filtrar por processo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os processos</SelectItem>
+                  {atendimentos.map(atendimento => (
+                    <SelectItem key={atendimento._id} value={atendimento._id}>
+                      {atendimento.contactName || `Processo ${atendimento._id.substring(0, 8)}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </motion.div>
         </div>
-      </main>
+      </section>
+
+      {/* Kanban Board */}
+      <section className="w-full py-6">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {TASK_COLUMNS.map((column) => {
+                const columnTasks = getTasksByColumn(column.id);
+                return (
+                  <motion.div
+                    key={column.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <Droppable droppableId={column.id}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`${column.color} border-2 ${column.borderColor} rounded-xl p-4 min-h-[600px] transition-all ${
+                            snapshot.isDraggingOver ? 'ring-4 ring-secondary/30 scale-[1.02]' : ''
+                          }`}
+                        >
+                          {/* Column Header */}
+                          <div className="mb-4 pb-3 border-b-2 border-gray-300">
+                            <h3 className="font-heading text-base text-foreground font-bold uppercase tracking-wide mb-2">
+                              {column.name}
+                            </h3>
+                            <Badge variant="secondary" className="text-xs">
+                              {columnTasks.length} {columnTasks.length === 1 ? 'tarefa' : 'tarefas'}
+                            </Badge>
+                          </div>
+
+                          {/* Tasks */}
+                          <div className="space-y-3">
+                            {columnTasks.map((tarefa, index) => {
+                              const daysOpen = getDaysOpen(tarefa.creationDate);
+                              const overdueStatus = isOverdue(tarefa.dueDate, tarefa.status);
+                              const slaColor = daysOpen <= 1 ? 'bg-green-500' : daysOpen <= 3 ? 'bg-yellow-500' : 'bg-red-500';
+                              
+                              return (
+                                <Draggable key={tarefa._id} draggableId={tarefa._id} index={index}>
+                                  {(provided, snapshot) => (
+                                    <motion.div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      whileHover={{ scale: snapshot.isDragging ? 1 : 1.02 }}
+                                      transition={{ duration: 0.2 }}
+                                      className={`bg-white rounded-lg p-4 border-2 border-gray-200 hover:shadow-lg transition-all cursor-grab active:cursor-grabbing group ${
+                                        snapshot.isDragging ? 'shadow-2xl ring-4 ring-secondary/50 rotate-1 scale-105' : ''
+                                      } ${overdueStatus ? 'border-red-400 bg-red-50' : ''}`}
+                                      style={{
+                                        ...provided.draggableProps.style,
+                                        opacity: snapshot.isDragging ? 0.9 : 1
+                                      }}
+                                    >
+                                      {/* SLA Indicator */}
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div className={`px-2 py-1 rounded text-xs font-bold text-white ${slaColor}`}>
+                                          {daysOpen} {daysOpen === 1 ? 'dia' : 'dias'} aberta
+                                        </div>
+                                        {overdueStatus && (
+                                          <Badge className="bg-red-600 text-white text-xs">
+                                            ATRASADA
+                                          </Badge>
+                                        )}
+                                      </div>
+
+                                      {/* Task Title */}
+                                      <h4 className="font-heading text-sm font-bold text-foreground mb-2 line-clamp-2">
+                                        {tarefa.titulo || tarefa.description}
+                                      </h4>
+
+                                      {/* Task Description */}
+                                      {tarefa.description && tarefa.titulo && (
+                                        <p className="text-xs text-foreground/70 mb-3 line-clamp-2">
+                                          {tarefa.description}
+                                        </p>
+                                      )}
+
+                                      {/* Process Info */}
+                                      <div className="mb-3 pb-3 border-b border-gray-200">
+                                        <div className="flex items-center gap-1 text-xs text-foreground/60">
+                                          <FileText className="w-3 h-3" />
+                                          <span className="font-semibold">{getAtendimentoName(tarefa.atendimentoRef)}</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Responsible */}
+                                      <div className="mb-3">
+                                        <div className="flex items-center gap-1 text-xs">
+                                          <User className="w-3 h-3 text-foreground/60" />
+                                          <span className="font-semibold text-foreground/80">
+                                            {getResponsibleName(tarefa)}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* Due Date */}
+                                      {tarefa.dueDate && (
+                                        <div className="mb-3">
+                                          <div className={`flex items-center gap-1 text-xs ${overdueStatus ? 'text-red-600 font-bold' : 'text-foreground/60'}`}>
+                                            <Calendar className="w-3 h-3" />
+                                            <span>Prazo: {format(new Date(tarefa.dueDate), 'dd/MM/yyyy', { locale: ptBR })}</span>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Action Buttons */}
+                                      <div className="flex gap-2 pt-3 border-t border-gray-200">
+                                        {column.id === 'todo' && (
+                                          <Button
+                                            size="sm"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleIniciar(tarefa._id);
+                                            }}
+                                            className="flex-1 h-8 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                                          >
+                                            <Play className="w-3 h-3 mr-1" />
+                                            Iniciar
+                                          </Button>
+                                        )}
+                                        {(column.id === 'todo' || column.id === 'in-progress') && (
+                                          <Button
+                                            size="sm"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleConcluir(tarefa._id);
+                                            }}
+                                            className="flex-1 h-8 bg-green-600 hover:bg-green-700 text-white text-xs"
+                                          >
+                                            <CheckSquare className="w-3 h-3 mr-1" />
+                                            Concluir
+                                          </Button>
+                                        )}
+                                        {column.id === 'done' && (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleReabrir(tarefa._id);
+                                            }}
+                                            className="flex-1 h-8 text-xs"
+                                          >
+                                            <RotateCcw className="w-3 h-3 mr-1" />
+                                            Reabrir
+                                          </Button>
+                                        )}
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEdit(tarefa);
+                                          }}
+                                          className="h-8 w-8 p-0"
+                                        >
+                                          <Edit2 className="w-3 h-3" />
+                                        </Button>
+                                        {tarefa.atendimentoRef && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              navigate(`/admin/financiamento/${tarefa.atendimentoRef}`);
+                                            }}
+                                            className="h-8 w-8 p-0"
+                                            title="Abrir processo"
+                                          >
+                                            <ExternalLink className="w-3 h-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </Draggable>
+                              );
+                            })}
+                            {provided.placeholder}
+                          </div>
+
+                          {/* Empty State */}
+                          {columnTasks.length === 0 && (
+                            <div className="text-center py-12 text-foreground/40">
+                              <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                              <p className="text-sm">Nenhuma tarefa</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Droppable>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </DragDropContext>
+        </div>
+      </section>
 
       <Footer />
 
@@ -656,66 +670,88 @@ export default function AdminFinancingTarefasPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">
+            <DialogTitle className="font-heading text-2xl text-secondary">
               {editingTarefa ? 'Editar Tarefa' : 'Nova Tarefa'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label className="font-paragraph">Título *</Label>
+              <Label className="font-paragraph text-sm mb-2 block font-semibold">Processo de Financiamento *</Label>
+              <Select 
+                value={formData.atendimentoRef} 
+                onValueChange={(value) => setFormData({ ...formData, atendimentoRef: value })}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Selecione o processo vinculado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {atendimentos.map((atendimento) => (
+                    <SelectItem key={atendimento._id} value={atendimento._id}>
+                      {atendimento.contactName || `Processo ${atendimento._id.substring(0, 8)}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="font-paragraph text-sm mb-2 block font-semibold">Título da Tarefa *</Label>
               <Input
                 value={formData.titulo}
                 onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                required
-                className="font-paragraph"
+                placeholder="Ex: Enviar documentos para análise"
+                className="h-11"
               />
             </div>
 
             <div>
-              <Label className="font-paragraph">Descrição</Label>
+              <Label className="font-paragraph text-sm mb-2 block font-semibold">Descrição</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Descreva os detalhes da tarefa..."
                 rows={3}
-                className="font-paragraph"
+                className="resize-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="font-paragraph">Status *</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger className="font-paragraph">
+                <Label className="font-paragraph text-sm mb-2 block font-semibold">Tipo de Responsável *</Label>
+                <Select 
+                  value={formData.responsibleType} 
+                  onValueChange={(value) => setFormData({ ...formData, responsibleType: value })}
+                >
+                  <SelectTrigger className="h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Aberta">Aberta</SelectItem>
-                    <SelectItem value="Em andamento">Em andamento</SelectItem>
-                    <SelectItem value="Concluída">Concluída</SelectItem>
+                    <SelectItem value="Interno">Interno (R Sales)</SelectItem>
+                    <SelectItem value="Externo">Externo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label className="font-paragraph">Tipo de Responsável *</Label>
-                <Select value={formData.responsibleType} onValueChange={(value) => setFormData({ ...formData, responsibleType: value })}>
-                  <SelectTrigger className="font-paragraph">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Interno">Interno</SelectItem>
-                    <SelectItem value="Externo">Externo</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="font-paragraph text-sm mb-2 block font-semibold">Prazo</Label>
+                <Input
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                  className="h-11"
+                />
               </div>
             </div>
 
             {formData.responsibleType === 'Interno' ? (
               <div>
-                <Label className="font-paragraph">Responsável Interno (R Sales) *</Label>
-                <Select value={formData.responsavelExternoRef} onValueChange={(value) => setFormData({ ...formData, responsavelExternoRef: value })}>
-                  <SelectTrigger className="font-paragraph">
-                    <SelectValue placeholder="Selecione um responsável" />
+                <Label className="font-paragraph text-sm mb-2 block font-semibold">Responsável (R Sales) *</Label>
+                <Select 
+                  value={formData.responsavelExternoRef} 
+                  onValueChange={(value) => setFormData({ ...formData, responsavelExternoRef: value })}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Selecione um membro da equipe" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="catarina">Catarina</SelectItem>
@@ -724,89 +760,44 @@ export default function AdminFinancingTarefasPage() {
                     <SelectItem value="isabela">Isabela</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-dark-gray mt-1">
-                  Selecione o membro da equipe R Sales responsável por esta tarefa
-                </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="font-paragraph">Nome do Responsável Externo</Label>
+                  <Label className="font-paragraph text-sm mb-2 block font-semibold">Nome do Responsável Externo</Label>
                   <Input
                     value={formData.externalResponsibleName}
                     onChange={(e) => setFormData({ ...formData, externalResponsibleName: e.target.value })}
                     placeholder="Nome completo"
-                    className="font-paragraph"
+                    className="h-11"
                   />
                 </div>
                 <div>
-                  <Label className="font-paragraph">Contato</Label>
+                  <Label className="font-paragraph text-sm mb-2 block font-semibold">Contato</Label>
                   <Input
                     value={formData.externalResponsibleContact}
                     onChange={(e) => setFormData({ ...formData, externalResponsibleContact: e.target.value })}
                     placeholder="Telefone ou email"
-                    className="font-paragraph"
+                    className="h-11"
                   />
                 </div>
               </div>
             )}
 
-            <div>
-              <Label className="font-paragraph">Atendimento</Label>
-              <Select value={formData.atendimentoRef} onValueChange={(value) => setFormData({ ...formData, atendimentoRef: value })}>
-                <SelectTrigger className="font-paragraph">
-                  <SelectValue placeholder="Selecione um atendimento" />
-                </SelectTrigger>
-                <SelectContent>
-                  {atendimentos.map((atendimento) => (
-                    <SelectItem key={atendimento._id} value={atendimento._id}>
-                      {atendimento.contactName || atendimento._id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="font-paragraph">Canal de Notificação</Label>
-                <Select value={formData.canalNotificacao} onValueChange={(value) => setFormData({ ...formData, canalNotificacao: value })}>
-                  <SelectTrigger className="font-paragraph">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="WhatsApp">WhatsApp</SelectItem>
-                    <SelectItem value="Email">Email</SelectItem>
-                    <SelectItem value="Telefone">Telefone</SelectItem>
-                    <SelectItem value="Sistema">Sistema</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="font-paragraph">Prazo</Label>
-                <Input
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="font-paragraph"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border-gray">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                className="font-paragraph"
+                className="h-11 px-6"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                className="bg-buttonbackground hover:bg-buttonbackground/90 text-white font-paragraph"
+                className="h-11 px-6 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold"
               >
+                <Save className="w-4 h-4 mr-2" />
                 {editingTarefa ? 'Salvar Alterações' : 'Criar Tarefa'}
               </Button>
             </div>

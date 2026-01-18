@@ -1851,7 +1851,7 @@ export default function AdminFinancingKanbanPage() {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleOpenDetails(caseItem, 'pendencias');
+                                    handleOpenDetails(caseItem, 'tarefas');
                                   }}
                                   className="p-1.5 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
                                   title="Abrir Tarefas"
@@ -1884,16 +1884,45 @@ export default function AdminFinancingKanbanPage() {
                                 </div>
                               </div>
 
-                              {/* Pendings and Tasks */}
-                              <div className="flex items-center gap-3 mb-3 text-xs">
-                                <div className="flex items-center gap-1">
-                                  <AlertCircle className={`w-4 h-4 ${caseItem.pendenciasAbertas > 0 ? 'text-red-500' : 'text-green-500'}`} />
-                                  <span className="font-semibold">{caseItem.pendenciasAbertas} pend.</span>
+                              {/* Pendings and Tasks with Mini-List */}
+                              <div className="mb-3 space-y-2">
+                                {/* Counters */}
+                                <div className="flex items-center gap-3 text-xs">
+                                  <div className="flex items-center gap-1">
+                                    <AlertCircle className={`w-4 h-4 ${caseItem.pendenciasAbertas > 0 ? 'text-red-500' : 'text-green-500'}`} />
+                                    <span className="font-semibold">{caseItem.pendenciasAbertas} pend.</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 cursor-pointer hover:text-secondary" onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/admin/financiamento-tarefas`);
+                                  }}>
+                                    <ListTodo className={`w-4 h-4 ${caseItem.tarefasAbertas > 0 ? 'text-blue-500' : 'text-green-500'}`} />
+                                    <span className="font-semibold">{caseItem.tarefasAbertas} tarefas</span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <CheckCircle className={`w-4 h-4 ${caseItem.tarefasAbertas > 0 ? 'text-yellow-500' : 'text-green-500'}`} />
-                                  <span className="font-semibold">{caseItem.tarefasAbertas} tarefas</span>
-                                </div>
+
+                                {/* Mini Task List (show first 2 open tasks) */}
+                                {(() => {
+                                  const caseTasks = tasks.filter(t => t.atendimentoRef === caseItem._id && t.status !== 'Concluída').slice(0, 2);
+                                  if (caseTasks.length > 0) {
+                                    return (
+                                      <div className="space-y-1 pl-1">
+                                        {caseTasks.map(task => (
+                                          <div key={task._id} className="flex items-start gap-1.5 text-xs text-foreground/70 hover:text-foreground transition-colors">
+                                            <CheckCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-blue-500" />
+                                            <span className="line-clamp-1 flex-1">{task.titulo || task.description}</span>
+                                          </div>
+                                        ))}
+                                        {caseItem.tarefasAbertas > 2 && (
+                                          <div className="text-xs text-foreground/50 pl-4">
+                                            +{caseItem.tarefasAbertas - 2} mais...
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                               </div>
 
                               {/* Bloqueio Icons */}
@@ -2009,7 +2038,7 @@ export default function AdminFinancingKanbanPage() {
           <ScrollArea className="h-[calc(90vh-120px)]">
             <div className="px-6 py-4">
               <Tabs value={modalTab} onValueChange={setModalTab}>
-                <TabsList className="grid w-full grid-cols-6 mb-6">
+                <TabsList className="grid w-full grid-cols-7 mb-6">
                   <TabsTrigger value="dados" className="text-xs">
                     <FileText className="w-4 h-4 mr-1" />
                     Dados
@@ -2024,15 +2053,28 @@ export default function AdminFinancingKanbanPage() {
                   </TabsTrigger>
                   <TabsTrigger value="pendencias" className="text-xs relative">
                     <ClipboardList className="w-4 h-4 mr-1" />
-                    Pendências + Tarefas
+                    Pendências
                     {(() => {
                       const casePendings = pendings.filter(p => p.atendimentoRef === selectedCase?._id && p.status !== 'Resolvida');
-                      const caseTasks = tasks.filter(t => t.atendimentoRef === selectedCase?._id && t.status !== 'Concluída');
-                      const totalOpen = casePendings.length + caseTasks.length;
-                      if (totalOpen > 0) {
+                      if (casePendings.length > 0) {
                         return (
                           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                            {totalOpen}
+                            {casePendings.length}
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </TabsTrigger>
+                  <TabsTrigger value="tarefas" className="text-xs relative">
+                    <ListTodo className="w-4 h-4 mr-1" />
+                    Tarefas
+                    {(() => {
+                      const caseTasks = tasks.filter(t => t.atendimentoRef === selectedCase?._id && t.status !== 'Concluída');
+                      if (caseTasks.length > 0) {
+                        return (
+                          <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                            {caseTasks.length}
                           </span>
                         );
                       }
@@ -3301,21 +3343,8 @@ export default function AdminFinancingKanbanPage() {
                   </Card>
                 </TabsContent>
 
-                {/* Pendências + Tarefas Tab */}
+                {/* Pendências Tab */}
                 <TabsContent value="pendencias" className="space-y-6">
-                  {/* Debug Info */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                    <p className="text-xs text-blue-800 font-mono">
-                      <strong>DEBUG:</strong> atendimentoId = {selectedCase?._id || 'undefined'}
-                    </p>
-                    <p className="text-xs text-blue-800 font-mono mt-1">
-                      <strong>DEBUG:</strong> Total Pendências = {pendings.filter(p => p.atendimentoRef === selectedCase?._id).length}
-                    </p>
-                    <p className="text-xs text-blue-800 font-mono mt-1">
-                      <strong>DEBUG:</strong> Total Tarefas = {tasks.filter(t => t.atendimentoRef === selectedCase?._id).length}
-                    </p>
-                  </div>
-
                   {/* Pendências Section */}
                   <Card>
                     <CardHeader>
@@ -3329,7 +3358,6 @@ export default function AdminFinancingKanbanPage() {
                         </CardTitle>
                         <Button 
                           onClick={() => {
-                            console.log('[DEBUG] Opening new pending form for case:', selectedCase?._id);
                             setShowPendingForm(true);
                             setEditingPending(null);
                             setNewPendingData({
@@ -3445,14 +3473,11 @@ export default function AdminFinancingKanbanPage() {
                           const casePendings = pendings
                             .filter(p => p.atendimentoRef === selectedCase?._id)
                             .sort((a, b) => {
-                              // Sort by dueDate (earliest first)
                               if (!a.dueDate && !b.dueDate) return 0;
                               if (!a.dueDate) return 1;
                               if (!b.dueDate) return -1;
                               return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
                             });
-
-                          console.log('[DEBUG] Filtered pendings for case:', selectedCase?._id, 'Count:', casePendings.length);
 
                           if (casePendings.length === 0) {
                             return (
@@ -3464,7 +3489,6 @@ export default function AdminFinancingKanbanPage() {
                           }
 
                           return casePendings.map(pending => {
-                            // Check if overdue
                             const isOverdue = pending.dueDate && new Date(pending.dueDate) < new Date() && pending.status !== 'Resolvida';
                             
                             return (
@@ -3480,7 +3504,7 @@ export default function AdminFinancingKanbanPage() {
                                     <h4 className={`font-paragraph font-bold text-sm mb-1 ${isOverdue ? 'text-red-700' : ''}`}>
                                       {pending.title}
                                       {isOverdue && (
-                                        <Badge className="ml-2 text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
+                                        <Badge className="ml-2 text-xs bg-red-600 text-white">ATRASADA</Badge>
                                       )}
                                     </h4>
                                     {pending.description && (
@@ -3498,7 +3522,7 @@ export default function AdminFinancingKanbanPage() {
                                       )}
                                       {pending.bloqueiaFase && (
                                         <Badge variant="destructive" className="text-xs">
-                                          🚫 Bloqueia fase
+                                          Bloqueia fase
                                         </Badge>
                                       )}
                                       <Badge variant="outline" className="text-xs">
@@ -3516,10 +3540,7 @@ export default function AdminFinancingKanbanPage() {
                                     <Button
                                       size="sm"
                                       variant={pending.status === 'Resolvida' ? 'outline' : 'default'}
-                                      onClick={() => {
-                                        console.log('[DEBUG] Updating pending status:', pending._id);
-                                        handleUpdatePendingStatus(pending._id, pending.status === 'Resolvida' ? 'Aberta' : 'Resolvida');
-                                      }}
+                                      onClick={() => handleUpdatePendingStatus(pending._id, pending.status === 'Resolvida' ? 'Aberta' : 'Resolvida')}
                                       className={pending.status === 'Resolvida' ? 'h-8' : 'h-8 bg-green-600 hover:bg-green-700 text-white'}
                                     >
                                       {pending.status === 'Resolvida' ? (
@@ -3531,10 +3552,7 @@ export default function AdminFinancingKanbanPage() {
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => {
-                                        console.log('[DEBUG] Deleting pending:', pending._id);
-                                        handleDeletePending(pending._id);
-                                      }}
+                                      onClick={() => handleDeletePending(pending._id)}
                                       className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                                     >
                                       <Trash2 className="w-3 h-3" />
@@ -3548,31 +3566,49 @@ export default function AdminFinancingKanbanPage() {
                       </div>
                     </CardContent>
                   </Card>
+                </TabsContent>
 
-                  {/* Tarefas Section */}
+                {/* Tarefas Tab */}
+                <TabsContent value="tarefas" className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg font-heading flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-secondary" />
-                        Tarefas Automáticas
-                        <Badge className="ml-2 bg-blue-500 text-white">
-                          {tasks.filter(t => t.atendimentoRef === selectedCase?._id && t.status !== 'Concluída').length} abertas
-                        </Badge>
-                      </CardTitle>
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-lg font-heading flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5 text-secondary" />
+                          Tarefas
+                          <Badge className="ml-2 bg-blue-500 text-white">
+                            {tasks.filter(t => t.atendimentoRef === selectedCase?._id && t.status !== 'Concluída').length} abertas
+                          </Badge>
+                        </CardTitle>
+                        <Button 
+                          onClick={() => {
+                            setNewTaskData({
+                              description: '',
+                              responsibleType: 'Interno',
+                              internalResponsibleId: '',
+                              externalResponsibleName: '',
+                              externalResponsibleContact: '',
+                              dueDate: ''
+                            });
+                            // Open task creation form (you can add a state for this)
+                          }} 
+                          className="h-9 bg-secondary text-secondary-foreground"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Nova Tarefa
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {(() => {
                         const caseTasks = tasks
                           .filter(t => t.atendimentoRef === selectedCase?._id)
                           .sort((a, b) => {
-                            // Sort by dueDate (earliest first)
                             if (!a.dueDate && !b.dueDate) return 0;
                             if (!a.dueDate) return 1;
                             if (!b.dueDate) return -1;
                             return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
                           });
-
-                        console.log('[DEBUG] Filtered tasks for case:', selectedCase?._id, 'Count:', caseTasks.length);
 
                         if (caseTasks.length === 0) {
                           return (
@@ -3584,9 +3620,7 @@ export default function AdminFinancingKanbanPage() {
                         }
 
                         return caseTasks.map(task => {
-                          // Check if overdue
                           const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'Concluída';
-                          // Check if has activity today
                           const hasActivityToday = task.creationDate && new Date(task.creationDate).toDateString() === new Date().toDateString();
                           const responsibleName = getTaskResponsibleName(task);
                           
@@ -3612,7 +3646,7 @@ export default function AdminFinancingKanbanPage() {
                                     <Badge variant="outline" className="text-xs">{task.responsibleType}</Badge>
                                     {responsibleName && (
                                       <Badge className="text-xs bg-blue-100 text-blue-800 border-blue-300">
-                                        👤 {responsibleName}
+                                        {responsibleName}
                                       </Badge>
                                     )}
                                     {task.dueDate && (
@@ -3623,12 +3657,12 @@ export default function AdminFinancingKanbanPage() {
                                     )}
                                     {isOverdue && (
                                       <Badge className="text-xs bg-red-600 text-white">
-                                        ⚠️ ATRASADA
+                                        ATRASADA
                                       </Badge>
                                     )}
                                     {hasActivityToday && (
                                       <Badge className="text-xs bg-green-600 text-white">
-                                        ✓ HOJE
+                                        HOJE
                                       </Badge>
                                     )}
                                   </div>
@@ -3638,10 +3672,7 @@ export default function AdminFinancingKanbanPage() {
                                     <Button
                                       size="sm"
                                       variant="default"
-                                      onClick={() => {
-                                        console.log('[DEBUG] Starting task:', task._id);
-                                        handleUpdateTaskStatus(task._id, 'Em andamento');
-                                      }}
+                                      onClick={() => handleUpdateTaskStatus(task._id, 'Em andamento')}
                                       className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
                                     >
                                       <Clock className="w-3 h-3 mr-1" /> Iniciar
@@ -3651,10 +3682,7 @@ export default function AdminFinancingKanbanPage() {
                                     <Button
                                       size="sm"
                                       variant="default"
-                                      onClick={() => {
-                                        console.log('[DEBUG] Completing task:', task._id);
-                                        handleUpdateTaskStatus(task._id, 'Concluída');
-                                      }}
+                                      onClick={() => handleUpdateTaskStatus(task._id, 'Concluída')}
                                       className="h-8 bg-green-600 hover:bg-green-700 text-white"
                                     >
                                       <CheckSquare className="w-3 h-3 mr-1" /> Concluir
@@ -3664,10 +3692,7 @@ export default function AdminFinancingKanbanPage() {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => {
-                                        console.log('[DEBUG] Reopening task:', task._id);
-                                        handleUpdateTaskStatus(task._id, 'Aberta');
-                                      }}
+                                      onClick={() => handleUpdateTaskStatus(task._id, 'Aberta')}
                                       className="h-8"
                                     >
                                       <RotateCcw className="w-3 h-3 mr-1" /> Reabrir
