@@ -132,10 +132,19 @@ interface FinancingCase {
   numeroMatricula?: string;
   numeroContrato?: string;
   numeroProtocoloCartorio?: string;
+  enderecoImovel?: string;
   valorItbi?: number;
   valorPrenotacaoCartorio?: number;
   valorProdutoNegociado?: number;
   valorTaxaVista?: number;
+  valorRegistro?: number;
+  
+  // Status de pagamento para cada valor
+  pagoItbi?: boolean;
+  pagoPrenotacao?: boolean;
+  pagoProdutoNegociado?: boolean;
+  pagoTaxaVista?: boolean;
+  pagoRegistro?: boolean;
   
   // Financeiro do financiamento
   propertyValue?: number;
@@ -353,10 +362,17 @@ export default function AdminFinancingKanbanPage() {
     numeroMatricula: '',
     numeroContrato: '',
     numeroProtocoloCartorio: '',
+    enderecoImovel: '',
     valorItbi: 0,
     valorPrenotacaoCartorio: 0,
     valorProdutoNegociado: 0,
     valorTaxaVista: 0,
+    valorRegistro: 0,
+    pagoItbi: false,
+    pagoPrenotacao: false,
+    pagoProdutoNegociado: false,
+    pagoTaxaVista: false,
+    pagoRegistro: false,
     propertyValue: 0,
     desiredFinancingValue: 0,
     approvedFinancingValue: 0,
@@ -558,14 +574,40 @@ export default function AdminFinancingKanbanPage() {
         setCaseFormData({
           ...caseData,
           proponentePrincipal: atendimento.contactName || '',
-          cpfProponentePrincipal: caseData.cpfProponentePrincipal || '',
+          cpfProponentePrincipal: caseData.cpfProponentePrincipal || (atendimento as any).cpfProponentePrincipal || '',
           email: atendimento.contactEmail || '',
           phoneNumber: atendimento.contactPhone || '',
           responsibleInternalId: atendimento.responsavelInternoId || '',
           responsibleExternal: atendimento.responsavelExterno || '',
           notes: atendimento.notes || '',
-          // CRITICAL FIX: Load pastaInterna from database
-          pastaInterna: (atendimento as any).pastaInterna || caseData.pastaInterna
+          pastaInterna: (atendimento as any).pastaInterna || caseData.pastaInterna,
+          // Load all new fields from database
+          numeroMatricula: (atendimento as any).numeroMatricula || caseData.numeroMatricula || '',
+          numeroContrato: (atendimento as any).numeroContrato || caseData.numeroContrato || '',
+          numeroProtocoloCartorio: (atendimento as any).numeroProtocoloCartorio || caseData.numeroProtocoloCartorio || '',
+          enderecoImovel: (atendimento as any).enderecoImovel || '',
+          valorItbi: (atendimento as any).valorItbi || caseData.valorItbi || 0,
+          valorPrenotacaoCartorio: (atendimento as any).valorPrenotacaoCartorio || caseData.valorPrenotacaoCartorio || 0,
+          valorProdutoNegociado: (atendimento as any).valorProdutoNegociado || caseData.valorProdutoNegociado || 0,
+          valorTaxaVista: (atendimento as any).valorTaxaVista || caseData.valorTaxaVista || 0,
+          valorRegistro: (atendimento as any).valorRegistro || 0,
+          pagoItbi: (atendimento as any).pagoItbi || false,
+          pagoPrenotacao: (atendimento as any).pagoPrenotacao || false,
+          pagoProdutoNegociado: (atendimento as any).pagoProdutoNegociado || false,
+          pagoTaxaVista: (atendimento as any).pagoTaxaVista || false,
+          pagoRegistro: (atendimento as any).pagoRegistro || false,
+          propertyValue: (atendimento as any).propertyValue || caseData.propertyValue || 0,
+          desiredFinancingValue: (atendimento as any).desiredFinancingValue || caseData.desiredFinancingValue || 0,
+          approvedFinancingValue: (atendimento as any).approvedFinancingValue || caseData.approvedFinancingValue || 0,
+          useFgts: (atendimento as any).useFgts || caseData.useFgts || false,
+          fgtsValue: (atendimento as any).fgtsValue || caseData.fgtsValue || 0,
+          hasCommercialProposal: (atendimento as any).hasCommercialProposal !== undefined ? (atendimento as any).hasCommercialProposal : caseData.hasCommercialProposal,
+          hasCheckingAccountWithOverdraft: (atendimento as any).hasCheckingAccountWithOverdraft || caseData.hasCheckingAccountWithOverdraft || false,
+          hasCheckingAccountWithoutOverdraft: (atendimento as any).hasCheckingAccountWithoutOverdraft || caseData.hasCheckingAccountWithoutOverdraft || false,
+          hasCreditCard: (atendimento as any).hasCreditCard || caseData.hasCreditCard || false,
+          bankName: (atendimento as any).bankName || caseData.bankName || '',
+          bankAccountNumber: (atendimento as any).bankAccountNumber || caseData.bankAccountNumber || '',
+          financingContractNumber: (atendimento as any).financingContractNumber || caseData.financingContractNumber || ''
         });
       }
 
@@ -837,7 +879,7 @@ export default function AdminFinancingKanbanPage() {
     if (!selectedCase) return;
 
     try {
-      // CRITICAL FIX: Include pastaInterna in the update to persist in database
+      // CRITICAL: Save all fields including new ones to atendimentos collection
       await BaseCrudService.update('atendimentos', {
         _id: selectedCase._id,
         contactName: caseFormData.proponentePrincipal,
@@ -847,10 +889,38 @@ export default function AdminFinancingKanbanPage() {
         responsavelExterno: caseFormData.responsibleExternal,
         notes: caseFormData.notes,
         unidadeResponsavelRef: caseFormData.agencia,
-        pastaInterna: caseFormData.pastaInterna
-      });
+        pastaInterna: caseFormData.pastaInterna,
+        // Store all new fields as custom properties
+        numeroMatricula: caseFormData.numeroMatricula,
+        numeroContrato: caseFormData.numeroContrato,
+        numeroProtocoloCartorio: caseFormData.numeroProtocoloCartorio,
+        enderecoImovel: caseFormData.enderecoImovel,
+        valorItbi: caseFormData.valorItbi,
+        valorPrenotacaoCartorio: caseFormData.valorPrenotacaoCartorio,
+        valorProdutoNegociado: caseFormData.valorProdutoNegociado,
+        valorTaxaVista: caseFormData.valorTaxaVista,
+        valorRegistro: caseFormData.valorRegistro,
+        pagoItbi: caseFormData.pagoItbi,
+        pagoPrenotacao: caseFormData.pagoPrenotacao,
+        pagoProdutoNegociado: caseFormData.pagoProdutoNegociado,
+        pagoTaxaVista: caseFormData.pagoTaxaVista,
+        pagoRegistro: caseFormData.pagoRegistro,
+        propertyValue: caseFormData.propertyValue,
+        desiredFinancingValue: caseFormData.desiredFinancingValue,
+        approvedFinancingValue: caseFormData.approvedFinancingValue,
+        useFgts: caseFormData.useFgts,
+        fgtsValue: caseFormData.fgtsValue,
+        hasCommercialProposal: caseFormData.hasCommercialProposal,
+        hasCheckingAccountWithOverdraft: caseFormData.hasCheckingAccountWithOverdraft,
+        hasCheckingAccountWithoutOverdraft: caseFormData.hasCheckingAccountWithoutOverdraft,
+        hasCreditCard: caseFormData.hasCreditCard,
+        bankName: caseFormData.bankName,
+        bankAccountNumber: caseFormData.bankAccountNumber,
+        financingContractNumber: caseFormData.financingContractNumber,
+        cpfProponentePrincipal: caseFormData.cpfProponentePrincipal
+      } as any);
 
-      // Update local state with all form data including pastaInterna
+      // Update local state with all form data
       setCases(cases.map(c => c._id === selectedCase._id ? {
         ...c,
         ...caseFormData,
@@ -2553,6 +2623,15 @@ export default function AdminFinancingKanbanPage() {
                             className="h-10"
                           />
                         </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Endereço do Imóvel</Label>
+                          <Input
+                            value={caseFormData.enderecoImovel}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, enderecoImovel: e.target.value })}
+                            placeholder="Endereço completo do imóvel"
+                            className="h-10"
+                          />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -2566,76 +2645,152 @@ export default function AdminFinancingKanbanPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor do Imóvel *</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.propertyValue}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, propertyValue: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
+                      <div className="grid grid-cols-1 gap-4">
+                        {/* Valor do Imóvel */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor do Imóvel *</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.propertyValue}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, propertyValue: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor de Financiamento Desejado *</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.desiredFinancingValue}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, desiredFinancingValue: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
+
+                        {/* Valor do Financiamento Desejado */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Desejado *</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.desiredFinancingValue}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, desiredFinancingValue: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor de Financiamento Possível/Aprovado</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.approvedFinancingValue}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, approvedFinancingValue: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
+
+                        {/* Valor do Financiamento Possível/Aprovado */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Possível/Aprovado</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.approvedFinancingValue}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, approvedFinancingValue: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor do ITBI</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.valorItbi}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, valorItbi: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
+
+                        {/* Valor da Taxa à Vista */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor da Taxa à Vista</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.valorTaxaVista}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, valorTaxaVista: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 pt-7">
+                            <Checkbox
+                              checked={caseFormData.pagoTaxaVista || false}
+                              onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, pagoTaxaVista: checked as boolean })}
+                            />
+                            <Label className="font-paragraph text-sm cursor-pointer">Pago?</Label>
+                          </div>
                         </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor da Prenotação Cartório</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.valorPrenotacaoCartorio}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, valorPrenotacaoCartorio: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
+
+                        {/* Valor do Produto Negociado */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor do Produto Negociado</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.valorProdutoNegociado}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, valorProdutoNegociado: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 pt-7">
+                            <Checkbox
+                              checked={caseFormData.pagoProdutoNegociado || false}
+                              onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, pagoProdutoNegociado: checked as boolean })}
+                            />
+                            <Label className="font-paragraph text-sm cursor-pointer">Pago?</Label>
+                          </div>
                         </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor do Produto Negociado</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.valorProdutoNegociado}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, valorProdutoNegociado: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
+
+                        {/* Valor do ITBI */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor do ITBI</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.valorItbi}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, valorItbi: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 pt-7">
+                            <Checkbox
+                              checked={caseFormData.pagoItbi || false}
+                              onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, pagoItbi: checked as boolean })}
+                            />
+                            <Label className="font-paragraph text-sm cursor-pointer">Pago?</Label>
+                          </div>
                         </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor da Taxa à Vista</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.valorTaxaVista}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, valorTaxaVista: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
+
+                        {/* Valor da Prenotação do Cartório */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor da Prenotação do Cartório</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.valorPrenotacaoCartorio}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, valorPrenotacaoCartorio: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 pt-7">
+                            <Checkbox
+                              checked={caseFormData.pagoPrenotacao || false}
+                              onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, pagoPrenotacao: checked as boolean })}
+                            />
+                            <Label className="font-paragraph text-sm cursor-pointer">Pago?</Label>
+                          </div>
+                        </div>
+
+                        {/* Valor do Registro */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor do Registro</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.valorRegistro}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, valorRegistro: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 pt-7">
+                            <Checkbox
+                              checked={caseFormData.pagoRegistro || false}
+                              onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, pagoRegistro: checked as boolean })}
+                            />
+                            <Label className="font-paragraph text-sm cursor-pointer">Pago?</Label>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -2691,15 +2846,26 @@ export default function AdminFinancingKanbanPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <Checkbox
-                            checked={caseFormData.hasCommercialProposal || false}
-                            onCheckedChange={(checked) => setCaseFormData({ ...caseFormData, hasCommercialProposal: checked as boolean })}
-                          />
-                          <Label className="font-paragraph text-sm cursor-pointer">
+                      <div className="space-y-4">
+                        {/* Radio button for commercial proposal */}
+                        <div>
+                          <Label className="font-paragraph text-sm mb-3 block font-semibold">
                             Possui proposta comercial?
                           </Label>
+                          <RadioGroup
+                            value={caseFormData.hasCommercialProposal === true ? 'sim' : caseFormData.hasCommercialProposal === false ? 'nao' : ''}
+                            onValueChange={(value) => setCaseFormData({ ...caseFormData, hasCommercialProposal: value === 'sim' })}
+                            className="flex gap-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="sim" id="commercial-proposal-sim" />
+                              <Label htmlFor="commercial-proposal-sim" className="cursor-pointer font-medium">Sim</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="nao" id="commercial-proposal-nao" />
+                              <Label htmlFor="commercial-proposal-nao" className="cursor-pointer font-medium">Não</Label>
+                            </div>
+                          </RadioGroup>
                         </div>
                         
                         {caseFormData.hasCommercialProposal && (
