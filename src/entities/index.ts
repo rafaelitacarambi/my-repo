@@ -77,6 +77,8 @@ export interface ServiceRecords {
   /** @wixFieldType boolean */
   alertaAtraso?: boolean;
   /** @wixFieldType text */
+  pastaInterna?: string;
+  /** @wixFieldType text */
   clientePrincipalRef?: string;
   /** @wixFieldType text */
   canalOrigem?: string;

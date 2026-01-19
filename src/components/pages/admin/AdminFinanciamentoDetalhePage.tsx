@@ -97,6 +97,7 @@ interface Proponente {
     status: 'Pendente' | 'Recebido';
     arquivo?: string;
     dataRecebimento?: string;
+    removed?: boolean;
   }[];
 }
 
@@ -116,6 +117,7 @@ interface Vendedor {
     status: 'Pendente' | 'Recebido';
     arquivo?: string;
     dataRecebimento?: string;
+    removed?: boolean;
   }[];
 }
 
@@ -147,9 +149,23 @@ export default function AdminFinanciamentoDetalhePage() {
     contactName: '',
     cpf: '',
     contactPhone: '',
+    enderecoImovel: '',
     matriculaImovel: '',
     numeroContratoSiopi: '',
     numeroRegistroCartorio: '',
+    valorImovel: 0,
+    valorFinanciamentoDesejado: 0,
+    valorFinanciamentoPossivelAprovado: 0,
+    valorTaxaVista: 0,
+    valorProdutoNegociado: 0,
+    valorItbi: 0,
+    valorPrenotacaoCartorio: 0,
+    valorRegistro: 0,
+    pagoTaxaVista: false,
+    pagoItbi: false,
+    pagoPrenotacao: false,
+    pagoRegistro: false,
+    possuiPropostaComercial: '',
     faseFinanciamento: 'novos-clientes',
     status: 'Cadastro de cliente',
     creationDate: new Date().toISOString()
@@ -349,9 +365,23 @@ export default function AdminFinanciamentoDetalhePage() {
           contactName: atend.contactName || '',
           cpf: '',
           contactPhone: atend.contactPhone || '',
+          enderecoImovel: '',
           matriculaImovel: '',
           numeroContratoSiopi: '',
           numeroRegistroCartorio: '',
+          valorImovel: 0,
+          valorFinanciamentoDesejado: 0,
+          valorFinanciamentoPossivelAprovado: 0,
+          valorTaxaVista: 0,
+          valorProdutoNegociado: 0,
+          valorItbi: 0,
+          valorPrenotacaoCartorio: 0,
+          valorRegistro: 0,
+          pagoTaxaVista: false,
+          pagoItbi: false,
+          pagoPrenotacao: false,
+          pagoRegistro: false,
+          possuiPropostaComercial: '',
           faseFinanciamento: atend.faseFinanciamento || 'novos-clientes',
           status: atend.status || 'Cadastro de cliente',
           creationDate: atend.creationDate?.toString() || new Date().toISOString()
@@ -623,16 +653,23 @@ export default function AdminFinanciamentoDetalhePage() {
     }
   };
 
-  // Remove documento file for proponente
-  const handleRemoveProponenteDocumentoFile = async (proponenteId: string, documentoTipo: string) => {
+  // Remove documento from proponente (soft delete - mark as removed)
+  const handleRemoveProponenteDocumento = async (proponenteId: string, documentoTipo: string) => {
     const proponente = proponentes.find(p => p._id === proponenteId);
     if (!proponente) return;
+
+    // Check if it's a mandatory document
+    const mandatoryDocs = ['RG, CPF ou CNH'];
+    if (mandatoryDocs.includes(documentoTipo)) {
+      alert('Este documento é obrigatório e não pode ser removido. Apenas o status pode ser alterado.');
+      return;
+    }
 
     const updatedProponentes = proponentes.map(p => {
       if (p._id === proponenteId && p.documentos) {
         const updatedDocumentos = p.documentos.map(doc => {
           if (doc.tipo === documentoTipo) {
-            return { ...doc, arquivo: undefined };
+            return { ...doc, removed: true };
           }
           return doc;
         });
@@ -642,7 +679,29 @@ export default function AdminFinanciamentoDetalhePage() {
     });
 
     setProponentes(updatedProponentes);
-    await createHistoryEntry(`Arquivo do documento "${documentoTipo}" do proponente ${proponente.nome} removido`);
+    await createHistoryEntry(`Documento "${documentoTipo}" do proponente ${proponente.nome} removido`);
+  };
+
+  // Restore removed documento for proponente
+  const handleRestoreProponenteDocumento = async (proponenteId: string, documentoTipo: string) => {
+    const proponente = proponentes.find(p => p._id === proponenteId);
+    if (!proponente) return;
+
+    const updatedProponentes = proponentes.map(p => {
+      if (p._id === proponenteId && p.documentos) {
+        const updatedDocumentos = p.documentos.map(doc => {
+          if (doc.tipo === documentoTipo) {
+            return { ...doc, removed: false };
+          }
+          return doc;
+        });
+        return { ...p, documentos: updatedDocumentos };
+      }
+      return p;
+    });
+
+    setProponentes(updatedProponentes);
+    await createHistoryEntry(`Documento "${documentoTipo}" do proponente ${proponente.nome} restaurado`);
   };
 
   // Create pendencia from proponente documento
@@ -754,15 +813,22 @@ export default function AdminFinanciamentoDetalhePage() {
   };
 
   // Remove documento file for vendedor
-  const handleRemoveVendedorDocumentoFile = async (vendedorId: string, documentoTipo: string) => {
+  const handleRemoveVendedorDocumento = async (vendedorId: string, documentoTipo: string) => {
     const vendedor = vendedores.find(v => v._id === vendedorId);
     if (!vendedor) return;
+
+    // Check if it's a mandatory document
+    const mandatoryDocs = ['Documento de identificação', 'Certidão de nascimento/casamento'];
+    if (mandatoryDocs.includes(documentoTipo)) {
+      alert('Este documento é obrigatório e não pode ser removido. Apenas o status pode ser alterado.');
+      return;
+    }
 
     const updatedVendedores = vendedores.map(v => {
       if (v._id === vendedorId) {
         const updatedDocumentos = v.documentos.map(doc => {
           if (doc.tipo === documentoTipo) {
-            return { ...doc, arquivo: undefined };
+            return { ...doc, removed: true };
           }
           return doc;
         });
@@ -772,7 +838,29 @@ export default function AdminFinanciamentoDetalhePage() {
     });
 
     setVendedores(updatedVendedores);
-    await createHistoryEntry(`Arquivo do documento "${documentoTipo}" do vendedor ${vendedor.nome} removido`);
+    await createHistoryEntry(`Documento "${documentoTipo}" do vendedor ${vendedor.nome} removido`);
+  };
+
+  // Restore removed documento for vendedor
+  const handleRestoreVendedorDocumento = async (vendedorId: string, documentoTipo: string) => {
+    const vendedor = vendedores.find(v => v._id === vendedorId);
+    if (!vendedor) return;
+
+    const updatedVendedores = vendedores.map(v => {
+      if (v._id === vendedorId) {
+        const updatedDocumentos = v.documentos.map(doc => {
+          if (doc.tipo === documentoTipo) {
+            return { ...doc, removed: false };
+          }
+          return doc;
+        });
+        return { ...v, documentos: updatedDocumentos };
+      }
+      return v;
+    });
+
+    setVendedores(updatedVendedores);
+    await createHistoryEntry(`Documento "${documentoTipo}" do vendedor ${vendedor.nome} restaurado`);
   };
 
   // Create pendencia from vendedor documento
@@ -1174,11 +1262,26 @@ export default function AdminFinanciamentoDetalhePage() {
                         className="h-10 bg-primary border-border-gray"
                       />
                     </div>
+                    <div className="md:col-span-2">
+                      <Label className="font-paragraph text-sm mb-2 block">Endereço do Imóvel</Label>
+                      <Input
+                        value={formData.enderecoImovel}
+                        onChange={(e) => {
+                          setFormData({ ...formData, enderecoImovel: e.target.value });
+                          handleAutoSave('enderecoImovel', e.target.value);
+                        }}
+                        placeholder="Rua, número, bairro, cidade - UF"
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Matrícula do Imóvel</Label>
                       <Input
                         value={formData.matriculaImovel}
-                        onChange={(e) => setFormData({ ...formData, matriculaImovel: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, matriculaImovel: e.target.value });
+                          handleAutoSave('matriculaImovel', e.target.value);
+                        }}
                         className="h-10 bg-primary border-border-gray"
                       />
                     </div>
@@ -1186,15 +1289,21 @@ export default function AdminFinanciamentoDetalhePage() {
                       <Label className="font-paragraph text-sm mb-2 block">Nº Contrato SIOPI</Label>
                       <Input
                         value={formData.numeroContratoSiopi}
-                        onChange={(e) => setFormData({ ...formData, numeroContratoSiopi: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, numeroContratoSiopi: e.target.value });
+                          handleAutoSave('numeroContratoSiopi', e.target.value);
+                        }}
                         className="h-10 bg-primary border-border-gray"
                       />
                     </div>
                     <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Nº Registro em Cartório</Label>
+                      <Label className="font-paragraph text-sm mb-2 block">Nº Protocolo do Cartório</Label>
                       <Input
                         value={formData.numeroRegistroCartorio}
-                        onChange={(e) => setFormData({ ...formData, numeroRegistroCartorio: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, numeroRegistroCartorio: e.target.value });
+                          handleAutoSave('numeroRegistroCartorio', e.target.value);
+                        }}
                         className="h-10 bg-primary border-border-gray"
                       />
                     </div>
@@ -1260,6 +1369,214 @@ export default function AdminFinanciamentoDetalhePage() {
                           {daysInPhase} {daysInPhase === 1 ? 'dia' : 'dias'}
                         </Badge>
                       </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Área Financeira */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-heading text-xl flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Área Financeira
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Valor do Imóvel</Label>
+                      <Input
+                        type="number"
+                        value={formData.valorImovel}
+                        onChange={(e) => {
+                          setFormData({ ...formData, valorImovel: parseFloat(e.target.value) || 0 });
+                          handleAutoSave('valorImovel', parseFloat(e.target.value) || 0);
+                        }}
+                        placeholder="0.00"
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Desejado</Label>
+                      <Input
+                        type="number"
+                        value={formData.valorFinanciamentoDesejado}
+                        onChange={(e) => {
+                          setFormData({ ...formData, valorFinanciamentoDesejado: parseFloat(e.target.value) || 0 });
+                          handleAutoSave('valorFinanciamentoDesejado', parseFloat(e.target.value) || 0);
+                        }}
+                        placeholder="0.00"
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Possível Aprovado</Label>
+                      <Input
+                        type="number"
+                        value={formData.valorFinanciamentoPossivelAprovado}
+                        onChange={(e) => {
+                          setFormData({ ...formData, valorFinanciamentoPossivelAprovado: parseFloat(e.target.value) || 0 });
+                          handleAutoSave('valorFinanciamentoPossivelAprovado', parseFloat(e.target.value) || 0);
+                        }}
+                        placeholder="0.00"
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Valor da Taxa à Vista</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          value={formData.valorTaxaVista}
+                          onChange={(e) => {
+                            setFormData({ ...formData, valorTaxaVista: parseFloat(e.target.value) || 0 });
+                            handleAutoSave('valorTaxaVista', parseFloat(e.target.value) || 0);
+                          }}
+                          placeholder="0.00"
+                          className="h-10 bg-primary border-border-gray flex-1"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={formData.pagoTaxaVista}
+                            onCheckedChange={(checked) => {
+                              setFormData({ ...formData, pagoTaxaVista: checked as boolean });
+                              handleAutoSave('pagoTaxaVista', checked);
+                            }}
+                          />
+                          <Label className="font-paragraph text-xs whitespace-nowrap">Pago?</Label>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Valor do Produto Negociado</Label>
+                      <Input
+                        type="number"
+                        value={formData.valorProdutoNegociado}
+                        onChange={(e) => {
+                          setFormData({ ...formData, valorProdutoNegociado: parseFloat(e.target.value) || 0 });
+                          handleAutoSave('valorProdutoNegociado', parseFloat(e.target.value) || 0);
+                        }}
+                        placeholder="0.00"
+                        className="h-10 bg-primary border-border-gray"
+                      />
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Valor do ITBI</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          value={formData.valorItbi}
+                          onChange={(e) => {
+                            setFormData({ ...formData, valorItbi: parseFloat(e.target.value) || 0 });
+                            handleAutoSave('valorItbi', parseFloat(e.target.value) || 0);
+                          }}
+                          placeholder="0.00"
+                          className="h-10 bg-primary border-border-gray flex-1"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={formData.pagoItbi}
+                            onCheckedChange={(checked) => {
+                              setFormData({ ...formData, pagoItbi: checked as boolean });
+                              handleAutoSave('pagoItbi', checked);
+                            }}
+                          />
+                          <Label className="font-paragraph text-xs whitespace-nowrap">Pago?</Label>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Valor da Prenotação do Cartório</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          value={formData.valorPrenotacaoCartorio}
+                          onChange={(e) => {
+                            setFormData({ ...formData, valorPrenotacaoCartorio: parseFloat(e.target.value) || 0 });
+                            handleAutoSave('valorPrenotacaoCartorio', parseFloat(e.target.value) || 0);
+                          }}
+                          placeholder="0.00"
+                          className="h-10 bg-primary border-border-gray flex-1"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={formData.pagoPrenotacao}
+                            onCheckedChange={(checked) => {
+                              setFormData({ ...formData, pagoPrenotacao: checked as boolean });
+                              handleAutoSave('pagoPrenotacao', checked);
+                            }}
+                          />
+                          <Label className="font-paragraph text-xs whitespace-nowrap">Pago?</Label>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm mb-2 block">Valor do Registro</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          value={formData.valorRegistro}
+                          onChange={(e) => {
+                            setFormData({ ...formData, valorRegistro: parseFloat(e.target.value) || 0 });
+                            handleAutoSave('valorRegistro', parseFloat(e.target.value) || 0);
+                          }}
+                          placeholder="0.00"
+                          className="h-10 bg-primary border-border-gray flex-1"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={formData.pagoRegistro}
+                            onCheckedChange={(checked) => {
+                              setFormData({ ...formData, pagoRegistro: checked as boolean });
+                              handleAutoSave('pagoRegistro', checked);
+                            }}
+                          />
+                          <Label className="font-paragraph text-xs whitespace-nowrap">Pago?</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Proposta Comercial */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-heading text-xl">Proposta Comercial</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div>
+                    <Label className="font-paragraph text-sm mb-3 block">Possui proposta comercial? *</Label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="possuiPropostaComercial"
+                          value="Sim"
+                          checked={formData.possuiPropostaComercial === 'Sim'}
+                          onChange={(e) => {
+                            setFormData({ ...formData, possuiPropostaComercial: e.target.value });
+                            handleAutoSave('possuiPropostaComercial', e.target.value);
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="font-paragraph text-sm">Sim</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="possuiPropostaComercial"
+                          value="Não"
+                          checked={formData.possuiPropostaComercial === 'Não'}
+                          onChange={(e) => {
+                            setFormData({ ...formData, possuiPropostaComercial: e.target.value });
+                            handleAutoSave('possuiPropostaComercial', e.target.value);
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="font-paragraph text-sm">Não</span>
+                      </label>
                     </div>
                   </div>
                 </CardContent>
@@ -1518,71 +1835,98 @@ export default function AdminFinanciamentoDetalhePage() {
                                           Checklist de Documentos
                                         </h4>
                                         <div className="space-y-2">
-                                          {proponente.documentos.map((doc) => (
-                                            <div 
-                                              key={doc.tipo} 
-                                              className={`p-3 rounded border-2 transition-all ${
-                                                doc.status === 'Recebido' 
-                                                  ? 'bg-green-50 border-green-300' 
-                                                  : 'bg-yellow-50 border-yellow-300'
-                                              }`}
-                                            >
-                                              <div className="flex items-start gap-3">
-                                                <Checkbox
-                                                  checked={doc.status === 'Recebido'}
-                                                  onCheckedChange={() => handleToggleProponenteDocumento(proponente._id, doc.tipo)}
-                                                  className="mt-1"
-                                                />
-                                                <div className="flex-1">
-                                                  <div className="flex items-center gap-2 mb-2">
-                                                    <FileText className={`w-4 h-4 ${doc.status === 'Recebido' ? 'text-green-600' : 'text-yellow-600'}`} />
-                                                    <span className="font-paragraph text-sm font-semibold">{doc.tipo}</span>
-                                                    <Badge className={`text-xs ml-auto ${doc.status === 'Recebido' ? 'bg-green-500' : 'bg-yellow-500'}`}>
-                                                      {doc.status}
-                                                    </Badge>
-                                                  </div>
-                                                  {doc.dataRecebimento && (
-                                                    <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
-                                                      Recebido em: {new Date(doc.dataRecebimento).toLocaleDateString('pt-BR')}
-                                                    </p>
-                                                  )}
-                                                  <div className="flex gap-2">
-                                                    <Button
-                                                      size="sm"
-                                                      variant="outline"
-                                                      onClick={() => handleUploadProponenteDocumento(proponente._id, doc.tipo)}
-                                                      className="h-8 text-xs"
-                                                    >
-                                                      <Upload className="w-3 h-3 mr-1" />
-                                                      Upload
-                                                    </Button>
-                                                    {doc.arquivo && (
-                                                      <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleRemoveProponenteDocumentoFile(proponente._id, doc.tipo)}
-                                                        className="h-8 text-xs text-destructive"
-                                                      >
-                                                        <X className="w-3 h-3 mr-1" />
-                                                        Remover
-                                                      </Button>
+                                          {proponente.documentos.filter(doc => !doc.removed).map((doc) => {
+                                            const isMandatory = doc.tipo === 'RG, CPF ou CNH';
+                                            return (
+                                              <div 
+                                                key={doc.tipo} 
+                                                className={`p-3 rounded border-2 transition-all ${
+                                                  doc.status === 'Recebido' 
+                                                    ? 'bg-green-50 border-green-300' 
+                                                    : 'bg-yellow-50 border-yellow-300'
+                                                }`}
+                                              >
+                                                <div className="flex items-start gap-3">
+                                                  <Checkbox
+                                                    checked={doc.status === 'Recebido'}
+                                                    onCheckedChange={() => handleToggleProponenteDocumento(proponente._id, doc.tipo)}
+                                                    className="mt-1"
+                                                  />
+                                                  <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                      <FileText className={`w-4 h-4 ${doc.status === 'Recebido' ? 'text-green-600' : 'text-yellow-600'}`} />
+                                                      <span className="font-paragraph text-sm font-semibold">{doc.tipo}</span>
+                                                      {isMandatory && (
+                                                        <Badge className="text-xs bg-red-500">Obrigatório</Badge>
+                                                      )}
+                                                      <Badge className={`text-xs ml-auto ${doc.status === 'Recebido' ? 'bg-green-500' : 'bg-yellow-500'}`}>
+                                                        {doc.status}
+                                                      </Badge>
+                                                    </div>
+                                                    {doc.dataRecebimento && (
+                                                      <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
+                                                        Recebido em: {new Date(doc.dataRecebimento).toLocaleDateString('pt-BR')}
+                                                      </p>
                                                     )}
-                                                    {doc.status === 'Pendente' && (
+                                                    <div className="flex gap-2">
                                                       <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        onClick={() => handleCreatePendenciaFromProponenteDoc(proponente._id, doc.tipo)}
+                                                        onClick={() => handleUploadProponenteDocumento(proponente._id, doc.tipo)}
                                                         className="h-8 text-xs"
                                                       >
-                                                        <AlertCircle className="w-3 h-3 mr-1" />
-                                                        Criar Pendência
+                                                        <Upload className="w-3 h-3 mr-1" />
+                                                        Upload
                                                       </Button>
-                                                    )}
+                                                      {!isMandatory && (
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          onClick={() => handleRemoveProponenteDocumento(proponente._id, doc.tipo)}
+                                                          className="h-8 text-xs text-destructive"
+                                                        >
+                                                          <Trash2 className="w-3 h-3 mr-1" />
+                                                          Excluir
+                                                        </Button>
+                                                      )}
+                                                      {doc.status === 'Pendente' && (
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          onClick={() => handleCreatePendenciaFromProponenteDoc(proponente._id, doc.tipo)}
+                                                          className="h-8 text-xs"
+                                                        >
+                                                          <AlertCircle className="w-3 h-3 mr-1" />
+                                                          Criar Pendência
+                                                        </Button>
+                                                      )}
+                                                    </div>
                                                   </div>
                                                 </div>
                                               </div>
+                                            );
+                                          })}
+                                          {proponente.documentos.filter(doc => doc.removed).length > 0 && (
+                                            <div className="mt-4 pt-4 border-t">
+                                              <h5 className="font-heading text-xs font-semibold text-primary-foreground/60 mb-2">Documentos Removidos</h5>
+                                              <div className="space-y-2">
+                                                {proponente.documentos.filter(doc => doc.removed).map((doc) => (
+                                                  <div key={doc.tipo} className="p-2 rounded bg-gray-100 border border-gray-300 flex items-center justify-between">
+                                                    <span className="font-paragraph text-xs text-primary-foreground/60">{doc.tipo}</span>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleRestoreProponenteDocumento(proponente._id, doc.tipo)}
+                                                      className="h-7 text-xs"
+                                                    >
+                                                      <RotateCcw className="w-3 h-3 mr-1" />
+                                                      Restaurar
+                                                    </Button>
+                                                  </div>
+                                                ))}
+                                              </div>
                                             </div>
-                                          ))}
+                                          )}
                                         </div>
                                       </div>
                                     )}
@@ -1878,71 +2222,98 @@ export default function AdminFinanciamentoDetalhePage() {
                                         Checklist de Documentos
                                       </h4>
                                       <div className="space-y-2">
-                                        {vendedor.documentos.map((doc) => (
-                                          <div 
-                                            key={doc.tipo} 
-                                            className={`p-3 rounded border-2 transition-all ${
-                                              doc.status === 'Recebido' 
-                                                ? 'bg-green-50 border-green-300' 
-                                                : 'bg-red-50 border-red-300'
-                                            }`}
-                                          >
-                                            <div className="flex items-start gap-3">
-                                              <Checkbox
-                                                checked={doc.status === 'Recebido'}
-                                                onCheckedChange={() => handleToggleVendedorDocumento(vendedor._id, doc.tipo)}
-                                                className="mt-1"
-                                              />
-                                              <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                  <FileText className={`w-4 h-4 ${doc.status === 'Recebido' ? 'text-green-600' : 'text-red-600'}`} />
-                                                  <span className="font-paragraph text-sm font-semibold">{doc.tipo}</span>
-                                                  <Badge className={`text-xs ml-auto ${doc.status === 'Recebido' ? 'bg-green-500' : 'bg-red-500'}`}>
-                                                    {doc.status}
-                                                  </Badge>
-                                                </div>
-                                                {doc.dataRecebimento && (
-                                                  <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
-                                                    Recebido em: {new Date(doc.dataRecebimento).toLocaleDateString('pt-BR')}
-                                                  </p>
-                                                )}
-                                                <div className="flex gap-2">
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleUploadVendedorDocumento(vendedor._id, doc.tipo)}
-                                                    className="h-8 text-xs"
-                                                  >
-                                                    <Upload className="w-3 h-3 mr-1" />
-                                                    Upload
-                                                  </Button>
-                                                  {doc.arquivo && (
-                                                    <Button
-                                                      size="sm"
-                                                      variant="outline"
-                                                      onClick={() => handleRemoveVendedorDocumentoFile(vendedor._id, doc.tipo)}
-                                                      className="h-8 text-xs text-destructive"
-                                                    >
-                                                      <X className="w-3 h-3 mr-1" />
-                                                      Remover
-                                                    </Button>
+                                        {vendedor.documentos.filter(doc => !doc.removed).map((doc) => {
+                                          const isMandatory = ['Documento de identificação', 'Certidão de nascimento/casamento'].includes(doc.tipo);
+                                          return (
+                                            <div 
+                                              key={doc.tipo} 
+                                              className={`p-3 rounded border-2 transition-all ${
+                                                doc.status === 'Recebido' 
+                                                  ? 'bg-green-50 border-green-300' 
+                                                  : 'bg-red-50 border-red-300'
+                                              }`}
+                                            >
+                                              <div className="flex items-start gap-3">
+                                                <Checkbox
+                                                  checked={doc.status === 'Recebido'}
+                                                  onCheckedChange={() => handleToggleVendedorDocumento(vendedor._id, doc.tipo)}
+                                                  className="mt-1"
+                                                />
+                                                <div className="flex-1">
+                                                  <div className="flex items-center gap-2 mb-2">
+                                                    <FileText className={`w-4 h-4 ${doc.status === 'Recebido' ? 'text-green-600' : 'text-red-600'}`} />
+                                                    <span className="font-paragraph text-sm font-semibold">{doc.tipo}</span>
+                                                    {isMandatory && (
+                                                      <Badge className="text-xs bg-red-500">Obrigatório</Badge>
+                                                    )}
+                                                    <Badge className={`text-xs ml-auto ${doc.status === 'Recebido' ? 'bg-green-500' : 'bg-red-500'}`}>
+                                                      {doc.status}
+                                                    </Badge>
+                                                  </div>
+                                                  {doc.dataRecebimento && (
+                                                    <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
+                                                      Recebido em: {new Date(doc.dataRecebimento).toLocaleDateString('pt-BR')}
+                                                    </p>
                                                   )}
-                                                  {doc.status === 'Pendente' && (
+                                                  <div className="flex gap-2">
                                                     <Button
                                                       size="sm"
                                                       variant="outline"
-                                                      onClick={() => handleCreatePendenciaFromVendedorDoc(vendedor._id, doc.tipo)}
+                                                      onClick={() => handleUploadVendedorDocumento(vendedor._id, doc.tipo)}
                                                       className="h-8 text-xs"
                                                     >
-                                                      <AlertCircle className="w-3 h-3 mr-1" />
-                                                      Criar Pendência
+                                                      <Upload className="w-3 h-3 mr-1" />
+                                                      Upload
                                                     </Button>
-                                                  )}
+                                                    {!isMandatory && (
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleRemoveVendedorDocumento(vendedor._id, doc.tipo)}
+                                                        className="h-8 text-xs text-destructive"
+                                                      >
+                                                        <Trash2 className="w-3 h-3 mr-1" />
+                                                        Excluir
+                                                      </Button>
+                                                    )}
+                                                    {doc.status === 'Pendente' && (
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleCreatePendenciaFromVendedorDoc(vendedor._id, doc.tipo)}
+                                                        className="h-8 text-xs"
+                                                      >
+                                                        <AlertCircle className="w-3 h-3 mr-1" />
+                                                        Criar Pendência
+                                                      </Button>
+                                                    )}
+                                                  </div>
                                                 </div>
                                               </div>
                                             </div>
+                                          );
+                                        })}
+                                        {vendedor.documentos.filter(doc => doc.removed).length > 0 && (
+                                          <div className="mt-4 pt-4 border-t">
+                                            <h5 className="font-heading text-xs font-semibold text-primary-foreground/60 mb-2">Documentos Removidos</h5>
+                                            <div className="space-y-2">
+                                              {vendedor.documentos.filter(doc => doc.removed).map((doc) => (
+                                                <div key={doc.tipo} className="p-2 rounded bg-gray-100 border border-gray-300 flex items-center justify-between">
+                                                  <span className="font-paragraph text-xs text-primary-foreground/60">{doc.tipo}</span>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => handleRestoreVendedorDocumento(vendedor._id, doc.tipo)}
+                                                    className="h-7 text-xs"
+                                                  >
+                                                    <RotateCcw className="w-3 h-3 mr-1" />
+                                                    Restaurar
+                                                  </Button>
+                                                </div>
+                                              ))}
+                                            </div>
                                           </div>
-                                        ))}
+                                        )}
                                       </div>
                                     </div>
                                   </motion.div>
@@ -2069,11 +2440,22 @@ export default function AdminFinanciamentoDetalhePage() {
                       pendencias
                         .filter(p => p.status !== 'CONCLUÍDA')
                         .sort((a, b) => {
-                          // Sort by overdue first, then by due date
+                          // Sort by priority first (Alta > Média > Baixa)
+                          const priorityOrder = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
+                          const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3;
+                          const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3;
+                          
+                          if (aPriority !== bPriority) {
+                            return aPriority - bPriority;
+                          }
+                          
+                          // Then sort by overdue status
                           const aOverdue = new Date(a.dueDate || '') < new Date();
                           const bOverdue = new Date(b.dueDate || '') < new Date();
                           if (aOverdue && !bOverdue) return -1;
                           if (!aOverdue && bOverdue) return 1;
+                          
+                          // Finally sort by due date
                           return new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
                         })
                         .map((pendencia) => {
@@ -2089,7 +2471,11 @@ export default function AdminFinanciamentoDetalhePage() {
                                 </div>
                                 <p className="font-paragraph text-xs text-primary-foreground/70 mb-2">{pendencia.description}</p>
                                 <div className="flex flex-wrap gap-2 mb-3">
-                                  <Badge className="text-xs">{pendencia.priority}</Badge>
+                                  <Badge className={`text-xs ${
+                                    pendencia.priority === 'Alta' ? 'bg-red-500' :
+                                    pendencia.priority === 'Média' ? 'bg-yellow-500' :
+                                    'bg-blue-500'
+                                  }`}>{pendencia.priority}</Badge>
                                   <Badge className="text-xs">{pendencia.status || 'PENDENTE'}</Badge>
                                   <Badge className="text-xs">{pendencia.responsiblePartyType}</Badge>
                                 </div>
@@ -2258,58 +2644,111 @@ export default function AdminFinanciamentoDetalhePage() {
                   </div>
 
                   <div className="space-y-3">
-                    {tarefas.length === 0 ? (
+                    {tarefas.filter(t => t.status !== 'Concluída').length === 0 ? (
                       <Card>
                         <CardContent className="py-8 text-center">
-                          <p className="font-paragraph text-primary-foreground/60 text-sm">Nenhuma tarefa</p>
+                          <p className="font-paragraph text-primary-foreground/60 text-sm">Nenhuma tarefa ativa</p>
                         </CardContent>
                       </Card>
                     ) : (
-                      tarefas.map((tarefa) => {
-                        const isOverdue = new Date(tarefa.dueDate || '') < new Date() && tarefa.status !== 'Concluída';
-                        const bgColor = tarefa.status === 'Concluída' ? 'bg-green-50 border-green-300' : isOverdue ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-300';
-                        
-                        return (
-                          <Card key={tarefa._id} className={`border-2 ${bgColor}`}>
-                            <CardContent className="py-3">
-                              <div className="flex items-start gap-2 mb-2">
-                                {tarefa.status === 'Concluída' ? (
-                                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                ) : isOverdue ? (
-                                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                                ) : (
-                                  <Clock className="w-4 h-4 text-primary-foreground/60 flex-shrink-0 mt-0.5" />
+                      tarefas
+                        .filter(t => t.status !== 'Concluída')
+                        .sort((a, b) => {
+                          // Sort by overdue first, then by due date
+                          const aOverdue = new Date(a.dueDate || '') < new Date();
+                          const bOverdue = new Date(b.dueDate || '') < new Date();
+                          if (aOverdue && !bOverdue) return -1;
+                          if (!aOverdue && bOverdue) return 1;
+                          return new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
+                        })
+                        .map((tarefa) => {
+                          const isOverdue = new Date(tarefa.dueDate || '') < new Date();
+                          const bgColor = isOverdue ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-300';
+                          
+                          return (
+                            <Card key={tarefa._id} className={`border-2 ${bgColor}`}>
+                              <CardContent className="py-3">
+                                <div className="flex items-start gap-2 mb-2">
+                                  {isOverdue ? (
+                                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                                  ) : (
+                                    <Clock className="w-4 h-4 text-primary-foreground/60 flex-shrink-0 mt-0.5" />
+                                  )}
+                                  <p className="font-paragraph text-sm flex-1">{tarefa.description}</p>
+                                </div>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                  <Badge className="text-xs">{tarefa.status}</Badge>
+                                  <Badge className="text-xs">{tarefa.responsibleType}</Badge>
+                                </div>
+                                {tarefa.dueDate && (
+                                  <p className="font-paragraph text-xs text-primary-foreground/60 mb-3">
+                                    Prazo: {new Date(tarefa.dueDate).toLocaleDateString('pt-BR')}
+                                  </p>
                                 )}
-                                <p className="font-paragraph text-sm flex-1">{tarefa.description}</p>
-                              </div>
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                <Badge className="text-xs">{tarefa.status}</Badge>
-                                <Badge className="text-xs">{tarefa.responsibleType}</Badge>
-                              </div>
-                              {tarefa.dueDate && (
-                                <p className="font-paragraph text-xs text-primary-foreground/60 mb-3">
-                                  Prazo: {new Date(tarefa.dueDate).toLocaleDateString('pt-BR')}
-                                </p>
-                              )}
-                              <div className="flex gap-2">
-                                {tarefa.status !== 'Concluída' ? (
+                                <div className="flex gap-2">
                                   <Button size="sm" variant="outline" onClick={() => handleCompleteTarefa(tarefa._id)} className="flex-1 h-8 text-xs">
                                     <Check className="w-3 h-3 mr-1" />
                                     Concluir
                                   </Button>
-                                ) : (
-                                  <Button size="sm" variant="outline" onClick={() => handleReopenTarefa(tarefa._id)} className="flex-1 h-8 text-xs">
-                                    <RotateCcw className="w-3 h-3 mr-1" />
-                                    Reabrir
-                                  </Button>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })
                     )}
                   </div>
+
+                  {/* Histórico de Tarefas Concluídas */}
+                  {tarefas.filter(t => t.status === 'Concluída').length > 0 && (
+                    <div className="mt-6">
+                      <button
+                        onClick={() => setShowHistoricoPendencias(!showHistoricoPendencias)}
+                        className="w-full flex items-center justify-between p-3 bg-light-gray rounded hover:bg-primary-foreground/10 transition-colors"
+                      >
+                        <h4 className="font-heading text-sm font-semibold text-primary-foreground">
+                          Histórico de Tarefas (Concluídas)
+                        </h4>
+                        {showHistoricoPendencias ? (
+                          <ChevronUp className="w-4 h-4 text-primary-foreground" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-primary-foreground" />
+                        )}
+                      </button>
+
+                      {showHistoricoPendencias && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-3 mt-3"
+                        >
+                          {tarefas
+                            .filter(t => t.status === 'Concluída')
+                            .sort((a, b) => new Date(b._updatedDate || '').getTime() - new Date(a._updatedDate || '').getTime())
+                            .map((tarefa) => (
+                              <Card key={tarefa._id} className="border-2 bg-green-50 border-green-300">
+                                <CardContent className="py-3">
+                                  <div className="flex items-start gap-2 mb-2">
+                                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                    <p className="font-paragraph text-sm flex-1">{tarefa.description}</p>
+                                  </div>
+                                  <div className="flex flex-wrap gap-2 mb-3">
+                                    <Badge className="text-xs bg-green-500">{tarefa.status}</Badge>
+                                    <Badge className="text-xs">{tarefa.responsibleType}</Badge>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" onClick={() => handleReopenTarefa(tarefa._id)} className="flex-1 h-8 text-xs">
+                                      <RotateCcw className="w-3 h-3 mr-1" />
+                                      Reabrir
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
