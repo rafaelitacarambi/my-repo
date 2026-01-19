@@ -2512,12 +2512,12 @@ export default function AdminFinancingKanbanPage() {
                     </CardContent>
                   </Card>
 
-                  {/* Campos Bancários */}
+                  {/* Dados Bancários */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg font-heading flex items-center gap-2">
                         <Building2 className="w-5 h-5 text-secondary" />
-                        Campos Bancários
+                        Dados Bancários
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -2543,46 +2543,6 @@ export default function AdminFinancingKanbanPage() {
                           <Input
                             value={caseFormData.numeroProtocoloCartorio}
                             onChange={(e) => setCaseFormData({ ...caseFormData, numeroProtocoloCartorio: e.target.value })}
-                            className="h-10"
-                          />
-                        </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor do ITBI</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.valorItbi}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, valorItbi: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
-                        </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor da Prenotação Cartório</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.valorPrenotacaoCartorio}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, valorPrenotacaoCartorio: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
-                        </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor do Produto Negociado</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.valorProdutoNegociado}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, valorProdutoNegociado: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
-                            className="h-10"
-                          />
-                        </div>
-                        <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Valor da Taxa à Vista</Label>
-                          <Input
-                            type="number"
-                            value={caseFormData.valorTaxaVista}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, valorTaxaVista: parseFloat(e.target.value) || 0 })}
-                            placeholder="R$ 0,00"
                             className="h-10"
                           />
                         </div>
