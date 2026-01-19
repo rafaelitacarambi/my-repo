@@ -74,6 +74,7 @@ interface FinanciamentoDocsVendedor {
   arquivo?: string;
   ativo?: boolean;
   observacoes?: string;
+  obrigatorio?: boolean;
 }
 
 // Interface for proponent documents (CMS collection)
@@ -243,6 +244,7 @@ interface VendorDocument {
   arquivo?: string;
   ativo: boolean;
   observacoes?: string;
+  obrigatorio?: boolean;
 }
 
 
@@ -283,8 +285,8 @@ const TASK_STATUS = ['Pendente', 'Em Progresso', 'Concluída', 'Atrasada'];
 // Default document types for each proponent
 const DEFAULT_PROPONENT_DOCUMENTS = [
   { documentName: 'Documento de Identificação (RG, CPF ou CNH)', isMandatory: true },
+  { documentName: 'Certidão de nascimento ou casamento', isMandatory: true },
   { documentName: 'Comprovante de residência atual', isMandatory: false },
-  { documentName: 'Certidão de nascimento ou casamento', isMandatory: false },
   { documentName: 'Holerite dos últimos 2 meses', isMandatory: false },
   { documentName: 'Pró-labore dos últimos 3 meses (se houver)', isMandatory: false },
   { documentName: 'Extrato do FGTS (se houver)', isMandatory: false },
@@ -759,7 +761,8 @@ export default function AdminFinancingKanbanPage() {
             recebido: doc.recebido || false,
             arquivo: doc.arquivo,
             ativo: doc.ativo !== false,
-            observacoes: doc.observacoes
+            observacoes: doc.observacoes,
+            obrigatorio: doc.obrigatorio || false
           });
           docsMap.set(doc.vendedorClienteRef, existing);
         }
@@ -1067,28 +1070,34 @@ export default function AdminFinancingKanbanPage() {
       setVendors([...vendors, newVendorObj]);
       
       // Create default documents for vendor
-      const defaultDocs = ['IDENTIFICACAO', 'CERTIDAO', 'ENDERECO'];
+      const defaultDocs = [
+        { docTipo: 'IDENTIFICACAO', obrigatorio: true },
+        { docTipo: 'CERTIDAO', obrigatorio: true },
+        { docTipo: 'ENDERECO', obrigatorio: false }
+      ];
       const vendorDocs: VendorDocument[] = [];
       
-      for (const docTipo of defaultDocs) {
+      for (const docConfig of defaultDocs) {
         const doc: FinanciamentoDocsVendedor = {
           _id: crypto.randomUUID(),
           atendimentoRef: selectedCase._id,
           vendedorClienteRef: newVendor.clientRef,
-          docTipo,
+          docTipo: docConfig.docTipo,
           recebido: false,
           ativo: true,
-          observacoes: ''
+          observacoes: '',
+          obrigatorio: docConfig.obrigatorio
         };
         
         await BaseCrudService.create('financiamentodocsvendedor', doc);
         
         vendorDocs.push({
           _id: doc._id,
-          docTipo,
+          docTipo: docConfig.docTipo,
           recebido: false,
           ativo: true,
-          observacoes: ''
+          observacoes: '',
+          obrigatorio: docConfig.obrigatorio
         });
       }
       
@@ -1249,9 +1258,26 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
-  // Delete vendor document (mark as inactive)
+  // Delete vendor document (mark as inactive) - only for non-mandatory documents
   const handleDeleteVendorDocument = async (vendorClientRef: string, docId: string) => {
+    const docs = vendorDocuments.get(vendorClientRef) || [];
+    const document = docs.find(d => d._id === docId);
+    
+    // Prevent deletion of mandatory documents
+    if (document?.obrigatorio) {
+      console.warn('Cannot delete mandatory document:', document.docTipo);
+      return;
+    }
+    
     await handleUpdateVendorDocument(vendorClientRef, docId, { ativo: false });
+  };
+
+  // Restore deleted vendor document (mark as active again)
+  const handleRestoreVendorDocument = async (vendorClientRef: string, docId: string) => {
+    await handleUpdateVendorDocument(vendorClientRef, docId, { 
+      ativo: true,
+      recebido: false // Reset to pending when restored
+    });
   };
 
   // Create or update pending
@@ -3505,12 +3531,13 @@ export default function AdminFinancingKanbanPage() {
                               const vendor = vendors.find(v => v.clientRef === currentVendorClientRef);
                               const docs = vendorDocuments.get(currentVendorClientRef) || [];
                               const activeDocs = docs.filter(d => d.ativo);
+                              const inactiveDocs = docs.filter(d => !d.ativo);
                               
                               if (!vendor) return null;
 
                               return (
                                 <div className="border-2 border-secondary/20 rounded-xl p-6 bg-gradient-to-br from-white to-light-gray/30">
-                                  {/* Vendor Info Header */}
+                                  {/* ... keep existing code (Vendor Info Header) */}
                                   <div className="mb-6 pb-5 border-b-2 border-border-gray">
                                     <div className="flex items-start justify-between mb-3">
                                       <div className="flex-1">
@@ -3550,7 +3577,7 @@ export default function AdminFinancingKanbanPage() {
                                     </div>
                                   </div>
 
-                                  {/* Dados do Vendedor Section */}
+                                  {/* ... keep existing code (Dados do Vendedor Section) */}
                                   <div className="mb-8">
                                     <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
                                       <UserCheck className="w-5 h-5 text-secondary" />
@@ -3594,7 +3621,7 @@ export default function AdminFinancingKanbanPage() {
                                     </div>
                                   </div>
 
-                                  {/* Bank Data Section */}
+                                  {/* ... keep existing code (Bank Data Section) */}
                                   <div className="mb-8">
                                     <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
                                       <Building2 className="w-5 h-5 text-secondary" />
@@ -3715,11 +3742,18 @@ export default function AdminFinancingKanbanPage() {
                                                       className="mt-1"
                                                     />
                                                     <div className="flex-1">
-                                                      <Label className={`font-paragraph text-sm font-semibold block mb-1 cursor-pointer ${
-                                                        doc.recebido ? 'text-green-700' : 'text-foreground'
-                                                      }`}>
-                                                        {docNames[doc.docTipo] || doc.docTipo}
-                                                      </Label>
+                                                      <div className="flex items-center gap-2 mb-1">
+                                                        <Label className={`font-paragraph text-sm font-semibold cursor-pointer ${
+                                                          doc.recebido ? 'text-green-700' : 'text-foreground'
+                                                        }`}>
+                                                          {docNames[doc.docTipo] || doc.docTipo}
+                                                        </Label>
+                                                        {doc.obrigatorio && (
+                                                          <Badge className="bg-red-500 text-white text-xs px-2 py-0">
+                                                            OBRIGATÓRIO
+                                                          </Badge>
+                                                        )}
+                                                      </div>
                                                       {doc.recebido && (
                                                         <p className="text-xs text-green-600 flex items-center gap-1">
                                                           <CheckCircle className="w-3 h-3" />
@@ -3728,15 +3762,17 @@ export default function AdminFinancingKanbanPage() {
                                                       )}
                                                     </div>
                                                   </div>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    onClick={() => handleDeleteVendorDocument(vendor.clientRef, doc._id)}
-                                                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                    title="Excluir item (não aplicável)"
-                                                  >
-                                                    <Trash2 className="w-4 h-4" />
-                                                  </Button>
+                                                  {!doc.obrigatorio && (
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      onClick={() => handleDeleteVendorDocument(vendor.clientRef, doc._id)}
+                                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                      title="Excluir item (não aplicável)"
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                  )}
                                                 </div>
 
                                                 {/* File upload section */}
@@ -3802,13 +3838,61 @@ export default function AdminFinancingKanbanPage() {
                                         })}
                                       </div>
 
+                                      {/* Deleted documents section - restore option */}
+                                      {inactiveDocs.length > 0 && (
+                                        <div className="mt-6 pt-6 border-t-2 border-border-gray">
+                                          <h6 className="font-heading text-sm font-bold mb-3 flex items-center gap-2 text-foreground/70">
+                                            <RotateCcw className="w-4 h-4" />
+                                            Documentos Excluídos (Recuperáveis)
+                                          </h6>
+                                          <div className="space-y-2">
+                                            {inactiveDocs.map((doc) => {
+                                              const docNames: Record<string, string> = {
+                                                'IDENTIFICACAO': 'Documento de Identificação (RG, CPF ou CNH)',
+                                                'CERTIDAO': 'Certidão de Casamento ou Nascimento',
+                                                'ENDERECO': 'Comprovante de Endereço'
+                                              };
+                                              
+                                              return (
+                                                <div
+                                                  key={doc._id}
+                                                  className="p-3 rounded-lg border-2 border-dashed border-border-gray bg-gray-50 flex items-center justify-between"
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <XCircle className="w-4 h-4 text-foreground/40" />
+                                                    <span className="text-sm text-foreground/60 line-through">
+                                                      {docNames[doc.docTipo] || doc.docTipo}
+                                                    </span>
+                                                  </div>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => handleRestoreVendorDocument(vendor.clientRef, doc._id)}
+                                                    className="h-8 text-xs bg-white hover:bg-secondary/10 border-secondary/30"
+                                                  >
+                                                    <RotateCcw className="w-3 h-3 mr-1" />
+                                                    Restaurar
+                                                  </Button>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      )}
+
                                       {/* Info message */}
                                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
                                         <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                        <p className="text-xs text-blue-800">
-                                          <strong>Importante:</strong> Marque os documentos como recebidos conforme forem entregues pelo vendedor. 
-                                          Use o botão "Excluir item" para remover documentos não aplicáveis.
-                                        </p>
+                                        <div className="text-xs text-blue-800">
+                                          <p className="mb-2">
+                                            <strong>Importante:</strong> Marque os documentos como recebidos conforme forem entregues pelo vendedor.
+                                          </p>
+                                          <ul className="list-disc list-inside space-y-1 ml-2">
+                                            <li><strong>Documentos obrigatórios</strong> (Identificação e Certidão) não podem ser excluídos</li>
+                                            <li><strong>Documentos opcionais</strong> podem ser excluídos se não aplicáveis</li>
+                                            <li><strong>Documentos excluídos</strong> podem ser restaurados a qualquer momento</li>
+                                          </ul>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
