@@ -1314,38 +1314,19 @@ export default function AdminFinancingKanbanPage() {
       await BaseCrudService.create('pendenciasfinanciamento', newPending);
       console.log('[DEBUG] Pending saved successfully');
 
-      // Create automatic task linked to this pendência
-      const newTarefa = {
-        _id: crypto.randomUUID(),
-        atendimentoRef: selectedCase._id,
-        pendenciaRef: newPending._id,
-        titulo: `Resolver: ${newPending.title}`,
-        description: newPendingData.description,
-        status: 'A Fazer',
-        responsibleType: newPendingData.responsiblePartyType,
-        internalResponsibleId: undefined,
-        externalResponsibleName: undefined,
-        dueDate: dueDate.toISOString(),
-        creationDate: now
-      } as FinancingTasks;
-
-      await BaseCrudService.create('tarefasfinanciamento', newTarefa);
-      console.log('[DEBUG] Automatic task created successfully');
-
       // Create history entry
       await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
         _id: crypto.randomUUID(),
         atendimentoRef: selectedCase._id,
         tipoEvento: 'Pendencia_Criada',
         interactionType: 'Criação de pendência',
-        interactionDescription: `Nova pendência criada: "${newPending.title}" (Tarefa automática gerada)`,
+        interactionDescription: `Nova pendência criada: "${newPending.title}"`,
         interactionDate: now,
         autorTipo: 'Sistema'
       });
 
       // Update local state optimistically
       setPendings([...pendings, newPending as Pending]);
-      setTasks([...tasks, newTarefa as Task]);
       
       // Reset form
       setNewPendingData({
@@ -1570,35 +1551,19 @@ export default function AdminFinancingKanbanPage() {
 
       await BaseCrudService.create('pendenciasfinanciamento', newPending);
 
-      // Create automatic task
-      const newTarefa: FinancingTasks = {
-        _id: crypto.randomUUID(),
-        atendimentoRef: quickActionCaseId,
-        pendenciaRef: newPending._id,
-        titulo: `Resolver: ${newPending.title}`,
-        description: newPendingData.description,
-        status: 'A Fazer',
-        responsibleType: newPendingData.responsiblePartyType,
-        dueDate,
-        creationDate: now
-      };
-
-      await BaseCrudService.create('tarefasfinanciamento', newTarefa);
-
       // Create history entry
       await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
         _id: crypto.randomUUID(),
         atendimentoRef: quickActionCaseId,
         tipoEvento: 'Pendencia_Criada',
         interactionType: 'Criação de pendência',
-        interactionDescription: `Nova pendência criada: "${newPending.title}" (Tarefa automática gerada)`,
+        interactionDescription: `Nova pendência criada: "${newPending.title}"`,
         interactionDate: now,
         autorTipo: 'Sistema'
       });
 
       // Update local state
       setPendings([...pendings, newPending as Pending]);
-      setTasks([...tasks, newTarefa as Task]);
       
       // Reset and close
       setNewPendingData({
