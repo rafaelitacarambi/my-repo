@@ -658,9 +658,11 @@ export default function AdminFinanciamentoDetalhePage() {
     const proponente = proponentes.find(p => p._id === proponenteId);
     if (!proponente) return;
 
-    // Check if it's a mandatory document
-    const mandatoryDocs = ['RG, CPF ou CNH'];
-    if (mandatoryDocs.includes(documentoTipo)) {
+    // Check if it's a mandatory document (case-insensitive check)
+    const mandatoryDocs = ['RG, CPF ou CNH', 'rg, cpf ou cnh'];
+    const isMandatory = mandatoryDocs.some(doc => doc.toLowerCase() === documentoTipo.toLowerCase());
+    
+    if (isMandatory) {
       alert('Este documento é obrigatório e não pode ser removido. Apenas o status pode ser alterado.');
       return;
     }
