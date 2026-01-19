@@ -282,9 +282,7 @@ const TASK_STATUS = ['Pendente', 'Em Progresso', 'Concluída', 'Atrasada'];
 
 // Default document types for each proponent
 const DEFAULT_PROPONENT_DOCUMENTS = [
-  { documentName: 'RG', isMandatory: true },
-  { documentName: 'CPF', isMandatory: true },
-  { documentName: 'CNH', isMandatory: true },
+  { documentName: 'Documento de Identificação (RG, CPF ou CNH)', isMandatory: true },
   { documentName: 'Comprovante de residência atual', isMandatory: false },
   { documentName: 'Certidão de nascimento ou casamento', isMandatory: false },
   { documentName: 'Holerite dos últimos 2 meses', isMandatory: false },
