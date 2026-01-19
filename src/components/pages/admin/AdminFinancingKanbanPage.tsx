@@ -845,12 +845,14 @@ export default function AdminFinancingKanbanPage() {
         unidadeResponsavelRef: caseFormData.agencia
       });
 
-      // Update local state
+      // Update local state with all form data including pastaInterna
       setCases(cases.map(c => c._id === selectedCase._id ? {
         ...c,
         ...caseFormData,
         proponentePrincipal: caseFormData.proponentePrincipal || c.proponentePrincipal,
         agencia: caseFormData.agencia,
+        pastaInterna: caseFormData.pastaInterna || c.pastaInterna,
+        cpfProponentePrincipal: caseFormData.cpfProponentePrincipal || c.cpfProponentePrincipal,
         updatedDate: new Date().toISOString()
       } : c));
 
