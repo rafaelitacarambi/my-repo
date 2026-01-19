@@ -11,7 +11,6 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { CreateNewModal } from '@/components/CreateNewModal';
 import { ClientRegistrationModal } from '@/components/ClientRegistrationModal';
-import { LeadRegistrationModal } from '@/components/LeadRegistrationModal';
 import { useState, useEffect } from 'react';
 import { useAuthValidation } from '@/hooks/use-auth-validation';
 
@@ -20,7 +19,6 @@ function AreaRestritaContent() {
   const { isValidating, isAuthorized, userProfile, error } = useAuthValidation();
   const navigate = useNavigate();
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
-  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
 
   const handleLogout = () => {
@@ -34,14 +32,6 @@ function AreaRestritaContent() {
 
   const handleCreateClient = () => {
     setIsClientModalOpen(true);
-  };
-
-  const handleCreateAtendimento = () => {
-    window.location.href = '/admin/atendimentos';
-  };
-
-  const handleCreateLead = () => {
-    setIsLeadModalOpen(true);
   };
 
   // Show loading state while validating
@@ -118,8 +108,6 @@ function AreaRestritaContent() {
               <CreateNewModal 
                 onSelectProperty={handleCreateProperty}
                 onSelectClient={handleCreateClient}
-                onSelectAtendimento={handleCreateAtendimento}
-                onSelectLead={handleCreateLead}
               />
               <Button 
                 onClick={handleLogout}
@@ -403,11 +391,6 @@ function AreaRestritaContent() {
       <ClientRegistrationModal 
         isOpen={isClientModalOpen}
         onOpenChange={setIsClientModalOpen}
-      />
-
-      <LeadRegistrationModal
-        isOpen={isLeadModalOpen}
-        onOpenChange={setIsLeadModalOpen}
       />
     </div>
   );
