@@ -462,7 +462,8 @@ export default function AdminFinancingKanbanPage() {
             _id: a._id,
             agencia: a.unidadeResponsavelRef || '',
             proponentePrincipal: a.contactName || 'Sem nome',
-            pastaInterna: a._id.substring(0, 8).toUpperCase(),
+            // CRITICAL FIX: Load pastaInterna from database, fallback to auto-generated only if not set
+            pastaInterna: (a as any).pastaInterna || a._id.substring(0, 8).toUpperCase(),
             status: a.status || 'Novo',
             faseAtual: a.faseFinanciamento || 'novos-clientes',
             dataEntradaFaseAtual: dataEntrada,
@@ -562,7 +563,9 @@ export default function AdminFinancingKanbanPage() {
           phoneNumber: atendimento.contactPhone || '',
           responsibleInternalId: atendimento.responsavelInternoId || '',
           responsibleExternal: atendimento.responsavelExterno || '',
-          notes: atendimento.notes || ''
+          notes: atendimento.notes || '',
+          // CRITICAL FIX: Load pastaInterna from database
+          pastaInterna: (atendimento as any).pastaInterna || caseData.pastaInterna
         });
       }
 
@@ -834,7 +837,8 @@ export default function AdminFinancingKanbanPage() {
     if (!selectedCase) return;
 
     try {
-      await BaseCrudService.update<ServiceRecords>('atendimentos', {
+      // CRITICAL FIX: Include pastaInterna in the update to persist in database
+      await BaseCrudService.update('atendimentos', {
         _id: selectedCase._id,
         contactName: caseFormData.proponentePrincipal,
         contactEmail: caseFormData.email,
@@ -842,7 +846,8 @@ export default function AdminFinancingKanbanPage() {
         responsavelInternoId: caseFormData.responsibleInternalId,
         responsavelExterno: caseFormData.responsibleExternal,
         notes: caseFormData.notes,
-        unidadeResponsavelRef: caseFormData.agencia
+        unidadeResponsavelRef: caseFormData.agencia,
+        pastaInterna: caseFormData.pastaInterna
       });
 
       // Update local state with all form data including pastaInterna
