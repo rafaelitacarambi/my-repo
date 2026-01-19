@@ -60,7 +60,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
-import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis } from '@/entities';
+import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis, ChecklistdosProponentes } from '@/entities';
 
 // Temporary interface for vendor documents collection
 interface FinanciamentoDocsVendedor {
@@ -76,19 +76,20 @@ interface FinanciamentoDocsVendedor {
   observacoes?: string;
 }
 
-// Temporary interface for the new collection until entities are regenerated
-interface ChecklistdosProponentes {
+// Interface for proponent documents (CMS collection)
+interface DocumentosProponentes {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
-  atendimentoRef?: string;
-  clientRef?: string;
-  hasFgtsContribution?: boolean;
-  hasDependent?: boolean;
-  declaresIncomeTax?: boolean;
-  ownsProperty?: boolean;
-  hasActiveFinancing?: boolean;
-  isFirstAcquisition?: boolean;
+  financingCaseRef?: string;
+  proponentRef?: string;
+  documentName?: string;
+  isReceived?: boolean;
+  isActive?: boolean;
+  isMandatory?: boolean;
+  fileUrl?: string;
+  notes?: string;
+  uploadDate?: Date | string;
 }
 
 // Types
@@ -244,23 +245,7 @@ interface VendorDocument {
   observacoes?: string;
 }
 
-interface ProponentDocumentItem {
-  _id: string;
-  documentType: string;
-  documentName: string;
-  isReceived: boolean;
-  isActive: boolean;
-  fileUrl?: string;
-  notes?: string;
-  uploadDate?: string;
-}
 
-interface ProponentDocumentChecklist {
-  _id?: string;
-  atendimentoRef: string;
-  clientRef: string;
-  documents: ProponentDocumentItem[];
-}
 
 // Financing Columns Configuration - Trello-style (neutral colors)
 const FINANCING_COLUMNS: FinancingColumn[] = [
@@ -297,13 +282,15 @@ const TASK_STATUS = ['Pendente', 'Em Progresso', 'Concluída', 'Atrasada'];
 
 // Default document types for each proponent
 const DEFAULT_PROPONENT_DOCUMENTS = [
-  { documentType: 'RG, CPF ou CNH', documentName: 'RG, CPF ou CNH' },
-  { documentType: 'Comprovante de residência atual', documentName: 'Comprovante de residência atual' },
-  { documentType: 'Certidão de nascimento ou casamento', documentName: 'Certidão de nascimento ou casamento' },
-  { documentType: 'Holerite dos últimos 2 meses', documentName: 'Holerite dos últimos 2 meses' },
-  { documentType: 'Pró-labore dos últimos 3 meses', documentName: 'Pró-labore dos últimos 3 meses (se houver)' },
-  { documentType: 'Extrato do FGTS', documentName: 'Extrato do FGTS (se houver)' },
-  { documentType: 'Declaração de Imposto de Renda', documentName: 'Declaração de Imposto de Renda (se houver)' }
+  { documentName: 'RG', isMandatory: true },
+  { documentName: 'CPF', isMandatory: true },
+  { documentName: 'CNH', isMandatory: true },
+  { documentName: 'Comprovante de residência atual', isMandatory: false },
+  { documentName: 'Certidão de nascimento ou casamento', isMandatory: false },
+  { documentName: 'Holerite dos últimos 2 meses', isMandatory: false },
+  { documentName: 'Pró-labore dos últimos 3 meses (se houver)', isMandatory: false },
+  { documentName: 'Extrato do FGTS (se houver)', isMandatory: false },
+  { documentName: 'Declaração de Imposto de Renda (se houver)', isMandatory: false }
 ];
 
 // Background options for Kanban
@@ -335,7 +322,7 @@ export default function AdminFinancingKanbanPage() {
   const [history, setHistory] = useState<HistricodeInteraes[]>([]);
   const [properties, setProperties] = useState<Imveis[]>([]);
   const [proponentChecklists, setProponentChecklists] = useState<Map<string, ProponentChecklist>>(new Map());
-  const [proponentDocumentChecklists, setProponentDocumentChecklists] = useState<Map<string, ProponentDocumentChecklist>>(new Map());
+  const [proponentDocuments, setProponentDocuments] = useState<DocumentosProponentes[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorDocuments, setVendorDocuments] = useState<Map<string, VendorDocument[]>>(new Map());
   const [selectedVendorId, setSelectedVendorId] = useState<string>('');
@@ -702,8 +689,8 @@ export default function AdminFinancingKanbanPage() {
       const { items: linkedPropsList } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
       setLinkedProperties(linkedPropsList.filter(lp => lp.atendimentoRef === caseId));
 
-      // Load document checklists for proponents
-      await loadProponentDocumentChecklists(caseId, principalClientRef, filteredParticipants);
+      // Load proponent documents from CMS
+      await loadProponentDocuments(caseId, principalClientRef, filteredParticipants);
 
       // Load vendors and their documents
       await loadVendorsAndDocuments(caseId);
@@ -793,71 +780,55 @@ export default function AdminFinancingKanbanPage() {
   };
 
   // Load or create document checklists for all proponents
-  const loadProponentDocumentChecklists = async (caseId: string, principalClientRef: string | undefined, participants: ServiceParties[]) => {
+  const loadProponentDocuments = async (caseId: string, principalClientRef: string | undefined, participants: ServiceParties[]) => {
     try {
-      // For now, we'll store document checklists in localStorage since we don't have a dedicated collection
-      // In production, you would create a new collection 'documentosproponentes'
-      const storageKey = `doc-checklist-${caseId}`;
-      const stored = localStorage.getItem(storageKey);
+      // Load all documents for this case from CMS
+      const { items: allDocs } = await BaseCrudService.getAll<DocumentosProponentes>('documentosproponentes');
+      const caseDocs = allDocs.filter(d => d.financingCaseRef === caseId);
       
-      const checklistsMap = new Map<string, ProponentDocumentChecklist>();
-      
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        Object.keys(parsed).forEach(clientRef => {
-          checklistsMap.set(clientRef, parsed[clientRef]);
-        });
+      // Build list of all proponents (principal + participants)
+      const allProponentRefs: string[] = [];
+      if (principalClientRef) {
+        allProponentRefs.push(principalClientRef);
       }
+      participants.forEach(p => {
+        if (p.clientRef && !allProponentRefs.includes(p.clientRef)) {
+          allProponentRefs.push(p.clientRef);
+        }
+      });
       
-      // Ensure principal proponent has document checklist
-      if (principalClientRef && !checklistsMap.has(principalClientRef)) {
-        const newChecklist: ProponentDocumentChecklist = {
-          _id: crypto.randomUUID(),
-          atendimentoRef: caseId,
-          clientRef: principalClientRef,
-          documents: DEFAULT_PROPONENT_DOCUMENTS.map(doc => ({
-            _id: crypto.randomUUID(),
-            documentType: doc.documentType,
-            documentName: doc.documentName,
-            isReceived: false,
-            isActive: true,
-            notes: ''
-          }))
-        };
-        checklistsMap.set(principalClientRef, newChecklist);
-      }
-      
-      // Ensure all participants have document checklists
-      for (const participant of participants) {
-        if (participant.clientRef && !checklistsMap.has(participant.clientRef)) {
-          const newChecklist: ProponentDocumentChecklist = {
-            _id: crypto.randomUUID(),
-            atendimentoRef: caseId,
-            clientRef: participant.clientRef,
-            documents: DEFAULT_PROPONENT_DOCUMENTS.map(doc => ({
+      // Ensure each proponent has all default documents
+      for (const proponentRef of allProponentRefs) {
+        for (const defaultDoc of DEFAULT_PROPONENT_DOCUMENTS) {
+          // Check if document already exists for this proponent
+          const existingDoc = caseDocs.find(d => 
+            d.proponentRef === proponentRef && 
+            d.documentName === defaultDoc.documentName
+          );
+          
+          if (!existingDoc) {
+            // Create the document in CMS
+            const newDoc: DocumentosProponentes = {
               _id: crypto.randomUUID(),
-              documentType: doc.documentType,
-              documentName: doc.documentName,
+              financingCaseRef: caseId,
+              proponentRef: proponentRef,
+              documentName: defaultDoc.documentName,
               isReceived: false,
               isActive: true,
+              isMandatory: defaultDoc.isMandatory,
               notes: ''
-            }))
-          };
-          checklistsMap.set(participant.clientRef, newChecklist);
+            };
+            
+            await BaseCrudService.create('documentosproponentes', newDoc);
+            caseDocs.push(newDoc);
+          }
         }
       }
       
-      setProponentDocumentChecklists(checklistsMap);
-      
-      // Save to localStorage
-      const toStore: Record<string, ProponentDocumentChecklist> = {};
-      checklistsMap.forEach((value, key) => {
-        toStore[key] = value;
-      });
-      localStorage.setItem(storageKey, JSON.stringify(toStore));
+      setProponentDocuments(caseDocs);
       
     } catch (error) {
-      console.error('Error loading proponent document checklists:', error);
+      console.error('Error loading proponent documents:', error);
     }
   };
 
@@ -1705,82 +1676,92 @@ export default function AdminFinancingKanbanPage() {
   };
 
   // Update document checklist item
-  const handleUpdateDocumentItem = async (clientRef: string, documentId: string, updates: Partial<ProponentDocumentItem>) => {
+  const handleUpdateDocumentItem = async (proponentRef: string, documentId: string, updates: Partial<DocumentosProponentes>) => {
     if (!selectedCase) return;
 
-    const checklist = proponentDocumentChecklists.get(clientRef);
-    if (!checklist) return;
+    try {
+      // Update in CMS
+      await BaseCrudService.update<DocumentosProponentes>('documentosproponentes', {
+        _id: documentId,
+        ...updates
+      });
 
-    const updatedDocuments = checklist.documents.map(doc => 
-      doc._id === documentId ? { ...doc, ...updates } : doc
-    );
+      // Update local state
+      setProponentDocuments(proponentDocuments.map(doc => 
+        doc._id === documentId ? { ...doc, ...updates } : doc
+      ));
 
-    const updatedChecklist: ProponentDocumentChecklist = {
-      ...checklist,
-      documents: updatedDocuments
-    };
+      // Create history entry
+      const client = clients.find(c => c._id === proponentRef);
+      const clientName = client?.clientName || client?.nomeRazaoSocial || 'Proponente';
+      const document = proponentDocuments.find(d => d._id === documentId);
+      
+      if (document) {
+        let description = '';
+        if (updates.isReceived !== undefined) {
+          description = updates.isReceived 
+            ? `Documento "${document.documentName}" marcado como RECEBIDO para ${clientName}`
+            : `Documento "${document.documentName}" marcado como PENDENTE para ${clientName}`;
+        } else if (updates.isActive === false) {
+          description = `Documento "${document.documentName}" EXCLUÍDO do checklist de ${clientName}`;
+        } else if (updates.isActive === true) {
+          description = `Documento "${document.documentName}" RESTAURADO no checklist de ${clientName}`;
+        }
 
-    const newMap = new Map(proponentDocumentChecklists);
-    newMap.set(clientRef, updatedChecklist);
-    setProponentDocumentChecklists(newMap);
-
-    // Save to localStorage
-    const storageKey = `doc-checklist-${selectedCase._id}`;
-    const toStore: Record<string, ProponentDocumentChecklist> = {};
-    newMap.forEach((value, key) => {
-      toStore[key] = value;
-    });
-    localStorage.setItem(storageKey, JSON.stringify(toStore));
-
-    // Create history entry
-    const client = clients.find(c => c._id === clientRef);
-    const clientName = client?.clientName || client?.nomeRazaoSocial || 'Proponente';
-    const document = updatedDocuments.find(d => d._id === documentId);
-    
-    if (document) {
-      let description = '';
-      if (updates.isReceived !== undefined) {
-        description = updates.isReceived 
-          ? `Documento "${document.documentName}" marcado como RECEBIDO para ${clientName}`
-          : `Documento "${document.documentName}" marcado como NÃO RECEBIDO para ${clientName}`;
-      } else if (updates.isActive === false) {
-        description = `Documento "${document.documentName}" EXCLUÍDO do checklist de ${clientName}`;
+        if (description) {
+          await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+            _id: crypto.randomUUID(),
+            atendimentoRef: selectedCase._id,
+            tipoEvento: 'Documento',
+            interactionType: 'Atualização de documento',
+            interactionDescription: description,
+            interactionDate: new Date().toISOString(),
+            autorTipo: 'Sistema'
+          });
+        }
       }
 
-      if (description) {
-        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-          _id: crypto.randomUUID(),
-          atendimentoRef: selectedCase._id,
-          tipoEvento: 'Documento',
-          interactionType: 'Atualização de documento',
-          interactionDescription: description,
-          interactionDate: new Date().toISOString(),
-          autorTipo: 'Sistema'
-        });
-      }
+      // Check and create/remove automatic pendings
+      await syncDocumentPendings(proponentRef);
+    } catch (error) {
+      console.error('Error updating document item:', error);
     }
-
-    // Check and create/remove automatic pendings
-    await syncDocumentPendings(clientRef);
   };
 
-  // Delete document item (mark as inactive)
-  const handleDeleteDocumentItem = async (clientRef: string, documentId: string) => {
-    await handleUpdateDocumentItem(clientRef, documentId, { isActive: false });
+  // Delete document item (mark as inactive) - only for non-mandatory documents
+  const handleDeleteDocumentItem = async (proponentRef: string, documentId: string) => {
+    const document = proponentDocuments.find(d => d._id === documentId);
+    
+    // Prevent deletion of mandatory documents
+    if (document?.isMandatory) {
+      console.warn('Cannot delete mandatory document:', document.documentName);
+      return;
+    }
+    
+    await handleUpdateDocumentItem(proponentRef, documentId, { isActive: false });
+  };
+
+  // Restore deleted document (mark as active again)
+  const handleRestoreDocumentItem = async (proponentRef: string, documentId: string) => {
+    await handleUpdateDocumentItem(proponentRef, documentId, { 
+      isActive: true,
+      isReceived: false // Reset to pending when restored
+    });
   };
 
   // Sync automatic pendings based on document checklist
-  const syncDocumentPendings = async (clientRef: string) => {
+  const syncDocumentPendings = async (proponentRef: string) => {
     if (!selectedCase) return;
 
-    const checklist = proponentDocumentChecklists.get(clientRef);
-    if (!checklist) return;
-
-    const client = clients.find(c => c._id === clientRef);
+    const client = clients.find(c => c._id === proponentRef);
     const clientName = client?.clientName || client?.nomeRazaoSocial || 'Proponente';
 
-    // Get active documents that are not received
-    const missingDocs = checklist.documents.filter(doc => doc.isActive && !doc.isReceived);
+    // Get active documents that are not received for this proponent
+    const missingDocs = proponentDocuments.filter(doc => 
+      doc.proponentRef === proponentRef && 
+      doc.isActive && 
+      !doc.isReceived
+    );
 
     // Get all existing document pendings for this client
     const existingPendings = pendings.filter(p => 
@@ -1802,7 +1783,7 @@ export default function AdminFinancingKanbanPage() {
           description: `Aguardando recebimento do documento "${doc.documentName}" do proponente ${clientName}`,
           status: 'Aberta',
           priority: 'Alta',
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           responsiblePartyType: 'Cliente',
           responsiblePartyDetails: clientName,
           taskAutomaticallyCreated: true,
@@ -1820,7 +1801,10 @@ export default function AdminFinancingKanbanPage() {
     // Remove pendings for documents that are now received or deleted
     for (const pending of existingPendings) {
       const docName = pending.title.replace(`Documento pendente: `, '').replace(` - ${clientName}`, '');
-      const doc = checklist.documents.find(d => d.documentName === docName);
+      const doc = proponentDocuments.find(d => 
+        d.proponentRef === proponentRef && 
+        d.documentName === docName
+      );
 
       if (!doc || !doc.isActive || doc.isReceived) {
         await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
@@ -3240,9 +3224,9 @@ export default function AdminFinancingKanbanPage() {
                                     </h5>
                                     
                                     {(() => {
-                                      const docChecklist = proponentDocumentChecklists.get(currentClientRef);
+                                      const proponentDocs = proponentDocuments.filter(d => d.proponentRef === currentClientRef);
                                       
-                                      if (!docChecklist) {
+                                      if (proponentDocs.length === 0) {
                                         return (
                                           <div className="text-center py-8 bg-light-gray/50 rounded-xl">
                                             <File className="w-12 h-12 mx-auto mb-3 text-foreground/20" />
@@ -3251,7 +3235,8 @@ export default function AdminFinancingKanbanPage() {
                                         );
                                       }
 
-                                      const activeDocuments = docChecklist.documents.filter(doc => doc.isActive);
+                                      const activeDocuments = proponentDocs.filter(doc => doc.isActive);
+                                      const inactiveDocuments = proponentDocs.filter(doc => !doc.isActive);
                                       const receivedCount = activeDocuments.filter(doc => doc.isReceived).length;
                                       const totalCount = activeDocuments.length;
 
@@ -3293,7 +3278,7 @@ export default function AdminFinancingKanbanPage() {
                                                   <div className="flex items-start justify-between gap-3">
                                                     <div className="flex items-start gap-3 flex-1">
                                                       <Checkbox
-                                                        checked={doc.isReceived}
+                                                        checked={doc.isReceived || false}
                                                         onCheckedChange={(checked) => 
                                                           handleUpdateDocumentItem(currentClientRef, doc._id, { 
                                                             isReceived: checked as boolean,
@@ -3303,11 +3288,18 @@ export default function AdminFinancingKanbanPage() {
                                                         className="mt-1"
                                                       />
                                                       <div className="flex-1">
-                                                        <Label className={`font-paragraph text-sm font-semibold block mb-1 cursor-pointer ${
-                                                          doc.isReceived ? 'text-green-700' : 'text-foreground'
-                                                        }`}>
-                                                          {doc.documentName}
-                                                        </Label>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                          <Label className={`font-paragraph text-sm font-semibold cursor-pointer ${
+                                                            doc.isReceived ? 'text-green-700' : 'text-foreground'
+                                                          }`}>
+                                                            {doc.documentName}
+                                                          </Label>
+                                                          {doc.isMandatory && (
+                                                            <Badge className="bg-red-500 text-white text-xs px-2 py-0">
+                                                              OBRIGATÓRIO
+                                                            </Badge>
+                                                          )}
+                                                        </div>
                                                         {doc.isReceived && doc.uploadDate && (
                                                           <p className="text-xs text-green-600 flex items-center gap-1">
                                                             <CheckCircle className="w-3 h-3" />
@@ -3316,15 +3308,17 @@ export default function AdminFinancingKanbanPage() {
                                                         )}
                                                       </div>
                                                     </div>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      onClick={() => handleDeleteDocumentItem(currentClientRef, doc._id)}
-                                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                      title="Excluir item (não aplicável)"
-                                                    >
-                                                      <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                    {!doc.isMandatory && (
+                                                      <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => handleDeleteDocumentItem(currentClientRef, doc._id)}
+                                                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        title="Excluir documento (não aplicável)"
+                                                      >
+                                                        <Trash2 className="w-4 h-4" />
+                                                      </Button>
+                                                    )}
                                                   </div>
 
                                                   {/* File upload section */}
@@ -3389,13 +3383,53 @@ export default function AdminFinancingKanbanPage() {
                                             ))}
                                           </div>
 
+                                          {/* Deleted documents section - restore option */}
+                                          {inactiveDocuments.length > 0 && (
+                                            <div className="mt-6 pt-6 border-t-2 border-border-gray">
+                                              <h6 className="font-heading text-sm font-bold mb-3 flex items-center gap-2 text-foreground/70">
+                                                <RotateCcw className="w-4 h-4" />
+                                                Documentos Excluídos (Recuperáveis)
+                                              </h6>
+                                              <div className="space-y-2">
+                                                {inactiveDocuments.map((doc) => (
+                                                  <div
+                                                    key={doc._id}
+                                                    className="p-3 rounded-lg border-2 border-dashed border-border-gray bg-gray-50 flex items-center justify-between"
+                                                  >
+                                                    <div className="flex items-center gap-2">
+                                                      <XCircle className="w-4 h-4 text-foreground/40" />
+                                                      <span className="text-sm text-foreground/60 line-through">
+                                                        {doc.documentName}
+                                                      </span>
+                                                    </div>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() => handleRestoreDocumentItem(currentClientRef, doc._id)}
+                                                      className="h-8 text-xs bg-white hover:bg-secondary/10 border-secondary/30"
+                                                    >
+                                                      <RotateCcw className="w-3 h-3 mr-1" />
+                                                      Restaurar
+                                                    </Button>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
                                           {/* Info message */}
                                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
                                             <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                            <p className="text-xs text-blue-800">
-                                              <strong>Importante:</strong> Documentos ativos e não recebidos geram pendências automáticas. 
-                                              Use o botão "Excluir item" para remover documentos não aplicáveis a este proponente.
-                                            </p>
+                                            <div className="text-xs text-blue-800">
+                                              <p className="mb-2">
+                                                <strong>Importante:</strong> Documentos ativos e não recebidos geram pendências automáticas.
+                                              </p>
+                                              <ul className="list-disc list-inside space-y-1 ml-2">
+                                                <li><strong>Documentos obrigatórios</strong> (RG, CPF, CNH) não podem ser excluídos</li>
+                                                <li><strong>Documentos opcionais</strong> podem ser excluídos se não aplicáveis</li>
+                                                <li><strong>Documentos excluídos</strong> podem ser restaurados a qualquer momento</li>
+                                              </ul>
+                                            </div>
                                           </div>
                                         </div>
                                       );

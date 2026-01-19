@@ -267,6 +267,35 @@ export interface DocumentosdoFinanciamento {
 
 
 /**
+ * Collection ID: documentosproponentes
+ * Interface for ProponentDocuments
+ */
+export interface ProponentDocuments {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  financingCaseRef?: string;
+  /** @wixFieldType text */
+  proponentRef?: string;
+  /** @wixFieldType text */
+  documentName?: string;
+  /** @wixFieldType boolean */
+  isReceived?: boolean;
+  /** @wixFieldType boolean */
+  isActive?: boolean;
+  /** @wixFieldType boolean */
+  isMandatory?: boolean;
+  /** @wixFieldType url */
+  fileUrl?: string;
+  /** @wixFieldType text */
+  notes?: string;
+  /** @wixFieldType datetime */
+  uploadDate?: Date | string;
+}
+
+
+/**
  * Collection ID: empresas
  * Interface for Companies
  */
