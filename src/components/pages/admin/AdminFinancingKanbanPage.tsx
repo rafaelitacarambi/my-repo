@@ -3989,10 +3989,10 @@ export default function AdminFinancingKanbanPage() {
                           const casePendings = pendings
                             .filter(p => p.atendimentoRef === selectedCase?._id)
                             .sort((a, b) => {
-                              if (!a.dueDate && !b.dueDate) return 0;
-                              if (!a.dueDate) return 1;
-                              if (!b.dueDate) return -1;
-                              return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                              // Sort by creation date DESC (most recent first)
+                              const dateA = a._createdDate ? new Date(a._createdDate).getTime() : 0;
+                              const dateB = b._createdDate ? new Date(b._createdDate).getTime() : 0;
+                              return dateB - dateA;
                             });
 
                           if (casePendings.length === 0) {
@@ -4120,10 +4120,10 @@ export default function AdminFinancingKanbanPage() {
                         const caseTasks = tasks
                           .filter(t => t.atendimentoRef === selectedCase?._id)
                           .sort((a, b) => {
-                            if (!a.dueDate && !b.dueDate) return 0;
-                            if (!a.dueDate) return 1;
-                            if (!b.dueDate) return -1;
-                            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                            // Sort by creation date DESC (most recent first)
+                            const dateA = a._createdDate ? new Date(a._createdDate).getTime() : 0;
+                            const dateB = b._createdDate ? new Date(b._createdDate).getTime() : 0;
+                            return dateB - dateA;
                           });
 
                         if (caseTasks.length === 0) {
