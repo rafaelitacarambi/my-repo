@@ -336,6 +336,9 @@ export default function AdminFinancingKanbanPage() {
   const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
   const [showQuickPendingModal, setShowQuickPendingModal] = useState(false);
   const [quickActionCaseId, setQuickActionCaseId] = useState<string | null>(null);
+  
+  // Task creation modal in Tarefas tab
+  const [showTaskFormInModal, setShowTaskFormInModal] = useState(false);
 
   // Form states
   const [caseFormData, setCaseFormData] = useState<Partial<FinancingCase>>({
@@ -388,7 +391,15 @@ export default function AdminFinancingKanbanPage() {
   const [showPendingForm, setShowPendingForm] = useState(false);
   const [linkedProperties, setLinkedProperties] = useState<AtendimentoImveis[]>([]);
 
-  const [newTaskData, setNewTaskData] = useState({
+  const [newTaskData, setNewTaskData] = useState<{
+    description: string;
+    responsibleType: string;
+    internalResponsibleId: string;
+    externalResponsibleName: string;
+    externalResponsibleContact: string;
+    dueDate: string;
+    responsavelExternoRef?: string;
+  }>({
     description: '',
     responsibleType: 'Interno',
     internalResponsibleId: '',
@@ -1466,6 +1477,59 @@ export default function AdminFinancingKanbanPage() {
     } catch (error) {
       console.error('Error updating task status:', error);
       await loadData(); // Revert on failure
+    }
+  };
+  
+  // Create task from modal (Tarefas tab)
+  const handleCreateTaskInModal = async () => {
+    if (!selectedCase || !newTaskData.description) return;
+
+    try {
+      const now = new Date().toISOString();
+      const dueDate = newTaskData.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      const newTask: FinancingTasks = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: selectedCase._id,
+        titulo: newTaskData.description.substring(0, 100),
+        description: newTaskData.description,
+        status: 'Aberta',
+        responsibleType: 'Equipe R Sales',
+        responsavelExternoRef: newTaskData.responsavelExternoRef,
+        dueDate,
+        creationDate: now
+      };
+
+      await BaseCrudService.create('tarefasfinanciamento', newTask);
+
+      // Create history entry
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: selectedCase._id,
+        tipoEvento: 'Tarefa_Criada',
+        interactionType: 'Criação de tarefa',
+        interactionDescription: `Nova tarefa criada: "${newTask.titulo}"`,
+        interactionDate: now,
+        autorTipo: 'Sistema'
+      });
+
+      // Update local state
+      setTasks([...tasks, newTask as Task]);
+      
+      // Reset and close
+      setNewTaskData({
+        description: '',
+        responsibleType: 'Interno',
+        internalResponsibleId: '',
+        externalResponsibleName: '',
+        externalResponsibleContact: '',
+        dueDate: ''
+      });
+      setShowTaskFormInModal(false);
+      
+      await loadData();
+    } catch (error) {
+      console.error('Error creating task in modal:', error);
     }
   };
   
