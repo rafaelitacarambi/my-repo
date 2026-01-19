@@ -4,24 +4,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Check, X } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 import { BaseCrudService } from '@/integrations';
-import { Clients, ServiceRecords } from '@/entities';
+import { Clients } from '@/entities';
+import { LeadRegistrationModal } from '@/components/LeadRegistrationModal';
 
 interface ClientRegistrationModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: (clientId: string, atendimentoIds: string[]) => void;
+  onSuccess?: (clientId: string) => void;
 }
 
 const ROLES = [
-  { id: 'comprador', label: 'Comprador', kanban: 'Kanban Compra/Financiamento' },
-  { id: 'vendedor', label: 'Vendedor', kanban: 'Kanban Captação/Venda' },
-  { id: 'locatario', label: 'Locatário', kanban: 'Kanban Locação (locatário)' },
-  { id: 'locador', label: 'Locador', kanban: 'Kanban Administração/Locação (locador)' },
-  { id: 'financiamento', label: 'Financiamento', kanban: 'Kanban Financiamento' },
-  { id: 'leilao', label: 'Leilão Caixa', kanban: 'Kanban Leilão Caixa' },
+  { id: 'Comprador', label: 'Comprador' },
+  { id: 'Vendedor', label: 'Vendedor' },
+  { id: 'Locatário', label: 'Locatário' },
+  { id: 'Locador', label: 'Locador' },
+  { id: 'Investidor', label: 'Investidor' },
+  { id: 'Parceiro', label: 'Parceiro' },
+  { id: 'Construtora / Incorporadora', label: 'Construtora / Incorporadora' },
+  { id: 'Prestador', label: 'Prestador' },
 ];
 
 export function ClientRegistrationModal({
@@ -34,8 +38,9 @@ export function ClientRegistrationModal({
   const [error, setError] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<Clients | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [createLead, setCreateLead] = useState<'sim' | 'nao'>('nao');
   const [createdClientId, setCreatedClientId] = useState<string | null>(null);
-  const [createdAtendimentos, setCreatedAtendimentos] = useState<string[]>([]);
+  const [showLeadModal, setShowLeadModal] = useState(false);
 
   const [formData, setFormData] = useState({
     clientName: '',
@@ -54,11 +59,12 @@ export function ClientRegistrationModal({
       notes: '',
     });
     setSelectedRoles([]);
+    setCreateLead('nao');
     setError(null);
     setDuplicateWarning(null);
     setStep('form');
     setCreatedClientId(null);
-    setCreatedAtendimentos([]);
+    setShowLeadModal(false);
   };
 
   const handleClose = () => {
@@ -131,7 +137,7 @@ export function ClientRegistrationModal({
     try {
       const clientId = crypto.randomUUID();
       
-      // Create client
+      // Create client with selected roles saved in papeis field
       await BaseCrudService.create('clientes', {
         _id: clientId,
         clientName: formData.clientName,
@@ -140,34 +146,23 @@ export function ClientRegistrationModal({
         address: formData.address,
         notes: formData.notes,
         status: 'Ativo',
+        papeis: selectedRoles.join(', '), // Save roles as comma-separated string
       });
 
-      // Create atendimentos for each selected role
-      const atendimentoIds: string[] = [];
-      for (const roleId of selectedRoles) {
-        const role = ROLES.find((r) => r.id === roleId);
-        if (role) {
-          const atendimentoId = crypto.randomUUID();
-          await BaseCrudService.create('atendimentos', {
-            _id: atendimentoId,
-            contactName: formData.clientName,
-            contactEmail: formData.email,
-            contactPhone: formData.phoneNumber,
-            serviceType: role.label,
-            status: 'Aberto',
-            priority: 'Normal',
-            notes: `Atendimento automático para ${role.label}. Direcionado para: ${role.kanban}`,
-            creationDate: new Date(),
-          });
-          atendimentoIds.push(atendimentoId);
-        }
-      }
-
       setCreatedClientId(clientId);
-      setCreatedAtendimentos(atendimentoIds);
-      setStep('success');
+      
+      // Check if user wants to create a lead
+      if (createLead === 'sim') {
+        setStep('success');
+        // Open lead modal after a short delay
+        setTimeout(() => {
+          setShowLeadModal(true);
+        }, 500);
+      } else {
+        setStep('success');
+      }
     } catch (err) {
-      setError('Erro ao criar cliente e atendimentos');
+      setError('Erro ao criar cliente');
       console.error(err);
     } finally {
       setLoading(false);
@@ -175,10 +170,15 @@ export function ClientRegistrationModal({
   };
 
   const handleSuccessClose = () => {
-    if (createdClientId && createdAtendimentos.length > 0) {
-      onSuccess?.(createdClientId, createdAtendimentos);
+    if (createdClientId) {
+      onSuccess?.(createdClientId);
     }
     handleClose();
+  };
+
+  const handleLeadSuccess = (leadId: string) => {
+    setShowLeadModal(false);
+    // Lead was created successfully
   };
 
   return (
@@ -310,7 +310,7 @@ export function ClientRegistrationModal({
         {step === 'roles' && (
           <div className="space-y-4 mt-4">
             <p className="font-paragraph text-sm text-primary-foreground/70">
-              Selecione os papéis/funções deste cliente. Um atendimento será criado automaticamente para cada papel selecionado.
+              Selecione os papéis/funções deste cliente. Os papéis servem apenas para classificação no CRM.
             </p>
 
             <div className="space-y-3">
@@ -333,13 +333,31 @@ export function ClientRegistrationModal({
                       >
                         {role.label}
                       </Label>
-                      <p className="font-paragraph text-xs text-primary-foreground/60 mt-1">
-                        {role.kanban}
-                      </p>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Create Lead Option */}
+            <div className="bg-secondary/10 rounded-lg p-4 border border-secondary/30 mt-6">
+              <Label className="font-paragraph font-semibold text-primary-foreground mb-3 block">
+                Criar Lead agora?
+              </Label>
+              <RadioGroup value={createLead} onValueChange={(value: 'sim' | 'nao') => setCreateLead(value)}>
+                <div className="flex items-center space-x-2 mb-2">
+                  <RadioGroupItem value="sim" id="lead-sim" />
+                  <Label htmlFor="lead-sim" className="font-paragraph text-sm text-primary-foreground cursor-pointer">
+                    Sim
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="nao" id="lead-nao" />
+                  <Label htmlFor="lead-nao" className="font-paragraph text-sm text-primary-foreground cursor-pointer">
+                    Não
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
             {error && (
@@ -389,7 +407,7 @@ export function ClientRegistrationModal({
 
             <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
               <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
-                Atendimentos criados:
+                Papéis selecionados:
               </p>
               <ul className="space-y-1">
                 {selectedRoles.map((roleId) => {
@@ -403,38 +421,42 @@ export function ClientRegistrationModal({
               </ul>
             </div>
 
+            {createLead === 'sim' && (
+              <div className="bg-secondary/10 rounded-lg p-4 border border-secondary/30">
+                <p className="font-paragraph text-sm text-primary-foreground">
+                  O formulário de Lead será aberto em seguida...
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-4">
-              <Button
-                onClick={() => {
-                  if (createdAtendimentos.length > 0) {
-                    window.location.href = '/admin/atendimentos';
-                  }
-                }}
-                className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-12 rounded-lg"
-              >
-                Ver Atendimentos
-              </Button>
               <Button
                 onClick={() => {
                   window.location.href = '/admin/clientes';
                 }}
-                variant="outline"
-                className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
+                className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-12 rounded-lg"
               >
                 Ver Cliente
               </Button>
+              <Button
+                onClick={handleSuccessClose}
+                variant="outline"
+                className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
+              >
+                Fechar
+              </Button>
             </div>
-
-            <Button
-              onClick={handleSuccessClose}
-              variant="ghost"
-              className="w-full text-primary-foreground/60 hover:text-primary-foreground"
-            >
-              Fechar
-            </Button>
           </div>
         )}
       </DialogContent>
+
+      {/* Lead Registration Modal */}
+      <LeadRegistrationModal
+        isOpen={showLeadModal}
+        onOpenChange={setShowLeadModal}
+        clientId={createdClientId}
+        onSuccess={handleLeadSuccess}
+      />
     </Dialog>
   );
 }
