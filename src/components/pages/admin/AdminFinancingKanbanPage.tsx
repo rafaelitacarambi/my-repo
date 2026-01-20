@@ -224,7 +224,6 @@ interface ProponentChecklist {
   ownsProperty?: boolean;
   hasActiveFinancing?: boolean;
   isFirstAcquisition?: boolean;
-  numeroPis?: string;
 }
 
 interface Vendor {
@@ -346,9 +345,6 @@ export default function AdminFinancingKanbanPage() {
   
   // Task creation modal in Tarefas tab
   const [showTaskFormInModal, setShowTaskFormInModal] = useState(false);
-  
-  // FGTS Reminder modal
-  const [showFgtsReminderModal, setShowFgtsReminderModal] = useState(false);
 
   // Form states
   const [caseFormData, setCaseFormData] = useState<Partial<FinancingCase>>({
@@ -1717,8 +1713,7 @@ export default function AdminFinancingKanbanPage() {
       declaresIncomeTax: field === 'declaresIncomeTax' ? value as boolean : false,
       ownsProperty: field === 'ownsProperty' ? value as boolean : false,
       hasActiveFinancing: field === 'hasActiveFinancing' ? value as boolean : false,
-      isFirstAcquisition: field === 'isFirstAcquisition' ? value as boolean : false,
-      numeroPis: field === 'numeroPis' ? value as string : ''
+      isFirstAcquisition: field === 'isFirstAcquisition' ? value as boolean : false
     };
     
     setProponentChecklists(new Map(proponentChecklists.set(clientRef, updated)));
@@ -2926,7 +2921,7 @@ export default function AdminFinancingKanbanPage() {
                     </CardContent>
                   </Card>
 
-                   {/* FGTS */}
+                  {/* FGTS */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg font-heading flex items-center gap-2">
@@ -2935,37 +2930,6 @@ export default function AdminFinancingKanbanPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {/* FGTS Reminder - Only show if FGTS is enabled and PIS is not filled */}
-                      {caseFormData.useFgts && (() => {
-                        const hasPisFilled = Array.from(proponentChecklists.values()).some(checklist => 
-                          checklist.numeroPis && checklist.numeroPis.trim() !== ''
-                        );
-                        
-                        if (!hasPisFilled) {
-                          return (
-                            <motion.div
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4 mb-4"
-                            >
-                              <div className="flex items-start gap-3">
-                                <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                                <div>
-                                  <p className="font-paragraph text-sm text-foreground font-semibold mb-1">
-                                    Lembrete: É obrigatório preencher o número do PIS no cadastro do proponente para utilização do FGTS.
-                                  </p>
-                                  <p className="text-xs text-foreground/70">
-                                    Acesse a aba "Proponentes" para preencher o número do PIS.
-                                  </p>
-                                </div>
-                              </div>
-                            </motion.div>
-                          );
-                        }
-                        return null;
-                      })()}
-
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label className="font-paragraph text-sm mb-3 block font-semibold">Utilizará FGTS na proposta? *</Label>
@@ -3403,40 +3367,6 @@ export default function AdminFinancingKanbanPage() {
                                           </div>
                                         </RadioGroup>
                                       </div>
-                                      
-                                      {/* PIS Number - Required if FGTS is enabled */}
-                                      {caseFormData.useFgts && (
-                                        <div className={`p-4 rounded-lg border-2 transition-all ${
-                                          !checklist?.numeroPis || checklist.numeroPis.trim() === '' 
-                                            ? 'bg-red-50 border-red-400 shadow-md' 
-                                            : 'bg-white border-border-gray hover:border-secondary/40 hover:shadow-md'
-                                        }`}>
-                                          <Label className="font-paragraph text-sm font-semibold leading-tight block mb-2">
-                                            Número do PIS *
-                                          </Label>
-                                          <p className="text-xs text-foreground/60 mb-3">
-                                            {!checklist?.numeroPis || checklist.numeroPis.trim() === '' 
-                                              ? '⚠️ OBRIGATÓRIO para utilização do FGTS' 
-                                              : 'Necessário para utilização do FGTS'}
-                                          </p>
-                                          <Input
-                                            value={checklist?.numeroPis || ''}
-                                            onChange={(e) => handleUpdateProponentChecklist(proponent.clientRef, 'numeroPis', e.target.value)}
-                                            placeholder="000.00000.00-0"
-                                            className={`h-10 ${
-                                              !checklist?.numeroPis || checklist.numeroPis.trim() === '' 
-                                                ? 'border-red-500 border-2' 
-                                                : ''
-                                            }`}
-                                          />
-                                          {(!checklist?.numeroPis || checklist.numeroPis.trim() === '') && (
-                                            <p className="text-xs text-red-600 font-semibold mt-2 flex items-center gap-1">
-                                              <AlertTriangle className="w-3 h-3" />
-                                              Campo obrigatório para FGTS
-                                            </p>
-                                          )}
-                                        </div>
-                                      )}
 
                                       {/* Dependente */}
                                       <div className="p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
@@ -5092,47 +5022,7 @@ export default function AdminFinancingKanbanPage() {
         </DialogContent>
       </Dialog>
       
-      {/* FGTS Reminder Modal */}
-      <Dialog open={showFgtsReminderModal} onOpenChange={setShowFgtsReminderModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-heading text-xl text-secondary flex items-center gap-2">
-              <AlertTriangle className="w-6 h-6 text-orange-500" />
-              Lembrete Importante
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4 mb-4">
-              <p className="font-paragraph text-sm text-foreground mb-2">
-                <strong>Lembrete:</strong> Preencher o número do PIS no cadastro do proponente.
-              </p>
-              <p className="text-xs text-foreground/70">
-                O número do PIS é obrigatório para utilização do FGTS no financiamento. Você pode preencher agora na aba Proponentes ou ser lembrado depois.
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <Button 
-              onClick={() => {
-                setShowFgtsReminderModal(false);
-                setModalTab('proponentes');
-              }}
-              className="h-11 flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Ir para Proponentes
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowFgtsReminderModal(false)}
-              className="h-11 px-6"
-            >
-              Lembrar depois
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* FGTS Reminder Modal - REMOVED */}
 
       <Footer />
     </div>
