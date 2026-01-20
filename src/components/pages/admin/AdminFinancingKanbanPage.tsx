@@ -343,7 +343,7 @@ export default function AdminFinancingKanbanPage() {
   // Task creation modal in Tarefas tab
   const [showTaskFormInModal, setShowTaskFormInModal] = useState(false);
   
-  // FGTS reminder modal
+  // FGTS Reminder modal
   const [showFgtsReminderModal, setShowFgtsReminderModal] = useState(false);
 
   // Form states
@@ -947,77 +947,6 @@ export default function AdminFinancingKanbanPage() {
   const handleFgtsChange = async (value: string) => {
     const willUseFgts = value === 'sim';
     setCaseFormData({ ...caseFormData, useFgts: willUseFgts, fgtsValue: willUseFgts ? caseFormData.fgtsValue : 0 });
-    
-    // If "Sim" is selected, check if PIS is filled for any proponent
-    if (willUseFgts && selectedCase) {
-      // Check if any proponent has PIS filled
-      const hasPisFilled = Array.from(proponentChecklists.values()).some(checklist => 
-        checklist.numeroPis && checklist.numeroPis.trim() !== ''
-      );
-      
-      // Show reminder if no PIS is filled
-      if (!hasPisFilled) {
-        setShowFgtsReminderModal(true);
-      }
-      
-      // Create automatic pending for PIS if not exists
-      await createFgtsPisPending();
-    }
-  };
-  
-  // Create automatic pending for PIS
-  const createFgtsPisPending = async () => {
-    if (!selectedCase) return;
-    
-    try {
-      // Check if pending already exists
-      const existingPending = pendings.find(p => 
-        p.atendimentoRef === selectedCase._id && 
-        p.categoria === 'FGTS' &&
-        p.title.includes('PIS') &&
-        p.status !== 'Resolvida'
-      );
-      
-      if (existingPending) return; // Already exists
-      
-      const now = new Date().toISOString();
-      const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(); // 3 days
-      
-      const newPending: PendnciasdoFinanciamento = {
-        _id: crypto.randomUUID(),
-        atendimentoRef: selectedCase._id,
-        title: 'Informar PIS para utilização do FGTS',
-        description: 'É necessário preencher o número do PIS no cadastro do proponente para utilizar o FGTS no financiamento.',
-        status: 'Aberta',
-        priority: 'Alta',
-        dueDate,
-        responsiblePartyType: 'Cliente',
-        responsiblePartyDetails: 'Proponente',
-        taskAutomaticallyCreated: false,
-        creationDate: now,
-        bloqueiaFase: false,
-        categoria: 'FGTS',
-        tipo: 'Automática - FGTS'
-      };
-      
-      await BaseCrudService.create('pendenciasfinanciamento', newPending);
-      setPendings([...pendings, newPending as Pending]);
-      
-      // Create history entry
-      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-        _id: crypto.randomUUID(),
-        atendimentoRef: selectedCase._id,
-        tipoEvento: 'Pendencia_Criada',
-        interactionType: 'Criação automática de pendência',
-        interactionDescription: 'Pendência automática criada: Informar PIS para FGTS',
-        interactionDate: now,
-        autorTipo: 'Sistema'
-      });
-      
-      await loadData();
-    } catch (error) {
-      console.error('Error creating FGTS PIS pending:', error);
-    }
   };
 
   // Handle drag and drop
@@ -1778,11 +1707,6 @@ export default function AdminFinancingKanbanPage() {
     
     setProponentChecklists(new Map(proponentChecklists.set(clientRef, updated)));
     setSaveStatus('saving');
-    
-    // If PIS is filled and FGTS is enabled, resolve the automatic pending
-    if (field === 'numeroPis' && value && typeof value === 'string' && value.trim() !== '' && caseFormData.useFgts) {
-      await resolveFgtsPisPending();
-    }
 
     // Debounce save to database
     const timer = setTimeout(async () => {
@@ -1821,45 +1745,6 @@ export default function AdminFinancingKanbanPage() {
     }, 500);
 
     setDebounceTimer(timer);
-  };
-  
-  // Resolve FGTS PIS pending when PIS is filled
-  const resolveFgtsPisPending = async () => {
-    if (!selectedCase) return;
-    
-    try {
-      const fgtsPending = pendings.find(p => 
-        p.atendimentoRef === selectedCase._id && 
-        p.categoria === 'FGTS' &&
-        p.title.includes('PIS') &&
-        p.status !== 'Resolvida'
-      );
-      
-      if (fgtsPending) {
-        await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
-          _id: fgtsPending._id,
-          status: 'Resolvida',
-          resolvedDate: new Date().toISOString()
-        });
-        
-        setPendings(pendings.map(p => p._id === fgtsPending._id ? { ...p, status: 'Resolvida' } : p));
-        
-        // Create history entry
-        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
-          _id: crypto.randomUUID(),
-          atendimentoRef: selectedCase._id,
-          tipoEvento: 'Pendencia_Concluida',
-          interactionType: 'Conclusão automática de pendência',
-          interactionDescription: 'Pendência de PIS para FGTS resolvida automaticamente',
-          interactionDate: new Date().toISOString(),
-          autorTipo: 'Sistema'
-        });
-        
-        await loadData();
-      }
-    } catch (error) {
-      console.error('Error resolving FGTS PIS pending:', error);
-    }
   };
 
   // Update document checklist item
@@ -2990,7 +2875,7 @@ export default function AdminFinancingKanbanPage() {
                     </CardContent>
                   </Card>
 
-                  {/* FGTS */}
+                   {/* FGTS */}
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg font-heading flex items-center gap-2">
@@ -2999,6 +2884,37 @@ export default function AdminFinancingKanbanPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {/* FGTS Reminder - Only show if FGTS is enabled and PIS is not filled */}
+                      {caseFormData.useFgts && (() => {
+                        const hasPisFilled = Array.from(proponentChecklists.values()).some(checklist => 
+                          checklist.numeroPis && checklist.numeroPis.trim() !== ''
+                        );
+                        
+                        if (!hasPisFilled) {
+                          return (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4 mb-4"
+                            >
+                              <div className="flex items-start gap-3">
+                                <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="font-paragraph text-sm text-foreground font-semibold mb-1">
+                                    Lembrete: É obrigatório preencher o número do PIS no cadastro do proponente para utilização do FGTS.
+                                  </p>
+                                  <p className="text-xs text-foreground/70">
+                                    Acesse a aba "Proponentes" para preencher o número do PIS.
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          );
+                        }
+                        return null;
+                      })()}
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label className="font-paragraph text-sm mb-3 block font-semibold">Utilizará FGTS na proposta? *</Label>
