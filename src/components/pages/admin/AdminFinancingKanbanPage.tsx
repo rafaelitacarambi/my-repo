@@ -622,9 +622,12 @@ export default function AdminFinancingKanbanPage() {
         });
       }
 
-      // Load participants
+      // Load participants - CRITICAL: EXCLUDE VENDORS (roleInService === 'Vendedor')
       const { items: participantsList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
-      const filteredParticipants = participantsList.filter(p => p.serviceRecordRef === caseId);
+      const filteredParticipants = participantsList.filter(p => 
+        p.serviceRecordRef === caseId && 
+        p.roleInService !== 'Vendedor' // EXCLUDE VENDORS FROM PROPONENTES
+      );
       setParticipants(filteredParticipants);
 
       // Load proponent checklists
@@ -676,8 +679,11 @@ export default function AdminFinancingKanbanPage() {
         setSelectedProponentId(principalClientRef);
       }
 
-      // Also ensure checklist exists for all participants
+      // Also ensure checklist exists for all participants (EXCLUDING VENDORS)
       for (const participant of filteredParticipants) {
+        // CRITICAL: Skip vendors
+        if (participant.roleInService === 'Vendedor') continue;
+        
         if (participant.clientRef && !checklistsMap.has(participant.clientRef)) {
           const newChecklist: ChecklistdosProponentes = {
             _id: crypto.randomUUID(),
@@ -713,7 +719,7 @@ export default function AdminFinancingKanbanPage() {
       const { items: linkedPropsList } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
       setLinkedProperties(linkedPropsList.filter(lp => lp.atendimentoRef === caseId));
 
-      // Load proponent documents from CMS
+      // Load proponent documents from CMS (only for proponents, not vendors)
       await loadProponentDocuments(caseId, principalClientRef, filteredParticipants);
 
       // Load vendors and their documents
@@ -807,20 +813,21 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
-  // Load or create document checklists for all proponents
+  // Load or create document checklists for all proponents (EXCLUDING VENDORS)
   const loadProponentDocuments = async (caseId: string, principalClientRef: string | undefined, participants: ServiceParties[]) => {
     try {
       // Load all documents for this case from CMS
       const { items: allDocs } = await BaseCrudService.getAll<DocumentosProponentes>('documentosproponentes');
       const caseDocs = allDocs.filter(d => d.financingCaseRef === caseId);
       
-      // Build list of all proponents (principal + participants)
+      // Build list of all proponents (principal + participants) - EXCLUDING VENDORS
       const allProponentRefs: string[] = [];
       if (principalClientRef) {
         allProponentRefs.push(principalClientRef);
       }
       participants.forEach(p => {
-        if (p.clientRef && !allProponentRefs.includes(p.clientRef)) {
+        // CRITICAL: Only add if NOT a vendor
+        if (p.clientRef && !allProponentRefs.includes(p.clientRef) && p.roleInService !== 'Vendedor') {
           allProponentRefs.push(p.clientRef);
         }
       });
@@ -1009,9 +1016,15 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
-  // Add participant
+  // Add participant (ONLY FOR PROPONENTS, NOT VENDORS)
   const handleAddParticipant = async () => {
     if (!selectedCase || !newParticipant.clientRef) return;
+
+    // CRITICAL: Prevent adding vendors through this function
+    if (newParticipant.roleInService === 'Vendedor') {
+      console.error('Cannot add vendors through participant function. Use vendor tab.');
+      return;
+    }
 
     try {
       const participant: ServiceParties = {
@@ -1087,7 +1100,7 @@ export default function AdminFinancingKanbanPage() {
       // Get client data
       const client = clients.find(c => c._id === newVendor.clientRef);
       
-      // Add to vendors list
+      // Add to vendors list with spouse link if provided
       const newVendorObj: Vendor = {
         _id: vendorParticipant._id,
         clientRef: newVendor.clientRef,
@@ -1099,8 +1112,28 @@ export default function AdminFinancingKanbanPage() {
         agencia: newVendor.agencia,
         conta: newVendor.conta,
         tipoConta: newVendor.tipoConta,
-        chavePix: newVendor.chavePix
+        chavePix: newVendor.chavePix,
+        estadoCivil: newVendor.estadoCivil,
+        ehConjugeDe: newVendor.ehConjugeDe,
+        conjugeNaoParticipa: newVendor.conjugeNaoParticipa
       };
+      
+      // Save spouse link to localStorage if provided
+      if (newVendor.ehConjugeDe) {
+        const storageKey = `vendor-bank-${selectedCase._id}-${newVendor.clientRef}`;
+        localStorage.setItem(storageKey, JSON.stringify({
+          contato: newVendor.contato,
+          email: newVendor.email,
+          banco: newVendor.banco,
+          agencia: newVendor.agencia,
+          conta: newVendor.conta,
+          tipoConta: newVendor.tipoConta,
+          chavePix: newVendor.chavePix,
+          estadoCivil: newVendor.estadoCivil,
+          ehConjugeDe: newVendor.ehConjugeDe,
+          conjugeNaoParticipa: newVendor.conjugeNaoParticipa
+        }));
+      }
       
       setVendors([...vendors, newVendorObj]);
       
@@ -3094,7 +3127,7 @@ export default function AdminFinancingKanbanPage() {
                     </CardHeader>
                     <CardContent>
                       {(() => {
-                        // Build proponents list: Principal first, then participants (avoiding duplicates)
+                        // Build proponents list: Principal first, then participants (EXCLUDING VENDORS)
                         const proponentsList: Array<{ clientRef: string; name: string; cpf: string; roleInService: string; isPrincipal: boolean; participantId?: string }> = [];
                         
                         // Add principal proponent first (from form data)
@@ -3109,8 +3142,11 @@ export default function AdminFinancingKanbanPage() {
                           });
                         }
                         
-                        // Add participants (excluding principal if duplicate)
+                        // Add participants (EXCLUDING VENDORS and principal if duplicate)
                         participants.forEach(participant => {
+                          // CRITICAL: Skip vendors completely
+                          if (participant.roleInService === 'Vendedor') return;
+                          
                           const client = clients.find(c => c._id === participant.clientRef);
                           if (client) {
                             // Check if this participant is the same as principal (by CPF)
@@ -3202,7 +3238,7 @@ export default function AdminFinancingKanbanPage() {
                                         </div>
                                       </div>
 
-                                      {/* Linked Participants (Indented) */}
+                                      {/* Linked Participants (Indented) - ONLY PROPONENTS */}
                                       {proponentsList
                                         .filter(p => !p.isPrincipal)
                                         .map((linkedProponent, linkedIndex) => {
@@ -3734,13 +3770,122 @@ export default function AdminFinancingKanbanPage() {
                           );
                         }
 
+                        // Build hierarchical vendor list: Principal vendors first, then their spouses
+                        const principalVendors = vendors.filter(v => !v.ehConjugeDe);
+                        const spouseVendors = vendors.filter(v => v.ehConjugeDe);
+
                         return (
                           <div className="space-y-6">
-                            {/* Vendor Selector */}
+                            {/* Hierarchical Table View - Vendors */}
+                            <div className="border-2 border-secondary/20 rounded-xl overflow-hidden bg-white">
+                              {/* Table Header */}
+                              <div className="bg-gradient-to-r from-secondary to-secondary/90 text-white grid grid-cols-12 gap-4 px-6 py-4 font-heading text-sm font-bold">
+                                <div className="col-span-1">#</div>
+                                <div className="col-span-3">CPF</div>
+                                <div className="col-span-4">Nome</div>
+                                <div className="col-span-3">Papel</div>
+                                <div className="col-span-1 text-right">Ações</div>
+                              </div>
+
+                              {/* Table Body - Principal Vendors and their Spouses */}
+                              {principalVendors.map((vendor, principalIndex) => {
+                                // Find spouses of this vendor
+                                const vendorSpouses = spouseVendors.filter(s => s.ehConjugeDe === vendor.clientRef);
+                                
+                                return (
+                                  <div key={vendor.clientRef}>
+                                    {/* Principal Vendor Row */}
+                                    <div 
+                                      className="grid grid-cols-12 gap-4 px-6 py-4 border-b-2 border-border-gray hover:bg-light-gray/50 transition-colors cursor-pointer"
+                                      onClick={() => setSelectedVendorId(vendor.clientRef)}
+                                    >
+                                      <div className="col-span-1 font-bold text-secondary text-base">{principalIndex + 1}</div>
+                                      <div className="col-span-3 font-paragraph text-sm text-foreground font-semibold">
+                                        {vendor.cpf || 'CPF não informado'}
+                                      </div>
+                                      <div className="col-span-4 font-paragraph text-sm text-foreground font-bold">
+                                        {vendor.name}
+                                      </div>
+                                      <div className="col-span-3">
+                                        <Badge className="bg-secondary text-secondary-foreground text-xs">
+                                          Vendedor Principal
+                                        </Badge>
+                                      </div>
+                                      <div className="col-span-1 flex justify-end">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedVendorId(vendor.clientRef);
+                                          }}
+                                          className="h-8 w-8 p-0 hover:bg-secondary/10"
+                                          title="Ver detalhes"
+                                        >
+                                          <Eye className="w-4 h-4 text-secondary" />
+                                        </Button>
+                                      </div>
+                                    </div>
+
+                                    {/* Spouse Vendors (Indented) */}
+                                    {vendorSpouses.map((spouseVendor, spouseIndex) => (
+                                      <div 
+                                        key={spouseVendor.clientRef}
+                                        className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-border-gray/50 bg-light-gray/30 hover:bg-light-gray/60 transition-colors cursor-pointer"
+                                        onClick={() => setSelectedVendorId(spouseVendor.clientRef)}
+                                      >
+                                        <div className="col-span-1 font-semibold text-secondary/70 text-sm pl-6">
+                                          {principalIndex + 1}.{spouseIndex + 1}
+                                        </div>
+                                        <div className="col-span-3 font-paragraph text-sm text-foreground/80">
+                                          {spouseVendor.cpf || 'CPF não informado'}
+                                        </div>
+                                        <div className="col-span-4 font-paragraph text-sm text-foreground">
+                                          {spouseVendor.name}
+                                        </div>
+                                        <div className="col-span-3">
+                                          <Badge variant="outline" className="text-xs border-secondary/40 text-secondary">
+                                            Cônjuge do Vendedor
+                                          </Badge>
+                                        </div>
+                                        <div className="col-span-1 flex justify-end gap-1">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedVendorId(spouseVendor.clientRef);
+                                            }}
+                                            className="h-7 w-7 p-0 hover:bg-secondary/10"
+                                            title="Ver detalhes"
+                                          >
+                                            <Eye className="w-3.5 h-3.5 text-secondary" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleRemoveVendor(spouseVendor._id);
+                                            }}
+                                            className="h-7 w-7 p-0 hover:bg-destructive/10 text-destructive"
+                                            title="Remover vendedor"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Vendor Selector for Details (only show if more than 1) */}
                             {vendors.length > 1 && (
                               <div>
                                 <Label className="font-paragraph text-sm mb-2 block font-semibold">
-                                  Selecione o vendedor
+                                  Ver detalhes do vendedor
                                 </Label>
                                 <Select 
                                   value={selectedVendorId || vendors[0]?.clientRef} 
@@ -3750,16 +3895,26 @@ export default function AdminFinancingKanbanPage() {
                                     <SelectValue placeholder="Escolha um vendedor" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {vendors.map((vendor) => (
-                                      <SelectItem key={vendor.clientRef} value={vendor.clientRef}>
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-semibold">{vendor.name}</span>
-                                          <span className="text-xs text-foreground/60">
-                                            CPF: {vendor.cpf}
-                                          </span>
-                                        </div>
-                                      </SelectItem>
-                                    ))}
+                                    {vendors.map((vendor) => {
+                                      const isSpouse = !!vendor.ehConjugeDe;
+                                      const spouseOf = isSpouse ? vendors.find(v => v.clientRef === vendor.ehConjugeDe) : null;
+                                      
+                                      return (
+                                        <SelectItem key={vendor.clientRef} value={vendor.clientRef}>
+                                          <div className="flex items-center gap-2">
+                                            {isSpouse && spouseOf && (
+                                              <Badge variant="outline" className="text-xs px-2 py-0">
+                                                Cônjuge de {spouseOf.name}
+                                              </Badge>
+                                            )}
+                                            <span className="font-semibold">{vendor.name}</span>
+                                            <span className="text-xs text-foreground/60">
+                                              CPF: {vendor.cpf}
+                                            </span>
+                                          </div>
+                                        </SelectItem>
+                                      );
+                                    })}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -4296,6 +4451,55 @@ export default function AdminFinancingKanbanPage() {
                               </SelectContent>
                             </Select>
                           </div>
+                          
+                          {/* Spouse linking question - Show if multiple vendors exist */}
+                          {vendors.length > 0 && newVendor.clientRef && (
+                            <div className="md:col-span-2 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                              <Label className="font-paragraph text-sm mb-3 block font-semibold">
+                                Este vendedor é cônjuge de algum vendedor já cadastrado?
+                              </Label>
+                              <RadioGroup
+                                value={newVendor.ehConjugeDe ? 'sim' : 'nao'}
+                                onValueChange={(value) => {
+                                  if (value === 'nao') {
+                                    setNewVendor({ ...newVendor, ehConjugeDe: '' });
+                                  }
+                                }}
+                                className="flex gap-6 mb-3"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="sim" id="new-vendor-spouse-sim" />
+                                  <Label htmlFor="new-vendor-spouse-sim" className="cursor-pointer font-medium">Sim</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="nao" id="new-vendor-spouse-nao" />
+                                  <Label htmlFor="new-vendor-spouse-nao" className="cursor-pointer font-medium">Não</Label>
+                                </div>
+                              </RadioGroup>
+
+                              {newVendor.ehConjugeDe === '' && (
+                                <div>
+                                  <Label className="font-paragraph text-sm mb-2 block">Selecione o vendedor principal</Label>
+                                  <Select 
+                                    value={newVendor.ehConjugeDe || ''} 
+                                    onValueChange={(value) => setNewVendor({ ...newVendor, ehConjugeDe: value })}
+                                  >
+                                    <SelectTrigger className="h-10">
+                                      <SelectValue placeholder="Escolha o vendedor principal" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {vendors.map(v => (
+                                        <SelectItem key={v.clientRef} value={v.clientRef}>
+                                          {v.name} - {v.cpf}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
                           <div className="md:col-span-2">
                             <Button 
                               onClick={handleAddVendor} 
