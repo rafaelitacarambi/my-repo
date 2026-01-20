@@ -4219,7 +4219,7 @@ export default function AdminFinancingKanbanPage() {
                               externalResponsibleContact: '',
                               dueDate: ''
                             });
-                            // Open task creation form (you can add a state for this)
+                            setShowTaskFormInModal(true);
                           }} 
                           className="h-9 bg-secondary text-secondary-foreground"
                         >
@@ -4335,6 +4335,89 @@ export default function AdminFinancingKanbanPage() {
                       })()}
                     </CardContent>
                   </Card>
+
+                  {/* Task Creation Form */}
+                  {showTaskFormInModal && (
+                    <Card className="border-2 border-secondary/30 shadow-lg">
+                      <CardHeader className="bg-gradient-to-br from-blue-50 to-blue-100/50">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-base font-heading flex items-center gap-2">
+                            <Plus className="w-5 h-5 text-secondary" />
+                            Criar Nova Tarefa
+                          </CardTitle>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowTaskFormInModal(false)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pt-6">
+                        <div>
+                          <Label className="text-sm mb-2 block font-semibold">Responsável *</Label>
+                          <Select 
+                            value={newTaskData.responsavelExternoRef || ''} 
+                            onValueChange={(value) => setNewTaskData({ ...newTaskData, responsavelExternoRef: value })}
+                          >
+                            <SelectTrigger className="h-11 bg-white border-2 border-border-gray">
+                              <SelectValue placeholder="Selecione o responsável" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="catarina">Catarina</SelectItem>
+                              <SelectItem value="rafael">Rafael</SelectItem>
+                              <SelectItem value="gabriela">Gabriela</SelectItem>
+                              <SelectItem value="isabela">Isabela</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm mb-2 block font-semibold">Descrição *</Label>
+                          <Textarea
+                            value={newTaskData.description}
+                            onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
+                            placeholder="Descreva a tarefa de forma clara e objetiva..."
+                            rows={4}
+                            className="resize-none text-sm bg-white border-2 border-border-gray"
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm mb-2 block font-semibold">Prazo</Label>
+                          <Input
+                            type="date"
+                            value={newTaskData.dueDate ? new Date(newTaskData.dueDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                            className="h-11 bg-white border-2 border-border-gray"
+                          />
+                          <p className="text-xs text-foreground/60 mt-1">
+                            Se não informado, será definido para 7 dias
+                          </p>
+                        </div>
+                        
+                        <div className="flex gap-3 pt-3 border-t-2 border-border-gray">
+                          <Button 
+                            onClick={handleCreateTaskInModal} 
+                            disabled={!newTaskData.description}
+                            className="h-11 flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold"
+                          >
+                            <Save className="w-4 h-4 mr-2" />
+                            Criar Tarefa
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setShowTaskFormInModal(false)}
+                            className="h-11 px-6 border-2"
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </TabsContent>
 
                 {/* Documentos Tab */}
