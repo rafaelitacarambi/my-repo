@@ -112,6 +112,9 @@ interface Vendedor {
   tipoConta: 'Corrente' | 'Poupança';
   titularConta: string;
   cpfCnpjTitular: string;
+  estadoCivil?: string;
+  conjugeVendedorId?: string;
+  vinculoVendedores?: string[];
   documentos: {
     tipo: string;
     status: 'Pendente' | 'Recebido';
@@ -223,12 +226,18 @@ export default function AdminFinanciamentoDetalhePage() {
     tipoConta: 'Corrente',
     titularConta: '',
     cpfCnpjTitular: '',
+    estadoCivil: '',
+    conjugeVendedorId: undefined,
+    vinculoVendedores: [],
     documentos: [
       { tipo: 'Documento de identificação', status: 'Pendente' },
       { tipo: 'Certidão de nascimento/casamento', status: 'Pendente' },
       { tipo: 'Comprovante de endereço', status: 'Pendente' }
     ]
   });
+
+  const [showConjugeQuestion, setShowConjugeQuestion] = useState(false);
+  const [isConjuge, setIsConjuge] = useState<boolean | null>(null);
 
   const [newPendencia, setNewPendencia] = useState({
     title: '',
@@ -741,9 +750,30 @@ export default function AdminFinanciamentoDetalhePage() {
 
   // Add vendedor
   const handleAddVendedor = () => {
-    const vendedor = { ...newVendedor, _id: crypto.randomUUID() };
-    setVendedores([...vendedores, vendedor]);
-    createHistoryEntry(`Vendedor adicionado: ${vendedor.nome}`);
+    const vendedorId = crypto.randomUUID();
+    
+    // Get all existing vendedores IDs to create vinculoVendedores
+    const allVendedoresIds = vendedores.map(v => v._id);
+    
+    // Create new vendedor with automatic linking
+    const vendedor: Vendedor = { 
+      ...newVendedor, 
+      _id: vendedorId,
+      vinculoVendedores: allVendedoresIds // Link to all existing vendedores
+    };
+    
+    // Update all existing vendedores to include the new vendedor in their vinculoVendedores
+    const updatedVendedores = vendedores.map(v => ({
+      ...v,
+      vinculoVendedores: [...(v.vinculoVendedores || []), vendedorId]
+    }));
+    
+    // Add new vendedor to the list
+    setVendedores([...updatedVendedores, vendedor]);
+    
+    createHistoryEntry(`Vendedor adicionado: ${vendedor.nome}${vendedor.conjugeVendedorId ? ' (vinculado como cônjuge)' : ''}`);
+    
+    // Reset form
     setNewVendedor({
       _id: '',
       nome: '',
@@ -755,12 +785,17 @@ export default function AdminFinanciamentoDetalhePage() {
       tipoConta: 'Corrente',
       titularConta: '',
       cpfCnpjTitular: '',
+      estadoCivil: '',
+      conjugeVendedorId: undefined,
+      vinculoVendedores: [],
       documentos: [
         { tipo: 'Documento de identificação', status: 'Pendente' },
         { tipo: 'Certidão de nascimento/casamento', status: 'Pendente' },
         { tipo: 'Comprovante de endereço', status: 'Pendente' }
       ]
     });
+    setShowConjugeQuestion(false);
+    setIsConjuge(null);
     setShowAddVendedorDialog(false);
   };
 
@@ -2016,6 +2051,86 @@ export default function AdminFinanciamentoDetalhePage() {
                               className="h-10 bg-primary border-border-gray"
                             />
                           </div>
+                          {newVendedor.tipoPessoa === 'PF' && (
+                            <div className="md:col-span-2">
+                              <Label className="font-paragraph text-sm mb-2 block">Estado Civil</Label>
+                              <Select 
+                                value={newVendedor.estadoCivil} 
+                                onValueChange={(value) => {
+                                  setNewVendedor({ ...newVendedor, estadoCivil: value });
+                                  // Show conjugal question if married or in stable union
+                                  if (value === 'Casado(a)' || value === 'União Estável') {
+                                    setShowConjugeQuestion(true);
+                                  } else {
+                                    setShowConjugeQuestion(false);
+                                    setIsConjuge(null);
+                                    setNewVendedor({ ...newVendedor, estadoCivil: value, conjugeVendedorId: undefined });
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="h-10 bg-primary border-border-gray">
+                                  <SelectValue placeholder="Selecione o estado civil" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {MARITAL_STATUS.map(status => (
+                                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          {showConjugeQuestion && vendedores.length > 0 && (
+                            <div className="md:col-span-2 p-4 bg-yellow-50 border-2 border-yellow-300 rounded">
+                              <Label className="font-paragraph text-sm mb-3 block font-semibold">
+                                Este vendedor é cônjuge de outro vendedor deste processo?
+                              </Label>
+                              <div className="flex gap-4 mb-3">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name="isConjuge"
+                                    checked={isConjuge === true}
+                                    onChange={() => setIsConjuge(true)}
+                                    className="w-4 h-4"
+                                  />
+                                  <span className="font-paragraph text-sm">Sim</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name="isConjuge"
+                                    checked={isConjuge === false}
+                                    onChange={() => {
+                                      setIsConjuge(false);
+                                      setNewVendedor({ ...newVendedor, conjugeVendedorId: undefined });
+                                    }}
+                                    className="w-4 h-4"
+                                  />
+                                  <span className="font-paragraph text-sm">Não</span>
+                                </label>
+                              </div>
+                              {isConjuge === true && (
+                                <div>
+                                  <Label className="font-paragraph text-sm mb-2 block">Selecione o cônjuge</Label>
+                                  <Select 
+                                    value={newVendedor.conjugeVendedorId} 
+                                    onValueChange={(value) => setNewVendedor({ ...newVendedor, conjugeVendedorId: value })}
+                                  >
+                                    <SelectTrigger className="h-10 bg-primary border-border-gray">
+                                      <SelectValue placeholder="Selecione o vendedor cônjuge" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {vendedores.map(v => (
+                                        <SelectItem key={v._id} value={v._id}>
+                                          {v.nome} - {v.cpfCnpj}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -2108,6 +2223,37 @@ export default function AdminFinanciamentoDetalhePage() {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 gap-4">
+                  {/* Show linked vendedores info if there are multiple */}
+                  {vendedores.length > 1 && (
+                    <Card className="border-2 border-secondary bg-secondary/5">
+                      <CardContent className="py-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                            <User className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-heading text-base font-semibold text-secondary">
+                              Vendedores Vinculados ao Processo
+                            </h3>
+                            <p className="font-paragraph text-xs text-primary-foreground/60">
+                              Todos os vendedores deste processo estão automaticamente vinculados entre si
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {vendedores.map((v) => (
+                            <Badge key={v._id} className="bg-secondary text-white">
+                              {v.nome}
+                              {v.conjugeVendedorId && (
+                                <span className="ml-1 text-xs">(cônjuge)</span>
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
                   {vendedores.map((vendedor) => {
                     const isSelected = selectedVendedor === vendedor._id;
                     const totalDocs = vendedor.documentos.length;
@@ -2150,6 +2296,16 @@ export default function AdminFinanciamentoDetalhePage() {
                                       <Badge className={`text-xs ${isComplete ? 'bg-green-500' : 'bg-red-500'}`}>
                                         {recebidos}/{totalDocs} documentos
                                       </Badge>
+                                      {vendedor.conjugeVendedorId && (
+                                        <Badge className="text-xs bg-pink-500">
+                                          Cônjuge vinculado
+                                        </Badge>
+                                      )}
+                                      {vendedor.vinculoVendedores && vendedor.vinculoVendedores.length > 0 && (
+                                        <Badge className="text-xs bg-secondary">
+                                          Vinculado a {vendedor.vinculoVendedores.length} vendedor(es)
+                                        </Badge>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -2180,7 +2336,43 @@ export default function AdminFinanciamentoDetalhePage() {
                                           <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">{vendedor.tipoPessoa === 'PF' ? 'CPF' : 'CNPJ'}</p>
                                           <p className="font-paragraph text-sm">{vendedor.cpfCnpj}</p>
                                         </div>
+                                        {vendedor.estadoCivil && (
+                                          <div>
+                                            <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Estado Civil</p>
+                                            <p className="font-paragraph text-sm">{vendedor.estadoCivil}</p>
+                                          </div>
+                                        )}
+                                        {vendedor.conjugeVendedorId && (
+                                          <div className="md:col-span-2">
+                                            <p className="font-paragraph text-xs text-primary-foreground/60 mb-1">Cônjuge</p>
+                                            <div className="flex items-center gap-2">
+                                              <Badge className="bg-pink-500 text-white">
+                                                {vendedores.find(v => v._id === vendedor.conjugeVendedorId)?.nome || 'Vendedor não encontrado'}
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
+                                      
+                                      {/* Vendedores Vinculados */}
+                                      {vendedor.vinculoVendedores && vendedor.vinculoVendedores.length > 0 && (
+                                        <div className="mt-3 p-3 bg-secondary/5 border border-secondary/20 rounded">
+                                          <p className="font-paragraph text-xs text-primary-foreground/60 mb-2 font-semibold">
+                                            Vendedores vinculados ao mesmo processo:
+                                          </p>
+                                          <div className="flex flex-wrap gap-2">
+                                            {vendedor.vinculoVendedores.map((vinculoId) => {
+                                              const vinculado = vendedores.find(v => v._id === vinculoId);
+                                              if (!vinculado) return null;
+                                              return (
+                                                <Badge key={vinculoId} className="bg-secondary text-white text-xs">
+                                                  {vinculado.nome}
+                                                </Badge>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
 
                                     {/* Dados Bancários */}
