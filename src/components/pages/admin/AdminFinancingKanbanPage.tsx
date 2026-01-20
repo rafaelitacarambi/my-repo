@@ -223,6 +223,7 @@ interface ProponentChecklist {
   ownsProperty?: boolean;
   hasActiveFinancing?: boolean;
   isFirstAcquisition?: boolean;
+  numeroPis?: string;
 }
 
 interface Vendor {
@@ -341,6 +342,9 @@ export default function AdminFinancingKanbanPage() {
   
   // Task creation modal in Tarefas tab
   const [showTaskFormInModal, setShowTaskFormInModal] = useState(false);
+  
+  // FGTS reminder modal
+  const [showFgtsReminderModal, setShowFgtsReminderModal] = useState(false);
 
   // Form states
   const [caseFormData, setCaseFormData] = useState<Partial<FinancingCase>>({
@@ -936,6 +940,83 @@ export default function AdminFinancingKanbanPage() {
       await loadData();
     } catch (error) {
       console.error('Error saving details:', error);
+    }
+  };
+  
+  // Handle FGTS selection change
+  const handleFgtsChange = async (value: string) => {
+    const willUseFgts = value === 'sim';
+    setCaseFormData({ ...caseFormData, useFgts: willUseFgts, fgtsValue: willUseFgts ? caseFormData.fgtsValue : 0 });
+    
+    // If "Sim" is selected, check if PIS is filled for any proponent
+    if (willUseFgts && selectedCase) {
+      // Check if any proponent has PIS filled
+      const hasPisFilled = Array.from(proponentChecklists.values()).some(checklist => 
+        checklist.numeroPis && checklist.numeroPis.trim() !== ''
+      );
+      
+      // Show reminder if no PIS is filled
+      if (!hasPisFilled) {
+        setShowFgtsReminderModal(true);
+      }
+      
+      // Create automatic pending for PIS if not exists
+      await createFgtsPisPending();
+    }
+  };
+  
+  // Create automatic pending for PIS
+  const createFgtsPisPending = async () => {
+    if (!selectedCase) return;
+    
+    try {
+      // Check if pending already exists
+      const existingPending = pendings.find(p => 
+        p.atendimentoRef === selectedCase._id && 
+        p.categoria === 'FGTS' &&
+        p.title.includes('PIS') &&
+        p.status !== 'Resolvida'
+      );
+      
+      if (existingPending) return; // Already exists
+      
+      const now = new Date().toISOString();
+      const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(); // 3 days
+      
+      const newPending: PendnciasdoFinanciamento = {
+        _id: crypto.randomUUID(),
+        atendimentoRef: selectedCase._id,
+        title: 'Informar PIS para utilização do FGTS',
+        description: 'É necessário preencher o número do PIS no cadastro do proponente para utilizar o FGTS no financiamento.',
+        status: 'Aberta',
+        priority: 'Alta',
+        dueDate,
+        responsiblePartyType: 'Cliente',
+        responsiblePartyDetails: 'Proponente',
+        taskAutomaticallyCreated: false,
+        creationDate: now,
+        bloqueiaFase: false,
+        categoria: 'FGTS',
+        tipo: 'Automática - FGTS'
+      };
+      
+      await BaseCrudService.create('pendenciasfinanciamento', newPending);
+      setPendings([...pendings, newPending as Pending]);
+      
+      // Create history entry
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: selectedCase._id,
+        tipoEvento: 'Pendencia_Criada',
+        interactionType: 'Criação automática de pendência',
+        interactionDescription: 'Pendência automática criada: Informar PIS para FGTS',
+        interactionDate: now,
+        autorTipo: 'Sistema'
+      });
+      
+      await loadData();
+    } catch (error) {
+      console.error('Error creating FGTS PIS pending:', error);
     }
   };
 
@@ -1672,7 +1753,7 @@ export default function AdminFinancingKanbanPage() {
   };
 
   // Update proponent checklist
-  const handleUpdateProponentChecklist = async (clientRef: string, field: keyof ProponentChecklist, value: boolean) => {
+  const handleUpdateProponentChecklist = async (clientRef: string, field: keyof ProponentChecklist, value: boolean | string) => {
     if (!selectedCase) return;
 
     // Clear existing timer
@@ -1686,16 +1767,22 @@ export default function AdminFinancingKanbanPage() {
       _id: crypto.randomUUID(),
       atendimentoRef: selectedCase._id,
       clientRef,
-      hasFgtsContribution: field === 'hasFgtsContribution' ? value : false,
-      hasDependent: field === 'hasDependent' ? value : false,
-      declaresIncomeTax: field === 'declaresIncomeTax' ? value : false,
-      ownsProperty: field === 'ownsProperty' ? value : false,
-      hasActiveFinancing: field === 'hasActiveFinancing' ? value : false,
-      isFirstAcquisition: field === 'isFirstAcquisition' ? value : false
+      hasFgtsContribution: field === 'hasFgtsContribution' ? value as boolean : false,
+      hasDependent: field === 'hasDependent' ? value as boolean : false,
+      declaresIncomeTax: field === 'declaresIncomeTax' ? value as boolean : false,
+      ownsProperty: field === 'ownsProperty' ? value as boolean : false,
+      hasActiveFinancing: field === 'hasActiveFinancing' ? value as boolean : false,
+      isFirstAcquisition: field === 'isFirstAcquisition' ? value as boolean : false,
+      numeroPis: field === 'numeroPis' ? value as string : ''
     };
     
     setProponentChecklists(new Map(proponentChecklists.set(clientRef, updated)));
     setSaveStatus('saving');
+    
+    // If PIS is filled and FGTS is enabled, resolve the automatic pending
+    if (field === 'numeroPis' && value && typeof value === 'string' && value.trim() !== '' && caseFormData.useFgts) {
+      await resolveFgtsPisPending();
+    }
 
     // Debounce save to database
     const timer = setTimeout(async () => {
@@ -1705,7 +1792,7 @@ export default function AdminFinancingKanbanPage() {
           await BaseCrudService.update<ChecklistdosProponentes>('checklistproponentes', {
             _id: existing._id,
             [field]: value
-          });
+          } as any);
         } else {
           // Create new checklist
           const newChecklist: ChecklistdosProponentes = {
@@ -1718,7 +1805,7 @@ export default function AdminFinancingKanbanPage() {
             ownsProperty: updated.ownsProperty,
             hasActiveFinancing: updated.hasActiveFinancing,
             isFirstAcquisition: updated.isFirstAcquisition
-          };
+          } as any;
 
           await BaseCrudService.create('checklistproponentes', newChecklist);
         }
@@ -1734,6 +1821,45 @@ export default function AdminFinancingKanbanPage() {
     }, 500);
 
     setDebounceTimer(timer);
+  };
+  
+  // Resolve FGTS PIS pending when PIS is filled
+  const resolveFgtsPisPending = async () => {
+    if (!selectedCase) return;
+    
+    try {
+      const fgtsPending = pendings.find(p => 
+        p.atendimentoRef === selectedCase._id && 
+        p.categoria === 'FGTS' &&
+        p.title.includes('PIS') &&
+        p.status !== 'Resolvida'
+      );
+      
+      if (fgtsPending) {
+        await BaseCrudService.update<PendnciasdoFinanciamento>('pendenciasfinanciamento', {
+          _id: fgtsPending._id,
+          status: 'Resolvida',
+          resolvedDate: new Date().toISOString()
+        });
+        
+        setPendings(pendings.map(p => p._id === fgtsPending._id ? { ...p, status: 'Resolvida' } : p));
+        
+        // Create history entry
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: selectedCase._id,
+          tipoEvento: 'Pendencia_Concluida',
+          interactionType: 'Conclusão automática de pendência',
+          interactionDescription: 'Pendência de PIS para FGTS resolvida automaticamente',
+          interactionDate: new Date().toISOString(),
+          autorTipo: 'Sistema'
+        });
+        
+        await loadData();
+      }
+    } catch (error) {
+      console.error('Error resolving FGTS PIS pending:', error);
+    }
   };
 
   // Update document checklist item
@@ -2875,19 +3001,21 @@ export default function AdminFinancingKanbanPage() {
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="font-paragraph text-sm mb-2 block">Utilizará FGTS? *</Label>
-                          <Select 
+                          <Label className="font-paragraph text-sm mb-3 block font-semibold">Utilizará FGTS na proposta? *</Label>
+                          <RadioGroup 
                             value={caseFormData.useFgts ? 'sim' : 'nao'} 
-                            onValueChange={(value) => setCaseFormData({ ...caseFormData, useFgts: value === 'sim', fgtsValue: value === 'nao' ? 0 : caseFormData.fgtsValue })}
+                            onValueChange={handleFgtsChange}
+                            className="flex gap-6"
                           >
-                            <SelectTrigger className="h-10">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="sim">Sim</SelectItem>
-                              <SelectItem value="nao">Não</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="sim" id="fgts-sim" />
+                              <Label htmlFor="fgts-sim" className="cursor-pointer font-medium">Sim</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="nao" id="fgts-nao" />
+                              <Label htmlFor="fgts-nao" className="cursor-pointer font-medium">Não</Label>
+                            </div>
+                          </RadioGroup>
                         </div>
                         {caseFormData.useFgts && (
                           <div>
@@ -3187,6 +3315,40 @@ export default function AdminFinancingKanbanPage() {
                                           </div>
                                         </RadioGroup>
                                       </div>
+                                      
+                                      {/* PIS Number - Required if FGTS is enabled */}
+                                      {caseFormData.useFgts && (
+                                        <div className={`p-4 rounded-lg border-2 transition-all ${
+                                          !checklist?.numeroPis || checklist.numeroPis.trim() === '' 
+                                            ? 'bg-red-50 border-red-400 shadow-md' 
+                                            : 'bg-white border-border-gray hover:border-secondary/40 hover:shadow-md'
+                                        }`}>
+                                          <Label className="font-paragraph text-sm font-semibold leading-tight block mb-2">
+                                            Número do PIS *
+                                          </Label>
+                                          <p className="text-xs text-foreground/60 mb-3">
+                                            {!checklist?.numeroPis || checklist.numeroPis.trim() === '' 
+                                              ? '⚠️ OBRIGATÓRIO para utilização do FGTS' 
+                                              : 'Necessário para utilização do FGTS'}
+                                          </p>
+                                          <Input
+                                            value={checklist?.numeroPis || ''}
+                                            onChange={(e) => handleUpdateProponentChecklist(proponent.clientRef, 'numeroPis', e.target.value)}
+                                            placeholder="000.00000.00-0"
+                                            className={`h-10 ${
+                                              !checklist?.numeroPis || checklist.numeroPis.trim() === '' 
+                                                ? 'border-red-500 border-2' 
+                                                : ''
+                                            }`}
+                                          />
+                                          {(!checklist?.numeroPis || checklist.numeroPis.trim() === '') && (
+                                            <p className="text-xs text-red-600 font-semibold mt-2 flex items-center gap-1">
+                                              <AlertTriangle className="w-3 h-3" />
+                                              Campo obrigatório para FGTS
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
 
                                       {/* Dependente */}
                                       <div className="p-4 bg-white rounded-lg border-2 border-border-gray hover:border-secondary/40 hover:shadow-md transition-all">
@@ -4708,6 +4870,48 @@ export default function AdminFinancingKanbanPage() {
               className="h-11 px-6"
             >
               Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* FGTS Reminder Modal */}
+      <Dialog open={showFgtsReminderModal} onOpenChange={setShowFgtsReminderModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl text-secondary flex items-center gap-2">
+              <AlertTriangle className="w-6 h-6 text-orange-500" />
+              Lembrete Importante
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4 mb-4">
+              <p className="font-paragraph text-sm text-foreground mb-2">
+                <strong>Lembrete:</strong> Preencher o número do PIS no cadastro do proponente.
+              </p>
+              <p className="text-xs text-foreground/70">
+                O número do PIS é obrigatório para utilização do FGTS no financiamento. Você pode preencher agora na aba Proponentes ou ser lembrado depois.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => {
+                setShowFgtsReminderModal(false);
+                setModalTab('proponentes');
+              }}
+              className="h-11 flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Ir para Proponentes
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowFgtsReminderModal(false)}
+              className="h-11 px-6"
+            >
+              Lembrar depois
             </Button>
           </div>
         </DialogContent>
