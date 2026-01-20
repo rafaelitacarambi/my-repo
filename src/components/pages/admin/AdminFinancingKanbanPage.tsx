@@ -238,6 +238,9 @@ interface Vendor {
   conta?: string;
   tipoConta?: string;
   chavePix?: string;
+  estadoCivil?: string;
+  ehConjugeDe?: string; // clientRef of spouse vendor
+  conjugeNaoParticipa?: boolean; // If married but spouse doesn't participate
 }
 
 interface VendorDocument {
@@ -432,7 +435,10 @@ export default function AdminFinancingKanbanPage() {
     agencia: '',
     conta: '',
     tipoConta: 'Corrente',
-    chavePix: ''
+    chavePix: '',
+    estadoCivil: '',
+    ehConjugeDe: '',
+    conjugeNaoParticipa: false
   });
 
   // Proponents tab state
@@ -756,7 +762,10 @@ export default function AdminFinancingKanbanPage() {
               agencia: bankData.agencia || '',
               conta: bankData.conta || '',
               tipoConta: bankData.tipoConta || 'Corrente',
-              chavePix: bankData.chavePix || ''
+              chavePix: bankData.chavePix || '',
+              estadoCivil: bankData.estadoCivil || '',
+              ehConjugeDe: bankData.ehConjugeDe || '',
+              conjugeNaoParticipa: bankData.conjugeNaoParticipa || false
             });
           }
         }
@@ -1151,7 +1160,10 @@ export default function AdminFinancingKanbanPage() {
         agencia: '',
         conta: '',
         tipoConta: 'Corrente',
-        chavePix: ''
+        chavePix: '',
+        estadoCivil: '',
+        ehConjugeDe: '',
+        conjugeNaoParticipa: false
       });
       
       // Create history entry
@@ -1208,7 +1220,7 @@ export default function AdminFinancingKanbanPage() {
   };
 
   // Update vendor bank data
-  const handleUpdateVendorBankData = async (vendorClientRef: string, field: string, value: string) => {
+  const handleUpdateVendorBankData = async (vendorClientRef: string, field: string, value: string | boolean) => {
     const updatedVendors = vendors.map(v => 
       v.clientRef === vendorClientRef ? { ...v, [field]: value } : v
     );
@@ -1225,7 +1237,10 @@ export default function AdminFinancingKanbanPage() {
         agencia: vendor.agencia,
         conta: vendor.conta,
         tipoConta: vendor.tipoConta,
-        chavePix: vendor.chavePix
+        chavePix: vendor.chavePix,
+        estadoCivil: vendor.estadoCivil,
+        ehConjugeDe: vendor.ehConjugeDe,
+        conjugeNaoParticipa: vendor.conjugeNaoParticipa
       }));
     }
   };
@@ -3715,7 +3730,7 @@ export default function AdminFinancingKanbanPage() {
                                     </div>
                                   </div>
 
-                                  {/* ... keep existing code (Dados do Vendedor Section) */}
+                                  {/* Dados do Vendedor Section */}
                                   <div className="mb-8">
                                     <h5 className="font-heading text-base font-bold mb-5 flex items-center gap-2 text-foreground">
                                       <UserCheck className="w-5 h-5 text-secondary" />
@@ -3756,6 +3771,135 @@ export default function AdminFinancingKanbanPage() {
                                           className="h-10"
                                         />
                                       </div>
+                                      
+                                      {/* Estado Civil - NEW FIELD */}
+                                      <div className="md:col-span-2">
+                                        <Label className="font-paragraph text-sm mb-2 block font-semibold">
+                                          Estado Civil do Vendedor *
+                                        </Label>
+                                        <Select 
+                                          value={vendor.estadoCivil || ''} 
+                                          onValueChange={(value) => handleUpdateVendorBankData(vendor.clientRef, 'estadoCivil', value)}
+                                        >
+                                          <SelectTrigger className={`h-10 ${!vendor.estadoCivil ? 'border-red-500 border-2' : ''}`}>
+                                            <SelectValue placeholder="Selecione o estado civil" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Solteiro(a)">Solteiro(a)</SelectItem>
+                                            <SelectItem value="Casado(a)">Casado(a)</SelectItem>
+                                            <SelectItem value="Divorciado(a)">Divorciado(a)</SelectItem>
+                                            <SelectItem value="Viúvo(a)">Viúvo(a)</SelectItem>
+                                            <SelectItem value="União Estável">União Estável</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                        {!vendor.estadoCivil && (
+                                          <p className="text-xs text-red-600 font-semibold mt-1 flex items-center gap-1">
+                                            <AlertTriangle className="w-3 h-3" />
+                                            Campo obrigatório
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      {/* Spouse Link - Show if multiple vendors exist */}
+                                      {vendors.length > 1 && (
+                                        <div className="md:col-span-2 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                                          <Label className="font-paragraph text-sm mb-3 block font-semibold">
+                                            Este vendedor é cônjuge de algum dos vendedores já cadastrados?
+                                          </Label>
+                                          <RadioGroup
+                                            value={vendor.ehConjugeDe ? 'sim' : 'nao'}
+                                            onValueChange={(value) => {
+                                              if (value === 'nao') {
+                                                handleUpdateVendorBankData(vendor.clientRef, 'ehConjugeDe', '');
+                                              }
+                                            }}
+                                            className="flex gap-6 mb-3"
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="sim" id={`spouse-sim-${vendor.clientRef}`} />
+                                              <Label htmlFor={`spouse-sim-${vendor.clientRef}`} className="cursor-pointer font-medium">Sim</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="nao" id={`spouse-nao-${vendor.clientRef}`} />
+                                              <Label htmlFor={`spouse-nao-${vendor.clientRef}`} className="cursor-pointer font-medium">Não</Label>
+                                            </div>
+                                          </RadioGroup>
+
+                                          {vendor.ehConjugeDe === '' && vendors.length > 1 && (
+                                            <div>
+                                              <Label className="font-paragraph text-sm mb-2 block">Selecione o cônjuge</Label>
+                                              <Select 
+                                                value={vendor.ehConjugeDe || ''} 
+                                                onValueChange={(value) => handleUpdateVendorBankData(vendor.clientRef, 'ehConjugeDe', value)}
+                                              >
+                                                <SelectTrigger className="h-10">
+                                                  <SelectValue placeholder="Escolha o cônjuge" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {vendors
+                                                    .filter(v => v.clientRef !== vendor.clientRef)
+                                                    .map(otherVendor => (
+                                                      <SelectItem key={otherVendor.clientRef} value={otherVendor.clientRef}>
+                                                        {otherVendor.name} - {otherVendor.cpf}
+                                                      </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                          )}
+
+                                          {vendor.ehConjugeDe && (() => {
+                                            const spouse = vendors.find(v => v.clientRef === vendor.ehConjugeDe);
+                                            return spouse ? (
+                                              <div className="mt-3 p-3 bg-green-50 border border-green-300 rounded-lg flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                                  <span className="text-sm font-semibold text-green-800">
+                                                    Vínculo conjugal com: {spouse.name}
+                                                  </span>
+                                                </div>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => handleUpdateVendorBankData(vendor.clientRef, 'ehConjugeDe', '')}
+                                                  className="h-7 text-xs"
+                                                >
+                                                  <X className="w-3 h-3 mr-1" />
+                                                  Remover vínculo
+                                                </Button>
+                                              </div>
+                                            ) : null;
+                                          })()}
+                                        </div>
+                                      )}
+
+                                      {/* Marital Status Warning - Show if married/union and no spouse registered */}
+                                      {(vendor.estadoCivil === 'Casado(a)' || vendor.estadoCivil === 'União Estável') && 
+                                       !vendor.ehConjugeDe && 
+                                       !vendor.conjugeNaoParticipa && (
+                                        <div className="md:col-span-2 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
+                                          <div className="flex items-start gap-3 mb-3">
+                                            <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                            <div>
+                                              <p className="font-paragraph text-sm text-foreground font-semibold mb-1">
+                                                Atenção: Anuência Conjugal Necessária
+                                              </p>
+                                              <p className="text-xs text-foreground/70 mb-3">
+                                                O vendedor é {vendor.estadoCivil}. É necessário cadastrar o cônjuge ou confirmar que não participa da venda.
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <Checkbox
+                                              checked={vendor.conjugeNaoParticipa || false}
+                                              onCheckedChange={(checked) => handleUpdateVendorBankData(vendor.clientRef, 'conjugeNaoParticipa', checked as boolean)}
+                                            />
+                                            <Label className="font-paragraph text-sm cursor-pointer">
+                                              Confirmo que o cônjuge não participa da venda
+                                            </Label>
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
 
