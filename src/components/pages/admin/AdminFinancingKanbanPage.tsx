@@ -3307,21 +3307,6 @@ export default function AdminFinancingKanbanPage() {
                               })}
                             </div>
 
-                            {/* Info Box */}
-                            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 flex items-start gap-3">
-                              <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                              <div className="text-sm text-blue-900">
-                                <p className="font-semibold mb-2">Estrutura Hierárquica:</p>
-                                <ul className="list-disc list-inside space-y-1 text-xs">
-                                  <li>O <strong>Proponente Principal</strong> é a linha principal do processo</li>
-                                  <li>Todos os <strong>participantes adicionais</strong> aparecem vinculados abaixo (indentados)</li>
-                                  <li>Cônjuges são automaticamente marcados como <strong>"Coobrigado/Proponente (Cônjuge)"</strong></li>
-                                  <li>O Proponente Principal <strong>não pode ser excluído</strong></li>
-                                  <li>Participantes secundários podem ser editados ou removidos</li>
-                                </ul>
-                              </div>
-                            </div>
-
                             {/* Participant Selector for Details (only show if more than 1) */}
                             {proponentsList.length > 1 && (
                               <div>
