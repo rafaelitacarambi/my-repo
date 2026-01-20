@@ -185,6 +185,7 @@ export default function AdminFinanciamentoDetalhePage() {
   const [showAddTarefaDialog, setShowAddTarefaDialog] = useState(false);
   const [showAddDocumentoDialog, setShowAddDocumentoDialog] = useState(false);
   const [selectedVendedor, setSelectedVendedor] = useState<string | null>(null);
+  const [selectedProponente, setSelectedProponente] = useState<string | null>(null);
   const [showHistoricoPendencias, setShowHistoricoPendencias] = useState(false);
 
   // New item forms
@@ -1746,7 +1747,7 @@ export default function AdminFinanciamentoDetalhePage() {
                     const recebidos = proponente.documentos?.filter(d => d.status === 'Recebido').length || 0;
                     const isComplete = totalDocs > 0 && recebidos === totalDocs;
                     const hasPending = totalDocs > 0 && recebidos < totalDocs;
-                    const isExpanded = selectedVendedor === proponente._id;
+                    const isExpanded = selectedProponente === proponente._id;
 
                     return (
                       <motion.div
@@ -1765,7 +1766,7 @@ export default function AdminFinanciamentoDetalhePage() {
                                   ? 'border-yellow-300 bg-yellow-50/50' 
                                   : 'border-border-gray'
                           }`}
-                          onClick={() => setSelectedVendedor(isExpanded ? null : proponente._id)}
+                          onClick={() => setSelectedProponente(isExpanded ? null : proponente._id)}
                         >
                           <CardContent className="py-4">
                             <div className="flex items-start justify-between gap-4">
@@ -2360,7 +2361,7 @@ export default function AdminFinanciamentoDetalhePage() {
                                   <div className="flex-1">
                                     <h3 className="font-heading text-lg font-semibold text-primary-foreground">{vendedor.nome}</h3>
                                     <div className="flex items-center gap-2 mt-1">
-                                      <Badge className="text-xs">{vendedor.tipoPessoa}</Badge>
+                                      <p className="font-paragraph text-xs text-primary-foreground/60">{vendedor.cpfCnpj}</p>
                                       <Badge className={`text-xs ${isComplete ? 'bg-green-500' : 'bg-red-500'}`}>
                                         {recebidos}/{totalDocs} documentos
                                       </Badge>
@@ -2375,6 +2376,27 @@ export default function AdminFinanciamentoDetalhePage() {
                                         </Badge>
                                       )}
                                     </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedVendedor(isSelected ? null : vendedor._id);
+                                      }}
+                                      className="mt-2 h-8 text-xs text-secondary hover:text-secondary/80 p-0 hover:bg-transparent"
+                                    >
+                                      {isSelected ? (
+                                        <>
+                                          <ChevronUp className="w-4 h-4 mr-1" />
+                                          Ocultar detalhes
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ChevronDown className="w-4 h-4 mr-1" />
+                                          Ver detalhes do participante
+                                        </>
+                                      )}
+                                    </Button>
                                   </div>
                                 </div>
 
