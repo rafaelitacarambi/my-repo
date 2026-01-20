@@ -2393,7 +2393,7 @@ export default function AdminFinanciamentoDetalhePage() {
                                       ) : (
                                         <>
                                           <ChevronDown className="w-4 h-4 mr-1" />
-                                          Ver detalhes do participante
+                                          Ver detalhes dos vendedores
                                         </>
                                       )}
                                     </Button>
