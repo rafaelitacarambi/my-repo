@@ -134,6 +134,7 @@ interface FinancingCase {
   numeroMatricula?: string;
   numeroContrato?: string;
   numeroProtocoloCartorio?: string;
+  dataRegistroCartorio?: string;
   enderecoImovel?: string;
   valorItbi?: number;
   valorPrenotacaoCartorio?: number;
@@ -353,6 +354,7 @@ export default function AdminFinancingKanbanPage() {
     numeroMatricula: '',
     numeroContrato: '',
     numeroProtocoloCartorio: '',
+    dataRegistroCartorio: '',
     enderecoImovel: '',
     valorItbi: 0,
     valorPrenotacaoCartorio: 0,
@@ -585,6 +587,7 @@ export default function AdminFinancingKanbanPage() {
           numeroMatricula: (atendimento as any).numeroMatricula || caseData.numeroMatricula || '',
           numeroContrato: (atendimento as any).numeroContrato || caseData.numeroContrato || '',
           numeroProtocoloCartorio: (atendimento as any).numeroProtocoloCartorio || caseData.numeroProtocoloCartorio || '',
+          dataRegistroCartorio: (atendimento as any).dataRegistroCartorio || caseData.dataRegistroCartorio || '',
           enderecoImovel: (atendimento as any).enderecoImovel || '',
           valorItbi: (atendimento as any).valorItbi || caseData.valorItbi || 0,
           valorPrenotacaoCartorio: (atendimento as any).valorPrenotacaoCartorio || caseData.valorPrenotacaoCartorio || 0,
@@ -880,6 +883,7 @@ export default function AdminFinancingKanbanPage() {
         numeroMatricula: caseFormData.numeroMatricula,
         numeroContrato: caseFormData.numeroContrato,
         numeroProtocoloCartorio: caseFormData.numeroProtocoloCartorio,
+        dataRegistroCartorio: caseFormData.dataRegistroCartorio,
         enderecoImovel: caseFormData.enderecoImovel,
         valorItbi: caseFormData.valorItbi,
         valorPrenotacaoCartorio: caseFormData.valorPrenotacaoCartorio,
@@ -2661,6 +2665,15 @@ export default function AdminFinancingKanbanPage() {
                           <Input
                             value={caseFormData.numeroProtocoloCartorio}
                             onChange={(e) => setCaseFormData({ ...caseFormData, numeroProtocoloCartorio: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="font-paragraph text-sm mb-2 block">Data do Registro no Cartório</Label>
+                          <Input
+                            type="date"
+                            value={caseFormData.dataRegistroCartorio ? new Date(caseFormData.dataRegistroCartorio).toISOString().split('T')[0] : ''}
+                            onChange={(e) => setCaseFormData({ ...caseFormData, dataRegistroCartorio: e.target.value ? new Date(e.target.value).toISOString() : '' })}
                             className="h-10"
                           />
                         </div>
