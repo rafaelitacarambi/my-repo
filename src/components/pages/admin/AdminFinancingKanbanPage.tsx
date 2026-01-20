@@ -61,6 +61,7 @@ import Footer from '@/components/Footer';
 import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis, ChecklistdosProponentes } from '@/entities';
+import { formatCurrency, parseCurrency, formatCPF, parseCPF, validateCPF, handleCurrencyInput, handleCPFInput } from '@/lib/input-masks';
 
 // Temporary interface for vendor documents collection
 interface FinanciamentoDocsVendedor {
@@ -2593,10 +2594,27 @@ export default function AdminFinancingKanbanPage() {
                           <Label className="font-paragraph text-sm mb-2 block">CPF do Proponente Principal *</Label>
                           <Input
                             value={caseFormData.cpfProponentePrincipal}
-                            onChange={(e) => setCaseFormData({ ...caseFormData, cpfProponentePrincipal: e.target.value })}
+                            onChange={(e) => {
+                              const { displayValue, isValid } = handleCPFInput(e.target.value);
+                              setCaseFormData({ ...caseFormData, cpfProponentePrincipal: displayValue });
+                            }}
                             placeholder="000.000.000-00"
-                            className="h-10"
+                            className={`h-10 ${
+                              caseFormData.cpfProponentePrincipal && 
+                              caseFormData.cpfProponentePrincipal.length === 14 && 
+                              !validateCPF(caseFormData.cpfProponentePrincipal)
+                                ? 'border-red-500 border-2'
+                                : ''
+                            }`}
                           />
+                          {caseFormData.cpfProponentePrincipal && 
+                           caseFormData.cpfProponentePrincipal.length === 14 && 
+                           !validateCPF(caseFormData.cpfProponentePrincipal) && (
+                            <p className="text-xs text-red-600 font-semibold mt-1 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              CPF inválido
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -2731,9 +2749,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor do Imóvel *</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.propertyValue}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, propertyValue: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.propertyValue)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, propertyValue: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2745,9 +2765,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Desejado *</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.desiredFinancingValue}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, desiredFinancingValue: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.desiredFinancingValue)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, desiredFinancingValue: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2759,9 +2781,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Possível/Aprovado</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.approvedFinancingValue}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, approvedFinancingValue: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.approvedFinancingValue)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, approvedFinancingValue: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2773,9 +2797,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor do Laudo</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.appraisalValue}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, appraisalValue: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.appraisalValue)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, appraisalValue: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2787,9 +2813,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor da Taxa à Vista</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.valorTaxaVista}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, valorTaxaVista: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.valorTaxaVista)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, valorTaxaVista: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2808,9 +2836,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor do Produto Negociado</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.valorProdutoNegociado}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, valorProdutoNegociado: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.valorProdutoNegociado)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, valorProdutoNegociado: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2829,9 +2859,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor do ITBI</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.valorItbi}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, valorItbi: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.valorItbi)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, valorItbi: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2850,9 +2882,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor da Prenotação do Cartório</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.valorPrenotacaoCartorio}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, valorPrenotacaoCartorio: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.valorPrenotacaoCartorio)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, valorPrenotacaoCartorio: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2871,9 +2905,11 @@ export default function AdminFinancingKanbanPage() {
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor do Registro</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.valorRegistro}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, valorRegistro: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.valorRegistro)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, valorRegistro: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
@@ -2952,9 +2988,11 @@ export default function AdminFinancingKanbanPage() {
                           <div>
                             <Label className="font-paragraph text-sm mb-2 block">Valor desejado de débito FGTS</Label>
                             <Input
-                              type="number"
-                              value={caseFormData.fgtsValue}
-                              onChange={(e) => setCaseFormData({ ...caseFormData, fgtsValue: parseFloat(e.target.value) || 0 })}
+                              value={formatCurrency(caseFormData.fgtsValue)}
+                              onChange={(e) => {
+                                const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                                setCaseFormData({ ...caseFormData, fgtsValue: numericValue });
+                              }}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />

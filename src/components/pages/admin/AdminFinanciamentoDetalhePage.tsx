@@ -55,6 +55,7 @@ import {
   Imveis,
   ChecklistdosProponentes
 } from '@/entities';
+import { formatCurrency, parseCurrency, formatCPF, parseCPF, validateCPF, handleCurrencyInput, handleCPFInput } from '@/lib/input-masks';
 
 // Financing Phases Configuration
 const FINANCING_PHASES = [
@@ -1280,12 +1281,24 @@ export default function AdminFinanciamentoDetalhePage() {
                       <Input
                         value={formData.cpf}
                         onChange={(e) => {
-                          setFormData({ ...formData, cpf: e.target.value });
-                          handleAutoSave('cpf', e.target.value);
+                          const { displayValue, isValid } = handleCPFInput(e.target.value);
+                          setFormData({ ...formData, cpf: displayValue });
+                          handleAutoSave('cpf', displayValue);
                         }}
                         placeholder="000.000.000-00"
-                        className="h-10 bg-primary border-border-gray"
+                        className={`h-10 bg-primary border-border-gray ${
+                          formData.cpf && 
+                          formData.cpf.length === 14 && 
+                          !validateCPF(formData.cpf)
+                            ? 'border-red-500 border-2'
+                            : ''
+                        }`}
                       />
+                      {formData.cpf && 
+                       formData.cpf.length === 14 && 
+                       !validateCPF(formData.cpf) && (
+                        <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
+                      )}
                     </div>
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Contato WhatsApp</Label>
@@ -1488,13 +1501,13 @@ export default function AdminFinanciamentoDetalhePage() {
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Valor do Produto Negociado</Label>
                       <Input
-                        type="number"
-                        value={formData.valorProdutoNegociado}
+                        value={formatCurrency(formData.valorProdutoNegociado)}
                         onChange={(e) => {
-                          setFormData({ ...formData, valorProdutoNegociado: parseFloat(e.target.value) || 0 });
-                          handleAutoSave('valorProdutoNegociado', parseFloat(e.target.value) || 0);
+                          const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                          setFormData({ ...formData, valorProdutoNegociado: numericValue });
+                          handleAutoSave('valorProdutoNegociado', numericValue);
                         }}
-                        placeholder="0.00"
+                        placeholder="R$ 0,00"
                         className="h-10 bg-primary border-border-gray"
                       />
                     </div>
@@ -1502,13 +1515,13 @@ export default function AdminFinanciamentoDetalhePage() {
                       <Label className="font-paragraph text-sm mb-2 block">Valor do ITBI</Label>
                       <div className="flex gap-2">
                         <Input
-                          type="number"
-                          value={formData.valorItbi}
+                          value={formatCurrency(formData.valorItbi)}
                           onChange={(e) => {
-                            setFormData({ ...formData, valorItbi: parseFloat(e.target.value) || 0 });
-                            handleAutoSave('valorItbi', parseFloat(e.target.value) || 0);
+                            const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                            setFormData({ ...formData, valorItbi: numericValue });
+                            handleAutoSave('valorItbi', numericValue);
                           }}
-                          placeholder="0.00"
+                          placeholder="R$ 0,00"
                           className="h-10 bg-primary border-border-gray flex-1"
                         />
                         <div className="flex items-center gap-2">
@@ -1527,13 +1540,13 @@ export default function AdminFinanciamentoDetalhePage() {
                       <Label className="font-paragraph text-sm mb-2 block">Valor da Prenotação do Cartório</Label>
                       <div className="flex gap-2">
                         <Input
-                          type="number"
-                          value={formData.valorPrenotacaoCartorio}
+                          value={formatCurrency(formData.valorPrenotacaoCartorio)}
                           onChange={(e) => {
-                            setFormData({ ...formData, valorPrenotacaoCartorio: parseFloat(e.target.value) || 0 });
-                            handleAutoSave('valorPrenotacaoCartorio', parseFloat(e.target.value) || 0);
+                            const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                            setFormData({ ...formData, valorPrenotacaoCartorio: numericValue });
+                            handleAutoSave('valorPrenotacaoCartorio', numericValue);
                           }}
-                          placeholder="0.00"
+                          placeholder="R$ 0,00"
                           className="h-10 bg-primary border-border-gray flex-1"
                         />
                         <div className="flex items-center gap-2">
@@ -1552,13 +1565,13 @@ export default function AdminFinanciamentoDetalhePage() {
                       <Label className="font-paragraph text-sm mb-2 block">Valor do Registro</Label>
                       <div className="flex gap-2">
                         <Input
-                          type="number"
-                          value={formData.valorRegistro}
+                          value={formatCurrency(formData.valorRegistro)}
                           onChange={(e) => {
-                            setFormData({ ...formData, valorRegistro: parseFloat(e.target.value) || 0 });
-                            handleAutoSave('valorRegistro', parseFloat(e.target.value) || 0);
+                            const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
+                            setFormData({ ...formData, valorRegistro: numericValue });
+                            handleAutoSave('valorRegistro', numericValue);
                           }}
-                          placeholder="0.00"
+                          placeholder="R$ 0,00"
                           className="h-10 bg-primary border-border-gray flex-1"
                         />
                         <div className="flex items-center gap-2">
@@ -1648,10 +1661,24 @@ export default function AdminFinanciamentoDetalhePage() {
                         <Label className="font-paragraph text-sm mb-2 block">CPF</Label>
                         <Input
                           value={newProponente.cpf}
-                          onChange={(e) => setNewProponente({ ...newProponente, cpf: e.target.value })}
+                          onChange={(e) => {
+                            const { displayValue, isValid } = handleCPFInput(e.target.value);
+                            setNewProponente({ ...newProponente, cpf: displayValue });
+                          }}
                           placeholder="000.000.000-00"
-                          className="h-10 bg-primary border-border-gray"
+                          className={`h-10 bg-primary border-border-gray ${
+                            newProponente.cpf && 
+                            newProponente.cpf.length === 14 && 
+                            !validateCPF(newProponente.cpf)
+                              ? 'border-red-500 border-2'
+                              : ''
+                          }`}
                         />
+                        {newProponente.cpf && 
+                         newProponente.cpf.length === 14 && 
+                         !validateCPF(newProponente.cpf) && (
+                          <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
+                        )}
                       </div>
                       <div>
                         <Label className="font-paragraph text-sm mb-2 block">Telefone/WhatsApp</Label>
@@ -2046,10 +2073,30 @@ export default function AdminFinanciamentoDetalhePage() {
                             </Label>
                             <Input
                               value={newVendedor.cpfCnpj}
-                              onChange={(e) => setNewVendedor({ ...newVendedor, cpfCnpj: e.target.value })}
+                              onChange={(e) => {
+                                if (newVendedor.tipoPessoa === 'PF') {
+                                  const { displayValue, isValid } = handleCPFInput(e.target.value);
+                                  setNewVendedor({ ...newVendedor, cpfCnpj: displayValue });
+                                } else {
+                                  setNewVendedor({ ...newVendedor, cpfCnpj: e.target.value });
+                                }
+                              }}
                               placeholder={newVendedor.tipoPessoa === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'}
-                              className="h-10 bg-primary border-border-gray"
+                              className={`h-10 bg-primary border-border-gray ${
+                                newVendedor.tipoPessoa === 'PF' && 
+                                newVendedor.cpfCnpj && 
+                                newVendedor.cpfCnpj.length === 14 && 
+                                !validateCPF(newVendedor.cpfCnpj)
+                                  ? 'border-red-500 border-2'
+                                  : ''
+                              }`}
                             />
+                            {newVendedor.tipoPessoa === 'PF' && 
+                             newVendedor.cpfCnpj && 
+                             newVendedor.cpfCnpj.length === 14 && 
+                             !validateCPF(newVendedor.cpfCnpj) && (
+                              <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
+                            )}
                           </div>
                           {newVendedor.tipoPessoa === 'PF' && (
                             <div className="md:col-span-2">
@@ -2193,10 +2240,31 @@ export default function AdminFinanciamentoDetalhePage() {
                             <Label className="font-paragraph text-sm mb-2 block">CPF/CNPJ do Titular *</Label>
                             <Input
                               value={newVendedor.cpfCnpjTitular}
-                              onChange={(e) => setNewVendedor({ ...newVendedor, cpfCnpjTitular: e.target.value })}
+                              onChange={(e) => {
+                                // Apply CPF mask for PF, no mask for PJ
+                                if (newVendedor.tipoPessoa === 'PF') {
+                                  const { displayValue, isValid } = handleCPFInput(e.target.value);
+                                  setNewVendedor({ ...newVendedor, cpfCnpjTitular: displayValue });
+                                } else {
+                                  setNewVendedor({ ...newVendedor, cpfCnpjTitular: e.target.value });
+                                }
+                              }}
                               placeholder="000.000.000-00"
-                              className="h-10 bg-primary border-border-gray"
+                              className={`h-10 bg-primary border-border-gray ${
+                                newVendedor.tipoPessoa === 'PF' && 
+                                newVendedor.cpfCnpjTitular && 
+                                newVendedor.cpfCnpjTitular.length === 14 && 
+                                !validateCPF(newVendedor.cpfCnpjTitular)
+                                  ? 'border-red-500 border-2'
+                                  : ''
+                              }`}
                             />
+                            {newVendedor.tipoPessoa === 'PF' && 
+                             newVendedor.cpfCnpjTitular && 
+                             newVendedor.cpfCnpjTitular.length === 14 && 
+                             !validateCPF(newVendedor.cpfCnpjTitular) && (
+                              <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
+                            )}
                           </div>
                         </div>
                       </div>
