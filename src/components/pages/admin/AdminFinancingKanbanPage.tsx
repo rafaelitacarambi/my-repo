@@ -152,6 +152,7 @@ interface FinancingCase {
   propertyValue?: number;
   desiredFinancingValue?: number;
   approvedFinancingValue?: number;
+  appraisalValue?: number;
   
   // FGTS
   useFgts?: boolean;
@@ -366,6 +367,7 @@ export default function AdminFinancingKanbanPage() {
     propertyValue: 0,
     desiredFinancingValue: 0,
     approvedFinancingValue: 0,
+    appraisalValue: 0,
     useFgts: false,
     fgtsValue: 0,
     hasCommercialProposal: false,
@@ -597,6 +599,7 @@ export default function AdminFinancingKanbanPage() {
           propertyValue: (atendimento as any).propertyValue || caseData.propertyValue || 0,
           desiredFinancingValue: (atendimento as any).desiredFinancingValue || caseData.desiredFinancingValue || 0,
           approvedFinancingValue: (atendimento as any).approvedFinancingValue || caseData.approvedFinancingValue || 0,
+          appraisalValue: (atendimento as any).appraisalValue || caseData.appraisalValue || 0,
           useFgts: (atendimento as any).useFgts || caseData.useFgts || false,
           fgtsValue: (atendimento as any).fgtsValue || caseData.fgtsValue || 0,
           hasCommercialProposal: (atendimento as any).hasCommercialProposal !== undefined ? (atendimento as any).hasCommercialProposal : caseData.hasCommercialProposal,
@@ -891,6 +894,7 @@ export default function AdminFinancingKanbanPage() {
         propertyValue: caseFormData.propertyValue,
         desiredFinancingValue: caseFormData.desiredFinancingValue,
         approvedFinancingValue: caseFormData.approvedFinancingValue,
+        appraisalValue: caseFormData.appraisalValue,
         useFgts: caseFormData.useFgts,
         fgtsValue: caseFormData.fgtsValue,
         hasCommercialProposal: caseFormData.hasCommercialProposal,
@@ -2719,6 +2723,20 @@ export default function AdminFinancingKanbanPage() {
                               type="number"
                               value={caseFormData.approvedFinancingValue}
                               onChange={(e) => setCaseFormData({ ...caseFormData, approvedFinancingValue: parseFloat(e.target.value) || 0 })}
+                              placeholder="R$ 0,00"
+                              className="h-10"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Valor do Laudo - NOVO CAMPO */}
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block">Valor do Laudo</Label>
+                            <Input
+                              type="number"
+                              value={caseFormData.appraisalValue}
+                              onChange={(e) => setCaseFormData({ ...caseFormData, appraisalValue: parseFloat(e.target.value) || 0 })}
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
