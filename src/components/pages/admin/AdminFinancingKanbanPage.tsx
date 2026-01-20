@@ -3113,7 +3113,7 @@ export default function AdminFinancingKanbanPage() {
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg font-heading flex items-center gap-2">
                           <Users className="w-5 h-5 text-secondary" />
-                          Checklist dos Proponentes
+                          Proponentes do Processo
                         </CardTitle>
                         {saveStatus === 'saved' && (
                           <Badge className="bg-green-500 text-white">
@@ -3131,7 +3131,7 @@ export default function AdminFinancingKanbanPage() {
                     <CardContent>
                       {(() => {
                         // Build proponents list: Principal first, then participants (avoiding duplicates)
-                        const proponentsList: Array<{ clientRef: string; name: string; cpf: string; roleInService: string; isPrincipal: boolean }> = [];
+                        const proponentsList: Array<{ clientRef: string; name: string; cpf: string; roleInService: string; isPrincipal: boolean; participantId?: string }> = [];
                         
                         // Add principal proponent first (from form data)
                         if (caseFormData.proponentePrincipal) {
@@ -3140,7 +3140,7 @@ export default function AdminFinancingKanbanPage() {
                             clientRef: principalKey,
                             name: caseFormData.proponentePrincipal,
                             cpf: caseFormData.cpfProponentePrincipal || '',
-                            roleInService: 'Proponente Principal',
+                            roleInService: 'Proponente/Comprador',
                             isPrincipal: true
                           });
                         }
@@ -3159,7 +3159,8 @@ export default function AdminFinancingKanbanPage() {
                                 name: client.clientName || client.nomeRazaoSocial || 'Nome não disponível',
                                 cpf: client.cpfCnpj || '',
                                 roleInService: participant.roleInService || 'Participante',
-                                isPrincipal: false
+                                isPrincipal: false,
+                                participantId: participant._id
                               });
                             }
                           }
@@ -3188,11 +3189,144 @@ export default function AdminFinancingKanbanPage() {
                         
                         return (
                           <div className="space-y-6">
-                            {/* Participant Selector (only show if more than 1) */}
+                            {/* Hierarchical Table View */}
+                            <div className="border-2 border-secondary/20 rounded-xl overflow-hidden bg-white">
+                              {/* Table Header */}
+                              <div className="bg-gradient-to-r from-secondary to-secondary/90 text-white grid grid-cols-12 gap-4 px-6 py-4 font-heading text-sm font-bold">
+                                <div className="col-span-1">#</div>
+                                <div className="col-span-3">CPF</div>
+                                <div className="col-span-4">Nome</div>
+                                <div className="col-span-3">Papel</div>
+                                <div className="col-span-1 text-right">Ações</div>
+                              </div>
+
+                              {/* Table Body - Principal Proponent */}
+                              {proponentsList.map((proponent, index) => {
+                                if (proponent.isPrincipal) {
+                                  return (
+                                    <div key={proponent.clientRef}>
+                                      {/* Principal Row */}
+                                      <div 
+                                        className="grid grid-cols-12 gap-4 px-6 py-4 border-b-2 border-border-gray hover:bg-light-gray/50 transition-colors cursor-pointer"
+                                        onClick={() => setSelectedProponentId(proponent.clientRef)}
+                                      >
+                                        <div className="col-span-1 font-bold text-secondary text-base">1</div>
+                                        <div className="col-span-3 font-paragraph text-sm text-foreground font-semibold">
+                                          {proponent.cpf || 'CPF não informado'}
+                                        </div>
+                                        <div className="col-span-4 font-paragraph text-sm text-foreground font-bold">
+                                          {proponent.name}
+                                        </div>
+                                        <div className="col-span-3">
+                                          <Badge className="bg-secondary text-secondary-foreground text-xs">
+                                            {proponent.roleInService}
+                                          </Badge>
+                                        </div>
+                                        <div className="col-span-1 flex justify-end">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedProponentId(proponent.clientRef);
+                                            }}
+                                            className="h-8 w-8 p-0 hover:bg-secondary/10"
+                                            title="Ver detalhes"
+                                          >
+                                            <Eye className="w-4 h-4 text-secondary" />
+                                          </Button>
+                                        </div>
+                                      </div>
+
+                                      {/* Linked Participants (Indented) */}
+                                      {proponentsList
+                                        .filter(p => !p.isPrincipal)
+                                        .map((linkedProponent, linkedIndex) => {
+                                          // Determine role display with spouse indicator
+                                          let roleDisplay = linkedProponent.roleInService;
+                                          if (linkedProponent.roleInService.toLowerCase().includes('cônjuge') || 
+                                              linkedProponent.roleInService.toLowerCase().includes('conjuge')) {
+                                            roleDisplay = 'Coobrigado/Proponente (Cônjuge)';
+                                          }
+
+                                          return (
+                                            <div 
+                                              key={linkedProponent.clientRef}
+                                              className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-border-gray/50 bg-light-gray/30 hover:bg-light-gray/60 transition-colors cursor-pointer"
+                                              onClick={() => setSelectedProponentId(linkedProponent.clientRef)}
+                                            >
+                                              <div className="col-span-1 font-semibold text-secondary/70 text-sm pl-6">
+                                                1.{linkedIndex + 1}
+                                              </div>
+                                              <div className="col-span-3 font-paragraph text-sm text-foreground/80">
+                                                {linkedProponent.cpf || 'CPF não informado'}
+                                              </div>
+                                              <div className="col-span-4 font-paragraph text-sm text-foreground">
+                                                {linkedProponent.name}
+                                              </div>
+                                              <div className="col-span-3">
+                                                <Badge variant="outline" className="text-xs border-secondary/40 text-secondary">
+                                                  {roleDisplay}
+                                                </Badge>
+                                              </div>
+                                              <div className="col-span-1 flex justify-end gap-1">
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedProponentId(linkedProponent.clientRef);
+                                                  }}
+                                                  className="h-7 w-7 p-0 hover:bg-secondary/10"
+                                                  title="Ver detalhes"
+                                                >
+                                                  <Eye className="w-3.5 h-3.5 text-secondary" />
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (linkedProponent.participantId) {
+                                                      handleRemoveParticipant(linkedProponent.participantId);
+                                                    }
+                                                  }}
+                                                  className="h-7 w-7 p-0 hover:bg-destructive/10 text-destructive"
+                                                  title="Remover participante"
+                                                >
+                                                  <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })}
+                            </div>
+
+                            {/* Info Box */}
+                            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 flex items-start gap-3">
+                              <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                              <div className="text-sm text-blue-900">
+                                <p className="font-semibold mb-2">Estrutura Hierárquica:</p>
+                                <ul className="list-disc list-inside space-y-1 text-xs">
+                                  <li>O <strong>Proponente Principal</strong> é a linha principal do processo</li>
+                                  <li>Todos os <strong>participantes adicionais</strong> aparecem vinculados abaixo (indentados)</li>
+                                  <li>Cônjuges são automaticamente marcados como <strong>"Coobrigado/Proponente (Cônjuge)"</strong></li>
+                                  <li>O Proponente Principal <strong>não pode ser excluído</strong></li>
+                                  <li>Participantes secundários podem ser editados ou removidos</li>
+                                </ul>
+                              </div>
+                            </div>
+
+                            {/* Participant Selector for Details (only show if more than 1) */}
                             {proponentsList.length > 1 && (
                               <div>
                                 <Label className="font-paragraph text-sm mb-2 block font-semibold">
-                                  Selecione o participante
+                                  Ver detalhes do participante
                                 </Label>
                                 <Select 
                                   value={selectedProponentId || proponentsList[0]?.clientRef} 
