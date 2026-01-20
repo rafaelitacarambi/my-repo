@@ -4103,8 +4103,8 @@ export default function AdminFinancingKanbanPage() {
                             .filter(p => p.atendimentoRef === selectedCase?._id)
                             .sort((a, b) => {
                               // Sort by creation date DESC (most recent first)
-                              const dateA = a._createdDate ? new Date(a._createdDate).getTime() : 0;
-                              const dateB = b._createdDate ? new Date(b._createdDate).getTime() : 0;
+                              const dateA = a.creationDate ? new Date(a.creationDate).getTime() : 0;
+                              const dateB = b.creationDate ? new Date(b.creationDate).getTime() : 0;
                               return dateB - dateA;
                             });
 
@@ -4234,8 +4234,8 @@ export default function AdminFinancingKanbanPage() {
                           .filter(t => t.atendimentoRef === selectedCase?._id)
                           .sort((a, b) => {
                             // Sort by creation date DESC (most recent first)
-                            const dateA = a._createdDate ? new Date(a._createdDate).getTime() : 0;
-                            const dateB = b._createdDate ? new Date(b._createdDate).getTime() : 0;
+                            const dateA = a.creationDate ? new Date(a.creationDate).getTime() : 0;
+                            const dateB = b.creationDate ? new Date(b.creationDate).getTime() : 0;
                             return dateB - dateA;
                           });
 
