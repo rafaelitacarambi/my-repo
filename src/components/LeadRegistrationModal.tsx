@@ -101,6 +101,7 @@ export function LeadRegistrationModal({
     try {
       const leadId = crypto.randomUUID();
       
+      // Create lead with all required fields
       await BaseCrudService.create('leadsdecontato', {
         _id: leadId,
         fullName: clientData?.clientName || '',
@@ -117,6 +118,7 @@ export function LeadRegistrationModal({
         perfilCompra: formData.perfilCompra,
         urgencia: formData.urgencia,
         leadStatus: 'Novo',
+        statusFunil: 'Novo',
         leadSource: 'Área Restrita',
         submissionDate: new Date(),
         ultimaInteracao: new Date(),
@@ -124,6 +126,13 @@ export function LeadRegistrationModal({
 
       setCreatedLeadId(leadId);
       setSuccess(true);
+      
+      // The backend hook (leads-distribuicao.js) will automatically:
+      // 1. Identify the sector
+      // 2. Assign a broker using round-robin
+      // 3. Create a task for the broker
+      // 4. Register in history
+      
       onSuccess?.(leadId);
     } catch (err) {
       setError('Erro ao criar lead');

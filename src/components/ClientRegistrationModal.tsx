@@ -110,6 +110,7 @@ export function ClientRegistrationModal({
         return;
       }
 
+      // Move to roles step (now optional)
       setStep('roles');
     } catch (err) {
       setError('Erro ao verificar cliente duplicado');
@@ -126,18 +127,14 @@ export function ClientRegistrationModal({
   };
 
   const handleCreateClient = async () => {
-    if (selectedRoles.length === 0) {
-      setError('Selecione pelo menos um papel/função');
-      return;
-    }
-
+    // Roles are now optional - no validation needed
     setLoading(true);
     setError(null);
 
     try {
       const clientId = crypto.randomUUID();
       
-      // Create client with selected roles saved in papeis field
+      // Create client with optional roles saved in papeis field
       await BaseCrudService.create('clientes', {
         _id: clientId,
         clientName: formData.clientName,
@@ -146,7 +143,7 @@ export function ClientRegistrationModal({
         address: formData.address,
         notes: formData.notes,
         status: 'Ativo',
-        papeis: selectedRoles.join(', '), // Save roles as comma-separated string
+        papeis: selectedRoles.length > 0 ? selectedRoles.join(', ') : undefined, // Optional roles
       });
 
       setCreatedClientId(clientId);
@@ -310,7 +307,7 @@ export function ClientRegistrationModal({
         {step === 'roles' && (
           <div className="space-y-4 mt-4">
             <p className="font-paragraph text-sm text-primary-foreground/70">
-              Selecione os papéis/funções deste cliente. Os papéis servem apenas para classificação no CRM.
+              Selecione os papéis/funções deste cliente (opcional). Os papéis servem apenas para classificação no CRM e não afetam nenhum fluxo.
             </p>
 
             <div className="space-y-3">
@@ -342,7 +339,7 @@ export function ClientRegistrationModal({
             {/* Create Lead Option */}
             <div className="bg-secondary/10 rounded-lg p-4 border border-secondary/30 mt-6">
               <Label className="font-paragraph font-semibold text-primary-foreground mb-3 block">
-                Criar Lead agora?
+                Criar Lead para este cliente?
               </Label>
               <RadioGroup value={createLead} onValueChange={(value: 'sim' | 'nao') => setCreateLead(value)}>
                 <div className="flex items-center space-x-2 mb-2">
@@ -372,10 +369,10 @@ export function ClientRegistrationModal({
             <div className="flex gap-3 pt-4">
               <Button
                 onClick={handleCreateClient}
-                disabled={loading || selectedRoles.length === 0}
+                disabled={loading}
                 className="flex-1 bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 rounded-lg"
               >
-                {loading ? 'Criando...' : `Criar Cliente (${selectedRoles.length} papel${selectedRoles.length !== 1 ? 'éis' : ''})`}
+                {loading ? 'Criando...' : selectedRoles.length > 0 ? `Criar Cliente (${selectedRoles.length} papel${selectedRoles.length !== 1 ? 'éis' : ''})` : 'Criar Cliente'}
               </Button>
               <Button
                 type="button"
@@ -405,21 +402,23 @@ export function ClientRegistrationModal({
               </p>
             </div>
 
-            <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
-              <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
-                Papéis selecionados:
-              </p>
-              <ul className="space-y-1">
-                {selectedRoles.map((roleId) => {
-                  const role = ROLES.find((r) => r.id === roleId);
-                  return (
-                    <li key={roleId} className="font-paragraph text-sm text-primary-foreground">
-                      ✓ {role?.label}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            {selectedRoles.length > 0 && (
+              <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
+                  Papéis selecionados:
+                </p>
+                <ul className="space-y-1">
+                  {selectedRoles.map((roleId) => {
+                    const role = ROLES.find((r) => r.id === roleId);
+                    return (
+                      <li key={roleId} className="font-paragraph text-sm text-primary-foreground">
+                        ✓ {role?.label}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
 
             {createLead === 'sim' && (
               <div className="bg-secondary/10 rounded-lg p-4 border border-secondary/30">
