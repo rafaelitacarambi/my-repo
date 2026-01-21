@@ -4150,33 +4150,7 @@ export default function AdminFinancingKanbanPage() {
                                         </div>
                                       )}
 
-                                      {/* Marital Status Warning - Show if married/union and no spouse registered */}
-                                      {(vendor.estadoCivil === 'Casado(a)' || vendor.estadoCivil === 'União Estável') && 
-                                       !vendor.ehConjugeDe && 
-                                       !vendor.conjugeNaoParticipa && (
-                                        <div className="md:col-span-2 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
-                                          <div className="flex items-start gap-3 mb-3">
-                                            <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                            <div>
-                                              <p className="font-paragraph text-sm text-foreground font-semibold mb-1">
-                                                Atenção: Anuência Conjugal Necessária
-                                              </p>
-                                              <p className="text-xs text-foreground/70 mb-3">
-                                                O vendedor é {vendor.estadoCivil}. É necessário cadastrar o cônjuge ou confirmar que não participa da venda.
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Checkbox
-                                              checked={vendor.conjugeNaoParticipa || false}
-                                              onCheckedChange={(checked) => handleUpdateVendorBankData(vendor.clientRef, 'conjugeNaoParticipa', checked as boolean)}
-                                            />
-                                            <Label className="font-paragraph text-sm cursor-pointer">
-                                              Confirmo que o cônjuge não participa da venda
-                                            </Label>
-                                          </div>
-                                        </div>
-                                      )}
+
                                     </div>
                                   </div>
 
