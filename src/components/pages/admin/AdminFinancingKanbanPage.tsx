@@ -111,10 +111,14 @@ interface FinancingCase {
   pastaInterna?: string;
   status: string;
   faseAtual: string;
+  faseAnterior?: string; // Store previous phase for rollback
   dataEntradaFaseAtual?: string;
   diasNaFase: number;
   pendenciasAbertas: number;
   tarefasAbertas: number;
+  
+  // Status de Resultado do Financiamento
+  statusResultadoFinanciamento?: 'Aprovado' | 'Condicionado' | 'Reprovado' | '';
   
   // Ícones de bloqueio
   bloqueioDocumento?: boolean;
@@ -491,6 +495,8 @@ export default function AdminFinancingKanbanPage() {
             pastaInterna: (a as any).pastaInterna || a._id.substring(0, 8).toUpperCase(),
             status: a.status || 'Novo',
             faseAtual: a.faseFinanciamento || 'novos-clientes',
+            faseAnterior: (a as any).faseAnterior || '',
+            statusResultadoFinanciamento: (a as any).statusResultadoFinanciamento || '',
             dataEntradaFaseAtual: dataEntrada,
             diasNaFase,
             pendenciasAbertas: 0,
@@ -985,14 +991,105 @@ export default function AdminFinancingKanbanPage() {
     await handleMoveCase(draggableId, newColumnId);
   };
 
-  // Move case to different column
-  const handleMoveCase = async (caseId: string, newColumn: string) => {
+  // Handle status change with automatic column movement
+  const handleStatusResultadoChange = async (caseId: string, newStatus: 'Aprovado' | 'Condicionado' | 'Reprovado') => {
     try {
+      const caseItem = cases.find(c => c._id === caseId);
+      if (!caseItem) return;
+
       const now = new Date().toISOString();
+      const oldStatus = caseItem.statusResultadoFinanciamento || 'Não definido';
       
+      // Determine target column based on status
+      let targetColumn = caseItem.faseAtual; // Keep current by default
+      let shouldMove = false;
+      
+      if (newStatus === 'Condicionado') {
+        targetColumn = 'condicionados';
+        shouldMove = true;
+      } else if (newStatus === 'Reprovado') {
+        targetColumn = 'reprovados';
+        shouldMove = true;
+      } else if (newStatus === 'Aprovado') {
+        // If changing from Reprovado to Aprovado, try to restore previous phase
+        if (oldStatus === 'Reprovado' && caseItem.faseAnterior) {
+          targetColumn = caseItem.faseAnterior;
+          shouldMove = true;
+        }
+        // Otherwise, keep in current phase (no automatic movement)
+      }
+
       // Optimistic update
       setCases(cases.map(c => c._id === caseId ? {
         ...c,
+        statusResultadoFinanciamento: newStatus,
+        faseAnterior: shouldMove && newStatus !== 'Aprovado' ? c.faseAtual : c.faseAnterior, // Save current phase before moving
+        faseAtual: targetColumn,
+        dataEntradaFaseAtual: shouldMove ? now : c.dataEntradaFaseAtual,
+        diasNaFase: shouldMove ? 0 : c.diasNaFase
+      } : c));
+
+      // Update database
+      const updateData: any = {
+        _id: caseId,
+        statusResultadoFinanciamento: newStatus
+      };
+
+      if (shouldMove) {
+        updateData.faseFinanciamento = targetColumn;
+        updateData.dataPrevistaConclusao = now;
+        
+        // Save previous phase for potential rollback
+        if (newStatus !== 'Aprovado') {
+          updateData.faseAnterior = caseItem.faseAtual;
+        }
+      }
+
+      await BaseCrudService.update<ServiceRecords>('atendimentos', updateData);
+
+      // Create history entry for status change
+      await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+        _id: crypto.randomUUID(),
+        atendimentoRef: caseId,
+        tipoEvento: 'Status_Resultado_Alterado',
+        interactionType: 'Mudança de Status de Resultado',
+        interactionDescription: `Status de resultado alterado de "${oldStatus}" para "${newStatus}"${shouldMove ? ` - Movido para coluna "${FINANCING_COLUMNS.find(c => c.id === targetColumn)?.name}"` : ''}`,
+        interactionDate: now,
+        autorTipo: 'Sistema'
+      });
+
+      // If moved to a different column, also create movement history
+      if (shouldMove && targetColumn !== caseItem.faseAtual) {
+        await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: caseId,
+          tipoEvento: 'Movimentação',
+          interactionType: 'Mudança de fase automática',
+          interactionDescription: `Movido automaticamente para: ${FINANCING_COLUMNS.find(c => c.id === targetColumn)?.name} (devido ao status "${newStatus}")`,
+          interactionDate: now,
+          autorTipo: 'Sistema'
+        });
+      }
+
+      await loadData();
+    } catch (error) {
+      console.error('Error updating status resultado:', error);
+      await loadData(); // Revert on failure
+    }
+  };
+
+  // Move case to different column
+  const handleMoveCase = async (caseId: string, newColumn: string) => {
+    try {
+      const caseItem = cases.find(c => c._id === caseId);
+      if (!caseItem) return;
+      
+      const now = new Date().toISOString();
+      
+      // Optimistic update - save previous phase
+      setCases(cases.map(c => c._id === caseId ? {
+        ...c,
+        faseAnterior: c.faseAtual, // Save current phase before moving
         faseAtual: newColumn,
         dataEntradaFaseAtual: now,
         diasNaFase: 0
@@ -1001,6 +1098,7 @@ export default function AdminFinancingKanbanPage() {
       await BaseCrudService.update<ServiceRecords>('atendimentos', {
         _id: caseId,
         faseFinanciamento: newColumn,
+        faseAnterior: caseItem.faseAtual, // Save for rollback
         dataPrevistaConclusao: now
       });
 
@@ -2264,11 +2362,12 @@ export default function AdminFinancingKanbanPage() {
                                 </div>
                               </div>
 
-                              {/* Status and Phase */}
+                              {/* Status Resultado and Days in Phase */}
                               <div className="mb-3 space-y-1">
-                                <Badge className="text-xs font-semibold">
-                                  {caseItem.status}
-                                </Badge>
+                                <div className="text-xs text-foreground/70 mb-1">
+                                  <span className="font-semibold">Status:</span>{' '}
+                                  {caseItem.statusResultadoFinanciamento || '—'}
+                                </div>
                                 <div className="flex items-center gap-1 text-xs text-foreground/70">
                                   <Clock className="w-3 h-3" />
                                   <span className={`font-bold px-2 py-0.5 rounded ${daysBadgeColor} text-white`}>
@@ -2587,6 +2686,68 @@ export default function AdminFinancingKanbanPage() {
 
                 {/* Dados do Processo Tab */}
                 <TabsContent value="dados" className="space-y-6">
+                  {/* Status de Resultado do Financiamento */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-heading flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-secondary" />
+                        Status de Resultado do Financiamento
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label className="font-paragraph text-sm mb-3 block font-semibold">
+                          Qual o status do resultado do financiamento?
+                        </Label>
+                        <Select 
+                          value={selectedCase?.statusResultadoFinanciamento || ''} 
+                          onValueChange={(value) => {
+                            if (selectedCase) {
+                              handleStatusResultadoChange(selectedCase._id, value as 'Aprovado' | 'Condicionado' | 'Reprovado');
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Aprovado">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="font-semibold">Aprovado</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Condicionado">
+                              <div className="flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                                <span className="font-semibold">Condicionado</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="Reprovado">
+                              <div className="flex items-center gap-2">
+                                <XCircle className="w-4 h-4 text-red-600" />
+                                <span className="font-semibold">Reprovado</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-xs text-blue-800">
+                              <p className="font-semibold mb-1">Regras de movimentação automática:</p>
+                              <ul className="list-disc list-inside space-y-1 ml-2">
+                                <li><strong>Condicionado</strong> → Move para coluna "Condicionados"</li>
+                                <li><strong>Reprovado</strong> → Move para coluna "Reprovados"</li>
+                                <li><strong>Aprovado</strong> → Não altera a fase atual</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Campos Obrigatórios */}
                   <Card>
                     <CardHeader>
