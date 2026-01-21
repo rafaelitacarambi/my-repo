@@ -311,101 +311,6 @@ const BACKGROUND_OPTIONS = [
   { id: 'image-minimal', name: 'Imagem: Minimalista', value: 'bg-[url(https://images.unsplash.com/photo-1557683316-973673baf926?w=1920)] bg-cover bg-center', preview: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400' }
 ];
 
-// Build safe vendor hierarchy with circular reference protection
-function buildSafeVendorHierarchy(vendors: Vendor[]): {
-  principalVendors: Vendor[];
-  spouseMap: Map<string, Vendor[]>;
-  hasCircularRef: boolean;
-  hasSelfRef: boolean;
-} {
-  const processedIds = new Set<string>();
-  const spouseMap = new Map<string, Vendor[]>();
-  let hasCircularRef = false;
-  let hasSelfRef = false;
-  
-  // Detect integrity issues
-  vendors.forEach(v => {
-    // Check for self-reference
-    if (v.ehConjugeDe === v.clientRef) {
-      hasSelfRef = true;
-      console.warn('[RENDER PROTECTION] Self-reference detected:', v.name);
-    }
-    
-    // Check for circular references (A->B and B->A where both have ehConjugeDe set)
-    if (v.ehConjugeDe) {
-      const spouse = vendors.find(s => s.clientRef === v.ehConjugeDe);
-      if (spouse?.ehConjugeDe === v.clientRef) {
-        // This is valid bidirectional link - mark as processed
-        const pairKey = [v.clientRef, spouse.clientRef].sort().join('-');
-        if (!processedIds.has(pairKey)) {
-          processedIds.add(pairKey);
-        }
-      }
-    }
-  });
-  
-  // Build principal vendors list (vendors without spouse link OR first in a pair)
-  const principalVendors: Vendor[] = [];
-  const processedPairs = new Set<string>();
-  
-  vendors.forEach(vendor => {
-    // Skip if self-reference (integrity issue)
-    if (vendor.ehConjugeDe === vendor.clientRef) {
-      // Treat as principal but without spouse
-      if (!principalVendors.some(p => p.clientRef === vendor.clientRef)) {
-        principalVendors.push({ ...vendor, ehConjugeDe: '' });
-      }
-      return;
-    }
-    
-    // If no spouse link, it's a principal vendor
-    if (!vendor.ehConjugeDe) {
-      if (!principalVendors.some(p => p.clientRef === vendor.clientRef)) {
-        principalVendors.push(vendor);
-      }
-      return;
-    }
-    
-    // If has spouse link, check if we've already processed this pair
-    const spouse = vendors.find(v => v.clientRef === vendor.ehConjugeDe);
-    if (!spouse) {
-      // Spouse not found - treat as principal without spouse
-      if (!principalVendors.some(p => p.clientRef === vendor.clientRef)) {
-        principalVendors.push({ ...vendor, ehConjugeDe: '' });
-      }
-      return;
-    }
-    
-    const pairKey = [vendor.clientRef, spouse.clientRef].sort().join('-');
-    
-    if (processedPairs.has(pairKey)) {
-      // Already processed this pair - skip
-      return;
-    }
-    
-    processedPairs.add(pairKey);
-    
-    // Determine which one is "principal" (alphabetically first by clientRef for consistency)
-    const sortedPair = [vendor, spouse].sort((a, b) => a.clientRef.localeCompare(b.clientRef));
-    const principal = sortedPair[0];
-    const spouseVendor = sortedPair[1];
-    
-    // Add principal to list
-    if (!principalVendors.some(p => p.clientRef === principal.clientRef)) {
-      principalVendors.push(principal);
-    }
-    
-    // Map spouse to principal
-    const spouses = spouseMap.get(principal.clientRef) || [];
-    if (!spouses.some(s => s.clientRef === spouseVendor.clientRef)) {
-      spouses.push(spouseVendor);
-      spouseMap.set(principal.clientRef, spouses);
-    }
-  });
-  
-  return { principalVendors, spouseMap, hasCircularRef, hasSelfRef };
-}
-
 export default function AdminFinancingKanbanPage() {
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -537,84 +442,6 @@ export default function AdminFinancingKanbanPage() {
   const [selectedProponentId, setSelectedProponentId] = useState<string>(''); // EMPTY by default - user must select
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
-
-  // Normalize spouse links to prevent duplicates and circular references
-  const normalizeSpouseLinks = (vendorsList: Vendor[], caseId: string): Vendor[] => {
-    const normalized = [...vendorsList];
-    const processedPairs = new Set<string>();
-    
-    for (let i = 0; i < normalized.length; i++) {
-      const vendor = normalized[i];
-      
-      // Skip if no spouse link
-      if (!vendor.ehConjugeDe) continue;
-      
-      // INTEGRITY CHECK: Prevent self-reference
-      if (vendor.ehConjugeDe === vendor.clientRef) {
-        console.warn('[AUTO-CORRECTION] Removing self-reference for vendor:', vendor.name);
-        normalized[i] = { ...vendor, ehConjugeDe: '' };
-        
-        // Save correction to localStorage
-        const storageKey = `vendor-bank-${caseId}-${vendor.clientRef}`;
-        const storedData = localStorage.getItem(storageKey);
-        if (storedData) {
-          const data = JSON.parse(storedData);
-          data.ehConjugeDe = '';
-          localStorage.setItem(storageKey, JSON.stringify(data));
-        }
-        continue;
-      }
-      
-      // Find spouse
-      const spouseIndex = normalized.findIndex(v => v.clientRef === vendor.ehConjugeDe);
-      if (spouseIndex === -1) {
-        // Spouse not found - remove invalid link
-        console.warn('[AUTO-CORRECTION] Removing invalid spouse link for vendor:', vendor.name);
-        normalized[i] = { ...vendor, ehConjugeDe: '' };
-        
-        const storageKey = `vendor-bank-${caseId}-${vendor.clientRef}`;
-        const storedData = localStorage.getItem(storageKey);
-        if (storedData) {
-          const data = JSON.parse(storedData);
-          data.ehConjugeDe = '';
-          localStorage.setItem(storageKey, JSON.stringify(data));
-        }
-        continue;
-      }
-      
-      const spouse = normalized[spouseIndex];
-      const pairKey = [vendor.clientRef, spouse.clientRef].sort().join('-');
-      
-      // Skip if already processed this pair
-      if (processedPairs.has(pairKey)) continue;
-      
-      // Mark pair as processed
-      processedPairs.add(pairKey);
-      
-      // INTEGRITY CHECK: Ensure bidirectional link
-      if (spouse.ehConjugeDe !== vendor.clientRef) {
-        console.warn('[AUTO-CORRECTION] Fixing unidirectional spouse link:', vendor.name, '<->', spouse.name);
-        normalized[spouseIndex] = { ...spouse, ehConjugeDe: vendor.clientRef };
-        
-        // Save correction to localStorage
-        const spouseStorageKey = `vendor-bank-${caseId}-${spouse.clientRef}`;
-        localStorage.setItem(spouseStorageKey, JSON.stringify({
-          contato: spouse.contato,
-          email: spouse.email,
-          banco: spouse.banco,
-          agencia: spouse.agencia,
-          conta: spouse.conta,
-          tipoConta: spouse.tipoConta,
-          chavePix: spouse.chavePix,
-          estadoCivil: spouse.estadoCivil,
-          ehConjugeDe: vendor.clientRef,
-          conjugeNaoParticipa: spouse.conjugeNaoParticipa
-        }));
-      }
-    }
-    
-    return normalized;
-  };
 
   // Load data
   useEffect(() => {
@@ -904,7 +731,7 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
-  // Load vendors and their documents with auto-correction of duplicate spouse links
+  // Load vendors and their documents
   const loadVendorsAndDocuments = async (caseId: string) => {
     try {
       console.log('[DEBUG] Loading vendors for atendimento:', caseId);
@@ -948,10 +775,8 @@ export default function AdminFinancingKanbanPage() {
         }
       }
       
-      // AUTO-CORRECTION: Normalize spouse links to prevent duplicates/loops
-      const normalizedVendors = normalizeSpouseLinks(vendorsList, caseId);
-      setVendors(normalizedVendors);
-      console.log('[DEBUG] Vendors loaded and normalized:', normalizedVendors.length);
+      setVendors(vendorsList);
+      console.log('[DEBUG] Vendors loaded:', vendorsList.length);
       
       // Load vendor documents
       const { items: allVendorDocs } = await BaseCrudService.getAll<FinanciamentoDocsVendedor>('financiamentodocsvendedor');
@@ -1260,27 +1085,12 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
-  // Add vendor with automatic bidirectional spouse linking
+  // Add vendor
   const handleAddVendor = async () => {
     if (!selectedCase || !newVendor.clientRef) return;
 
     try {
       console.log('[DEBUG] Adding vendor:', newVendor);
-      
-      // INTEGRITY CHECK: Prevent self-reference
-      if (newVendor.ehConjugeDe === newVendor.clientRef) {
-        console.error('[INTEGRITY] Cannot link vendor to themselves');
-        return;
-      }
-      
-      // INTEGRITY CHECK: If linking to spouse, ensure spouse isn't already linked to someone else
-      if (newVendor.ehConjugeDe) {
-        const targetSpouse = vendors.find(v => v.clientRef === newVendor.ehConjugeDe);
-        if (targetSpouse?.ehConjugeDe && targetSpouse.ehConjugeDe !== newVendor.clientRef) {
-          console.error('[INTEGRITY] Target spouse is already linked to another vendor');
-          return;
-        }
-      }
       
       // Create vendor as participant with role "Vendedor"
       const vendorParticipant: ServiceParties = {
@@ -1314,49 +1124,24 @@ export default function AdminFinancingKanbanPage() {
         conjugeNaoParticipa: newVendor.conjugeNaoParticipa
       };
       
-      // BIDIRECTIONAL UPDATE: If spouse link provided, update spouse automatically
-      let updatedVendorsList = [...vendors, newVendorObj];
-      
+      // Save spouse link to localStorage if provided
       if (newVendor.ehConjugeDe) {
-        updatedVendorsList = updatedVendorsList.map(v => 
-          v.clientRef === newVendor.ehConjugeDe ? { ...v, ehConjugeDe: newVendor.clientRef } : v
-        );
-        
-        // Save spouse's updated data to localStorage
-        const spouse = updatedVendorsList.find(v => v.clientRef === newVendor.ehConjugeDe);
-        if (spouse) {
-          const spouseStorageKey = `vendor-bank-${selectedCase._id}-${newVendor.ehConjugeDe}`;
-          localStorage.setItem(spouseStorageKey, JSON.stringify({
-            contato: spouse.contato,
-            email: spouse.email,
-            banco: spouse.banco,
-            agencia: spouse.agencia,
-            conta: spouse.conta,
-            tipoConta: spouse.tipoConta,
-            chavePix: spouse.chavePix,
-            estadoCivil: spouse.estadoCivil,
-            ehConjugeDe: spouse.ehConjugeDe,
-            conjugeNaoParticipa: spouse.conjugeNaoParticipa
-          }));
-        }
+        const storageKey = `vendor-bank-${selectedCase._id}-${newVendor.clientRef}`;
+        localStorage.setItem(storageKey, JSON.stringify({
+          contato: newVendor.contato,
+          email: newVendor.email,
+          banco: newVendor.banco,
+          agencia: newVendor.agencia,
+          conta: newVendor.conta,
+          tipoConta: newVendor.tipoConta,
+          chavePix: newVendor.chavePix,
+          estadoCivil: newVendor.estadoCivil,
+          ehConjugeDe: newVendor.ehConjugeDe,
+          conjugeNaoParticipa: newVendor.conjugeNaoParticipa
+        }));
       }
       
-      // Save new vendor to localStorage
-      const storageKey = `vendor-bank-${selectedCase._id}-${newVendor.clientRef}`;
-      localStorage.setItem(storageKey, JSON.stringify({
-        contato: newVendor.contato,
-        email: newVendor.email,
-        banco: newVendor.banco,
-        agencia: newVendor.agencia,
-        conta: newVendor.conta,
-        tipoConta: newVendor.tipoConta,
-        chavePix: newVendor.chavePix,
-        estadoCivil: newVendor.estadoCivil,
-        ehConjugeDe: newVendor.ehConjugeDe,
-        conjugeNaoParticipa: newVendor.conjugeNaoParticipa
-      }));
-      
-      setVendors(updatedVendorsList);
+      setVendors([...vendors, newVendorObj]);
       
       // Create default documents for vendor
       const defaultDocs = [
@@ -1434,7 +1219,7 @@ export default function AdminFinancingKanbanPage() {
     }
   };
 
-  // Remove vendor with automatic spouse link cleanup
+  // Remove vendor
   const handleRemoveVendor = async (vendorId: string) => {
     try {
       console.log('[DEBUG] Removing vendor:', vendorId);
@@ -1442,33 +1227,6 @@ export default function AdminFinancingKanbanPage() {
       // Find vendor
       const vendor = vendors.find(v => v._id === vendorId);
       if (!vendor) return;
-      
-      // BIDIRECTIONAL UPDATE: If vendor has spouse, remove spouse's link too
-      let updatedVendorsList = vendors.filter(v => v._id !== vendorId);
-      
-      if (vendor.ehConjugeDe) {
-        updatedVendorsList = updatedVendorsList.map(v => 
-          v.clientRef === vendor.ehConjugeDe ? { ...v, ehConjugeDe: '' } : v
-        );
-        
-        // Update spouse's localStorage
-        const spouse = updatedVendorsList.find(v => v.clientRef === vendor.ehConjugeDe);
-        if (spouse && selectedCase) {
-          const spouseStorageKey = `vendor-bank-${selectedCase._id}-${vendor.ehConjugeDe}`;
-          localStorage.setItem(spouseStorageKey, JSON.stringify({
-            contato: spouse.contato,
-            email: spouse.email,
-            banco: spouse.banco,
-            agencia: spouse.agencia,
-            conta: spouse.conta,
-            tipoConta: spouse.tipoConta,
-            chavePix: spouse.chavePix,
-            estadoCivil: spouse.estadoCivil,
-            ehConjugeDe: '', // Clear spouse link
-            conjugeNaoParticipa: spouse.conjugeNaoParticipa
-          }));
-        }
-      }
       
       // Delete participant
       await BaseCrudService.delete('atendimentopartes', vendorId);
@@ -1482,158 +1240,23 @@ export default function AdminFinancingKanbanPage() {
         });
       }
       
-      // Remove from localStorage
-      if (selectedCase) {
-        const storageKey = `vendor-bank-${selectedCase._id}-${vendor.clientRef}`;
-        localStorage.removeItem(storageKey);
-      }
-      
       // Update state
-      setVendors(updatedVendorsList);
+      setVendors(vendors.filter(v => v._id !== vendorId));
       
       // CRITICAL FIX: Clear selection when removing vendor
       if (selectedVendorId === vendor.clientRef) {
         setSelectedVendorId(''); // Reset to empty - user must select again
       }
       
-      console.log('[DEBUG] Vendor removed successfully with spouse link cleanup');
+      console.log('[DEBUG] Vendor removed successfully');
       
     } catch (error) {
       console.error('[ERROR] Error removing vendor:', error);
     }
   };
 
-  // Update vendor bank data with automatic bidirectional spouse linking
+  // Update vendor bank data
   const handleUpdateVendorBankData = async (vendorClientRef: string, field: string, value: string | boolean) => {
-    // CRITICAL FIX: Handle spouse linking with bidirectional automatic update
-    if (field === 'ehConjugeDe') {
-      const spouseClientRef = value as string;
-      
-      // If setting a spouse link
-      if (spouseClientRef) {
-        // INTEGRITY CHECK: Prevent self-reference
-        if (spouseClientRef === vendorClientRef) {
-          console.error('[INTEGRITY] Cannot link vendor to themselves');
-          return;
-        }
-        
-        // INTEGRITY CHECK: Prevent duplicate/circular links
-        const spouse = vendors.find(v => v.clientRef === spouseClientRef);
-        if (spouse?.ehConjugeDe && spouse.ehConjugeDe !== vendorClientRef) {
-          console.error('[INTEGRITY] Spouse is already linked to another vendor');
-          return;
-        }
-        
-        // Update both vendors atomically
-        const updatedVendors = vendors.map(v => {
-          if (v.clientRef === vendorClientRef) {
-            // Set this vendor's spouse link
-            return { ...v, ehConjugeDe: spouseClientRef };
-          } else if (v.clientRef === spouseClientRef) {
-            // AUTOMATICALLY set reverse link
-            return { ...v, ehConjugeDe: vendorClientRef };
-          }
-          return v;
-        });
-        
-        setVendors(updatedVendors);
-        
-        // Save both to localStorage
-        const vendor = updatedVendors.find(v => v.clientRef === vendorClientRef);
-        const spouseVendor = updatedVendors.find(v => v.clientRef === spouseClientRef);
-        
-        if (vendor) {
-          const storageKey = `vendor-bank-${selectedCase?._id}-${vendorClientRef}`;
-          localStorage.setItem(storageKey, JSON.stringify({
-            contato: vendor.contato,
-            email: vendor.email,
-            banco: vendor.banco,
-            agencia: vendor.agencia,
-            conta: vendor.conta,
-            tipoConta: vendor.tipoConta,
-            chavePix: vendor.chavePix,
-            estadoCivil: vendor.estadoCivil,
-            ehConjugeDe: vendor.ehConjugeDe,
-            conjugeNaoParticipa: vendor.conjugeNaoParticipa
-          }));
-        }
-        
-        if (spouseVendor) {
-          const spouseStorageKey = `vendor-bank-${selectedCase?._id}-${spouseClientRef}`;
-          localStorage.setItem(spouseStorageKey, JSON.stringify({
-            contato: spouseVendor.contato,
-            email: spouseVendor.email,
-            banco: spouseVendor.banco,
-            agencia: spouseVendor.agencia,
-            conta: spouseVendor.conta,
-            tipoConta: spouseVendor.tipoConta,
-            chavePix: spouseVendor.chavePix,
-            estadoCivil: spouseVendor.estadoCivil,
-            ehConjugeDe: spouseVendor.ehConjugeDe,
-            conjugeNaoParticipa: spouseVendor.conjugeNaoParticipa
-          }));
-        }
-        
-        return; // Exit early - bidirectional update complete
-      } else {
-        // If removing spouse link, remove from both sides
-        const currentVendor = vendors.find(v => v.clientRef === vendorClientRef);
-        const oldSpouseRef = currentVendor?.ehConjugeDe;
-        
-        const updatedVendors = vendors.map(v => {
-          if (v.clientRef === vendorClientRef) {
-            return { ...v, ehConjugeDe: '' };
-          } else if (oldSpouseRef && v.clientRef === oldSpouseRef) {
-            // AUTOMATICALLY remove reverse link
-            return { ...v, ehConjugeDe: '' };
-          }
-          return v;
-        });
-        
-        setVendors(updatedVendors);
-        
-        // Save both to localStorage
-        const vendor = updatedVendors.find(v => v.clientRef === vendorClientRef);
-        if (vendor) {
-          const storageKey = `vendor-bank-${selectedCase?._id}-${vendorClientRef}`;
-          localStorage.setItem(storageKey, JSON.stringify({
-            contato: vendor.contato,
-            email: vendor.email,
-            banco: vendor.banco,
-            agencia: vendor.agencia,
-            conta: vendor.conta,
-            tipoConta: vendor.tipoConta,
-            chavePix: vendor.chavePix,
-            estadoCivil: vendor.estadoCivil,
-            ehConjugeDe: vendor.ehConjugeDe,
-            conjugeNaoParticipa: vendor.conjugeNaoParticipa
-          }));
-        }
-        
-        if (oldSpouseRef) {
-          const spouseVendor = updatedVendors.find(v => v.clientRef === oldSpouseRef);
-          if (spouseVendor) {
-            const spouseStorageKey = `vendor-bank-${selectedCase?._id}-${oldSpouseRef}`;
-            localStorage.setItem(spouseStorageKey, JSON.stringify({
-              contato: spouseVendor.contato,
-              email: spouseVendor.email,
-              banco: spouseVendor.banco,
-              agencia: spouseVendor.agencia,
-              conta: spouseVendor.conta,
-              tipoConta: spouseVendor.tipoConta,
-              chavePix: spouseVendor.chavePix,
-              estadoCivil: spouseVendor.estadoCivil,
-              ehConjugeDe: spouseVendor.ehConjugeDe,
-              conjugeNaoParticipa: spouseVendor.conjugeNaoParticipa
-            }));
-          }
-        }
-        
-        return; // Exit early - bidirectional removal complete
-      }
-    }
-    
-    // For non-spouse fields, update normally
     const updatedVendors = vendors.map(v => 
       v.clientRef === vendorClientRef ? { ...v, [field]: value } : v
     );
@@ -4277,92 +3900,6 @@ export default function AdminFinancingKanbanPage() {
                               })}
                             </div>
 
-                            {/* Add Vendor Section - MOVED HERE */}
-                            <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100/50 border-2 border-secondary/30 rounded-xl shadow-md">
-                              <h4 className="font-heading text-base font-bold mb-4 flex items-center gap-2">
-                                <Plus className="w-5 h-5 text-secondary" />
-                                Adicionar Novo Vendedor
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="md:col-span-2">
-                                  <Label className="font-paragraph text-sm mb-2 block">Selecionar Cliente *</Label>
-                                  <Select value={newVendor.clientRef} onValueChange={(value) => setNewVendor({ ...newVendor, clientRef: value })}>
-                                    <SelectTrigger className="h-10">
-                                      <SelectValue placeholder="Escolha um cliente da lista" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {clients
-                                        .filter(c => !vendors.some(v => v.clientRef === c._id))
-                                        .map(client => (
-                                          <SelectItem key={client._id} value={client._id}>
-                                            {client.clientName || client.nomeRazaoSocial} {client.cpfCnpj ? `- ${client.cpfCnpj}` : ''}
-                                          </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                
-                                {/* Spouse linking question - Show if multiple vendors exist */}
-                                {vendors.length > 0 && newVendor.clientRef && (
-                                  <div className="md:col-span-2 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
-                                    <Label className="font-paragraph text-sm mb-3 block font-semibold">
-                                      Este vendedor é cônjuge de algum vendedor já cadastrado?
-                                    </Label>
-                                    <RadioGroup
-                                      value={newVendor.ehConjugeDe ? 'sim' : 'nao'}
-                                      onValueChange={(value) => {
-                                        if (value === 'nao') {
-                                          setNewVendor({ ...newVendor, ehConjugeDe: '' });
-                                        }
-                                      }}
-                                      className="flex gap-6 mb-3"
-                                    >
-                                      <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="sim" id="new-vendor-spouse-sim" />
-                                        <Label htmlFor="new-vendor-spouse-sim" className="cursor-pointer font-medium">Sim</Label>
-                                      </div>
-                                      <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="nao" id="new-vendor-spouse-nao" />
-                                        <Label htmlFor="new-vendor-spouse-nao" className="cursor-pointer font-medium">Não</Label>
-                                      </div>
-                                    </RadioGroup>
-
-                                    {newVendor.ehConjugeDe === '' && (
-                                      <div>
-                                        <Label className="font-paragraph text-sm mb-2 block">Selecione o vendedor principal</Label>
-                                        <Select 
-                                          value={newVendor.ehConjugeDe || ''} 
-                                          onValueChange={(value) => setNewVendor({ ...newVendor, ehConjugeDe: value })}
-                                        >
-                                          <SelectTrigger className="h-10">
-                                            <SelectValue placeholder="Escolha o vendedor principal" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {vendors.map(v => (
-                                              <SelectItem key={v.clientRef} value={v.clientRef}>
-                                                {v.name} - {v.cpf}
-                                              </SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                <div className="md:col-span-2">
-                                  <Button 
-                                    onClick={handleAddVendor} 
-                                    disabled={!newVendor.clientRef}
-                                    className="h-10 bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                                  >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Adicionar Vendedor
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-
                             {/* Vendor Selector for Details */}
                             <div>
                               <Label className="font-paragraph text-sm mb-2 block font-semibold">
@@ -4886,7 +4423,91 @@ export default function AdminFinancingKanbanPage() {
                         );
                       })()}
 
+                      {/* Add Vendor Section */}
+                      <div className="mt-6 pt-6 border-t-2 border-border-gray">
+                        <h4 className="font-heading text-base font-bold mb-4 flex items-center gap-2">
+                          <Plus className="w-5 h-5 text-secondary" />
+                          Adicionar Novo Vendedor
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2">
+                            <Label className="font-paragraph text-sm mb-2 block">Selecionar Cliente *</Label>
+                            <Select value={newVendor.clientRef} onValueChange={(value) => setNewVendor({ ...newVendor, clientRef: value })}>
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Escolha um cliente da lista" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {clients
+                                  .filter(c => !vendors.some(v => v.clientRef === c._id))
+                                  .map(client => (
+                                    <SelectItem key={client._id} value={client._id}>
+                                      {client.clientName || client.nomeRazaoSocial} {client.cpfCnpj ? `- ${client.cpfCnpj}` : ''}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {/* Spouse linking question - Show if multiple vendors exist */}
+                          {vendors.length > 0 && newVendor.clientRef && (
+                            <div className="md:col-span-2 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                              <Label className="font-paragraph text-sm mb-3 block font-semibold">
+                                Este vendedor é cônjuge de algum vendedor já cadastrado?
+                              </Label>
+                              <RadioGroup
+                                value={newVendor.ehConjugeDe ? 'sim' : 'nao'}
+                                onValueChange={(value) => {
+                                  if (value === 'nao') {
+                                    setNewVendor({ ...newVendor, ehConjugeDe: '' });
+                                  }
+                                }}
+                                className="flex gap-6 mb-3"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="sim" id="new-vendor-spouse-sim" />
+                                  <Label htmlFor="new-vendor-spouse-sim" className="cursor-pointer font-medium">Sim</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem value="nao" id="new-vendor-spouse-nao" />
+                                  <Label htmlFor="new-vendor-spouse-nao" className="cursor-pointer font-medium">Não</Label>
+                                </div>
+                              </RadioGroup>
 
+                              {newVendor.ehConjugeDe === '' && (
+                                <div>
+                                  <Label className="font-paragraph text-sm mb-2 block">Selecione o vendedor principal</Label>
+                                  <Select 
+                                    value={newVendor.ehConjugeDe || ''} 
+                                    onValueChange={(value) => setNewVendor({ ...newVendor, ehConjugeDe: value })}
+                                  >
+                                    <SelectTrigger className="h-10">
+                                      <SelectValue placeholder="Escolha o vendedor principal" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {vendors.map(v => (
+                                        <SelectItem key={v.clientRef} value={v.clientRef}>
+                                          {v.name} - {v.cpf}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          <div className="md:col-span-2">
+                            <Button 
+                              onClick={handleAddVendor} 
+                              disabled={!newVendor.clientRef}
+                              className="h-10 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Adicionar Vendedor
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
