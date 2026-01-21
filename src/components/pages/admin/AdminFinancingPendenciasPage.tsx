@@ -17,7 +17,8 @@ import {
   RotateCcw,
   CheckSquare,
   ExternalLink,
-  Eye
+  Eye,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,12 @@ export default function AdminFinancingPendenciasPage() {
   const [editingPendencia, setEditingPendencia] = useState<PendnciasdoFinanciamento | null>(null);
   const [selectedAtendimentoId, setSelectedAtendimentoId] = useState<string | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState({
+    prazo: true,
+    prioridade: true,
+    responsavel: true
+  });
 
   const [formData, setFormData] = useState({
     title: '',
@@ -488,9 +495,9 @@ export default function AdminFinancingPendenciasPage() {
         <TableHeader>
           <TableRow>
             <TableHead className="font-paragraph">Título</TableHead>
-            <TableHead className="font-paragraph">Prioridade</TableHead>
-            <TableHead className="font-paragraph">Prazo</TableHead>
-            <TableHead className="font-paragraph">Responsável</TableHead>
+            {visibleColumns.prioridade && <TableHead className="font-paragraph">Prioridade</TableHead>}
+            {visibleColumns.prazo && <TableHead className="font-paragraph">Prazo</TableHead>}
+            {visibleColumns.responsavel && <TableHead className="font-paragraph">Responsável</TableHead>}
             <TableHead className="font-paragraph text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -520,22 +527,26 @@ export default function AdminFinancingPendenciasPage() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
-                <TableCell className="font-paragraph">
-                  {pendencia.dueDate ? (
-                    <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
-                      {format(new Date(pendencia.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                      {overdueStatus && (
-                        <div className="text-xs">Atrasada</div>
-                      )}
-                    </div>
-                  ) : (
-                    '—'
-                  )}
-                </TableCell>
-                <TableCell className="font-paragraph">
-                  {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '—'}
-                </TableCell>
+                {visibleColumns.prioridade && <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>}
+                {visibleColumns.prazo && (
+                  <TableCell className="font-paragraph">
+                    {pendencia.dueDate ? (
+                      <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
+                        {format(new Date(pendencia.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                        {overdueStatus && (
+                          <div className="text-xs">Atrasada</div>
+                        )}
+                      </div>
+                    ) : (
+                      '—'
+                    )}
+                  </TableCell>
+                )}
+                {visibleColumns.responsavel && (
+                  <TableCell className="font-paragraph">
+                    {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '—'}
+                  </TableCell>
+                )}
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     {pendencia.atendimentoRef && (
@@ -590,14 +601,74 @@ export default function AdminFinancingPendenciasPage() {
       <main className="flex-1 w-full">
         <div className="max-w-[100rem] mx-auto px-6 py-12">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="font-heading text-4xl font-bold text-foreground mb-3">
-              Pendências do Financiamento
-            </h1>
-            <p className="font-paragraph text-lg text-dark-gray">
-              Gerencie todas as pendências dos processos de financiamento
-            </p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="font-heading text-4xl font-bold text-foreground mb-3">
+                Pendências do Financiamento
+              </h1>
+              <p className="font-paragraph text-lg text-dark-gray">
+                Gerencie todas as pendências dos processos de financiamento
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowColumnSettings(!showColumnSettings)}
+              className="font-paragraph"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Colunas
+            </Button>
           </div>
+
+          {/* Column Settings Panel */}
+          {showColumnSettings && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="font-heading text-lg">Configurar Colunas Visíveis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="col-prioridade"
+                      checked={visibleColumns.prioridade}
+                      onChange={(e) => setVisibleColumns({ ...visibleColumns, prioridade: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="col-prioridade" className="font-paragraph cursor-pointer">
+                      Prioridade
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="col-prazo"
+                      checked={visibleColumns.prazo}
+                      onChange={(e) => setVisibleColumns({ ...visibleColumns, prazo: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="col-prazo" className="font-paragraph cursor-pointer">
+                      Prazo
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="col-responsavel"
+                      checked={visibleColumns.responsavel}
+                      onChange={(e) => setVisibleColumns({ ...visibleColumns, responsavel: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="col-responsavel" className="font-paragraph cursor-pointer">
+                      Responsável
+                    </Label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Filters Section */}
           <Card className="mb-6">
