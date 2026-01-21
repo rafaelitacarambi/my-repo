@@ -344,10 +344,7 @@ export default function AdminFinancingKanbanPage() {
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
   const [currentUser, setCurrentUser] = useState<UsuriosdoSistema | null>(null);
   
-  // Drag-scroll state
-  const [isDraggingScroll, setIsDraggingScroll] = useState(false);
-  const dragStartX = useRef(0);
-  const dragStartScrollLeft = useRef(0);
+
   
   // Quick action modals for card
   const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
@@ -563,6 +560,10 @@ export default function AdminFinancingKanbanPage() {
     const container = scrollContainerRef.current;
     if (!container) return;
 
+    let isMouseDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+
     const handleMouseDown = (e: MouseEvent) => {
       // Only start drag-scroll if clicking on empty area (not on cards or interactive elements)
       const target = e.target as HTMLElement;
@@ -580,47 +581,48 @@ export default function AdminFinancingKanbanPage() {
         return;
       }
 
-      setIsDraggingScroll(true);
-      dragStartX.current = e.clientX;
-      dragStartScrollLeft.current = container.scrollLeft;
+      isMouseDown = true;
+      startX = e.pageX - container.offsetLeft;
+      scrollLeft = container.scrollLeft;
       container.style.cursor = 'grabbing';
-      document.body.style.userSelect = 'none';
+      container.style.userSelect = 'none';
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDraggingScroll) return;
+      if (!isMouseDown) return;
       
       e.preventDefault();
-      const deltaX = e.clientX - dragStartX.current;
-      container.scrollLeft = dragStartScrollLeft.current - deltaX; // Subtract for natural drag direction
+      const x = e.pageX - container.offsetLeft;
+      const walk = (x - startX) * 2; // Multiply by 2 for faster scroll
+      container.scrollLeft = scrollLeft - walk;
     };
 
     const handleMouseUp = () => {
-      setIsDraggingScroll(false);
+      isMouseDown = false;
       container.style.cursor = 'grab';
-      document.body.style.userSelect = '';
+      container.style.userSelect = '';
     };
 
     const handleMouseLeave = () => {
-      if (isDraggingScroll) {
-        setIsDraggingScroll(false);
+      if (isMouseDown) {
+        isMouseDown = false;
         container.style.cursor = 'grab';
-        document.body.style.userSelect = '';
+        container.style.userSelect = '';
       }
     };
 
     container.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
       container.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseup', handleMouseUp);
       container.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [isDraggingScroll]);
+  }, []);
 
   // Convert vertical scroll to horizontal scroll (mouse wheel)
   useEffect(() => {
@@ -2496,7 +2498,7 @@ export default function AdminFinancingKanbanPage() {
                 overflowY: 'visible',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
-                cursor: isDraggingScroll ? 'grabbing' : 'grab'
+                cursor: 'grab'
               }}
               onKeyDown={(e) => {
                 // Enable keyboard navigation (arrow keys)
