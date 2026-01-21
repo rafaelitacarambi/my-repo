@@ -47,6 +47,8 @@ export default function AdminFinancingPendenciasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [responsavelFilter, setResponsavelFilter] = useState<string>('all');
+  const [prazoFilter, setPrazoFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPendencia, setEditingPendencia] = useState<PendnciasdoFinanciamento | null>(null);
 
@@ -71,7 +73,7 @@ export default function AdminFinancingPendenciasPage() {
 
   useEffect(() => {
     filterPendencias();
-  }, [pendencias, searchTerm, statusFilter, priorityFilter]);
+  }, [pendencias, searchTerm, statusFilter, priorityFilter, responsavelFilter, prazoFilter]);
 
   const loadData = async () => {
     console.log('[AdminFinancingPendenciasPage] loadData() called');
@@ -111,6 +113,44 @@ export default function AdminFinancingPendenciasPage() {
 
     if (priorityFilter !== 'all') {
       filtered = filtered.filter(p => p.priority === priorityFilter);
+    }
+
+    if (responsavelFilter !== 'all') {
+      filtered = filtered.filter(p => {
+        const responsavel = p.responsiblePartyDetails || p.responsiblePartyType || '';
+        return responsavel.toLowerCase().includes(responsavelFilter.toLowerCase());
+      });
+    }
+
+    if (prazoFilter !== 'all') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      filtered = filtered.filter(p => {
+        if (!p.dueDate) return prazoFilter === 'sem-prazo';
+        
+        const dueDate = new Date(p.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        
+        switch (prazoFilter) {
+          case 'atrasado':
+            return dueDate < today;
+          case 'hoje':
+            return dueDate.getTime() === today.getTime();
+          case 'proximos-7-dias':
+            const next7Days = new Date(today);
+            next7Days.setDate(today.getDate() + 7);
+            return dueDate >= today && dueDate <= next7Days;
+          case 'proximos-30-dias':
+            const next30Days = new Date(today);
+            next30Days.setDate(today.getDate() + 30);
+            return dueDate >= today && dueDate <= next30Days;
+          case 'sem-prazo':
+            return false;
+          default:
+            return true;
+        }
+      });
     }
 
     setFilteredPendencias(filtered);
@@ -493,7 +533,82 @@ export default function AdminFinancingPendenciasPage() {
             </p>
           </div>
 
+          {/* Filters Section */}
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Responsável Filter */}
+                <div>
+                  <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
+                  <Select value={responsavelFilter} onValueChange={setResponsavelFilter}>
+                    <SelectTrigger className="font-paragraph">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="Cliente">Cliente</SelectItem>
+                      <SelectItem value="Vendedor">Vendedor</SelectItem>
+                      <SelectItem value="Banco">Banco</SelectItem>
+                      <SelectItem value="Interno">Interno</SelectItem>
+                      <SelectItem value="Proponente">Proponente</SelectItem>
+                      <SelectItem value="Caixa">Caixa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
+                {/* Prioridade Filter */}
+                <div>
+                  <Label className="font-paragraph text-sm mb-2 block">Prioridade</Label>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger className="font-paragraph">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="Alta">Alta</SelectItem>
+                      <SelectItem value="Média">Média</SelectItem>
+                      <SelectItem value="Baixa">Baixa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Prazo Filter */}
+                <div>
+                  <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
+                  <Select value={prazoFilter} onValueChange={setPrazoFilter}>
+                    <SelectTrigger className="font-paragraph">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="atrasado">Atrasado</SelectItem>
+                      <SelectItem value="hoje">Hoje</SelectItem>
+                      <SelectItem value="proximos-7-dias">Próximos 7 dias</SelectItem>
+                      <SelectItem value="proximos-30-dias">Próximos 30 dias</SelectItem>
+                      <SelectItem value="sem-prazo">Sem prazo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Clear Filters Button */}
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setResponsavelFilter('all');
+                      setPriorityFilter('all');
+                      setPrazoFilter('all');
+                      setSearchTerm('');
+                    }}
+                    className="w-full font-paragraph"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Limpar Filtros
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Pendências Table */}
           <Card className="mb-8">
