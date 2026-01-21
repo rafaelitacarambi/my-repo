@@ -318,6 +318,8 @@ const BACKGROUND_OPTIONS = [
 export default function AdminFinancingKanbanPage() {
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollbarRef = useRef<HTMLDivElement>(null);
+  const scrollbarThumbRef = useRef<HTMLDivElement>(null);
   const [cases, setCases] = useState<FinancingCase[]>([]);
   const [pendings, setPendings] = useState<Pending[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -446,6 +448,110 @@ export default function AdminFinancingKanbanPage() {
   const [selectedProponentId, setSelectedProponentId] = useState<string>(''); // EMPTY by default - user must select
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Sync scrollbar with container
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const scrollbar = scrollbarRef.current;
+    const thumb = scrollbarThumbRef.current;
+    
+    if (!container || !scrollbar || !thumb) return;
+
+    const updateScrollbar = () => {
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+      const scrollLeft = container.scrollLeft;
+      
+      // Hide scrollbar if content fits in viewport
+      if (scrollWidth <= clientWidth) {
+        scrollbar.style.display = 'none';
+        return;
+      } else {
+        scrollbar.style.display = 'block';
+      }
+      
+      // Calculate thumb width proportionally
+      const thumbWidth = (clientWidth / scrollWidth) * clientWidth;
+      thumb.style.width = `${thumbWidth}px`;
+      
+      // Calculate thumb position
+      const maxScroll = scrollWidth - clientWidth;
+      const scrollPercentage = maxScroll > 0 ? scrollLeft / maxScroll : 0;
+      const maxThumbPosition = clientWidth - thumbWidth;
+      thumb.style.transform = `translateX(${scrollPercentage * maxThumbPosition}px)`;
+    };
+
+    // Update scrollbar on container scroll
+    container.addEventListener('scroll', updateScrollbar);
+    
+    // Update scrollbar on window resize
+    window.addEventListener('resize', updateScrollbar);
+    
+    // Initial update
+    updateScrollbar();
+    
+    // Update after content loads
+    const timer = setTimeout(updateScrollbar, 100);
+    const timer2 = setTimeout(updateScrollbar, 500);
+
+    return () => {
+      container.removeEventListener('scroll', updateScrollbar);
+      window.removeEventListener('resize', updateScrollbar);
+      clearTimeout(timer);
+      clearTimeout(timer2);
+    };
+  }, [cases]);
+
+  // Handle scrollbar thumb drag
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const thumb = scrollbarThumbRef.current;
+    
+    if (!container || !thumb) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      startX = e.clientX;
+      startScrollLeft = container.scrollLeft;
+      thumb.style.cursor = 'grabbing';
+      document.body.style.userSelect = 'none';
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      
+      const deltaX = e.clientX - startX;
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+      const maxScroll = scrollWidth - clientWidth;
+      const thumbWidth = parseFloat(thumb.style.width);
+      const maxThumbPosition = clientWidth - thumbWidth;
+      
+      // Calculate scroll position based on thumb movement
+      const scrollRatio = maxThumbPosition > 0 ? deltaX / maxThumbPosition : 0;
+      container.scrollLeft = startScrollLeft + (scrollRatio * maxScroll);
+    };
+
+    const handleMouseUp = () => {
+      isDragging = false;
+      thumb.style.cursor = 'grab';
+      document.body.style.userSelect = '';
+    };
+
+    thumb.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      thumb.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   // Load data
   useEffect(() => {
@@ -2249,6 +2355,38 @@ export default function AdminFinancingKanbanPage() {
         </div>
       </section>
 
+      {/* Fixed Horizontal Scrollbar - Trello Style */}
+      <div className="sticky top-[180px] z-30 bg-white/95 backdrop-blur-sm border-b border-border-gray shadow-sm">
+        <div className="max-w-[120rem] mx-auto px-6 lg:px-12 py-2.5">
+          <div 
+            ref={scrollbarRef}
+            className="w-full h-2.5 bg-gray-200/80 rounded-full overflow-hidden cursor-pointer relative hover:h-3 transition-all"
+            onClick={(e) => {
+              const container = scrollContainerRef.current;
+              const scrollbar = scrollbarRef.current;
+              if (!container || !scrollbar) return;
+              
+              const rect = scrollbar.getBoundingClientRect();
+              const clickX = e.clientX - rect.left;
+              const scrollbarWidth = rect.width;
+              const scrollWidth = container.scrollWidth;
+              const clientWidth = container.clientWidth;
+              const maxScroll = scrollWidth - clientWidth;
+              
+              // Calculate target scroll position
+              const scrollPercentage = clickX / scrollbarWidth;
+              container.scrollLeft = scrollPercentage * maxScroll;
+            }}
+          >
+            <div 
+              ref={scrollbarThumbRef}
+              className="absolute top-0 left-0 h-full bg-secondary/90 rounded-full cursor-grab active:cursor-grabbing transition-all hover:bg-secondary shadow-sm"
+              style={{ width: '100px' }}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Kanban Board with Drag & Drop */}
       <section className="w-full py-6">
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
@@ -2257,12 +2395,22 @@ export default function AdminFinancingKanbanPage() {
               ref={scrollContainerRef}
               className="flex gap-4 pb-6 scroll-smooth"
               style={{
-                overflowX: 'scroll',
+                overflowX: 'auto',
                 overflowY: 'visible',
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#005CA9 #E5E7EB'
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
               }}
+              onKeyDown={(e) => {
+                // Enable keyboard navigation (arrow keys)
+                if (e.key === 'ArrowLeft') {
+                  e.currentTarget.scrollLeft -= 100;
+                } else if (e.key === 'ArrowRight') {
+                  e.currentTarget.scrollLeft += 100;
+                }
+              }}
+              tabIndex={0}
             >
+              {/* ... keep existing code (FINANCING_COLUMNS.map) ... */}
               {FINANCING_COLUMNS.map((column) => {
                 const columnCases = getCasesByColumn(column.id);
                 return (
