@@ -607,47 +607,7 @@ export default function AdminFinancingPendenciasPage() {
             </CardContent>
           </Card>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Total</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold font-heading">{pendencias.length}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Pendentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold font-heading text-red-600">
-                  {pendencias.filter(p => p.status === 'Pendente').length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Em Andamento</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold font-heading text-yellow-600">
-                  {pendencias.filter(p => p.status === 'Em Andamento').length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-paragraph text-dark-gray">Concluídas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold font-heading text-green-600">
-                  {pendencias.filter(p => p.status === 'Concluída').length}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+
 
           {/* Tabs for Active and History */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
