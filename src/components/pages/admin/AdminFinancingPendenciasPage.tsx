@@ -62,7 +62,11 @@ export default function AdminFinancingPendenciasPage() {
   const [visibleColumns, setVisibleColumns] = useState({
     prazo: true,
     prioridade: true,
-    responsavel: true
+    responsavel: true,
+    cpfProponente: false,
+    numeroMatricula: false,
+    numeroContrato: false,
+    protocoloCartorio: false
   });
 
   const [formData, setFormData] = useState({
@@ -334,21 +338,38 @@ export default function AdminFinancingPendenciasPage() {
   };
 
   const getAtendimentoInfo = (atendimentoRef?: string) => {
-    if (!atendimentoRef) return { proponentePrincipal: '—', pasta: '—' };
+    if (!atendimentoRef) return { 
+      proponentePrincipal: '—', 
+      pasta: '—',
+      cpfProponente: '—',
+      numeroMatricula: '—',
+      numeroContrato: '—',
+      protocoloCartorio: '—'
+    };
     
     const atendimento = atendimentos.find(a => a._id === atendimentoRef);
-    if (!atendimento) return { proponentePrincipal: '—', pasta: '—' };
+    if (!atendimento) return { 
+      proponentePrincipal: '—', 
+      pasta: '—',
+      cpfProponente: '—',
+      numeroMatricula: '—',
+      numeroContrato: '—',
+      protocoloCartorio: '—'
+    };
 
-    // Get proponent principal name with priority logic
+    // Get proponent principal name and CPF with priority logic
     let proponentePrincipal = '—';
+    let cpfProponente = '—';
+    let clientePrincipal: Clients | undefined;
     
     // Priority 1: atendimento.proponentePrincipalRef (if exists in future)
     // For now, this field doesn't exist in ServiceRecords, so skip
     
     // Priority 2: atendimento.clientePrincipalRef
     if (atendimento.clientePrincipalRef) {
-      const cliente = clientes.find(c => c._id === atendimento.clientePrincipalRef);
-      proponentePrincipal = cliente?.clientName || cliente?.nomeRazaoSocial || atendimento.contactName || '—';
+      clientePrincipal = clientes.find(c => c._id === atendimento.clientePrincipalRef);
+      proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || atendimento.contactName || '—';
+      cpfProponente = clientePrincipal?.cpfCnpj || '—';
     } 
     // Priority 3: Search in ServiceParties for "Proponente Principal"
     else {
@@ -356,8 +377,9 @@ export default function AdminFinancingPendenciasPage() {
         p => p.serviceRecordRef === atendimentoRef && p.roleInService === 'Proponente Principal'
       );
       if (principalParty && principalParty.clientRef) {
-        const cliente = clientes.find(c => c._id === principalParty.clientRef);
-        proponentePrincipal = cliente?.clientName || cliente?.nomeRazaoSocial || '—';
+        clientePrincipal = clientes.find(c => c._id === principalParty.clientRef);
+        proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || '—';
+        cpfProponente = clientePrincipal?.cpfCnpj || '—';
       } else if (atendimento.contactName) {
         proponentePrincipal = atendimento.contactName;
       }
@@ -366,7 +388,21 @@ export default function AdminFinancingPendenciasPage() {
     // Get pasta
     const pasta = atendimento.pastaInterna || '—';
 
-    return { proponentePrincipal, pasta };
+    // Note: numeroMatricula, numeroContrato, and protocoloCartorio are not currently stored
+    // in the ServiceRecords entity. These fields would need to be added to the entity
+    // or fetched from a related collection (e.g., DetalhesdoFinanciamento)
+    const numeroMatricula = '—'; // TODO: Add field to entity
+    const numeroContrato = '—'; // TODO: Add field to entity
+    const protocoloCartorio = '—'; // TODO: Add field to entity
+
+    return { 
+      proponentePrincipal, 
+      pasta,
+      cpfProponente,
+      numeroMatricula,
+      numeroContrato,
+      protocoloCartorio
+    };
   };
 
   const handleConcluir = async (pendenciaId: string) => {
@@ -498,13 +534,17 @@ export default function AdminFinancingPendenciasPage() {
             {visibleColumns.prioridade && <TableHead className="font-paragraph">Prioridade</TableHead>}
             {visibleColumns.prazo && <TableHead className="font-paragraph">Prazo</TableHead>}
             {visibleColumns.responsavel && <TableHead className="font-paragraph">Responsável</TableHead>}
+            {visibleColumns.cpfProponente && <TableHead className="font-paragraph">CPF Proponente</TableHead>}
+            {visibleColumns.numeroMatricula && <TableHead className="font-paragraph">Nº Matrícula</TableHead>}
+            {visibleColumns.numeroContrato && <TableHead className="font-paragraph">Nº Contrato</TableHead>}
+            {visibleColumns.protocoloCartorio && <TableHead className="font-paragraph">Protocolo Cartório</TableHead>}
             <TableHead className="font-paragraph text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredPendencias.map((pendencia) => {
             const overdueStatus = isOverdue(pendencia.dueDate, pendencia.status);
-            const { proponentePrincipal, pasta } = getAtendimentoInfo(pendencia.atendimentoRef);
+            const { proponentePrincipal, pasta, cpfProponente, numeroMatricula, numeroContrato, protocoloCartorio } = getAtendimentoInfo(pendencia.atendimentoRef);
             
             return (
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
@@ -545,6 +585,26 @@ export default function AdminFinancingPendenciasPage() {
                 {visibleColumns.responsavel && (
                   <TableCell className="font-paragraph">
                     {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '—'}
+                  </TableCell>
+                )}
+                {visibleColumns.cpfProponente && (
+                  <TableCell className="font-paragraph">
+                    {cpfProponente}
+                  </TableCell>
+                )}
+                {visibleColumns.numeroMatricula && (
+                  <TableCell className="font-paragraph">
+                    {numeroMatricula}
+                  </TableCell>
+                )}
+                {visibleColumns.numeroContrato && (
+                  <TableCell className="font-paragraph">
+                    {numeroContrato}
+                  </TableCell>
+                )}
+                {visibleColumns.protocoloCartorio && (
+                  <TableCell className="font-paragraph">
+                    {protocoloCartorio}
                   </TableCell>
                 )}
                 <TableCell className="text-right">
@@ -630,7 +690,7 @@ export default function AdminFinancingPendenciasPage() {
                 <CardTitle className="font-heading text-lg">Configurar Colunas Visíveis</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -665,6 +725,54 @@ export default function AdminFinancingPendenciasPage() {
                     />
                     <Label htmlFor="col-responsavel" className="font-paragraph cursor-pointer">
                       Responsável
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="col-cpfProponente"
+                      checked={visibleColumns.cpfProponente}
+                      onChange={(e) => setVisibleColumns({ ...visibleColumns, cpfProponente: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="col-cpfProponente" className="font-paragraph cursor-pointer">
+                      CPF Proponente Principal
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="col-numeroMatricula"
+                      checked={visibleColumns.numeroMatricula}
+                      onChange={(e) => setVisibleColumns({ ...visibleColumns, numeroMatricula: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="col-numeroMatricula" className="font-paragraph cursor-pointer">
+                      Número da Matrícula
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="col-numeroContrato"
+                      checked={visibleColumns.numeroContrato}
+                      onChange={(e) => setVisibleColumns({ ...visibleColumns, numeroContrato: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="col-numeroContrato" className="font-paragraph cursor-pointer">
+                      Número do Contrato
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="col-protocoloCartorio"
+                      checked={visibleColumns.protocoloCartorio}
+                      onChange={(e) => setVisibleColumns({ ...visibleColumns, protocoloCartorio: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="col-protocoloCartorio" className="font-paragraph cursor-pointer">
+                      Protocolo do Cartório
                     </Label>
                   </div>
                 </div>
