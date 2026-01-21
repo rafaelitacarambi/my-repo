@@ -601,24 +601,26 @@ export default function AdminFinancingPendenciasPage() {
       <main className="flex-1 w-full">
         <div className="max-w-[100rem] mx-auto px-6 py-12">
           {/* Page Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="font-heading text-4xl font-bold text-foreground mb-3">
-                Pendências do Financiamento
-              </h1>
-              <p className="font-paragraph text-lg text-dark-gray">
-                Gerencie todas as pendências dos processos de financiamento
-              </p>
+          <div className="mb-8">
+            <div className="flex items-start justify-between gap-6 mb-4">
+              <div className="flex-1">
+                <h1 className="font-heading text-4xl font-bold text-foreground mb-3">
+                  Pendências do Financiamento
+                </h1>
+                <p className="font-paragraph text-lg text-dark-gray">
+                  Gerencie todas as pendências dos processos de financiamento
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="default"
+                onClick={() => setShowColumnSettings(!showColumnSettings)}
+                className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
+              >
+                <Settings className="w-5 h-5 mr-2" />
+                Colunas
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowColumnSettings(!showColumnSettings)}
-              className="font-paragraph"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Colunas
-            </Button>
           </div>
 
           {/* Column Settings Panel */}
