@@ -519,11 +519,6 @@ export default function AdminFinancingPendenciasPage() {
                         <Badge className="text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
                       )}
                     </div>
-                    {pendencia.description && (
-                      <div className="text-sm text-dark-gray mt-1 line-clamp-1">
-                        {pendencia.description}
-                      </div>
-                    )}
                   </div>
                 </TableCell>
                 <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
