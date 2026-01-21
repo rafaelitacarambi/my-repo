@@ -5016,6 +5016,9 @@ export default function AdminFinancingKanbanPage() {
                           return casePendings.map(pending => {
                             const isOverdue = pending.dueDate && new Date(pending.dueDate) < new Date() && pending.status !== 'Resolvida';
                             
+                            // Get atendimento data for process identification
+                            const atendimento = cases.find(c => c._id === pending.atendimentoRef);
+                            
                             return (
                               <div key={pending._id} className={`p-4 rounded-lg border-2 transition-all ${
                                 isOverdue 
@@ -5024,6 +5027,39 @@ export default function AdminFinancingKanbanPage() {
                                     ? 'bg-green-50 border-green-200' 
                                     : 'bg-white border-border-gray shadow-sm'
                               }`}>
+                                {/* Process Identification Header */}
+                                {atendimento && (
+                                  <div className="mb-3 pb-3 border-b border-border-gray bg-light-gray/50 -m-4 p-3 rounded-t-lg">
+                                    <div className="text-xs space-y-1">
+                                      <div className="font-semibold text-foreground">
+                                        <span className="text-foreground/60">Cliente:</span> {atendimento.proponentePrincipal}
+                                        {atendimento.cpfProponentePrincipal && (
+                                          <span className="text-foreground/60"> — CPF: {atendimento.cpfProponentePrincipal}</span>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-foreground/70">
+                                        {atendimento.agencia && (
+                                          <span><span className="font-semibold">Agência:</span> {atendimento.agencia}</span>
+                                        )}
+                                        {atendimento.pastaInterna && (
+                                          <span><span className="font-semibold">Pasta:</span> {atendimento.pastaInterna}</span>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-foreground/70">
+                                        {atendimento.numeroMatricula && (
+                                          <span><span className="font-semibold">Matrícula:</span> {atendimento.numeroMatricula}</span>
+                                        )}
+                                        {atendimento.numeroProtocoloCartorio && (
+                                          <span><span className="font-semibold">Protocolo:</span> {atendimento.numeroProtocoloCartorio}</span>
+                                        )}
+                                        {atendimento.numeroContrato && (
+                                          <span><span className="font-semibold">Contrato:</span> {atendimento.numeroContrato}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                                
                                 <div className="flex items-start justify-between mb-2">
                                   <div className="flex-1">
                                     <h4 className={`font-paragraph font-bold text-sm mb-1 ${isOverdue ? 'text-red-700' : ''}`}>
