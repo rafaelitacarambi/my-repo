@@ -395,7 +395,6 @@ export default function AdminFinancingPendenciasPage() {
         <TableHeader>
           <TableRow>
             <TableHead className="font-paragraph">Título</TableHead>
-            <TableHead className="font-paragraph">Status</TableHead>
             <TableHead className="font-paragraph">Prioridade</TableHead>
             <TableHead className="font-paragraph">Tipo</TableHead>
             <TableHead className="font-paragraph">Prazo</TableHead>
@@ -427,7 +426,6 @@ export default function AdminFinancingPendenciasPage() {
                     )}
                   </div>
                 </TableCell>
-                <TableCell>{getStatusBadge(pendencia.status)}</TableCell>
                 <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
                 <TableCell className="font-paragraph">{pendencia.tipo}</TableCell>
                 <TableCell className="font-paragraph">
@@ -488,88 +486,19 @@ export default function AdminFinancingPendenciasPage() {
       <main className="flex-1 w-full">
         <div className="max-w-[100rem] mx-auto px-6 py-12">
           {/* Page Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="font-heading text-4xl font-bold text-foreground mb-3">
-                Pendências do Financiamento
-              </h1>
-              <p className="font-paragraph text-lg text-dark-gray">
-                Gerencie todas as pendências dos processos de financiamento
-              </p>
-            </div>
-            <Button
-              onClick={handleCreate}
-              className="bg-buttonbackground hover:bg-buttonbackground/90 text-white font-paragraph"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Pendência
-            </Button>
+          <div className="mb-8">
+            <h1 className="font-heading text-4xl font-bold text-foreground mb-3">
+              Pendências do Financiamento
+            </h1>
+            <p className="font-paragraph text-lg text-dark-gray">
+              Gerencie todas as pendências dos processos de financiamento
+            </p>
           </div>
 
-          {/* Filters */}
-          <Card className="mb-8">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label className="font-paragraph mb-2">Buscar</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-dark-gray w-4 h-4" />
-                    <Input
-                      placeholder="Buscar pendências..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 font-paragraph"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="font-paragraph mb-2">Status</Label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Pendente">Pendente</SelectItem>
-                      <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                      <SelectItem value="Concluída">Concluída</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="font-paragraph mb-2">Prioridade</Label>
-                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="Alta">Alta</SelectItem>
-                      <SelectItem value="Média">Média</SelectItem>
-                      <SelectItem value="Baixa">Baixa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setStatusFilter('all');
-                      setPriorityFilter('all');
-                    }}
-                    className="w-full font-paragraph"
-                  >
-                    <Filter className="w-4 h-4 mr-2" />
-                    Limpar Filtros
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
 
           {/* Pendências Table */}
-          <Card>
+          <Card className="mb-8">
             <CardContent className="p-0">
               {renderPendenciasTable()}
             </CardContent>
