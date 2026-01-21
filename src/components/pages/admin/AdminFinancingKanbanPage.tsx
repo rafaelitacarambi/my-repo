@@ -3789,13 +3789,12 @@ export default function AdminFinancingKanbanPage() {
                           );
                         }
 
-                        // Build hierarchical vendor list: Principal vendors first, then their spouses
-                        const principalVendors = vendors.filter(v => !v.ehConjugeDe);
-                        const spouseVendors = vendors.filter(v => v.ehConjugeDe);
-
+                        // CRITICAL FIX: Show ALL vendors in a flat list, not hierarchical
+                        // This ensures all vendors appear regardless of ehConjugeDe status
+                        
                         return (
                           <div className="space-y-6">
-                            {/* Hierarchical Table View - Vendors */}
+                            {/* Flat Table View - ALL Vendors */}
                             <div className="border-2 border-secondary/20 rounded-xl overflow-hidden bg-white">
                               {/* Table Header */}
                               <div className="bg-gradient-to-r from-secondary to-secondary/90 text-white grid grid-cols-12 gap-4 px-6 py-4 font-heading text-sm font-bold">
@@ -3806,95 +3805,67 @@ export default function AdminFinancingKanbanPage() {
                                 <div className="col-span-1 text-right">Ações</div>
                               </div>
 
-                              {/* Table Body - Principal Vendors and their Spouses */}
-                              {principalVendors.map((vendor, principalIndex) => {
-                                // Find spouses of this vendor
-                                const vendorSpouses = spouseVendors.filter(s => s.ehConjugeDe === vendor.clientRef);
+                              {/* Table Body - ALL Vendors (Flat List) */}
+                              {vendors.map((vendor, index) => {
+                                // Determine role display based on spouse relationship
+                                let roleDisplay = 'Vendedor';
+                                let roleVariant: 'default' | 'outline' = 'default';
+                                
+                                if (vendor.ehConjugeDe) {
+                                  const spouseOf = vendors.find(v => v.clientRef === vendor.ehConjugeDe);
+                                  if (spouseOf) {
+                                    roleDisplay = `Cônjuge de ${spouseOf.name}`;
+                                    roleVariant = 'outline';
+                                  }
+                                }
                                 
                                 return (
-                                  <div key={vendor.clientRef}>
-                                    {/* Principal Vendor Row */}
-                                    <div 
-                                      className="grid grid-cols-12 gap-4 px-6 py-4 border-b-2 border-border-gray hover:bg-light-gray/50 transition-colors cursor-pointer"
-                                      onClick={() => setSelectedVendorId(vendor.clientRef)}
-                                    >
-                                      <div className="col-span-1 font-bold text-secondary text-base">{principalIndex + 1}</div>
-                                      <div className="col-span-3 font-paragraph text-sm text-foreground font-semibold">
-                                        {vendor.cpf || 'CPF não informado'}
-                                      </div>
-                                      <div className="col-span-4 font-paragraph text-sm text-foreground font-bold">
-                                        {vendor.name}
-                                      </div>
-                                      <div className="col-span-3">
-                                        <Badge className="bg-secondary text-secondary-foreground text-xs">
-                                          Vendedor Principal
-                                        </Badge>
-                                      </div>
-                                      <div className="col-span-1 flex justify-end">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedVendorId(vendor.clientRef);
-                                          }}
-                                          className="h-8 w-8 p-0 hover:bg-secondary/10"
-                                          title="Ver detalhes"
-                                        >
-                                          <Eye className="w-4 h-4 text-secondary" />
-                                        </Button>
-                                      </div>
+                                  <div 
+                                    key={vendor.clientRef}
+                                    className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-border-gray hover:bg-light-gray/50 transition-colors cursor-pointer"
+                                    onClick={() => setSelectedVendorId(vendor.clientRef)}
+                                  >
+                                    <div className="col-span-1 font-bold text-secondary text-base">{index + 1}</div>
+                                    <div className="col-span-3 font-paragraph text-sm text-foreground font-semibold">
+                                      {vendor.cpf || 'CPF não informado'}
                                     </div>
-
-                                    {/* Spouse Vendors (Indented) */}
-                                    {vendorSpouses.map((spouseVendor, spouseIndex) => (
-                                      <div 
-                                        key={spouseVendor.clientRef}
-                                        className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-border-gray/50 bg-light-gray/30 hover:bg-light-gray/60 transition-colors cursor-pointer"
-                                        onClick={() => setSelectedVendorId(spouseVendor.clientRef)}
+                                    <div className="col-span-4 font-paragraph text-sm text-foreground font-bold">
+                                      {vendor.name}
+                                    </div>
+                                    <div className="col-span-3">
+                                      <Badge 
+                                        variant={roleVariant}
+                                        className={roleVariant === 'default' ? 'bg-secondary text-secondary-foreground text-xs' : 'text-xs border-secondary/40 text-secondary'}
                                       >
-                                        <div className="col-span-1 font-semibold text-secondary/70 text-sm pl-6">
-                                          {principalIndex + 1}.{spouseIndex + 1}
-                                        </div>
-                                        <div className="col-span-3 font-paragraph text-sm text-foreground/80">
-                                          {spouseVendor.cpf || 'CPF não informado'}
-                                        </div>
-                                        <div className="col-span-4 font-paragraph text-sm text-foreground">
-                                          {spouseVendor.name}
-                                        </div>
-                                        <div className="col-span-3">
-                                          <Badge variant="outline" className="text-xs border-secondary/40 text-secondary">
-                                            Cônjuge do Vendedor
-                                          </Badge>
-                                        </div>
-                                        <div className="col-span-1 flex justify-end gap-1">
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedVendorId(spouseVendor.clientRef);
-                                            }}
-                                            className="h-7 w-7 p-0 hover:bg-secondary/10"
-                                            title="Ver detalhes"
-                                          >
-                                            <Eye className="w-3.5 h-3.5 text-secondary" />
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleRemoveVendor(spouseVendor._id);
-                                            }}
-                                            className="h-7 w-7 p-0 hover:bg-destructive/10 text-destructive"
-                                            title="Remover vendedor"
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ))}
+                                        {roleDisplay}
+                                      </Badge>
+                                    </div>
+                                    <div className="col-span-1 flex justify-end gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedVendorId(vendor.clientRef);
+                                        }}
+                                        className="h-8 w-8 p-0 hover:bg-secondary/10"
+                                        title="Ver detalhes"
+                                      >
+                                        <Eye className="w-4 h-4 text-secondary" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRemoveVendor(vendor._id);
+                                        }}
+                                        className="h-8 w-8 p-0 hover:bg-destructive/10 text-destructive"
+                                        title="Remover vendedor"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
                                   </div>
                                 );
                               })}
