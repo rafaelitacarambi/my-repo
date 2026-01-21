@@ -16,7 +16,8 @@ import {
   FileText,
   RotateCcw,
   CheckSquare,
-  ExternalLink
+  ExternalLink,
+  Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +33,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
-import { PendnciasdoFinanciamento, ServiceRecords, HistricodeInteraes, FinancingTasks, Clients } from '@/entities';
+import { PendnciasdoFinanciamento, ServiceRecords, HistricodeInteraes, FinancingTasks, Clients, ServiceParties } from '@/entities';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -45,6 +46,7 @@ export default function AdminFinancingPendenciasPage() {
   const [filteredPendencias, setFilteredPendencias] = useState<PendnciasdoFinanciamento[]>([]);
   const [atendimentos, setAtendimentos] = useState<ServiceRecords[]>([]);
   const [clientes, setClientes] = useState<Clients[]>([]);
+  const [serviceParties, setServiceParties] = useState<ServiceParties[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -53,6 +55,8 @@ export default function AdminFinancingPendenciasPage() {
   const [prazoFilter, setPrazoFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPendencia, setEditingPendencia] = useState<PendnciasdoFinanciamento | null>(null);
+  const [selectedAtendimentoId, setSelectedAtendimentoId] = useState<string | null>(null);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -81,21 +85,24 @@ export default function AdminFinancingPendenciasPage() {
     console.log('[AdminFinancingPendenciasPage] loadData() called');
     setIsLoading(true);
     
-    const [pendenciasResult, atendimentosResult, clientesResult] = await Promise.all([
+    const [pendenciasResult, atendimentosResult, clientesResult, partiesResult] = await Promise.all([
       BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento'),
       BaseCrudService.getAll<ServiceRecords>('atendimentos'),
-      BaseCrudService.getAll<Clients>('clientes')
+      BaseCrudService.getAll<Clients>('clientes'),
+      BaseCrudService.getAll<ServiceParties>('atendimentopartes')
     ]);
 
     console.log('[AdminFinancingPendenciasPage] Data loaded:', {
       pendenciasCount: pendenciasResult.items.length,
       atendimentosCount: atendimentosResult.items.length,
-      clientesCount: clientesResult.items.length
+      clientesCount: clientesResult.items.length,
+      partiesCount: partiesResult.items.length
     });
 
     setPendencias(pendenciasResult.items);
     setAtendimentos(atendimentosResult.items);
     setClientes(clientesResult.items);
+    setServiceParties(partiesResult.items);
     setIsLoading(false);
   };
 
@@ -320,24 +327,39 @@ export default function AdminFinancingPendenciasPage() {
   };
 
   const getAtendimentoInfo = (atendimentoRef?: string) => {
-    if (!atendimentoRef) return { clienteName: '-', pasta: '-' };
+    if (!atendimentoRef) return { proponentePrincipal: '—', pasta: '—' };
     
     const atendimento = atendimentos.find(a => a._id === atendimentoRef);
-    if (!atendimento) return { clienteName: '-', pasta: '-' };
+    if (!atendimento) return { proponentePrincipal: '—', pasta: '—' };
 
-    // Get client name
-    let clienteName = '-';
+    // Get proponent principal name with priority logic
+    let proponentePrincipal = '—';
+    
+    // Priority 1: atendimento.proponentePrincipalRef (if exists in future)
+    // For now, this field doesn't exist in ServiceRecords, so skip
+    
+    // Priority 2: atendimento.clientePrincipalRef
     if (atendimento.clientePrincipalRef) {
       const cliente = clientes.find(c => c._id === atendimento.clientePrincipalRef);
-      clienteName = cliente?.clientName || cliente?.nomeRazaoSocial || atendimento.contactName || '-';
-    } else if (atendimento.contactName) {
-      clienteName = atendimento.contactName;
+      proponentePrincipal = cliente?.clientName || cliente?.nomeRazaoSocial || atendimento.contactName || '—';
+    } 
+    // Priority 3: Search in ServiceParties for "Proponente Principal"
+    else {
+      const principalParty = serviceParties.find(
+        p => p.serviceRecordRef === atendimentoRef && p.roleInService === 'Proponente Principal'
+      );
+      if (principalParty && principalParty.clientRef) {
+        const cliente = clientes.find(c => c._id === principalParty.clientRef);
+        proponentePrincipal = cliente?.clientName || cliente?.nomeRazaoSocial || '—';
+      } else if (atendimento.contactName) {
+        proponentePrincipal = atendimento.contactName;
+      }
     }
 
     // Get pasta
-    const pasta = atendimento.pastaInterna || '-';
+    const pasta = atendimento.pastaInterna || '—';
 
-    return { clienteName, pasta };
+    return { proponentePrincipal, pasta };
   };
 
   const handleConcluir = async (pendenciaId: string) => {
@@ -439,6 +461,11 @@ export default function AdminFinancingPendenciasPage() {
     }
   };
 
+  const handleOpenCard = (atendimentoId: string) => {
+    setSelectedAtendimentoId(atendimentoId);
+    setShowCardModal(true);
+  };
+
   const renderPendenciasTable = () => {
     if (isLoading) {
       return (
@@ -461,8 +488,6 @@ export default function AdminFinancingPendenciasPage() {
         <TableHeader>
           <TableRow>
             <TableHead className="font-paragraph">Título</TableHead>
-            <TableHead className="font-paragraph">Proponente</TableHead>
-            <TableHead className="font-paragraph">Pasta</TableHead>
             <TableHead className="font-paragraph">Prioridade</TableHead>
             <TableHead className="font-paragraph">Prazo</TableHead>
             <TableHead className="font-paragraph">Responsável</TableHead>
@@ -472,12 +497,19 @@ export default function AdminFinancingPendenciasPage() {
         <TableBody>
           {filteredPendencias.map((pendencia) => {
             const overdueStatus = isOverdue(pendencia.dueDate, pendencia.status);
-            const { clienteName, pasta } = getAtendimentoInfo(pendencia.atendimentoRef);
+            const { proponentePrincipal, pasta } = getAtendimentoInfo(pendencia.atendimentoRef);
             
             return (
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
                 <TableCell className="font-paragraph font-medium">
                   <div>
+                    {/* Identification: Proponent and Pasta */}
+                    <div className="text-xs text-dark-gray mb-2 space-y-0.5">
+                      <div><strong>Proponente Principal:</strong> {proponentePrincipal}</div>
+                      <div><strong>Pasta:</strong> {pasta}</div>
+                    </div>
+                    
+                    {/* Title and badges */}
                     <div className={`flex items-center gap-2 ${overdueStatus ? 'text-red-700 font-bold' : ''}`}>
                       {pendencia.title}
                       {pendencia.bloqueiaFase && (
@@ -494,8 +526,6 @@ export default function AdminFinancingPendenciasPage() {
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="font-paragraph">{clienteName}</TableCell>
-                <TableCell className="font-paragraph">{pasta}</TableCell>
                 <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
                 <TableCell className="font-paragraph">
                   {pendencia.dueDate ? (
@@ -506,11 +536,11 @@ export default function AdminFinancingPendenciasPage() {
                       )}
                     </div>
                   ) : (
-                    '-'
+                    '—'
                   )}
                 </TableCell>
                 <TableCell className="font-paragraph">
-                  {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '-'}
+                  {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '—'}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
@@ -518,10 +548,11 @@ export default function AdminFinancingPendenciasPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/admin/financiamento/${pendencia.atendimentoRef}`)}
-                        title="Ver cartão do cliente"
+                        onClick={() => handleOpenCard(pendencia.atendimentoRef!)}
+                        title="Abrir Cartão do Processo"
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        <Eye className="w-4 h-4 mr-1" />
+                        Abrir Cartão
                       </Button>
                     )}
                     <Button
@@ -837,6 +868,133 @@ export default function AdminFinancingPendenciasPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Card Modal - Process Details Popup */}
+      <Dialog open={showCardModal} onOpenChange={setShowCardModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">
+              Cartão do Processo
+            </DialogTitle>
+          </DialogHeader>
+          {selectedAtendimentoId && (() => {
+            const atendimento = atendimentos.find(a => a._id === selectedAtendimentoId);
+            if (!atendimento) {
+              return <div className="p-6 text-center text-dark-gray">Atendimento não encontrado</div>;
+            }
+
+            const { proponentePrincipal, pasta } = getAtendimentoInfo(selectedAtendimentoId);
+            const casePendencias = pendencias.filter(p => p.atendimentoRef === selectedAtendimentoId && p.status !== 'Concluída');
+
+            return (
+              <div className="space-y-6 p-6">
+                {/* Basic Info */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Proponente Principal</Label>
+                      <p className="font-paragraph text-base font-semibold">{proponentePrincipal}</p>
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Pasta Interna</Label>
+                      <p className="font-paragraph text-base font-semibold">{pasta}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Fase Atual</Label>
+                      <p className="font-paragraph text-base">{atendimento.faseFinanciamento || '—'}</p>
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Status</Label>
+                      <p className="font-paragraph text-base">{atendimento.status || '—'}</p>
+                    </div>
+                  </div>
+
+                  {atendimento.contactEmail && (
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Email</Label>
+                      <p className="font-paragraph text-base">{atendimento.contactEmail}</p>
+                    </div>
+                  )}
+
+                  {atendimento.contactPhone && (
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Telefone</Label>
+                      <p className="font-paragraph text-base">{atendimento.contactPhone}</p>
+                    </div>
+                  )}
+
+                  {atendimento.notes && (
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Observações</Label>
+                      <p className="font-paragraph text-base">{atendimento.notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pendências */}
+                <div>
+                  <h3 className="font-heading text-lg font-bold mb-3">
+                    Pendências Abertas ({casePendencias.length})
+                  </h3>
+                  {casePendencias.length === 0 ? (
+                    <p className="text-dark-gray font-paragraph">Nenhuma pendência aberta</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {casePendencias.map(p => (
+                        <Card key={p._id} className="p-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-paragraph font-semibold">{p.title}</span>
+                                {getPriorityBadge(p.priority)}
+                                {p.bloqueiaFase && (
+                                  <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
+                                )}
+                              </div>
+                              {p.description && (
+                                <p className="text-sm text-dark-gray font-paragraph">{p.description}</p>
+                              )}
+                              {p.dueDate && (
+                                <p className="text-xs text-dark-gray font-paragraph mt-1">
+                                  Prazo: {format(new Date(p.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCardModal(false)}
+                    className="font-paragraph"
+                  >
+                    Fechar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowCardModal(false);
+                      navigate(`/admin/financiamento/${selectedAtendimentoId}`);
+                    }}
+                    className="bg-buttonbackground hover:bg-buttonbackground/90 text-white font-paragraph"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Ver Detalhes Completos
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
