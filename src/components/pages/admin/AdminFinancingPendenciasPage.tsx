@@ -15,8 +15,7 @@ import {
   User,
   FileText,
   RotateCcw,
-  CheckSquare,
-  History
+  CheckSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,7 +26,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -51,7 +49,6 @@ export default function AdminFinancingPendenciasPage() {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPendencia, setEditingPendencia] = useState<PendnciasdoFinanciamento | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('ativas');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -74,7 +71,7 @@ export default function AdminFinancingPendenciasPage() {
 
   useEffect(() => {
     filterPendencias();
-  }, [pendencias, searchTerm, statusFilter, priorityFilter, activeTab]);
+  }, [pendencias, searchTerm, statusFilter, priorityFilter]);
 
   const loadData = async () => {
     console.log('[AdminFinancingPendenciasPage] loadData() called');
@@ -98,18 +95,8 @@ export default function AdminFinancingPendenciasPage() {
   const filterPendencias = () => {
     let filtered = [...pendencias];
 
-    // Filter by tab (ativas = not completed, historico = completed)
-    if (activeTab === 'ativas') {
-      filtered = filtered.filter(p => p.status !== 'Concluída');
-    } else if (activeTab === 'historico') {
-      filtered = filtered.filter(p => p.status === 'Concluída');
-      // Sort by resolved date (most recent first)
-      filtered.sort((a, b) => {
-        const dateA = a.resolvedDate ? new Date(a.resolvedDate).getTime() : 0;
-        const dateB = b.resolvedDate ? new Date(b.resolvedDate).getTime() : 0;
-        return dateB - dateA;
-      });
-    }
+    // Filter only active pendencias (not completed)
+    filtered = filtered.filter(p => p.status !== 'Concluída');
 
     if (searchTerm) {
       filtered = filtered.filter(p => 
@@ -322,7 +309,7 @@ export default function AdminFinancingPendenciasPage() {
 
       toast({
         title: "✅ Pendência concluída",
-        description: `"${pendencia.title}" foi marcada como concluída e movida para o histórico`,
+        description: `"${pendencia.title}" foi marcada como concluída`,
       });
 
       // Reload data to ensure consistency
@@ -371,7 +358,7 @@ export default function AdminFinancingPendenciasPage() {
 
       toast({
         title: "🔄 Pendência reaberta",
-        description: `"${pendencia.title}" foi reaberta e movida para pendências ativas`,
+        description: `"${pendencia.title}" foi reaberta`,
       });
 
       await loadData();
@@ -398,7 +385,7 @@ export default function AdminFinancingPendenciasPage() {
     if (filteredPendencias.length === 0) {
       return (
         <div className="p-12 text-center text-dark-gray font-paragraph">
-          {activeTab === 'ativas' ? 'Nenhuma pendência ativa encontrada' : 'Nenhuma pendência concluída encontrada'}
+          Nenhuma pendência ativa encontrada
         </div>
       );
     }
@@ -411,11 +398,7 @@ export default function AdminFinancingPendenciasPage() {
             <TableHead className="font-paragraph">Status</TableHead>
             <TableHead className="font-paragraph">Prioridade</TableHead>
             <TableHead className="font-paragraph">Tipo</TableHead>
-            {activeTab === 'ativas' ? (
-              <TableHead className="font-paragraph">Prazo</TableHead>
-            ) : (
-              <TableHead className="font-paragraph">Data Conclusão</TableHead>
-            )}
+            <TableHead className="font-paragraph">Prazo</TableHead>
             <TableHead className="font-paragraph">Responsável</TableHead>
             <TableHead className="font-paragraph text-right">Ações</TableHead>
           </TableRow>
@@ -448,25 +431,15 @@ export default function AdminFinancingPendenciasPage() {
                 <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
                 <TableCell className="font-paragraph">{pendencia.tipo}</TableCell>
                 <TableCell className="font-paragraph">
-                  {activeTab === 'ativas' ? (
-                    pendencia.dueDate ? (
-                      <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
-                        {format(new Date(pendencia.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                        {overdueStatus && (
-                          <div className="text-xs">Atrasada</div>
-                        )}
-                      </div>
-                    ) : (
-                      '-'
-                    )
+                  {pendencia.dueDate ? (
+                    <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
+                      {format(new Date(pendencia.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                      {overdueStatus && (
+                        <div className="text-xs">Atrasada</div>
+                      )}
+                    </div>
                   ) : (
-                    pendencia.resolvedDate ? (
-                      <div>
-                        {format(new Date(pendencia.resolvedDate), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                      </div>
-                    ) : (
-                      '-'
-                    )
+                    '-'
                   )}
                 </TableCell>
                 <TableCell className="font-paragraph">
@@ -474,27 +447,15 @@ export default function AdminFinancingPendenciasPage() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    {pendencia.status !== 'Concluída' && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleConcluir(pendencia._id)}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <CheckSquare className="w-4 h-4 mr-1" />
-                        Concluir
-                      </Button>
-                    )}
-                    {pendencia.status === 'Concluída' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleReabrir(pendencia._id)}
-                      >
-                        <RotateCcw className="w-4 h-4 mr-1" />
-                        Reabrir
-                      </Button>
-                    )}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleConcluir(pendencia._id)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <CheckSquare className="w-4 h-4 mr-1" />
+                      Concluir
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -607,37 +568,12 @@ export default function AdminFinancingPendenciasPage() {
             </CardContent>
           </Card>
 
-
-
-          {/* Tabs for Active and History */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-              <TabsTrigger value="ativas" className="font-paragraph">
-                <Clock className="w-4 h-4 mr-2" />
-                Pendências Ativas
-              </TabsTrigger>
-              <TabsTrigger value="historico" className="font-paragraph">
-                <History className="w-4 h-4 mr-2" />
-                Histórico
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="ativas">
-              <Card>
-                <CardContent className="p-0">
-                  {renderPendenciasTable()}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="historico">
-              <Card>
-                <CardContent className="p-0">
-                  {renderPendenciasTable()}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          {/* Pendências Table */}
+          <Card>
+            <CardContent className="p-0">
+              {renderPendenciasTable()}
+            </CardContent>
+          </Card>
         </div>
       </main>
 
