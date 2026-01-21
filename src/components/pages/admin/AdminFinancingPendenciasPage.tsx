@@ -15,7 +15,8 @@ import {
   User,
   FileText,
   RotateCcw,
-  CheckSquare
+  CheckSquare,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +32,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FinancingNavigation from '@/components/FinancingNavigation';
 import { BaseCrudService } from '@/integrations';
-import { PendnciasdoFinanciamento, ServiceRecords, HistricodeInteraes, FinancingTasks } from '@/entities';
+import { PendnciasdoFinanciamento, ServiceRecords, HistricodeInteraes, FinancingTasks, Clients } from '@/entities';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -43,6 +44,7 @@ export default function AdminFinancingPendenciasPage() {
   const [pendencias, setPendencias] = useState<PendnciasdoFinanciamento[]>([]);
   const [filteredPendencias, setFilteredPendencias] = useState<PendnciasdoFinanciamento[]>([]);
   const [atendimentos, setAtendimentos] = useState<ServiceRecords[]>([]);
+  const [clientes, setClientes] = useState<Clients[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -79,18 +81,21 @@ export default function AdminFinancingPendenciasPage() {
     console.log('[AdminFinancingPendenciasPage] loadData() called');
     setIsLoading(true);
     
-    const [pendenciasResult, atendimentosResult] = await Promise.all([
+    const [pendenciasResult, atendimentosResult, clientesResult] = await Promise.all([
       BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento'),
-      BaseCrudService.getAll<ServiceRecords>('atendimentos')
+      BaseCrudService.getAll<ServiceRecords>('atendimentos'),
+      BaseCrudService.getAll<Clients>('clientes')
     ]);
 
     console.log('[AdminFinancingPendenciasPage] Data loaded:', {
       pendenciasCount: pendenciasResult.items.length,
-      atendimentosCount: atendimentosResult.items.length
+      atendimentosCount: atendimentosResult.items.length,
+      clientesCount: clientesResult.items.length
     });
 
     setPendencias(pendenciasResult.items);
     setAtendimentos(atendimentosResult.items);
+    setClientes(clientesResult.items);
     setIsLoading(false);
   };
 
@@ -314,6 +319,27 @@ export default function AdminFinancingPendenciasPage() {
     return new Date(dueDate) < new Date();
   };
 
+  const getAtendimentoInfo = (atendimentoRef?: string) => {
+    if (!atendimentoRef) return { clienteName: '-', pasta: '-' };
+    
+    const atendimento = atendimentos.find(a => a._id === atendimentoRef);
+    if (!atendimento) return { clienteName: '-', pasta: '-' };
+
+    // Get client name
+    let clienteName = '-';
+    if (atendimento.clientePrincipalRef) {
+      const cliente = clientes.find(c => c._id === atendimento.clientePrincipalRef);
+      clienteName = cliente?.clientName || cliente?.nomeRazaoSocial || atendimento.contactName || '-';
+    } else if (atendimento.contactName) {
+      clienteName = atendimento.contactName;
+    }
+
+    // Get pasta
+    const pasta = atendimento.pastaInterna || '-';
+
+    return { clienteName, pasta };
+  };
+
   const handleConcluir = async (pendenciaId: string) => {
     const pendencia = pendencias.find(p => p._id === pendenciaId);
     if (!pendencia) return;
@@ -435,6 +461,8 @@ export default function AdminFinancingPendenciasPage() {
         <TableHeader>
           <TableRow>
             <TableHead className="font-paragraph">Título</TableHead>
+            <TableHead className="font-paragraph">Proponente</TableHead>
+            <TableHead className="font-paragraph">Pasta</TableHead>
             <TableHead className="font-paragraph">Prioridade</TableHead>
             <TableHead className="font-paragraph">Prazo</TableHead>
             <TableHead className="font-paragraph">Responsável</TableHead>
@@ -444,6 +472,7 @@ export default function AdminFinancingPendenciasPage() {
         <TableBody>
           {filteredPendencias.map((pendencia) => {
             const overdueStatus = isOverdue(pendencia.dueDate, pendencia.status);
+            const { clienteName, pasta } = getAtendimentoInfo(pendencia.atendimentoRef);
             
             return (
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
@@ -465,6 +494,8 @@ export default function AdminFinancingPendenciasPage() {
                     )}
                   </div>
                 </TableCell>
+                <TableCell className="font-paragraph">{clienteName}</TableCell>
+                <TableCell className="font-paragraph">{pasta}</TableCell>
                 <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
                 <TableCell className="font-paragraph">
                   {pendencia.dueDate ? (
@@ -483,6 +514,16 @@ export default function AdminFinancingPendenciasPage() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    {pendencia.atendimentoRef && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/admin/financiamento/${pendencia.atendimentoRef}`)}
+                        title="Ver cartão do cliente"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="default"
                       size="sm"
