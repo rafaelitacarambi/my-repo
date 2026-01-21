@@ -24,9 +24,9 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <Image 
-              src="https://static.wixstatic.com/media/9b23b4_c2b3b72e5b7a47ae9a95f95aa5ca8f06~mv2.png" 
+              src="https://static.wixstatic.com/media/9b23b4_8b5ff4d697054133a09457af0365ebeb~mv2.png" 
               alt="R. Sales Imóveis Logo"
-              width={140}
+              width={120}
               className="h-auto"
             />
           </Link>
