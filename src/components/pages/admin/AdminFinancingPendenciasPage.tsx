@@ -504,9 +504,8 @@ export default function AdminFinancingPendenciasPage() {
                 <TableCell className="font-paragraph font-medium">
                   <div>
                     {/* Identification: Proponent and Pasta */}
-                    <div className="text-xs text-dark-gray mb-2 space-y-0.5">
-                      <div><strong>Proponente Principal:</strong> {proponentePrincipal}</div>
-                      <div><strong>Pasta:</strong> {pasta}</div>
+                    <div className="text-xs text-dark-gray mb-2">
+                      {proponentePrincipal} ({pasta})
                     </div>
                     
                     {/* Title and badges */}
