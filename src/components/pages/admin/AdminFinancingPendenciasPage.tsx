@@ -396,7 +396,6 @@ export default function AdminFinancingPendenciasPage() {
           <TableRow>
             <TableHead className="font-paragraph">Título</TableHead>
             <TableHead className="font-paragraph">Prioridade</TableHead>
-            <TableHead className="font-paragraph">Tipo</TableHead>
             <TableHead className="font-paragraph">Prazo</TableHead>
             <TableHead className="font-paragraph">Responsável</TableHead>
             <TableHead className="font-paragraph text-right">Ações</TableHead>
@@ -427,7 +426,6 @@ export default function AdminFinancingPendenciasPage() {
                   </div>
                 </TableCell>
                 <TableCell>{getPriorityBadge(pendencia.priority)}</TableCell>
-                <TableCell className="font-paragraph">{pendencia.tipo}</TableCell>
                 <TableCell className="font-paragraph">
                   {pendencia.dueDate ? (
                     <div className={overdueStatus ? 'text-red-600 font-semibold' : ''}>
