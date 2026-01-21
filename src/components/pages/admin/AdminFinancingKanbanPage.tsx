@@ -4413,20 +4413,7 @@ export default function AdminFinancingKanbanPage() {
                                         </div>
                                       )}
 
-                                      {/* Info message */}
-                                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
-                                        <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                        <div className="text-xs text-blue-800">
-                                          <p className="mb-2">
-                                            <strong>Importante:</strong> Marque os documentos como recebidos conforme forem entregues pelo vendedor.
-                                          </p>
-                                          <ul className="list-disc list-inside space-y-1 ml-2">
-                                            <li><strong>Documentos obrigatórios</strong> (Identificação e Certidão) não podem ser excluídos</li>
-                                            <li><strong>Documentos opcionais</strong> podem ser excluídos se não aplicáveis</li>
-                                            <li><strong>Documentos excluídos</strong> podem ser restaurados a qualquer momento</li>
-                                          </ul>
-                                        </div>
-                                      </div>
+
                                     </div>
                                   </div>
                                 </div>
