@@ -344,6 +344,11 @@ export default function AdminFinancingKanbanPage() {
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
   const [currentUser, setCurrentUser] = useState<UsuriosdoSistema | null>(null);
   
+  // Drag-scroll state
+  const [isDraggingScroll, setIsDraggingScroll] = useState(false);
+  const dragStartX = useRef(0);
+  const dragStartScrollLeft = useRef(0);
+  
   // Quick action modals for card
   const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
   const [showQuickPendingModal, setShowQuickPendingModal] = useState(false);
@@ -550,6 +555,98 @@ export default function AdminFinancingKanbanPage() {
       thumb.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  // Continuous drag-scroll on Kanban container (Trello-style)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      // Only start drag-scroll if clicking on empty area (not on cards or interactive elements)
+      const target = e.target as HTMLElement;
+      
+      // Ignore if clicking on draggable cards, buttons, inputs, or interactive elements
+      if (
+        target.closest('[data-rbd-draggable-id]') || // Draggable card
+        target.closest('button') ||
+        target.closest('input') ||
+        target.closest('textarea') ||
+        target.closest('select') ||
+        target.closest('[role="button"]') ||
+        target.closest('a')
+      ) {
+        return;
+      }
+
+      setIsDraggingScroll(true);
+      dragStartX.current = e.clientX;
+      dragStartScrollLeft.current = container.scrollLeft;
+      container.style.cursor = 'grabbing';
+      document.body.style.userSelect = 'none';
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingScroll) return;
+      
+      e.preventDefault();
+      const deltaX = e.clientX - dragStartX.current;
+      container.scrollLeft = dragStartScrollLeft.current - deltaX; // Subtract for natural drag direction
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingScroll(false);
+      container.style.cursor = 'grab';
+      document.body.style.userSelect = '';
+    };
+
+    const handleMouseLeave = () => {
+      if (isDraggingScroll) {
+        setIsDraggingScroll(false);
+        container.style.cursor = 'grab';
+        document.body.style.userSelect = '';
+      }
+    };
+
+    container.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      container.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [isDraggingScroll]);
+
+  // Convert vertical scroll to horizontal scroll (mouse wheel)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Prevent default vertical scroll
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        
+        // Convert vertical scroll to horizontal
+        container.scrollLeft += e.deltaY;
+      }
+      
+      // Also support horizontal scroll (trackpad or Shift+wheel)
+      if (e.deltaX !== 0) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaX;
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
     };
   }, []);
 
@@ -2398,7 +2495,8 @@ export default function AdminFinancingKanbanPage() {
                 overflowX: 'auto',
                 overflowY: 'visible',
                 scrollbarWidth: 'none',
-                msOverflowStyle: 'none'
+                msOverflowStyle: 'none',
+                cursor: isDraggingScroll ? 'grabbing' : 'grab'
               }}
               onKeyDown={(e) => {
                 // Enable keyboard navigation (arrow keys)
