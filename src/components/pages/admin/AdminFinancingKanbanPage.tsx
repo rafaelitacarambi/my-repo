@@ -331,7 +331,7 @@ export default function AdminFinancingKanbanPage() {
   const [proponentDocuments, setProponentDocuments] = useState<DocumentosProponentes[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorDocuments, setVendorDocuments] = useState<Map<string, VendorDocument[]>>(new Map());
-  const [selectedVendorId, setSelectedVendorId] = useState<string>('');
+  const [selectedVendorId, setSelectedVendorId] = useState<string>(''); // EMPTY by default - user must select
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAgencia, setFilterAgencia] = useState('');
   const [kanbanBackground, setKanbanBackground] = useState('bg-light-gray');
@@ -439,7 +439,7 @@ export default function AdminFinancingKanbanPage() {
   });
 
   // Proponents tab state
-  const [selectedProponentId, setSelectedProponentId] = useState<string>('');
+  const [selectedProponentId, setSelectedProponentId] = useState<string>(''); // EMPTY by default - user must select
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
@@ -675,8 +675,9 @@ export default function AdminFinancingKanbanPage() {
           setProponentChecklists(new Map(checklistsMap));
         }
 
-        // Set principal proponent as selected by default
-        setSelectedProponentId(principalClientRef);
+        // CRITICAL FIX: Do NOT auto-select principal proponent - keep empty
+        // User must manually select to see details
+        // setSelectedProponentId(principalClientRef); // REMOVED
       }
 
       // Also ensure checklist exists for all participants (EXCLUDING VENDORS)
@@ -803,10 +804,11 @@ export default function AdminFinancingKanbanPage() {
       
       setVendorDocuments(docsMap);
       
-      // Set first vendor as selected if exists
-      if (vendorsList.length > 0) {
-        setSelectedVendorId(vendorsList[0].clientRef);
-      }
+      // CRITICAL FIX: Do NOT auto-select first vendor - keep empty
+      // User must manually select to see details
+      // if (vendorsList.length > 0) {
+      //   setSelectedVendorId(vendorsList[0].clientRef);
+      // }
       
     } catch (error) {
       console.error('[ERROR] Error loading vendors and documents:', error);
@@ -874,10 +876,14 @@ export default function AdminFinancingKanbanPage() {
     console.log('[DEBUG] Case data:', caseItem);
     
     setSelectedCase(caseItem);
+    
+    // CRITICAL FIX: Reset selections to empty when opening modal
+    setSelectedProponentId('');
+    setSelectedVendorId('');
+    
     await loadCaseDetails(caseItem._id);
     setShowDetailsModal(true);
     setModalTab(initialTab); // Set initial tab
-    // selectedProponentId is set in loadCaseDetails to principal proponent
   };
 
   // Save case details
@@ -1174,8 +1180,9 @@ export default function AdminFinancingKanbanPage() {
       newDocsMap.set(newVendor.clientRef, vendorDocs);
       setVendorDocuments(newDocsMap);
       
-      // Set as selected
-      setSelectedVendorId(newVendor.clientRef);
+      // CRITICAL FIX: Do NOT auto-select newly added vendor
+      // Keep selection empty so user must manually select
+      // setSelectedVendorId(newVendor.clientRef); // REMOVED
       
       console.log('[DEBUG] Vendor added successfully with', vendorDocs.length, 'documents');
       
@@ -1236,10 +1243,9 @@ export default function AdminFinancingKanbanPage() {
       // Update state
       setVendors(vendors.filter(v => v._id !== vendorId));
       
-      // Remove from selected if it was selected
+      // CRITICAL FIX: Clear selection when removing vendor
       if (selectedVendorId === vendor.clientRef) {
-        const remaining = vendors.filter(v => v._id !== vendorId);
-        setSelectedVendorId(remaining.length > 0 ? remaining[0].clientRef : '');
+        setSelectedVendorId(''); // Reset to empty - user must select again
       }
       
       console.log('[DEBUG] Vendor removed successfully');
@@ -3307,45 +3313,58 @@ export default function AdminFinancingKanbanPage() {
                               })}
                             </div>
 
-                            {/* Participant Selector for Details (only show if more than 1) */}
-                            {proponentsList.length > 1 && (
-                              <div>
-                                <Label className="font-paragraph text-sm mb-2 block font-semibold">
-                                  Ver detalhes do participante
-                                </Label>
-                                <Select 
-                                  value={selectedProponentId || proponentsList[0]?.clientRef} 
-                                  onValueChange={setSelectedProponentId}
-                                >
-                                  <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
-                                    <SelectValue placeholder="Escolha um proponente" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {proponentsList.map((proponent, index) => (
-                                      <SelectItem key={`${proponent.clientRef}-${index}`} value={proponent.clientRef}>
-                                        <div className="flex items-center gap-2">
-                                          {proponent.isPrincipal && (
-                                            <Badge className="bg-secondary text-secondary-foreground text-xs px-2 py-0">
-                                              Principal
-                                            </Badge>
-                                          )}
-                                          <span className="font-semibold">
-                                            {proponent.name}
-                                          </span>
-                                          <span className="text-xs text-foreground/60">
-                                            ({proponent.roleInService})
-                                          </span>
-                                        </div>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
+                            {/* Participant Selector for Details */}
+                            <div>
+                              <Label className="font-paragraph text-sm mb-2 block font-semibold">
+                                Ver detalhes do participante
+                              </Label>
+                              <Select 
+                                value={selectedProponentId} 
+                                onValueChange={setSelectedProponentId}
+                              >
+                                <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
+                                  <SelectValue placeholder="Selecione um proponente para ver os detalhes" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {proponentsList.map((proponent, index) => (
+                                    <SelectItem key={`${proponent.clientRef}-${index}`} value={proponent.clientRef}>
+                                      <div className="flex items-center gap-2">
+                                        {proponent.isPrincipal && (
+                                          <Badge className="bg-secondary text-secondary-foreground text-xs px-2 py-0">
+                                            Principal
+                                          </Badge>
+                                        )}
+                                        <span className="font-semibold">
+                                          {proponent.name}
+                                        </span>
+                                        <span className="text-xs text-foreground/60">
+                                          ({proponent.roleInService})
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-                            {/* Display selected proponent or first one */}
+                            {/* Display selected proponent OR placeholder */}
                             {(() => {
-                              const currentClientRef = selectedProponentId || proponentsList[0]?.clientRef;
+                              // If no selection, show placeholder
+                              if (!selectedProponentId) {
+                                return (
+                                  <div className="border-2 border-dashed border-border-gray rounded-xl p-12 bg-light-gray/30 text-center">
+                                    <Users className="w-16 h-16 mx-auto mb-4 text-foreground/20" />
+                                    <h4 className="font-heading text-lg font-semibold mb-2 text-foreground/60">
+                                      Selecione um proponente para ver os detalhes
+                                    </h4>
+                                    <p className="text-sm text-foreground/50">
+                                      Use o seletor acima para escolher qual proponente deseja visualizar
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              const currentClientRef = selectedProponentId;
                               const proponent = proponentsList.find(p => p.clientRef === currentClientRef);
                               const checklist = proponentChecklists.get(currentClientRef);
                               
@@ -3881,48 +3900,61 @@ export default function AdminFinancingKanbanPage() {
                               })}
                             </div>
 
-                            {/* Vendor Selector for Details (only show if more than 1) */}
-                            {vendors.length > 1 && (
-                              <div>
-                                <Label className="font-paragraph text-sm mb-2 block font-semibold">
-                                  Ver detalhes do vendedor
-                                </Label>
-                                <Select 
-                                  value={selectedVendorId || vendors[0]?.clientRef} 
-                                  onValueChange={setSelectedVendorId}
-                                >
-                                  <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
-                                    <SelectValue placeholder="Escolha um vendedor" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {vendors.map((vendor) => {
-                                      const isSpouse = !!vendor.ehConjugeDe;
-                                      const spouseOf = isSpouse ? vendors.find(v => v.clientRef === vendor.ehConjugeDe) : null;
-                                      
-                                      return (
-                                        <SelectItem key={vendor.clientRef} value={vendor.clientRef}>
-                                          <div className="flex items-center gap-2">
-                                            {isSpouse && spouseOf && (
-                                              <Badge variant="outline" className="text-xs px-2 py-0">
-                                                Cônjuge de {spouseOf.name}
-                                              </Badge>
-                                            )}
-                                            <span className="font-semibold">{vendor.name}</span>
-                                            <span className="text-xs text-foreground/60">
-                                              CPF: {vendor.cpf}
-                                            </span>
-                                          </div>
-                                        </SelectItem>
-                                      );
-                                    })}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
+                            {/* Vendor Selector for Details */}
+                            <div>
+                              <Label className="font-paragraph text-sm mb-2 block font-semibold">
+                                Ver detalhes do vendedor
+                              </Label>
+                              <Select 
+                                value={selectedVendorId} 
+                                onValueChange={setSelectedVendorId}
+                              >
+                                <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
+                                  <SelectValue placeholder="Selecione um vendedor para ver os detalhes" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {vendors.map((vendor) => {
+                                    const isSpouse = !!vendor.ehConjugeDe;
+                                    const spouseOf = isSpouse ? vendors.find(v => v.clientRef === vendor.ehConjugeDe) : null;
+                                    
+                                    return (
+                                      <SelectItem key={vendor.clientRef} value={vendor.clientRef}>
+                                        <div className="flex items-center gap-2">
+                                          {isSpouse && spouseOf && (
+                                            <Badge variant="outline" className="text-xs px-2 py-0">
+                                              Cônjuge de {spouseOf.name}
+                                            </Badge>
+                                          )}
+                                          <span className="font-semibold">{vendor.name}</span>
+                                          <span className="text-xs text-foreground/60">
+                                            CPF: {vendor.cpf}
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-                            {/* Display selected vendor */}
+                            {/* Display selected vendor OR placeholder */}
                             {(() => {
-                              const currentVendorClientRef = selectedVendorId || vendors[0]?.clientRef;
+                              // If no selection, show placeholder
+                              if (!selectedVendorId) {
+                                return (
+                                  <div className="border-2 border-dashed border-border-gray rounded-xl p-12 bg-light-gray/30 text-center">
+                                    <UserCheck className="w-16 h-16 mx-auto mb-4 text-foreground/20" />
+                                    <h4 className="font-heading text-lg font-semibold mb-2 text-foreground/60">
+                                      Selecione um vendedor para ver os detalhes
+                                    </h4>
+                                    <p className="text-sm text-foreground/50">
+                                      Use o seletor acima para escolher qual vendedor deseja visualizar
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              const currentVendorClientRef = selectedVendorId;
                               const vendor = vendors.find(v => v.clientRef === currentVendorClientRef);
                               const docs = vendorDocuments.get(currentVendorClientRef) || [];
                               const activeDocs = docs.filter(d => d.ativo);
@@ -3963,7 +3995,10 @@ export default function AdminFinancingKanbanPage() {
                                       <Button
                                         size="sm"
                                         variant="ghost"
-                                        onClick={() => handleRemoveVendor(vendor._id)}
+                                        onClick={() => {
+                                          handleRemoveVendor(vendor._id);
+                                          setSelectedVendorId(''); // Reset selection after removal
+                                        }}
                                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                       >
                                         <Trash2 className="w-4 h-4 mr-2" />
