@@ -2686,67 +2686,6 @@ export default function AdminFinancingKanbanPage() {
 
                 {/* Dados do Processo Tab */}
                 <TabsContent value="dados" className="space-y-6">
-                  {/* Status de Resultado do Financiamento */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg font-heading flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-secondary" />
-                        Status de Resultado do Financiamento
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label className="font-paragraph text-sm mb-3 block font-semibold">
-                          Qual o status do resultado do financiamento?
-                        </Label>
-                        <Select 
-                          value={selectedCase?.statusResultadoFinanciamento || ''} 
-                          onValueChange={(value) => {
-                            if (selectedCase) {
-                              handleStatusResultadoChange(selectedCase._id, value as 'Aprovado' | 'Condicionado' | 'Reprovado');
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-12 bg-white border-2 border-border-gray">
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Aprovado">
-                              <div className="flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span className="font-semibold">Aprovado</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Condicionado">
-                              <div className="flex items-center gap-2">
-                                <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                                <span className="font-semibold">Condicionado</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="Reprovado">
-                              <div className="flex items-center gap-2">
-                                <XCircle className="w-4 h-4 text-red-600" />
-                                <span className="font-semibold">Reprovado</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex items-start gap-2">
-                            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-xs text-blue-800">
-                              <p className="font-semibold mb-1">Regras de movimentação automática:</p>
-                              <ul className="list-disc list-inside space-y-1 ml-2">
-                                <li><strong>Condicionado</strong> → Move para coluna "Condicionados"</li>
-                                <li><strong>Reprovado</strong> → Move para coluna "Reprovados"</li>
-                                <li><strong>Aprovado</strong> → Não altera a fase atual</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
 
                   {/* Campos Obrigatórios */}
                   <Card>
@@ -2971,8 +2910,8 @@ export default function AdminFinancingKanbanPage() {
                           </div>
                         </div>
 
-                        {/* Valor do Financiamento Possível/Aprovado */}
-                        <div className="flex items-center gap-4">
+                        {/* Valor do Financiamento Possível/Aprovado + Status de Resultado */}
+                        <div className="flex items-start gap-4">
                           <div className="flex-1">
                             <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Possível/Aprovado</Label>
                             <Input
@@ -2984,6 +2923,43 @@ export default function AdminFinancingKanbanPage() {
                               placeholder="R$ 0,00"
                               className="h-10"
                             />
+                          </div>
+                          <div className="flex-1">
+                            <Label className="font-paragraph text-sm mb-2 block font-semibold">
+                              Qual o status do resultado do financiamento?
+                            </Label>
+                            <Select 
+                              value={selectedCase?.statusResultadoFinanciamento || ''} 
+                              onValueChange={(value) => {
+                                if (selectedCase) {
+                                  handleStatusResultadoChange(selectedCase._id, value as 'Aprovado' | 'Condicionado' | 'Reprovado');
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-10 bg-white border-2 border-border-gray">
+                                <SelectValue placeholder="Selecione o status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Aprovado">
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                    <span className="font-semibold">Aprovado</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="Condicionado">
+                                  <div className="flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                                    <span className="font-semibold">Condicionado</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="Reprovado">
+                                  <div className="flex items-center gap-2">
+                                    <XCircle className="w-4 h-4 text-red-600" />
+                                    <span className="font-semibold">Reprovado</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
 
