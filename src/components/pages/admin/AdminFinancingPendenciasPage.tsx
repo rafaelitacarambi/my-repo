@@ -63,10 +63,10 @@ export default function AdminFinancingPendenciasPage() {
     prazo: true,
     prioridade: true,
     responsavel: true,
-    cpfProponente: true,
-    numeroMatricula: true,
-    numeroContrato: true,
-    protocoloCartorio: true
+    cpfProponente: false,
+    numeroMatricula: false,
+    numeroContrato: false,
+    protocoloCartorio: false
   });
 
   const [formData, setFormData] = useState({
@@ -382,19 +382,18 @@ export default function AdminFinancingPendenciasPage() {
         cpfProponente = clientePrincipal?.cpfCnpj || '—';
       } else if (atendimento.contactName) {
         proponentePrincipal = atendimento.contactName;
-        // Try to get CPF from cpfProponentePrincipal field (stored in Kanban)
-        cpfProponente = (atendimento as any).cpfProponentePrincipal || '—';
       }
     }
 
     // Get pasta
     const pasta = atendimento.pastaInterna || '—';
 
-    // Get numeroMatricula, numeroContrato, and protocoloCartorio from atendimento
-    // These fields are stored in the atendimentos collection (added in Kanban)
-    const numeroMatricula = (atendimento as any).numeroMatricula || '—';
-    const numeroContrato = (atendimento as any).numeroContrato || '—';
-    const protocoloCartorio = (atendimento as any).numeroProtocoloCartorio || '—';
+    // Note: numeroMatricula, numeroContrato, and protocoloCartorio are not currently stored
+    // in the ServiceRecords entity. These fields would need to be added to the entity
+    // or fetched from a related collection (e.g., DetalhesdoFinanciamento)
+    const numeroMatricula = '—'; // TODO: Add field to entity
+    const numeroContrato = '—'; // TODO: Add field to entity
+    const protocoloCartorio = '—'; // TODO: Add field to entity
 
     return { 
       proponentePrincipal, 
@@ -551,18 +550,9 @@ export default function AdminFinancingPendenciasPage() {
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
                 <TableCell className="font-paragraph font-medium">
                   <div>
-                    {/* Identification Header - Only show info for hidden columns */}
-                    <div className="text-xs text-dark-gray mb-2 space-y-1">
-                      <div className="font-semibold">
-                        Cliente: {proponentePrincipal}
-                        {!visibleColumns.cpfProponente && ` — CPF: ${cpfProponente}`}
-                      </div>
-                      <div>
-                        Pasta: {pasta}
-                        {!visibleColumns.numeroMatricula && ` | Matrícula: ${numeroMatricula}`}
-                        {!visibleColumns.numeroContrato && ` | Contrato: ${numeroContrato}`}
-                        {!visibleColumns.protocoloCartorio && ` | Protocolo: ${protocoloCartorio}`}
-                      </div>
+                    {/* Identification: Proponent and Pasta */}
+                    <div className="text-xs text-dark-gray mb-2">
+                      {proponentePrincipal} ({pasta})
                     </div>
                     
                     {/* Title and badges */}
