@@ -1,49 +1,24 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Plus, Building2, Users, FileText } from 'lucide-react';
+import { Plus, Building2, Users } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 interface CreateNewModalProps {
-  onSelectProperty?: () => void;
-  onSelectClient?: () => void;
-  onClose?: () => void;
+  onSelectProperty: () => void;
+  onSelectClient: () => void;
 }
 
-export function CreateNewModal({ onSelectProperty, onSelectClient, onClose }: CreateNewModalProps) {
+export function CreateNewModal({ onSelectProperty, onSelectClient }: CreateNewModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
 
   const handlePropertyClick = () => {
-    if (onSelectProperty) {
-      onSelectProperty();
-    } else {
-      navigate('/admin/imoveis');
-    }
+    onSelectProperty();
     setIsOpen(false);
-    onClose?.();
   };
 
   const handleClientClick = () => {
-    if (onSelectClient) {
-      onSelectClient();
-    } else {
-      // Will be handled by parent component
-    }
+    onSelectClient();
     setIsOpen(false);
-    onClose?.();
-  };
-
-  const handleLeadClick = () => {
-    navigate('/admin/leads');
-    setIsOpen(false);
-    onClose?.();
-  };
-
-  const handleServiceClick = () => {
-    navigate('/admin/atendimentos');
-    setIsOpen(false);
-    onClose?.();
   };
 
   return (
@@ -63,38 +38,19 @@ export function CreateNewModal({ onSelectProperty, onSelectClient, onClose }: Cr
         
         <div className="space-y-4 mt-6">
           <button
-            onClick={handleServiceClick}
+            onClick={handlePropertyClick}
             className="w-full bg-primary-foreground/5 hover:bg-primary-foreground/10 border border-primary-foreground/20 rounded-xl p-6 transition-all text-left group"
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                <FileText className="w-6 h-6 text-secondary-foreground" />
+                <Building2 className="w-6 h-6 text-secondary-foreground" />
               </div>
               <div>
                 <h3 className="font-heading text-lg text-primary-foreground font-semibold">
-                  Novo Atendimento
+                  Cadastrar Imóvel
                 </h3>
                 <p className="font-paragraph text-sm text-primary-foreground/60 mt-1">
-                  Crie um novo atendimento (Financiamento)
-                </p>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={handleLeadClick}
-            className="w-full bg-primary-foreground/5 hover:bg-primary-foreground/10 border border-primary-foreground/20 rounded-xl p-6 transition-all text-left group"
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                <Users className="w-6 h-6 text-secondary-foreground" />
-              </div>
-              <div>
-                <h3 className="font-heading text-lg text-primary-foreground font-semibold">
-                  Novo Lead
-                </h3>
-                <p className="font-paragraph text-sm text-primary-foreground/60 mt-1">
-                  Registre um novo lead de contato
+                  Adicione um novo imóvel ao sistema
                 </p>
               </div>
             </div>
@@ -110,29 +66,10 @@ export function CreateNewModal({ onSelectProperty, onSelectClient, onClose }: Cr
               </div>
               <div>
                 <h3 className="font-heading text-lg text-primary-foreground font-semibold">
-                  Novo Cliente
+                  Cadastrar Cliente
                 </h3>
                 <p className="font-paragraph text-sm text-primary-foreground/60 mt-1">
                   Registre um novo cliente (Pessoa/Empresa)
-                </p>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={handlePropertyClick}
-            className="w-full bg-primary-foreground/5 hover:bg-primary-foreground/10 border border-primary-foreground/20 rounded-xl p-6 transition-all text-left group"
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                <Building2 className="w-6 h-6 text-secondary-foreground" />
-              </div>
-              <div>
-                <h3 className="font-heading text-lg text-primary-foreground font-semibold">
-                  Novo Imóvel
-                </h3>
-                <p className="font-paragraph text-sm text-primary-foreground/60 mt-1">
-                  Adicione um novo imóvel ao sistema
                 </p>
               </div>
             </div>

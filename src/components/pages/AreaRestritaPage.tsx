@@ -341,32 +341,11 @@ function AreaRestritaContent() {
               </Link>
             </motion.div>
 
-            {/* Dashboard de Financiamento */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.1 }}
-            >
-              <Link to="/admin/financiamento/dashboard">
-                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
-                  <div className="w-14 h-14 bg-brandaccent rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <TrendingUp className="w-7 h-7 text-white" />
-                  </div>
-                  <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
-                    Financiamento (Dashboard)
-                  </h3>
-                  <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
-                    Dashboard de produtividade e controle operacional do setor de financiamento
-                  </p>
-                </div>
-              </Link>
-            </motion.div>
-
             {/* Kanban de Financiamento */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.2 }}
+              transition={{ duration: 0.6, delay: 1.1 }}
             >
               <Link to="/admin/financiamento-kanban">
                 <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
@@ -387,7 +366,7 @@ function AreaRestritaContent() {
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.3 }}
+              transition={{ duration: 0.6, delay: 1.2 }}
             >
               <Link to="/admin/usuarios">
                 <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
