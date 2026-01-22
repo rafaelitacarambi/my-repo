@@ -403,10 +403,13 @@ export default function AdminFinancingPendenciasPage() {
       
       if (clientePrincipal) {
         proponentePrincipal = clientePrincipal.clientName || clientePrincipal.nomeRazaoSocial || atendimento.contactName || '—';
-        cpfProponente = clientePrincipal.cpfCnpj || '—';
+        // Try both cpfCnpj and cpfCnpj fields (handle different naming)
+        cpfProponente = clientePrincipal.cpfCnpj || (clientePrincipal as any).cpf || (clientePrincipal as any).cnpj || '—';
         console.log('[getAtendimentoInfo] ✅ CPF from clientePrincipal:', cpfProponente);
+        console.log('[getAtendimentoInfo] clientePrincipal full object:', JSON.stringify(clientePrincipal));
       } else {
         console.log('[getAtendimentoInfo] ⚠️ clientePrincipalRef exists but cliente not found in clientes array');
+        console.log('[getAtendimentoInfo] Available cliente IDs:', clientes.map(c => c._id).join(', '));
         proponentePrincipal = atendimento.contactName || '—';
       }
     } 
@@ -425,13 +428,19 @@ export default function AdminFinancingPendenciasPage() {
         
         if (clientePrincipal) {
           proponentePrincipal = clientePrincipal.clientName || clientePrincipal.nomeRazaoSocial || '—';
-          cpfProponente = clientePrincipal.cpfCnpj || '—';
+          // Try both cpfCnpj and cpfCnpj fields (handle different naming)
+          cpfProponente = clientePrincipal.cpfCnpj || (clientePrincipal as any).cpf || (clientePrincipal as any).cnpj || '—';
           console.log('[getAtendimentoInfo] ✅ CPF from ServiceParties:', cpfProponente);
+          console.log('[getAtendimentoInfo] clientePrincipal full object:', JSON.stringify(clientePrincipal));
         } else {
           console.log('[getAtendimentoInfo] ⚠️ principalParty.clientRef exists but cliente not found');
+          console.log('[getAtendimentoInfo] Available cliente IDs:', clientes.map(c => c._id).join(', '));
         }
       } else {
         console.log('[getAtendimentoInfo] ⚠️ No principalParty found for this atendimento');
+        console.log('[getAtendimentoInfo] Available serviceParties for this atendimento:', 
+          serviceParties.filter(p => p.serviceRecordRef === atendimentoRef).map(p => ({ role: p.roleInService, clientRef: p.clientRef }))
+        );
       }
     }
     
