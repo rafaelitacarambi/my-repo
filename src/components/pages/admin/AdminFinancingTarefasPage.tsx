@@ -409,7 +409,15 @@ export default function AdminFinancingTarefasPage() {
   const getAtendimentoName = (atendimentoRef?: string) => {
     if (!atendimentoRef) return 'Sem processo';
     const atendimento = atendimentos.find(a => a._id === atendimentoRef);
-    return atendimento?.contactName || `Processo ${atendimentoRef.substring(0, 8)}`;
+    if (!atendimento) return `Processo ${atendimentoRef.substring(0, 8)}`;
+    
+    const clientName = atendimento.contactName || 'Cliente não informado';
+    const folderName = atendimento.pastaInterna;
+    
+    if (folderName) {
+      return `${clientName} (${folderName})`;
+    }
+    return clientName;
   };
 
   if (isLoading) {
