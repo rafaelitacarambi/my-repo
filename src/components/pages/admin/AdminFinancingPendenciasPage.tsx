@@ -18,7 +18,8 @@ import {
   CheckSquare,
   ExternalLink,
   Eye,
-  Settings
+  Settings,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +61,7 @@ export default function AdminFinancingPendenciasPage() {
   const [selectedAtendimentoId, setSelectedAtendimentoId] = useState<string | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   
   // Load column preferences from localStorage
   const loadColumnPreferences = () => {
@@ -763,23 +765,42 @@ export default function AdminFinancingPendenciasPage() {
                   Gerencie todas as pendências dos processos de financiamento
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="default"
-                onClick={() => setShowColumnSettings(!showColumnSettings)}
-                className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
-              >
-                <Settings className="w-5 h-5 mr-2" />
-                Colunas
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
+                >
+                  <Filter className="w-5 h-5 mr-2" />
+                  Filtros
+                </Button>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setShowColumnSettings(!showColumnSettings)}
+                  className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
+                >
+                  <Settings className="w-5 h-5 mr-2" />
+                  Colunas
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Column Settings Panel */}
           {showColumnSettings && (
             <Card className="mb-6">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="font-heading text-lg">Configurar Colunas Visíveis</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowColumnSettings(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -873,119 +894,132 @@ export default function AdminFinancingPendenciasPage() {
           )}
 
           {/* Filters Section */}
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {/* Column Filter (Fase do Financiamento) */}
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block">Fase do Kanban</Label>
-                  <Select value={selectedColumn} onValueChange={setSelectedColumn}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue placeholder="Todas as fases" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as fases</SelectItem>
-                      <SelectItem value="aguardando-imovel">Aguardando o imóvel</SelectItem>
-                      <SelectItem value="condicionados">Condicionados</SelectItem>
-                      <SelectItem value="pendencia">Pendência</SelectItem>
-                      <SelectItem value="consultar-restricao">Consultar restrição</SelectItem>
-                      <SelectItem value="novos-clientes">Novos clientes</SelectItem>
-                      <SelectItem value="analise-documentos">Análise de documentos</SelectItem>
-                      <SelectItem value="cadastro-cliente">Cadastro de cliente</SelectItem>
-                      <SelectItem value="avaliacao-risco">Avaliação de risco</SelectItem>
-                      <SelectItem value="engenharia">Engenharia</SelectItem>
-                      <SelectItem value="fgts">FGTS</SelectItem>
-                      <SelectItem value="formularios">Formulários</SelectItem>
-                      <SelectItem value="siopi">SIOPI</SelectItem>
-                      <SelectItem value="solicitar-reserva">Solicitar reserva orçamentária</SelectItem>
-                      <SelectItem value="sictd">SICTD</SelectItem>
-                      <SelectItem value="conformidade">Conformidade</SelectItem>
-                      <SelectItem value="entrevista">Entrevista</SelectItem>
-                      <SelectItem value="assinatura-minuta">Assinatura minuta</SelectItem>
-                      <SelectItem value="itbi">ITBI</SelectItem>
-                      <SelectItem value="cartorio-rsales">Cartório (R Sales)</SelectItem>
-                      <SelectItem value="cartorio-cliente">Cartório por conta do cliente</SelectItem>
-                      <SelectItem value="garantia">Garantia</SelectItem>
-                      <SelectItem value="concluido">Concluído</SelectItem>
-                      <SelectItem value="acompanhamento-obra">Acompanhamento de obra</SelectItem>
-                      <SelectItem value="reprovados">Reprovados</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {showFilters && (
+            <Card className="mb-6">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="font-heading text-lg">Filtros</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFilters(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {/* Column Filter (Fase do Financiamento) */}
+                  <div>
+                    <Label className="font-paragraph text-sm mb-2 block">Fase do Kanban</Label>
+                    <Select value={selectedColumn} onValueChange={setSelectedColumn}>
+                      <SelectTrigger className="font-paragraph">
+                        <SelectValue placeholder="Todas as fases" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as fases</SelectItem>
+                        <SelectItem value="aguardando-imovel">Aguardando o imóvel</SelectItem>
+                        <SelectItem value="condicionados">Condicionados</SelectItem>
+                        <SelectItem value="pendencia">Pendência</SelectItem>
+                        <SelectItem value="consultar-restricao">Consultar restrição</SelectItem>
+                        <SelectItem value="novos-clientes">Novos clientes</SelectItem>
+                        <SelectItem value="analise-documentos">Análise de documentos</SelectItem>
+                        <SelectItem value="cadastro-cliente">Cadastro de cliente</SelectItem>
+                        <SelectItem value="avaliacao-risco">Avaliação de risco</SelectItem>
+                        <SelectItem value="engenharia">Engenharia</SelectItem>
+                        <SelectItem value="fgts">FGTS</SelectItem>
+                        <SelectItem value="formularios">Formulários</SelectItem>
+                        <SelectItem value="siopi">SIOPI</SelectItem>
+                        <SelectItem value="solicitar-reserva">Solicitar reserva orçamentária</SelectItem>
+                        <SelectItem value="sictd">SICTD</SelectItem>
+                        <SelectItem value="conformidade">Conformidade</SelectItem>
+                        <SelectItem value="entrevista">Entrevista</SelectItem>
+                        <SelectItem value="assinatura-minuta">Assinatura minuta</SelectItem>
+                        <SelectItem value="itbi">ITBI</SelectItem>
+                        <SelectItem value="cartorio-rsales">Cartório (R Sales)</SelectItem>
+                        <SelectItem value="cartorio-cliente">Cartório por conta do cliente</SelectItem>
+                        <SelectItem value="garantia">Garantia</SelectItem>
+                        <SelectItem value="concluido">Concluído</SelectItem>
+                        <SelectItem value="acompanhamento-obra">Acompanhamento de obra</SelectItem>
+                        <SelectItem value="reprovados">Reprovados</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Responsável Filter */}
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
-                  <Select value={responsavelFilter} onValueChange={setResponsavelFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Cliente">Cliente</SelectItem>
-                      <SelectItem value="Vendedor">Vendedor</SelectItem>
-                      <SelectItem value="Banco">Banco</SelectItem>
-                      <SelectItem value="Interno">Interno</SelectItem>
-                      <SelectItem value="Proponente">Proponente</SelectItem>
-                      <SelectItem value="Caixa">Caixa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Responsável Filter */}
+                  <div>
+                    <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
+                    <Select value={responsavelFilter} onValueChange={setResponsavelFilter}>
+                      <SelectTrigger className="font-paragraph">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="Cliente">Cliente</SelectItem>
+                        <SelectItem value="Vendedor">Vendedor</SelectItem>
+                        <SelectItem value="Banco">Banco</SelectItem>
+                        <SelectItem value="Interno">Interno</SelectItem>
+                        <SelectItem value="Proponente">Proponente</SelectItem>
+                        <SelectItem value="Caixa">Caixa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Prioridade Filter */}
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block">Prioridade</Label>
-                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="Alta">Alta</SelectItem>
-                      <SelectItem value="Média">Média</SelectItem>
-                      <SelectItem value="Baixa">Baixa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Prioridade Filter */}
+                  <div>
+                    <Label className="font-paragraph text-sm mb-2 block">Prioridade</Label>
+                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                      <SelectTrigger className="font-paragraph">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="Alta">Alta</SelectItem>
+                        <SelectItem value="Média">Média</SelectItem>
+                        <SelectItem value="Baixa">Baixa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Prazo Filter */}
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
-                  <Select value={prazoFilter} onValueChange={setPrazoFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="atrasado">Atrasado</SelectItem>
-                      <SelectItem value="hoje">Hoje</SelectItem>
-                      <SelectItem value="proximos-7-dias">Próximos 7 dias</SelectItem>
-                      <SelectItem value="proximos-30-dias">Próximos 30 dias</SelectItem>
-                      <SelectItem value="sem-prazo">Sem prazo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Prazo Filter */}
+                  <div>
+                    <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
+                    <Select value={prazoFilter} onValueChange={setPrazoFilter}>
+                      <SelectTrigger className="font-paragraph">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="atrasado">Atrasado</SelectItem>
+                        <SelectItem value="hoje">Hoje</SelectItem>
+                        <SelectItem value="proximos-7-dias">Próximos 7 dias</SelectItem>
+                        <SelectItem value="proximos-30-dias">Próximos 30 dias</SelectItem>
+                        <SelectItem value="sem-prazo">Sem prazo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Clear Filters Button */}
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedColumn('all');
-                      setResponsavelFilter('all');
-                      setPriorityFilter('all');
-                      setPrazoFilter('all');
-                      setSearchTerm('');
-                    }}
-                    className="w-full font-paragraph"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Limpar Filtros
-                  </Button>
+                  {/* Clear Filters Button */}
+                  <div className="flex items-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedColumn('all');
+                        setResponsavelFilter('all');
+                        setPriorityFilter('all');
+                        setPrazoFilter('all');
+                        setSearchTerm('');
+                      }}
+                      className="w-full font-paragraph"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Limpar Filtros
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Pendências Table */}
           <Card className="mb-8">
