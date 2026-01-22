@@ -50,6 +50,7 @@ export default function AdminFinancingPendenciasPage() {
   const [serviceParties, setServiceParties] = useState<ServiceParties[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedColumn, setSelectedColumn] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [responsavelFilter, setResponsavelFilter] = useState<string>('all');
@@ -104,7 +105,7 @@ export default function AdminFinancingPendenciasPage() {
 
   useEffect(() => {
     filterPendencias();
-  }, [pendencias, searchTerm, statusFilter, priorityFilter, responsavelFilter, prazoFilter]);
+  }, [pendencias, searchTerm, statusFilter, priorityFilter, responsavelFilter, prazoFilter, selectedColumn]);
 
   // Save column preferences to localStorage whenever they change
   useEffect(() => {
@@ -141,6 +142,15 @@ export default function AdminFinancingPendenciasPage() {
 
     // Filter only active pendencias (not completed)
     filtered = filtered.filter(p => p.status !== 'Concluída');
+
+    // Filter by selected column (fase do financiamento)
+    if (selectedColumn !== 'all') {
+      filtered = filtered.filter(p => {
+        if (!p.atendimentoRef) return false;
+        const atendimento = atendimentos.find(a => a._id === p.atendimentoRef);
+        return atendimento?.faseFinanciamento === selectedColumn;
+      });
+    }
 
     if (searchTerm) {
       filtered = filtered.filter(p => 
@@ -407,12 +417,12 @@ export default function AdminFinancingPendenciasPage() {
     // Get pasta
     const pasta = atendimento.pastaInterna || '—';
 
-    // Note: numeroMatricula, numeroContrato, and protocoloCartorio are not currently stored
-    // in the ServiceRecords entity. These fields would need to be added to the entity
-    // or fetched from a related collection (e.g., DetalhesdoFinanciamento)
-    const numeroMatricula = '—'; // TODO: Add field to entity
-    const numeroContrato = '—'; // TODO: Add field to entity
-    const protocoloCartorio = '—'; // TODO: Add field to entity
+    // Get additional fields from atendimento
+    // Note: These fields need to be added to the ServiceRecords entity in the future
+    // For now, we'll check if they exist (they might be added via visual editing)
+    const numeroMatricula = (atendimento as any).numeroMatricula || '—';
+    const numeroContrato = (atendimento as any).numeroContrato || '—';
+    const protocoloCartorio = (atendimento as any).numeroProtocoloCartorio || '—';
 
     return { 
       proponentePrincipal, 
@@ -545,6 +555,9 @@ export default function AdminFinancingPendenciasPage() {
       );
     }
 
+    // Check if we should show identification details (when a column is selected)
+    const showIdentificationDetails = selectedColumn !== 'all';
+
     return (
       <Table>
         <TableHeader>
@@ -553,10 +566,10 @@ export default function AdminFinancingPendenciasPage() {
             {visibleColumns.prioridade && <TableHead className="font-paragraph">Prioridade</TableHead>}
             {visibleColumns.prazo && <TableHead className="font-paragraph">Prazo</TableHead>}
             {visibleColumns.responsavel && <TableHead className="font-paragraph">Responsável</TableHead>}
-            {visibleColumns.cpfProponente && <TableHead className="font-paragraph">CPF Proponente</TableHead>}
-            {visibleColumns.numeroMatricula && <TableHead className="font-paragraph">Nº Matrícula</TableHead>}
-            {visibleColumns.numeroContrato && <TableHead className="font-paragraph">Nº Contrato</TableHead>}
-            {visibleColumns.protocoloCartorio && <TableHead className="font-paragraph">Protocolo Cartório</TableHead>}
+            {showIdentificationDetails && visibleColumns.cpfProponente && <TableHead className="font-paragraph">CPF Proponente</TableHead>}
+            {showIdentificationDetails && visibleColumns.numeroMatricula && <TableHead className="font-paragraph">Nº Matrícula</TableHead>}
+            {showIdentificationDetails && visibleColumns.numeroContrato && <TableHead className="font-paragraph">Nº Contrato</TableHead>}
+            {showIdentificationDetails && visibleColumns.protocoloCartorio && <TableHead className="font-paragraph">Protocolo Cartório</TableHead>}
             <TableHead className="font-paragraph text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -569,10 +582,24 @@ export default function AdminFinancingPendenciasPage() {
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
                 <TableCell className="font-paragraph font-medium">
                   <div>
-                    {/* Identification: Proponent and Pasta */}
-                    <div className="text-xs text-dark-gray mb-2">
-                      {proponentePrincipal} ({pasta})
-                    </div>
+                    {/* Identification: Show only when column is selected */}
+                    {showIdentificationDetails && (
+                      <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                        <div className="text-sm font-semibold text-foreground mb-1">
+                          Cliente: {proponentePrincipal} — CPF: {cpfProponente}
+                        </div>
+                        <div className="text-xs text-dark-gray">
+                          Matrícula: {numeroMatricula} | Contrato: {numeroContrato} | Protocolo: {protocoloCartorio}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Simple identification when no column selected */}
+                    {!showIdentificationDetails && (
+                      <div className="text-xs text-dark-gray mb-2">
+                        {proponentePrincipal} ({pasta})
+                      </div>
+                    )}
                     
                     {/* Title and badges */}
                     <div className={`flex items-center gap-2 ${overdueStatus ? 'text-red-700 font-bold' : ''}`}>
@@ -606,22 +633,22 @@ export default function AdminFinancingPendenciasPage() {
                     {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '—'}
                   </TableCell>
                 )}
-                {visibleColumns.cpfProponente && (
+                {showIdentificationDetails && visibleColumns.cpfProponente && (
                   <TableCell className="font-paragraph">
                     {cpfProponente}
                   </TableCell>
                 )}
-                {visibleColumns.numeroMatricula && (
+                {showIdentificationDetails && visibleColumns.numeroMatricula && (
                   <TableCell className="font-paragraph">
                     {numeroMatricula}
                   </TableCell>
                 )}
-                {visibleColumns.numeroContrato && (
+                {showIdentificationDetails && visibleColumns.numeroContrato && (
                   <TableCell className="font-paragraph">
                     {numeroContrato}
                   </TableCell>
                 )}
-                {visibleColumns.protocoloCartorio && (
+                {showIdentificationDetails && visibleColumns.protocoloCartorio && (
                   <TableCell className="font-paragraph">
                     {protocoloCartorio}
                   </TableCell>
@@ -802,7 +829,44 @@ export default function AdminFinancingPendenciasPage() {
           {/* Filters Section */}
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {/* Column Filter (Fase do Financiamento) */}
+                <div>
+                  <Label className="font-paragraph text-sm mb-2 block">Fase do Kanban</Label>
+                  <Select value={selectedColumn} onValueChange={setSelectedColumn}>
+                    <SelectTrigger className="font-paragraph">
+                      <SelectValue placeholder="Todas as fases" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as fases</SelectItem>
+                      <SelectItem value="aguardando-imovel">Aguardando o imóvel</SelectItem>
+                      <SelectItem value="condicionados">Condicionados</SelectItem>
+                      <SelectItem value="pendencia">Pendência</SelectItem>
+                      <SelectItem value="consultar-restricao">Consultar restrição</SelectItem>
+                      <SelectItem value="novos-clientes">Novos clientes</SelectItem>
+                      <SelectItem value="analise-documentos">Análise de documentos</SelectItem>
+                      <SelectItem value="cadastro-cliente">Cadastro de cliente</SelectItem>
+                      <SelectItem value="avaliacao-risco">Avaliação de risco</SelectItem>
+                      <SelectItem value="engenharia">Engenharia</SelectItem>
+                      <SelectItem value="fgts">FGTS</SelectItem>
+                      <SelectItem value="formularios">Formulários</SelectItem>
+                      <SelectItem value="siopi">SIOPI</SelectItem>
+                      <SelectItem value="solicitar-reserva">Solicitar reserva orçamentária</SelectItem>
+                      <SelectItem value="sictd">SICTD</SelectItem>
+                      <SelectItem value="conformidade">Conformidade</SelectItem>
+                      <SelectItem value="entrevista">Entrevista</SelectItem>
+                      <SelectItem value="assinatura-minuta">Assinatura minuta</SelectItem>
+                      <SelectItem value="itbi">ITBI</SelectItem>
+                      <SelectItem value="cartorio-rsales">Cartório (R Sales)</SelectItem>
+                      <SelectItem value="cartorio-cliente">Cartório por conta do cliente</SelectItem>
+                      <SelectItem value="garantia">Garantia</SelectItem>
+                      <SelectItem value="concluido">Concluído</SelectItem>
+                      <SelectItem value="acompanhamento-obra">Acompanhamento de obra</SelectItem>
+                      <SelectItem value="reprovados">Reprovados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Responsável Filter */}
                 <div>
                   <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
@@ -861,6 +925,7 @@ export default function AdminFinancingPendenciasPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
+                      setSelectedColumn('all');
                       setResponsavelFilter('all');
                       setPriorityFilter('all');
                       setPrazoFilter('all');
