@@ -551,13 +551,17 @@ export default function AdminFinancingPendenciasPage() {
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
                 <TableCell className="font-paragraph font-medium">
                   <div>
-                    {/* Identification Header - Compact Format */}
+                    {/* Identification Header - Only show info for hidden columns */}
                     <div className="text-xs text-dark-gray mb-2 space-y-1">
                       <div className="font-semibold">
-                        Cliente: {proponentePrincipal} — CPF: {cpfProponente}
+                        Cliente: {proponentePrincipal}
+                        {!visibleColumns.cpfProponente && ` — CPF: ${cpfProponente}`}
                       </div>
                       <div>
-                        Pasta: {pasta} | Matrícula: {numeroMatricula} | Contrato: {numeroContrato} | Protocolo: {protocoloCartorio}
+                        Pasta: {pasta}
+                        {!visibleColumns.numeroMatricula && ` | Matrícula: ${numeroMatricula}`}
+                        {!visibleColumns.numeroContrato && ` | Contrato: ${numeroContrato}`}
+                        {!visibleColumns.protocoloCartorio && ` | Protocolo: ${protocoloCartorio}`}
                       </div>
                     </div>
                     
