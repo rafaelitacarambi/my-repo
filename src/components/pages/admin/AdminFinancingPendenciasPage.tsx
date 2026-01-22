@@ -59,15 +59,29 @@ export default function AdminFinancingPendenciasPage() {
   const [selectedAtendimentoId, setSelectedAtendimentoId] = useState<string | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showColumnSettings, setShowColumnSettings] = useState(false);
-  const [visibleColumns, setVisibleColumns] = useState({
-    prazo: true,
-    prioridade: true,
-    responsavel: true,
-    cpfProponente: false,
-    numeroMatricula: false,
-    numeroContrato: false,
-    protocoloCartorio: false
-  });
+  
+  // Load column preferences from localStorage
+  const loadColumnPreferences = () => {
+    const saved = localStorage.getItem('pendenciasColumnPreferences');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error loading column preferences:', e);
+      }
+    }
+    return {
+      prazo: true,
+      prioridade: true,
+      responsavel: true,
+      cpfProponente: false,
+      numeroMatricula: false,
+      numeroContrato: false,
+      protocoloCartorio: false
+    };
+  };
+
+  const [visibleColumns, setVisibleColumns] = useState(loadColumnPreferences());
 
   const [formData, setFormData] = useState({
     title: '',
@@ -91,6 +105,11 @@ export default function AdminFinancingPendenciasPage() {
   useEffect(() => {
     filterPendencias();
   }, [pendencias, searchTerm, statusFilter, priorityFilter, responsavelFilter, prazoFilter]);
+
+  // Save column preferences to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('pendenciasColumnPreferences', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
 
   const loadData = async () => {
     console.log('[AdminFinancingPendenciasPage] loadData() called');
