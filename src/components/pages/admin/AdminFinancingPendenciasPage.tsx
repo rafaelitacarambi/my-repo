@@ -391,26 +391,37 @@ export default function AdminFinancingPendenciasPage() {
     let cpfProponente = '—';
     let clientePrincipal: Clients | undefined;
     
+    console.log('[getAtendimentoInfo] Processing atendimento:', atendimentoRef);
+    console.log('[getAtendimentoInfo] clientePrincipalRef:', atendimento.clientePrincipalRef);
+    
     // Priority 1: atendimento.proponentePrincipalRef (if exists in future)
     // For now, this field doesn't exist in ServiceRecords, so skip
     
     // Priority 2: atendimento.clientePrincipalRef
     if (atendimento.clientePrincipalRef) {
       clientePrincipal = clientes.find(c => c._id === atendimento.clientePrincipalRef);
+      console.log('[getAtendimentoInfo] Found clientePrincipal via clientePrincipalRef:', clientePrincipal);
       proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || atendimento.contactName || '—';
       cpfProponente = clientePrincipal?.cpfCnpj || '—';
+      console.log('[getAtendimentoInfo] CPF from clientePrincipal:', cpfProponente);
     } 
     // Priority 3: Search in ServiceParties for "Proponente Principal"
     else {
+      console.log('[getAtendimentoInfo] Searching in ServiceParties...');
       const principalParty = serviceParties.find(
         p => p.serviceRecordRef === atendimentoRef && p.roleInService === 'Proponente Principal'
       );
+      console.log('[getAtendimentoInfo] Found principalParty:', principalParty);
+      
       if (principalParty && principalParty.clientRef) {
         clientePrincipal = clientes.find(c => c._id === principalParty.clientRef);
+        console.log('[getAtendimentoInfo] Found clientePrincipal via ServiceParties:', clientePrincipal);
         proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || '—';
         cpfProponente = clientePrincipal?.cpfCnpj || '—';
+        console.log('[getAtendimentoInfo] CPF from ServiceParties:', cpfProponente);
       } else if (atendimento.contactName) {
         proponentePrincipal = atendimento.contactName;
+        console.log('[getAtendimentoInfo] Using contactName:', proponentePrincipal);
       }
     }
 
@@ -423,6 +434,15 @@ export default function AdminFinancingPendenciasPage() {
     const numeroMatricula = (atendimento as any).numeroMatricula || '—';
     const numeroContrato = (atendimento as any).numeroContrato || '—';
     const protocoloCartorio = (atendimento as any).numeroProtocoloCartorio || '—';
+
+    console.log('[getAtendimentoInfo] Final result:', { 
+      proponentePrincipal, 
+      pasta,
+      cpfProponente,
+      numeroMatricula,
+      numeroContrato,
+      protocoloCartorio
+    });
 
     return { 
       proponentePrincipal, 
