@@ -555,8 +555,9 @@ export default function AdminFinancingPendenciasPage() {
       );
     }
 
-    // Check if we should show identification details (when a column is selected)
-    const showIdentificationDetails = selectedColumn !== 'all';
+    // Check if any identification column is visible
+    const hasIdentificationColumns = visibleColumns.cpfProponente || visibleColumns.numeroMatricula || 
+                                      visibleColumns.numeroContrato || visibleColumns.protocoloCartorio;
 
     return (
       <Table>
@@ -566,10 +567,10 @@ export default function AdminFinancingPendenciasPage() {
             {visibleColumns.prioridade && <TableHead className="font-paragraph">Prioridade</TableHead>}
             {visibleColumns.prazo && <TableHead className="font-paragraph">Prazo</TableHead>}
             {visibleColumns.responsavel && <TableHead className="font-paragraph">Responsável</TableHead>}
-            {showIdentificationDetails && visibleColumns.cpfProponente && <TableHead className="font-paragraph">CPF Proponente</TableHead>}
-            {showIdentificationDetails && visibleColumns.numeroMatricula && <TableHead className="font-paragraph">Nº Matrícula</TableHead>}
-            {showIdentificationDetails && visibleColumns.numeroContrato && <TableHead className="font-paragraph">Nº Contrato</TableHead>}
-            {showIdentificationDetails && visibleColumns.protocoloCartorio && <TableHead className="font-paragraph">Protocolo Cartório</TableHead>}
+            {visibleColumns.cpfProponente && <TableHead className="font-paragraph">CPF Proponente</TableHead>}
+            {visibleColumns.numeroMatricula && <TableHead className="font-paragraph">Nº Matrícula</TableHead>}
+            {visibleColumns.numeroContrato && <TableHead className="font-paragraph">Nº Contrato</TableHead>}
+            {visibleColumns.protocoloCartorio && <TableHead className="font-paragraph">Protocolo Cartório</TableHead>}
             <TableHead className="font-paragraph text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -582,20 +583,20 @@ export default function AdminFinancingPendenciasPage() {
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
                 <TableCell className="font-paragraph font-medium">
                   <div>
-                    {/* Identification: Show only when column is selected */}
-                    {showIdentificationDetails && (
+                    {/* Identification: Show when identification columns are visible */}
+                    {hasIdentificationColumns && (
                       <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
                         <div className="text-sm font-semibold text-foreground mb-1">
-                          Cliente: {proponentePrincipal} — CPF: {cpfProponente}
+                          Cliente: {proponentePrincipal}
                         </div>
                         <div className="text-xs text-dark-gray">
-                          Matrícula: {numeroMatricula} | Contrato: {numeroContrato} | Protocolo: {protocoloCartorio}
+                          Pasta: {pasta}
                         </div>
                       </div>
                     )}
                     
-                    {/* Simple identification when no column selected */}
-                    {!showIdentificationDetails && (
+                    {/* Simple identification when no identification columns visible */}
+                    {!hasIdentificationColumns && (
                       <div className="text-xs text-dark-gray mb-2">
                         {proponentePrincipal} ({pasta})
                       </div>
@@ -633,22 +634,22 @@ export default function AdminFinancingPendenciasPage() {
                     {pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || '—'}
                   </TableCell>
                 )}
-                {showIdentificationDetails && visibleColumns.cpfProponente && (
+                {visibleColumns.cpfProponente && (
                   <TableCell className="font-paragraph">
                     {cpfProponente}
                   </TableCell>
                 )}
-                {showIdentificationDetails && visibleColumns.numeroMatricula && (
+                {visibleColumns.numeroMatricula && (
                   <TableCell className="font-paragraph">
                     {numeroMatricula}
                   </TableCell>
                 )}
-                {showIdentificationDetails && visibleColumns.numeroContrato && (
+                {visibleColumns.numeroContrato && (
                   <TableCell className="font-paragraph">
                     {numeroContrato}
                   </TableCell>
                 )}
-                {showIdentificationDetails && visibleColumns.protocoloCartorio && (
+                {visibleColumns.protocoloCartorio && (
                   <TableCell className="font-paragraph">
                     {protocoloCartorio}
                   </TableCell>
