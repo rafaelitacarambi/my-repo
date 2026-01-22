@@ -630,34 +630,20 @@ export default function AdminFinancingPendenciasPage() {
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
                 <TableCell className="font-paragraph font-medium">
                   <div>
-                    {/* Identification: Show when identification columns are visible */}
-                    {hasIdentificationColumns && (
-                      <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                        <div className="text-sm font-semibold text-foreground mb-1">
-                          Cliente: {proponentePrincipal}
-                        </div>
-                        <div className="text-xs text-dark-gray">
-                          Pasta: {pasta}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Simple identification when no identification columns visible */}
-                    {!hasIdentificationColumns && (
-                      <div className="text-xs text-dark-gray mb-2">
-                        {proponentePrincipal} ({pasta})
-                      </div>
-                    )}
-                    
-                    {/* Title and badges */}
-                    <div className={`flex items-center gap-2 ${overdueStatus ? 'text-red-700 font-bold' : ''}`}>
-                      {pendencia.title}
+                    {/* Nome do cliente com pasta entre parênteses */}
+                    <div className={`text-base font-semibold mb-1 flex items-center gap-2 ${overdueStatus ? 'text-red-700' : 'text-foreground'}`}>
+                      {proponentePrincipal} ({pasta})
                       {pendencia.bloqueiaFase && (
                         <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
                       )}
                       {overdueStatus && (
                         <Badge className="text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
                       )}
+                    </div>
+                    
+                    {/* Descrição da pendência embaixo */}
+                    <div className="text-sm text-dark-gray">
+                      {pendencia.description || '—'}
                     </div>
                   </div>
                 </TableCell>
