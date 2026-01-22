@@ -391,22 +391,28 @@ export default function AdminFinancingPendenciasPage() {
     let cpfProponente = '—';
     let clientePrincipal: Clients | undefined;
     
-    console.log('[getAtendimentoInfo] Processing atendimento:', atendimentoRef);
+    console.log('[getAtendimentoInfo] ===== Processing atendimento:', atendimentoRef);
     console.log('[getAtendimentoInfo] clientePrincipalRef:', atendimento.clientePrincipalRef);
+    console.log('[getAtendimentoInfo] Total clientes available:', clientes.length);
+    console.log('[getAtendimentoInfo] Total serviceParties available:', serviceParties.length);
     
-    // Priority 1: atendimento.proponentePrincipalRef (if exists in future)
-    // For now, this field doesn't exist in ServiceRecords, so skip
-    
-    // Priority 2: atendimento.clientePrincipalRef
+    // Priority 1: atendimento.clientePrincipalRef
     if (atendimento.clientePrincipalRef) {
       clientePrincipal = clientes.find(c => c._id === atendimento.clientePrincipalRef);
       console.log('[getAtendimentoInfo] Found clientePrincipal via clientePrincipalRef:', clientePrincipal);
-      proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || atendimento.contactName || '—';
-      cpfProponente = clientePrincipal?.cpfCnpj || '—';
-      console.log('[getAtendimentoInfo] CPF from clientePrincipal:', cpfProponente);
+      
+      if (clientePrincipal) {
+        proponentePrincipal = clientePrincipal.clientName || clientePrincipal.nomeRazaoSocial || atendimento.contactName || '—';
+        cpfProponente = clientePrincipal.cpfCnpj || '—';
+        console.log('[getAtendimentoInfo] ✅ CPF from clientePrincipal:', cpfProponente);
+      } else {
+        console.log('[getAtendimentoInfo] ⚠️ clientePrincipalRef exists but cliente not found in clientes array');
+        proponentePrincipal = atendimento.contactName || '—';
+      }
     } 
-    // Priority 3: Search in ServiceParties for "Proponente Principal"
-    else {
+    
+    // Priority 2: Search in ServiceParties for "Proponente Principal"
+    if (!clientePrincipal) {
       console.log('[getAtendimentoInfo] Searching in ServiceParties...');
       const principalParty = serviceParties.find(
         p => p.serviceRecordRef === atendimentoRef && p.roleInService === 'Proponente Principal'
@@ -416,13 +422,23 @@ export default function AdminFinancingPendenciasPage() {
       if (principalParty && principalParty.clientRef) {
         clientePrincipal = clientes.find(c => c._id === principalParty.clientRef);
         console.log('[getAtendimentoInfo] Found clientePrincipal via ServiceParties:', clientePrincipal);
-        proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || '—';
-        cpfProponente = clientePrincipal?.cpfCnpj || '—';
-        console.log('[getAtendimentoInfo] CPF from ServiceParties:', cpfProponente);
-      } else if (atendimento.contactName) {
-        proponentePrincipal = atendimento.contactName;
-        console.log('[getAtendimentoInfo] Using contactName:', proponentePrincipal);
+        
+        if (clientePrincipal) {
+          proponentePrincipal = clientePrincipal.clientName || clientePrincipal.nomeRazaoSocial || '—';
+          cpfProponente = clientePrincipal.cpfCnpj || '—';
+          console.log('[getAtendimentoInfo] ✅ CPF from ServiceParties:', cpfProponente);
+        } else {
+          console.log('[getAtendimentoInfo] ⚠️ principalParty.clientRef exists but cliente not found');
+        }
+      } else {
+        console.log('[getAtendimentoInfo] ⚠️ No principalParty found for this atendimento');
       }
+    }
+    
+    // Priority 3: Fallback to contactName
+    if (proponentePrincipal === '—' && atendimento.contactName) {
+      proponentePrincipal = atendimento.contactName;
+      console.log('[getAtendimentoInfo] Using contactName as fallback:', proponentePrincipal);
     }
 
     // Get pasta
@@ -435,7 +451,7 @@ export default function AdminFinancingPendenciasPage() {
     const numeroContrato = (atendimento as any).numeroContrato || '—';
     const protocoloCartorio = (atendimento as any).numeroProtocoloCartorio || '—';
 
-    console.log('[getAtendimentoInfo] Final result:', { 
+    console.log('[getAtendimentoInfo] ===== Final result:', { 
       proponentePrincipal, 
       pasta,
       cpfProponente,
