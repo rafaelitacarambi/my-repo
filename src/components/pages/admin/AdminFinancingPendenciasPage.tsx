@@ -75,7 +75,7 @@ export default function AdminFinancingPendenciasPage() {
       prazo: true,
       prioridade: true,
       responsavel: true,
-      cpfProponente: false,
+      cpfProponente: true,
       numeroMatricula: false,
       numeroContrato: false,
       protocoloCartorio: false
