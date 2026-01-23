@@ -118,7 +118,7 @@ interface FinancingCase {
   tarefasAbertas: number;
   
   // Status de Resultado do Financiamento
-  statusResultadoFinanciamento?: 'Aprovado' | 'Condicionado' | 'Reprovado' | '';
+  statusResultadoFinanciamento?: 'Aprovado' | 'Condicionado' | 'Reprovado' | 'Em andamento' | '';
   
   // Ícones de bloqueio
   bloqueioDocumento?: boolean;
@@ -1225,6 +1225,9 @@ export default function AdminFinancingKanbanPage() {
           shouldMove = true;
         }
         // Otherwise, keep in current phase (no automatic movement)
+      } else if (newStatus === 'Em andamento') {
+        // Keep in current phase - no automatic movement for "Em andamento"
+        shouldMove = false;
       }
 
       // Optimistic update
