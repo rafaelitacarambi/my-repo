@@ -213,33 +213,6 @@ export interface GeneratedContracts {
 
 
 /**
- * Collection ID: conversas
- * Interface for WhatsAppConversations
- */
-export interface WhatsAppConversations {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  serviceRecordRef?: string;
-  /** @wixFieldType text */
-  clientRef?: string;
-  /** @wixFieldType text */
-  whatsappNumber?: string;
-  /** @wixFieldType text */
-  status?: string;
-  /** @wixFieldType text */
-  responsibleUserRef?: string;
-  /** @wixFieldType text */
-  sector?: string;
-  /** @wixFieldType text */
-  lastMessagePreview?: string;
-  /** @wixFieldType datetime */
-  lastMessageTimestamp?: Date | string;
-}
-
-
-/**
  * Collection ID: corretores
  * Interface for RealEstateBrokers
  */
@@ -668,27 +641,6 @@ export interface LeadsdeContato {
 
 
 /**
- * Collection ID: logsia
- * Interface for AIInteractionLogs
- */
-export interface AIInteractionLogs {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  conversationReference?: string;
-  /** @wixFieldType text */
-  clientMessage?: string;
-  /** @wixFieldType text */
-  aiResponse?: string;
-  /** @wixFieldType text */
-  approvedBy?: string;
-  /** @wixFieldType datetime */
-  timestamp?: Date | string;
-}
-
-
-/**
  * Collection ID: matches
  * Interface for LeadPropertyMatches
  */
@@ -714,33 +666,6 @@ export interface LeadPropertyMatches {
   notifiedWhatsApp?: boolean;
   /** @wixFieldType boolean */
   notifiedEmail?: boolean;
-}
-
-
-/**
- * Collection ID: mensagens
- * Interface for Messages
- */
-export interface Messages {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  conversationId?: string;
-  /** @wixFieldType text */
-  origin?: string;
-  /** @wixFieldType text */
-  text?: string;
-  /** @wixFieldType text */
-  type?: string;
-  /** @wixFieldType url */
-  fileUrl?: string;
-  /** @wixFieldType datetime */
-  timestamp?: Date | string;
-  /** @wixFieldType boolean */
-  isSent?: boolean;
-  /** @wixFieldType text */
-  deliveryStatus?: string;
 }
 
 
@@ -858,27 +783,6 @@ export interface ProcessosdeVenda {
 
 
 /**
- * Collection ID: regrasia
- * Interface for AIRules
- */
-export interface AIRules {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  sector?: string;
-  /** @wixFieldType text */
-  messageType?: string;
-  /** @wixFieldType text */
-  basePrompt?: string;
-  /** @wixFieldType boolean */
-  active?: boolean;
-  /** @wixFieldType text */
-  notes?: string;
-}
-
-
-/**
  * Collection ID: setoreslead
  * Interface for LeadSectors
  */
@@ -956,27 +860,6 @@ export interface ContractTemplates {
   templateContent?: string;
   /** @wixFieldType boolean */
   isActive?: boolean;
-}
-
-
-/**
- * Collection ID: templateswhatsapp
- * Interface for TemplatesWhatsApp
- */
-export interface TemplatesWhatsApp {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  templateName?: string;
-  /** @wixFieldType text */
-  category?: string;
-  /** @wixFieldType text */
-  templateText?: string;
-  /** @wixFieldType boolean */
-  approvedByMeta?: boolean;
-  /** @wixFieldType text */
-  internalDescription?: string;
 }
 
 
