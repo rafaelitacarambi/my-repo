@@ -118,7 +118,7 @@ interface FinancingCase {
   tarefasAbertas: number;
   
   // Status de Resultado do Financiamento
-  statusResultadoFinanciamento?: 'Aprovado' | 'Condicionado' | 'Reprovado' | 'Em Andamento' | '';
+  statusResultadoFinanciamento?: 'Aprovado' | 'Condicionado' | 'Reprovado' | '';
   
   // Ícones de bloqueio
   bloqueioDocumento?: boolean;
@@ -1197,7 +1197,7 @@ export default function AdminFinancingKanbanPage() {
   };
 
   // Handle status change with automatic column movement
-  const handleStatusResultadoChange = async (caseId: string, newStatus: 'Aprovado' | 'Condicionado' | 'Reprovado' | 'Em Andamento') => {
+  const handleStatusResultadoChange = async (caseId: string, newStatus: 'Aprovado' | 'Condicionado' | 'Reprovado') => {
     try {
       const caseItem = cases.find(c => c._id === caseId);
       if (!caseItem) return;
@@ -1222,9 +1222,6 @@ export default function AdminFinancingKanbanPage() {
           shouldMove = true;
         }
         // Otherwise, keep in current phase (no automatic movement)
-      } else if (newStatus === 'Em Andamento') {
-        // Em Andamento doesn't trigger automatic column movement
-        shouldMove = false;
       }
 
       // Optimistic update
@@ -3183,7 +3180,7 @@ export default function AdminFinancingKanbanPage() {
                               value={selectedCase?.statusResultadoFinanciamento || ''} 
                               onValueChange={(value) => {
                                 if (selectedCase) {
-                                  handleStatusResultadoChange(selectedCase._id, value as 'Aprovado' | 'Condicionado' | 'Reprovado' | 'Em Andamento');
+                                  handleStatusResultadoChange(selectedCase._id, value as 'Aprovado' | 'Condicionado' | 'Reprovado');
                                 }
                               }}
                             >
@@ -3201,12 +3198,6 @@ export default function AdminFinancingKanbanPage() {
                                   <div className="flex items-center gap-2">
                                     <AlertTriangle className="w-4 h-4 text-yellow-600" />
                                     <span className="font-semibold">Condicionado</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="Em Andamento">
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-blue-600" />
-                                    <span className="font-semibold">Em Andamento</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="Reprovado">
