@@ -60,8 +60,6 @@ export default function AdminFinancingPendenciasPage() {
   const [editingPendencia, setEditingPendencia] = useState<PendnciasdoFinanciamento | null>(null);
   const [selectedAtendimentoId, setSelectedAtendimentoId] = useState<string | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
-  const [showClientModal, setShowClientModal] = useState(false);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showColumnSettings, setShowColumnSettings] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   
@@ -377,8 +375,7 @@ export default function AdminFinancingPendenciasPage() {
       cpfProponente: '—',
       numeroMatricula: '—',
       numeroContrato: '—',
-      protocoloCartorio: '—',
-      clientePrincipalId: undefined
+      protocoloCartorio: '—'
     };
     
     const atendimento = atendimentos.find(a => a._id === atendimentoRef);
@@ -388,8 +385,7 @@ export default function AdminFinancingPendenciasPage() {
       cpfProponente: '—',
       numeroMatricula: '—',
       numeroContrato: '—',
-      protocoloCartorio: '—',
-      clientePrincipalId: undefined
+      protocoloCartorio: '—'
     };
 
     // Get proponent principal name and CPF with priority logic
@@ -472,8 +468,7 @@ export default function AdminFinancingPendenciasPage() {
       cpfProponente,
       numeroMatricula,
       numeroContrato,
-      protocoloCartorio,
-      clientePrincipalId: clientePrincipal?._id
+      protocoloCartorio
     });
 
     return { 
@@ -482,8 +477,7 @@ export default function AdminFinancingPendenciasPage() {
       cpfProponente,
       numeroMatricula,
       numeroContrato,
-      protocoloCartorio,
-      clientePrincipalId: clientePrincipal?._id
+      protocoloCartorio
     };
   };
 
@@ -591,11 +585,6 @@ export default function AdminFinancingPendenciasPage() {
     setShowCardModal(true);
   };
 
-  const handleOpenClientCard = (clientId: string) => {
-    setSelectedClientId(clientId);
-    setShowClientModal(true);
-  };
-
   const renderPendenciasTable = () => {
     if (isLoading) {
       return (
@@ -635,7 +624,7 @@ export default function AdminFinancingPendenciasPage() {
         <TableBody>
           {filteredPendencias.map((pendencia) => {
             const overdueStatus = isOverdue(pendencia.dueDate, pendencia.status);
-            const { proponentePrincipal, pasta, cpfProponente, numeroMatricula, numeroContrato, protocoloCartorio, clientePrincipalId } = getAtendimentoInfo(pendencia.atendimentoRef);
+            const { proponentePrincipal, pasta, cpfProponente, numeroMatricula, numeroContrato, protocoloCartorio } = getAtendimentoInfo(pendencia.atendimentoRef);
             
             return (
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
@@ -644,18 +633,6 @@ export default function AdminFinancingPendenciasPage() {
                     {/* Nome do cliente com pasta entre parênteses */}
                     <div className={`text-base font-semibold mb-1 flex items-center gap-2 ${overdueStatus ? 'text-red-700' : 'text-foreground'}`}>
                       {proponentePrincipal} ({pasta})
-                      {clientePrincipalId && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenClientCard(clientePrincipalId)}
-                          className="h-6 px-2 text-xs text-buttonbackground hover:text-buttonbackground hover:bg-light-gray"
-                          title="Ver cartão do cliente"
-                        >
-                          <User className="w-3 h-3 mr-1" />
-                          Cliente
-                        </Button>
-                      )}
                       {pendencia.bloqueiaFase && (
                         <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
                       )}
@@ -1338,209 +1315,6 @@ export default function AdminFinancingPendenciasPage() {
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Ver Detalhes Completos
-                  </Button>
-                </div>
-              </div>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
-
-      {/* Client Card Modal */}
-      <Dialog open={showClientModal} onOpenChange={setShowClientModal}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">
-              Cartão do Cliente
-            </DialogTitle>
-          </DialogHeader>
-          {selectedClientId && (() => {
-            const cliente = clientes.find(c => c._id === selectedClientId);
-            if (!cliente) {
-              return <div className="p-6 text-center text-dark-gray">Cliente não encontrado</div>;
-            }
-
-            // Find all atendimentos for this client
-            const clientAtendimentos = atendimentos.filter(a => 
-              a.clientePrincipalRef === selectedClientId ||
-              serviceParties.some(sp => sp.clientRef === selectedClientId && sp.serviceRecordRef === a._id)
-            );
-
-            // Find all pendencias for this client
-            const clientPendencias = pendencias.filter(p => 
-              p.status !== 'Concluída' && 
-              clientAtendimentos.some(a => a._id === p.atendimentoRef)
-            );
-
-            return (
-              <div className="space-y-6 p-6">
-                {/* Client Basic Info */}
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">Nome</Label>
-                      <p className="font-paragraph text-base font-semibold">
-                        {cliente.clientName || cliente.nomeRazaoSocial || '—'}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">CPF/CNPJ</Label>
-                      <p className="font-paragraph text-base font-semibold">
-                        {cliente.cpfCnpj || '—'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">Email</Label>
-                      <p className="font-paragraph text-base">
-                        {cliente.emailPrincipal || cliente.email || '—'}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">Telefone</Label>
-                      <p className="font-paragraph text-base">
-                        {cliente.telefonePrincipal || cliente.phoneNumber || '—'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {cliente.whatsAppPrincipal && (
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">WhatsApp</Label>
-                      <p className="font-paragraph text-base">{cliente.whatsAppPrincipal}</p>
-                    </div>
-                  )}
-
-                  {cliente.address && (
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">Endereço</Label>
-                      <p className="font-paragraph text-base">{cliente.address}</p>
-                    </div>
-                  )}
-
-                  {cliente.tipoPessoa && (
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">Tipo de Pessoa</Label>
-                      <p className="font-paragraph text-base">{cliente.tipoPessoa}</p>
-                    </div>
-                  )}
-
-                  {cliente.status && (
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">Status</Label>
-                      <p className="font-paragraph text-base">{cliente.status}</p>
-                    </div>
-                  )}
-
-                  {cliente.notes && (
-                    <div>
-                      <Label className="font-paragraph text-sm text-dark-gray">Observações</Label>
-                      <p className="font-paragraph text-base">{cliente.notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Atendimentos */}
-                <div>
-                  <h3 className="font-heading text-lg font-bold mb-3">
-                    Atendimentos ({clientAtendimentos.length})
-                  </h3>
-                  {clientAtendimentos.length === 0 ? (
-                    <p className="text-dark-gray font-paragraph">Nenhum atendimento encontrado</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {clientAtendimentos.map(a => {
-                        const { pasta } = getAtendimentoInfo(a._id);
-                        return (
-                          <Card key={a._id} className="p-3">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-paragraph font-semibold">
-                                    Pasta: {pasta}
-                                  </span>
-                                  {a.faseFinanciamento && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {a.faseFinanciamento}
-                                    </Badge>
-                                  )}
-                                </div>
-                                {a.serviceType && (
-                                  <p className="text-sm text-dark-gray font-paragraph">
-                                    Tipo: {a.serviceType}
-                                  </p>
-                                )}
-                                {a.status && (
-                                  <p className="text-xs text-dark-gray font-paragraph mt-1">
-                                    Status: {a.status}
-                                  </p>
-                                )}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setShowClientModal(false);
-                                  navigate(`/admin/financiamento/${a._id}`);
-                                }}
-                                className="text-buttonbackground hover:text-buttonbackground"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Pendências */}
-                <div>
-                  <h3 className="font-heading text-lg font-bold mb-3">
-                    Pendências Abertas ({clientPendencias.length})
-                  </h3>
-                  {clientPendencias.length === 0 ? (
-                    <p className="text-dark-gray font-paragraph">Nenhuma pendência aberta</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {clientPendencias.map(p => (
-                        <Card key={p._id} className="p-3">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-paragraph font-semibold">{p.title}</span>
-                                {getPriorityBadge(p.priority)}
-                                {p.bloqueiaFase && (
-                                  <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
-                                )}
-                              </div>
-                              {p.description && (
-                                <p className="text-sm text-dark-gray font-paragraph">{p.description}</p>
-                              )}
-                              {p.dueDate && (
-                                <p className="text-xs text-dark-gray font-paragraph mt-1">
-                                  Prazo: {format(new Date(p.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowClientModal(false)}
-                    className="font-paragraph"
-                  >
-                    Fechar
                   </Button>
                 </div>
               </div>
