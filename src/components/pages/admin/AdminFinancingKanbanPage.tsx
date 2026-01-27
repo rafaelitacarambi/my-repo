@@ -3183,7 +3183,7 @@ export default function AdminFinancingKanbanPage() {
                               value={selectedCase?.statusResultadoFinanciamento || ''} 
                               onValueChange={(value) => {
                                 if (selectedCase) {
-                                  handleStatusResultadoChange(selectedCase._id, value as 'Aprovado' | 'Condicionado' | 'Reprovado');
+                                  handleStatusResultadoChange(selectedCase._id, value as 'Aprovado' | 'Condicionado' | 'Reprovado' | 'Em andamento');
                                 }
                               }}
                             >
