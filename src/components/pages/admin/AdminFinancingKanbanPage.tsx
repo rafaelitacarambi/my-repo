@@ -118,7 +118,7 @@ interface FinancingCase {
   tarefasAbertas: number;
   
   // Status de Resultado do Financiamento
-  statusResultadoFinanciamento?: 'Aprovado' | 'Condicionado' | 'Reprovado' | '';
+  statusResultadoFinanciamento?: 'Aprovado' | 'Condicionado' | 'Reprovado' | 'Em andamento' | '';
   
   // Ícones de bloqueio
   bloqueioDocumento?: boolean;
@@ -1197,7 +1197,7 @@ export default function AdminFinancingKanbanPage() {
   };
 
   // Handle status change with automatic column movement
-  const handleStatusResultadoChange = async (caseId: string, newStatus: 'Aprovado' | 'Condicionado' | 'Reprovado') => {
+  const handleStatusResultadoChange = async (caseId: string, newStatus: 'Aprovado' | 'Condicionado' | 'Reprovado' | 'Em andamento') => {
     try {
       const caseItem = cases.find(c => c._id === caseId);
       if (!caseItem) return;
@@ -1222,6 +1222,9 @@ export default function AdminFinancingKanbanPage() {
           shouldMove = true;
         }
         // Otherwise, keep in current phase (no automatic movement)
+      } else if (newStatus === 'Em andamento') {
+        // Em andamento keeps current phase (no automatic movement)
+        shouldMove = false;
       }
 
       // Optimistic update
@@ -3188,6 +3191,12 @@ export default function AdminFinancingKanbanPage() {
                                 <SelectValue placeholder="Selecione o status" />
                               </SelectTrigger>
                               <SelectContent>
+                                <SelectItem value="Em andamento">
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-blue-600" />
+                                    <span className="font-semibold">Em andamento</span>
+                                  </div>
+                                </SelectItem>
                                 <SelectItem value="Aprovado">
                                   <div className="flex items-center gap-2">
                                     <CheckCircle className="w-4 h-4 text-green-600" />
