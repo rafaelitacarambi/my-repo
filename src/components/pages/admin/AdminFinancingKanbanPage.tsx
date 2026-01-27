@@ -1197,7 +1197,7 @@ export default function AdminFinancingKanbanPage() {
   };
 
   // Handle status change with automatic column movement
-  const handleStatusResultadoChange = async (caseId: string, newStatus: 'Em Andamento' | 'Aprovado' | 'Condicionado' | 'Reprovado') => {
+  const handleStatusResultadoChange = async (caseId: string, newStatus: 'Aprovado' | 'Condicionado' | 'Reprovado') => {
     try {
       const caseItem = cases.find(c => c._id === caseId);
       if (!caseItem) return;
@@ -1209,10 +1209,7 @@ export default function AdminFinancingKanbanPage() {
       let targetColumn = caseItem.faseAtual; // Keep current by default
       let shouldMove = false;
       
-      if (newStatus === 'Em Andamento') {
-        // Keep in current phase, no automatic movement
-        shouldMove = false;
-      } else if (newStatus === 'Condicionado') {
+      if (newStatus === 'Condicionado') {
         targetColumn = 'condicionados';
         shouldMove = true;
       } else if (newStatus === 'Reprovado') {
@@ -3183,7 +3180,7 @@ export default function AdminFinancingKanbanPage() {
                               value={selectedCase?.statusResultadoFinanciamento || ''} 
                               onValueChange={(value) => {
                                 if (selectedCase) {
-                                  handleStatusResultadoChange(selectedCase._id, value as 'Em Andamento' | 'Aprovado' | 'Condicionado' | 'Reprovado');
+                                  handleStatusResultadoChange(selectedCase._id, value as 'Aprovado' | 'Condicionado' | 'Reprovado');
                                 }
                               }}
                             >
@@ -3191,12 +3188,6 @@ export default function AdminFinancingKanbanPage() {
                                 <SelectValue placeholder="Selecione o status" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Em Andamento">
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-blue-600" />
-                                    <span className="font-semibold">Em Andamento</span>
-                                  </div>
-                                </SelectItem>
                                 <SelectItem value="Aprovado">
                                   <div className="flex items-center gap-2">
                                     <CheckCircle className="w-4 h-4 text-green-600" />

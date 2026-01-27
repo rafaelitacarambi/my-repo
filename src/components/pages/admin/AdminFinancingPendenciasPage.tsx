@@ -18,8 +18,7 @@ import {
   CheckSquare,
   ExternalLink,
   Eye,
-  Settings,
-  X
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,7 +50,6 @@ export default function AdminFinancingPendenciasPage() {
   const [serviceParties, setServiceParties] = useState<ServiceParties[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedColumn, setSelectedColumn] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [responsavelFilter, setResponsavelFilter] = useState<string>('all');
@@ -61,7 +59,6 @@ export default function AdminFinancingPendenciasPage() {
   const [selectedAtendimentoId, setSelectedAtendimentoId] = useState<string | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showColumnSettings, setShowColumnSettings] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   
   // Load column preferences from localStorage
   const loadColumnPreferences = () => {
@@ -77,7 +74,7 @@ export default function AdminFinancingPendenciasPage() {
       prazo: true,
       prioridade: true,
       responsavel: true,
-      cpfProponente: true,
+      cpfProponente: false,
       numeroMatricula: false,
       numeroContrato: false,
       protocoloCartorio: false
@@ -107,7 +104,7 @@ export default function AdminFinancingPendenciasPage() {
 
   useEffect(() => {
     filterPendencias();
-  }, [pendencias, searchTerm, statusFilter, priorityFilter, responsavelFilter, prazoFilter, selectedColumn]);
+  }, [pendencias, searchTerm, statusFilter, priorityFilter, responsavelFilter, prazoFilter]);
 
   // Save column preferences to localStorage whenever they change
   useEffect(() => {
@@ -144,15 +141,6 @@ export default function AdminFinancingPendenciasPage() {
 
     // Filter only active pendencias (not completed)
     filtered = filtered.filter(p => p.status !== 'Concluída');
-
-    // Filter by selected column (fase do financiamento)
-    if (selectedColumn !== 'all') {
-      filtered = filtered.filter(p => {
-        if (!p.atendimentoRef) return false;
-        const atendimento = atendimentos.find(a => a._id === p.atendimentoRef);
-        return atendimento?.faseFinanciamento === selectedColumn;
-      });
-    }
 
     if (searchTerm) {
       filtered = filtered.filter(p => 
@@ -393,83 +381,38 @@ export default function AdminFinancingPendenciasPage() {
     let cpfProponente = '—';
     let clientePrincipal: Clients | undefined;
     
-    console.log('[getAtendimentoInfo] ===== Processing atendimento:', atendimentoRef);
-    console.log('[getAtendimentoInfo] clientePrincipalRef:', atendimento.clientePrincipalRef);
-    console.log('[getAtendimentoInfo] Total clientes available:', clientes.length);
-    console.log('[getAtendimentoInfo] Total serviceParties available:', serviceParties.length);
+    // Priority 1: atendimento.proponentePrincipalRef (if exists in future)
+    // For now, this field doesn't exist in ServiceRecords, so skip
     
-    // Priority 1: atendimento.clientePrincipalRef
+    // Priority 2: atendimento.clientePrincipalRef
     if (atendimento.clientePrincipalRef) {
       clientePrincipal = clientes.find(c => c._id === atendimento.clientePrincipalRef);
-      console.log('[getAtendimentoInfo] Found clientePrincipal via clientePrincipalRef:', clientePrincipal);
-      
-      if (clientePrincipal) {
-        proponentePrincipal = clientePrincipal.clientName || clientePrincipal.nomeRazaoSocial || atendimento.contactName || '—';
-        // Try both cpfCnpj and cpfCnpj fields (handle different naming)
-        cpfProponente = clientePrincipal.cpfCnpj || (clientePrincipal as any).cpf || (clientePrincipal as any).cnpj || '—';
-        console.log('[getAtendimentoInfo] ✅ CPF from clientePrincipal:', cpfProponente);
-        console.log('[getAtendimentoInfo] clientePrincipal full object:', JSON.stringify(clientePrincipal));
-      } else {
-        console.log('[getAtendimentoInfo] ⚠️ clientePrincipalRef exists but cliente not found in clientes array');
-        console.log('[getAtendimentoInfo] Available cliente IDs:', clientes.map(c => c._id).join(', '));
-        proponentePrincipal = atendimento.contactName || '—';
-      }
+      proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || atendimento.contactName || '—';
+      cpfProponente = clientePrincipal?.cpfCnpj || '—';
     } 
-    
-    // Priority 2: Search in ServiceParties for "Proponente Principal"
-    if (!clientePrincipal) {
-      console.log('[getAtendimentoInfo] Searching in ServiceParties...');
+    // Priority 3: Search in ServiceParties for "Proponente Principal"
+    else {
       const principalParty = serviceParties.find(
         p => p.serviceRecordRef === atendimentoRef && p.roleInService === 'Proponente Principal'
       );
-      console.log('[getAtendimentoInfo] Found principalParty:', principalParty);
-      
       if (principalParty && principalParty.clientRef) {
         clientePrincipal = clientes.find(c => c._id === principalParty.clientRef);
-        console.log('[getAtendimentoInfo] Found clientePrincipal via ServiceParties:', clientePrincipal);
-        
-        if (clientePrincipal) {
-          proponentePrincipal = clientePrincipal.clientName || clientePrincipal.nomeRazaoSocial || '—';
-          // Try both cpfCnpj and cpfCnpj fields (handle different naming)
-          cpfProponente = clientePrincipal.cpfCnpj || (clientePrincipal as any).cpf || (clientePrincipal as any).cnpj || '—';
-          console.log('[getAtendimentoInfo] ✅ CPF from ServiceParties:', cpfProponente);
-          console.log('[getAtendimentoInfo] clientePrincipal full object:', JSON.stringify(clientePrincipal));
-        } else {
-          console.log('[getAtendimentoInfo] ⚠️ principalParty.clientRef exists but cliente not found');
-          console.log('[getAtendimentoInfo] Available cliente IDs:', clientes.map(c => c._id).join(', '));
-        }
-      } else {
-        console.log('[getAtendimentoInfo] ⚠️ No principalParty found for this atendimento');
-        console.log('[getAtendimentoInfo] Available serviceParties for this atendimento:', 
-          serviceParties.filter(p => p.serviceRecordRef === atendimentoRef).map(p => ({ role: p.roleInService, clientRef: p.clientRef }))
-        );
+        proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || '—';
+        cpfProponente = clientePrincipal?.cpfCnpj || '—';
+      } else if (atendimento.contactName) {
+        proponentePrincipal = atendimento.contactName;
       }
-    }
-    
-    // Priority 3: Fallback to contactName
-    if (proponentePrincipal === '—' && atendimento.contactName) {
-      proponentePrincipal = atendimento.contactName;
-      console.log('[getAtendimentoInfo] Using contactName as fallback:', proponentePrincipal);
     }
 
     // Get pasta
     const pasta = atendimento.pastaInterna || '—';
 
-    // Get additional fields from atendimento
-    // Note: These fields need to be added to the ServiceRecords entity in the future
-    // For now, we'll check if they exist (they might be added via visual editing)
-    const numeroMatricula = (atendimento as any).numeroMatricula || '—';
-    const numeroContrato = (atendimento as any).numeroContrato || '—';
-    const protocoloCartorio = (atendimento as any).numeroProtocoloCartorio || '—';
-
-    console.log('[getAtendimentoInfo] ===== Final result:', { 
-      proponentePrincipal, 
-      pasta,
-      cpfProponente,
-      numeroMatricula,
-      numeroContrato,
-      protocoloCartorio
-    });
+    // Note: numeroMatricula, numeroContrato, and protocoloCartorio are not currently stored
+    // in the ServiceRecords entity. These fields would need to be added to the entity
+    // or fetched from a related collection (e.g., DetalhesdoFinanciamento)
+    const numeroMatricula = '—'; // TODO: Add field to entity
+    const numeroContrato = '—'; // TODO: Add field to entity
+    const protocoloCartorio = '—'; // TODO: Add field to entity
 
     return { 
       proponentePrincipal, 
@@ -602,10 +545,6 @@ export default function AdminFinancingPendenciasPage() {
       );
     }
 
-    // Check if any identification column is visible
-    const hasIdentificationColumns = visibleColumns.cpfProponente || visibleColumns.numeroMatricula || 
-                                      visibleColumns.numeroContrato || visibleColumns.protocoloCartorio;
-
     return (
       <Table>
         <TableHeader>
@@ -630,20 +569,20 @@ export default function AdminFinancingPendenciasPage() {
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
                 <TableCell className="font-paragraph font-medium">
                   <div>
-                    {/* Nome do cliente com pasta entre parênteses */}
-                    <div className={`text-base font-semibold mb-1 flex items-center gap-2 ${overdueStatus ? 'text-red-700' : 'text-foreground'}`}>
+                    {/* Identification: Proponent and Pasta */}
+                    <div className="text-xs text-dark-gray mb-2">
                       {proponentePrincipal} ({pasta})
+                    </div>
+                    
+                    {/* Title and badges */}
+                    <div className={`flex items-center gap-2 ${overdueStatus ? 'text-red-700 font-bold' : ''}`}>
+                      {pendencia.title}
                       {pendencia.bloqueiaFase && (
                         <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
                       )}
                       {overdueStatus && (
                         <Badge className="text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
                       )}
-                    </div>
-                    
-                    {/* Descrição da pendência embaixo */}
-                    <div className="text-sm text-dark-gray">
-                      {pendencia.description || '—'}
                     </div>
                   </div>
                 </TableCell>
@@ -751,42 +690,23 @@ export default function AdminFinancingPendenciasPage() {
                   Gerencie todas as pendências dos processos de financiamento
                 </p>
               </div>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  size="default"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
-                >
-                  <Filter className="w-5 h-5 mr-2" />
-                  Filtros
-                </Button>
-                <Button
-                  variant="outline"
-                  size="default"
-                  onClick={() => setShowColumnSettings(!showColumnSettings)}
-                  className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
-                >
-                  <Settings className="w-5 h-5 mr-2" />
-                  Colunas
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="default"
+                onClick={() => setShowColumnSettings(!showColumnSettings)}
+                className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
+              >
+                <Settings className="w-5 h-5 mr-2" />
+                Colunas
+              </Button>
             </div>
           </div>
 
           {/* Column Settings Panel */}
           {showColumnSettings && (
             <Card className="mb-6">
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader>
                 <CardTitle className="font-heading text-lg">Configurar Colunas Visíveis</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowColumnSettings(false)}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -880,132 +800,81 @@ export default function AdminFinancingPendenciasPage() {
           )}
 
           {/* Filters Section */}
-          {showFilters && (
-            <Card className="mb-6">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="font-heading text-lg">Filtros</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowFilters(false)}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  {/* Column Filter (Fase do Financiamento) */}
-                  <div>
-                    <Label className="font-paragraph text-sm mb-2 block">Fase do Kanban</Label>
-                    <Select value={selectedColumn} onValueChange={setSelectedColumn}>
-                      <SelectTrigger className="font-paragraph">
-                        <SelectValue placeholder="Todas as fases" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as fases</SelectItem>
-                        <SelectItem value="aguardando-imovel">Aguardando o imóvel</SelectItem>
-                        <SelectItem value="condicionados">Condicionados</SelectItem>
-                        <SelectItem value="pendencia">Pendência</SelectItem>
-                        <SelectItem value="consultar-restricao">Consultar restrição</SelectItem>
-                        <SelectItem value="novos-clientes">Novos clientes</SelectItem>
-                        <SelectItem value="analise-documentos">Análise de documentos</SelectItem>
-                        <SelectItem value="cadastro-cliente">Cadastro de cliente</SelectItem>
-                        <SelectItem value="avaliacao-risco">Avaliação de risco</SelectItem>
-                        <SelectItem value="engenharia">Engenharia</SelectItem>
-                        <SelectItem value="fgts">FGTS</SelectItem>
-                        <SelectItem value="formularios">Formulários</SelectItem>
-                        <SelectItem value="siopi">SIOPI</SelectItem>
-                        <SelectItem value="solicitar-reserva">Solicitar reserva orçamentária</SelectItem>
-                        <SelectItem value="sictd">SICTD</SelectItem>
-                        <SelectItem value="conformidade">Conformidade</SelectItem>
-                        <SelectItem value="entrevista">Entrevista</SelectItem>
-                        <SelectItem value="assinatura-minuta">Assinatura minuta</SelectItem>
-                        <SelectItem value="itbi">ITBI</SelectItem>
-                        <SelectItem value="cartorio-rsales">Cartório (R Sales)</SelectItem>
-                        <SelectItem value="cartorio-cliente">Cartório por conta do cliente</SelectItem>
-                        <SelectItem value="garantia">Garantia</SelectItem>
-                        <SelectItem value="concluido">Concluído</SelectItem>
-                        <SelectItem value="acompanhamento-obra">Acompanhamento de obra</SelectItem>
-                        <SelectItem value="reprovados">Reprovados</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Responsável Filter */}
-                  <div>
-                    <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
-                    <Select value={responsavelFilter} onValueChange={setResponsavelFilter}>
-                      <SelectTrigger className="font-paragraph">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="Cliente">Cliente</SelectItem>
-                        <SelectItem value="Vendedor">Vendedor</SelectItem>
-                        <SelectItem value="Banco">Banco</SelectItem>
-                        <SelectItem value="Interno">Interno</SelectItem>
-                        <SelectItem value="Proponente">Proponente</SelectItem>
-                        <SelectItem value="Caixa">Caixa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Prioridade Filter */}
-                  <div>
-                    <Label className="font-paragraph text-sm mb-2 block">Prioridade</Label>
-                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                      <SelectTrigger className="font-paragraph">
-                        <SelectValue placeholder="Todas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        <SelectItem value="Alta">Alta</SelectItem>
-                        <SelectItem value="Média">Média</SelectItem>
-                        <SelectItem value="Baixa">Baixa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Prazo Filter */}
-                  <div>
-                    <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
-                    <Select value={prazoFilter} onValueChange={setPrazoFilter}>
-                      <SelectTrigger className="font-paragraph">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="atrasado">Atrasado</SelectItem>
-                        <SelectItem value="hoje">Hoje</SelectItem>
-                        <SelectItem value="proximos-7-dias">Próximos 7 dias</SelectItem>
-                        <SelectItem value="proximos-30-dias">Próximos 30 dias</SelectItem>
-                        <SelectItem value="sem-prazo">Sem prazo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Clear Filters Button */}
-                  <div className="flex items-end">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedColumn('all');
-                        setResponsavelFilter('all');
-                        setPriorityFilter('all');
-                        setPrazoFilter('all');
-                        setSearchTerm('');
-                      }}
-                      className="w-full font-paragraph"
-                    >
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      Limpar Filtros
-                    </Button>
-                  </div>
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Responsável Filter */}
+                <div>
+                  <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
+                  <Select value={responsavelFilter} onValueChange={setResponsavelFilter}>
+                    <SelectTrigger className="font-paragraph">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="Cliente">Cliente</SelectItem>
+                      <SelectItem value="Vendedor">Vendedor</SelectItem>
+                      <SelectItem value="Banco">Banco</SelectItem>
+                      <SelectItem value="Interno">Interno</SelectItem>
+                      <SelectItem value="Proponente">Proponente</SelectItem>
+                      <SelectItem value="Caixa">Caixa</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+
+                {/* Prioridade Filter */}
+                <div>
+                  <Label className="font-paragraph text-sm mb-2 block">Prioridade</Label>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger className="font-paragraph">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="Alta">Alta</SelectItem>
+                      <SelectItem value="Média">Média</SelectItem>
+                      <SelectItem value="Baixa">Baixa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Prazo Filter */}
+                <div>
+                  <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
+                  <Select value={prazoFilter} onValueChange={setPrazoFilter}>
+                    <SelectTrigger className="font-paragraph">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="atrasado">Atrasado</SelectItem>
+                      <SelectItem value="hoje">Hoje</SelectItem>
+                      <SelectItem value="proximos-7-dias">Próximos 7 dias</SelectItem>
+                      <SelectItem value="proximos-30-dias">Próximos 30 dias</SelectItem>
+                      <SelectItem value="sem-prazo">Sem prazo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Clear Filters Button */}
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setResponsavelFilter('all');
+                      setPriorityFilter('all');
+                      setPrazoFilter('all');
+                      setSearchTerm('');
+                    }}
+                    className="w-full font-paragraph"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Limpar Filtros
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Pendências Table */}
           <Card className="mb-8">
