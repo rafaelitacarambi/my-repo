@@ -18,7 +18,8 @@ import {
   CheckSquare,
   ExternalLink,
   Eye,
-  Settings
+  Settings,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ export default function AdminFinancingPendenciasPage() {
   const [serviceParties, setServiceParties] = useState<ServiceParties[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedColumn, setSelectedColumn] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [responsavelFilter, setResponsavelFilter] = useState<string>('all');
@@ -58,7 +60,10 @@ export default function AdminFinancingPendenciasPage() {
   const [editingPendencia, setEditingPendencia] = useState<PendnciasdoFinanciamento | null>(null);
   const [selectedAtendimentoId, setSelectedAtendimentoId] = useState<string | null>(null);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   
   // Load column preferences from localStorage
   const loadColumnPreferences = () => {
@@ -74,7 +79,7 @@ export default function AdminFinancingPendenciasPage() {
       prazo: true,
       prioridade: true,
       responsavel: true,
-      cpfProponente: false,
+      cpfProponente: true,
       numeroMatricula: false,
       numeroContrato: false,
       protocoloCartorio: false
@@ -104,7 +109,7 @@ export default function AdminFinancingPendenciasPage() {
 
   useEffect(() => {
     filterPendencias();
-  }, [pendencias, searchTerm, statusFilter, priorityFilter, responsavelFilter, prazoFilter]);
+  }, [pendencias, searchTerm, statusFilter, priorityFilter, responsavelFilter, prazoFilter, selectedColumn]);
 
   // Save column preferences to localStorage whenever they change
   useEffect(() => {
@@ -141,6 +146,15 @@ export default function AdminFinancingPendenciasPage() {
 
     // Filter only active pendencias (not completed)
     filtered = filtered.filter(p => p.status !== 'Concluída');
+
+    // Filter by selected column (fase do financiamento)
+    if (selectedColumn !== 'all') {
+      filtered = filtered.filter(p => {
+        if (!p.atendimentoRef) return false;
+        const atendimento = atendimentos.find(a => a._id === p.atendimentoRef);
+        return atendimento?.faseFinanciamento === selectedColumn;
+      });
+    }
 
     if (searchTerm) {
       filtered = filtered.filter(p => 
@@ -363,7 +377,8 @@ export default function AdminFinancingPendenciasPage() {
       cpfProponente: '—',
       numeroMatricula: '—',
       numeroContrato: '—',
-      protocoloCartorio: '—'
+      protocoloCartorio: '—',
+      clientePrincipalId: undefined
     };
     
     const atendimento = atendimentos.find(a => a._id === atendimentoRef);
@@ -373,7 +388,8 @@ export default function AdminFinancingPendenciasPage() {
       cpfProponente: '—',
       numeroMatricula: '—',
       numeroContrato: '—',
-      protocoloCartorio: '—'
+      protocoloCartorio: '—',
+      clientePrincipalId: undefined
     };
 
     // Get proponent principal name and CPF with priority logic
@@ -381,38 +397,84 @@ export default function AdminFinancingPendenciasPage() {
     let cpfProponente = '—';
     let clientePrincipal: Clients | undefined;
     
-    // Priority 1: atendimento.proponentePrincipalRef (if exists in future)
-    // For now, this field doesn't exist in ServiceRecords, so skip
+    console.log('[getAtendimentoInfo] ===== Processing atendimento:', atendimentoRef);
+    console.log('[getAtendimentoInfo] clientePrincipalRef:', atendimento.clientePrincipalRef);
+    console.log('[getAtendimentoInfo] Total clientes available:', clientes.length);
+    console.log('[getAtendimentoInfo] Total serviceParties available:', serviceParties.length);
     
-    // Priority 2: atendimento.clientePrincipalRef
+    // Priority 1: atendimento.clientePrincipalRef
     if (atendimento.clientePrincipalRef) {
       clientePrincipal = clientes.find(c => c._id === atendimento.clientePrincipalRef);
-      proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || atendimento.contactName || '—';
-      cpfProponente = clientePrincipal?.cpfCnpj || '—';
+      console.log('[getAtendimentoInfo] Found clientePrincipal via clientePrincipalRef:', clientePrincipal);
+      
+      if (clientePrincipal) {
+        proponentePrincipal = clientePrincipal.clientName || clientePrincipal.nomeRazaoSocial || atendimento.contactName || '—';
+        // Try both cpfCnpj and cpfCnpj fields (handle different naming)
+        cpfProponente = clientePrincipal.cpfCnpj || (clientePrincipal as any).cpf || (clientePrincipal as any).cnpj || '—';
+        console.log('[getAtendimentoInfo] ✅ CPF from clientePrincipal:', cpfProponente);
+        console.log('[getAtendimentoInfo] clientePrincipal full object:', JSON.stringify(clientePrincipal));
+      } else {
+        console.log('[getAtendimentoInfo] ⚠️ clientePrincipalRef exists but cliente not found in clientes array');
+        console.log('[getAtendimentoInfo] Available cliente IDs:', clientes.map(c => c._id).join(', '));
+        proponentePrincipal = atendimento.contactName || '—';
+      }
     } 
-    // Priority 3: Search in ServiceParties for "Proponente Principal"
-    else {
+    
+    // Priority 2: Search in ServiceParties for "Proponente Principal"
+    if (!clientePrincipal) {
+      console.log('[getAtendimentoInfo] Searching in ServiceParties...');
       const principalParty = serviceParties.find(
         p => p.serviceRecordRef === atendimentoRef && p.roleInService === 'Proponente Principal'
       );
+      console.log('[getAtendimentoInfo] Found principalParty:', principalParty);
+      
       if (principalParty && principalParty.clientRef) {
         clientePrincipal = clientes.find(c => c._id === principalParty.clientRef);
-        proponentePrincipal = clientePrincipal?.clientName || clientePrincipal?.nomeRazaoSocial || '—';
-        cpfProponente = clientePrincipal?.cpfCnpj || '—';
-      } else if (atendimento.contactName) {
-        proponentePrincipal = atendimento.contactName;
+        console.log('[getAtendimentoInfo] Found clientePrincipal via ServiceParties:', clientePrincipal);
+        
+        if (clientePrincipal) {
+          proponentePrincipal = clientePrincipal.clientName || clientePrincipal.nomeRazaoSocial || '—';
+          // Try both cpfCnpj and cpfCnpj fields (handle different naming)
+          cpfProponente = clientePrincipal.cpfCnpj || (clientePrincipal as any).cpf || (clientePrincipal as any).cnpj || '—';
+          console.log('[getAtendimentoInfo] ✅ CPF from ServiceParties:', cpfProponente);
+          console.log('[getAtendimentoInfo] clientePrincipal full object:', JSON.stringify(clientePrincipal));
+        } else {
+          console.log('[getAtendimentoInfo] ⚠️ principalParty.clientRef exists but cliente not found');
+          console.log('[getAtendimentoInfo] Available cliente IDs:', clientes.map(c => c._id).join(', '));
+        }
+      } else {
+        console.log('[getAtendimentoInfo] ⚠️ No principalParty found for this atendimento');
+        console.log('[getAtendimentoInfo] Available serviceParties for this atendimento:', 
+          serviceParties.filter(p => p.serviceRecordRef === atendimentoRef).map(p => ({ role: p.roleInService, clientRef: p.clientRef }))
+        );
       }
+    }
+    
+    // Priority 3: Fallback to contactName
+    if (proponentePrincipal === '—' && atendimento.contactName) {
+      proponentePrincipal = atendimento.contactName;
+      console.log('[getAtendimentoInfo] Using contactName as fallback:', proponentePrincipal);
     }
 
     // Get pasta
     const pasta = atendimento.pastaInterna || '—';
 
-    // Note: numeroMatricula, numeroContrato, and protocoloCartorio are not currently stored
-    // in the ServiceRecords entity. These fields would need to be added to the entity
-    // or fetched from a related collection (e.g., DetalhesdoFinanciamento)
-    const numeroMatricula = '—'; // TODO: Add field to entity
-    const numeroContrato = '—'; // TODO: Add field to entity
-    const protocoloCartorio = '—'; // TODO: Add field to entity
+    // Get additional fields from atendimento
+    // Note: These fields need to be added to the ServiceRecords entity in the future
+    // For now, we'll check if they exist (they might be added via visual editing)
+    const numeroMatricula = (atendimento as any).numeroMatricula || '—';
+    const numeroContrato = (atendimento as any).numeroContrato || '—';
+    const protocoloCartorio = (atendimento as any).numeroProtocoloCartorio || '—';
+
+    console.log('[getAtendimentoInfo] ===== Final result:', { 
+      proponentePrincipal, 
+      pasta,
+      cpfProponente,
+      numeroMatricula,
+      numeroContrato,
+      protocoloCartorio,
+      clientePrincipalId: clientePrincipal?._id
+    });
 
     return { 
       proponentePrincipal, 
@@ -420,7 +482,8 @@ export default function AdminFinancingPendenciasPage() {
       cpfProponente,
       numeroMatricula,
       numeroContrato,
-      protocoloCartorio
+      protocoloCartorio,
+      clientePrincipalId: clientePrincipal?._id
     };
   };
 
@@ -528,6 +591,11 @@ export default function AdminFinancingPendenciasPage() {
     setShowCardModal(true);
   };
 
+  const handleOpenClientCard = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setShowClientModal(true);
+  };
+
   const renderPendenciasTable = () => {
     if (isLoading) {
       return (
@@ -544,6 +612,10 @@ export default function AdminFinancingPendenciasPage() {
         </div>
       );
     }
+
+    // Check if any identification column is visible
+    const hasIdentificationColumns = visibleColumns.cpfProponente || visibleColumns.numeroMatricula || 
+                                      visibleColumns.numeroContrato || visibleColumns.protocoloCartorio;
 
     return (
       <Table>
@@ -563,26 +635,38 @@ export default function AdminFinancingPendenciasPage() {
         <TableBody>
           {filteredPendencias.map((pendencia) => {
             const overdueStatus = isOverdue(pendencia.dueDate, pendencia.status);
-            const { proponentePrincipal, pasta, cpfProponente, numeroMatricula, numeroContrato, protocoloCartorio } = getAtendimentoInfo(pendencia.atendimentoRef);
+            const { proponentePrincipal, pasta, cpfProponente, numeroMatricula, numeroContrato, protocoloCartorio, clientePrincipalId } = getAtendimentoInfo(pendencia.atendimentoRef);
             
             return (
               <TableRow key={pendencia._id} className={overdueStatus ? 'bg-red-50' : ''}>
                 <TableCell className="font-paragraph font-medium">
                   <div>
-                    {/* Identification: Proponent and Pasta */}
-                    <div className="text-xs text-dark-gray mb-2">
+                    {/* Nome do cliente com pasta entre parênteses */}
+                    <div className={`text-base font-semibold mb-1 flex items-center gap-2 ${overdueStatus ? 'text-red-700' : 'text-foreground'}`}>
                       {proponentePrincipal} ({pasta})
-                    </div>
-                    
-                    {/* Title and badges */}
-                    <div className={`flex items-center gap-2 ${overdueStatus ? 'text-red-700 font-bold' : ''}`}>
-                      {pendencia.title}
+                      {clientePrincipalId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenClientCard(clientePrincipalId)}
+                          className="h-6 px-2 text-xs text-buttonbackground hover:text-buttonbackground hover:bg-light-gray"
+                          title="Ver cartão do cliente"
+                        >
+                          <User className="w-3 h-3 mr-1" />
+                          Cliente
+                        </Button>
+                      )}
                       {pendencia.bloqueiaFase && (
                         <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
                       )}
                       {overdueStatus && (
                         <Badge className="text-xs bg-red-600 text-white">⚠️ ATRASADA</Badge>
                       )}
+                    </div>
+                    
+                    {/* Descrição da pendência embaixo */}
+                    <div className="text-sm text-dark-gray">
+                      {pendencia.description || '—'}
                     </div>
                   </div>
                 </TableCell>
@@ -690,23 +774,42 @@ export default function AdminFinancingPendenciasPage() {
                   Gerencie todas as pendências dos processos de financiamento
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="default"
-                onClick={() => setShowColumnSettings(!showColumnSettings)}
-                className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
-              >
-                <Settings className="w-5 h-5 mr-2" />
-                Colunas
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
+                >
+                  <Filter className="w-5 h-5 mr-2" />
+                  Filtros
+                </Button>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setShowColumnSettings(!showColumnSettings)}
+                  className="font-paragraph bg-white hover:bg-light-gray border-2 border-buttonbackground text-buttonbackground hover:text-buttonbackground font-semibold px-6 py-2 shadow-sm"
+                >
+                  <Settings className="w-5 h-5 mr-2" />
+                  Colunas
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Column Settings Panel */}
           {showColumnSettings && (
             <Card className="mb-6">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="font-heading text-lg">Configurar Colunas Visíveis</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowColumnSettings(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -800,81 +903,132 @@ export default function AdminFinancingPendenciasPage() {
           )}
 
           {/* Filters Section */}
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Responsável Filter */}
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
-                  <Select value={responsavelFilter} onValueChange={setResponsavelFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="Cliente">Cliente</SelectItem>
-                      <SelectItem value="Vendedor">Vendedor</SelectItem>
-                      <SelectItem value="Banco">Banco</SelectItem>
-                      <SelectItem value="Interno">Interno</SelectItem>
-                      <SelectItem value="Proponente">Proponente</SelectItem>
-                      <SelectItem value="Caixa">Caixa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {showFilters && (
+            <Card className="mb-6">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="font-heading text-lg">Filtros</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFilters(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {/* Column Filter (Fase do Financiamento) */}
+                  <div>
+                    <Label className="font-paragraph text-sm mb-2 block">Fase do Kanban</Label>
+                    <Select value={selectedColumn} onValueChange={setSelectedColumn}>
+                      <SelectTrigger className="font-paragraph">
+                        <SelectValue placeholder="Todas as fases" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas as fases</SelectItem>
+                        <SelectItem value="aguardando-imovel">Aguardando o imóvel</SelectItem>
+                        <SelectItem value="condicionados">Condicionados</SelectItem>
+                        <SelectItem value="pendencia">Pendência</SelectItem>
+                        <SelectItem value="consultar-restricao">Consultar restrição</SelectItem>
+                        <SelectItem value="novos-clientes">Novos clientes</SelectItem>
+                        <SelectItem value="analise-documentos">Análise de documentos</SelectItem>
+                        <SelectItem value="cadastro-cliente">Cadastro de cliente</SelectItem>
+                        <SelectItem value="avaliacao-risco">Avaliação de risco</SelectItem>
+                        <SelectItem value="engenharia">Engenharia</SelectItem>
+                        <SelectItem value="fgts">FGTS</SelectItem>
+                        <SelectItem value="formularios">Formulários</SelectItem>
+                        <SelectItem value="siopi">SIOPI</SelectItem>
+                        <SelectItem value="solicitar-reserva">Solicitar reserva orçamentária</SelectItem>
+                        <SelectItem value="sictd">SICTD</SelectItem>
+                        <SelectItem value="conformidade">Conformidade</SelectItem>
+                        <SelectItem value="entrevista">Entrevista</SelectItem>
+                        <SelectItem value="assinatura-minuta">Assinatura minuta</SelectItem>
+                        <SelectItem value="itbi">ITBI</SelectItem>
+                        <SelectItem value="cartorio-rsales">Cartório (R Sales)</SelectItem>
+                        <SelectItem value="cartorio-cliente">Cartório por conta do cliente</SelectItem>
+                        <SelectItem value="garantia">Garantia</SelectItem>
+                        <SelectItem value="concluido">Concluído</SelectItem>
+                        <SelectItem value="acompanhamento-obra">Acompanhamento de obra</SelectItem>
+                        <SelectItem value="reprovados">Reprovados</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Prioridade Filter */}
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block">Prioridade</Label>
-                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas</SelectItem>
-                      <SelectItem value="Alta">Alta</SelectItem>
-                      <SelectItem value="Média">Média</SelectItem>
-                      <SelectItem value="Baixa">Baixa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Responsável Filter */}
+                  <div>
+                    <Label className="font-paragraph text-sm mb-2 block">Responsável</Label>
+                    <Select value={responsavelFilter} onValueChange={setResponsavelFilter}>
+                      <SelectTrigger className="font-paragraph">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="Cliente">Cliente</SelectItem>
+                        <SelectItem value="Vendedor">Vendedor</SelectItem>
+                        <SelectItem value="Banco">Banco</SelectItem>
+                        <SelectItem value="Interno">Interno</SelectItem>
+                        <SelectItem value="Proponente">Proponente</SelectItem>
+                        <SelectItem value="Caixa">Caixa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Prazo Filter */}
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
-                  <Select value={prazoFilter} onValueChange={setPrazoFilter}>
-                    <SelectTrigger className="font-paragraph">
-                      <SelectValue placeholder="Todos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="atrasado">Atrasado</SelectItem>
-                      <SelectItem value="hoje">Hoje</SelectItem>
-                      <SelectItem value="proximos-7-dias">Próximos 7 dias</SelectItem>
-                      <SelectItem value="proximos-30-dias">Próximos 30 dias</SelectItem>
-                      <SelectItem value="sem-prazo">Sem prazo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {/* Prioridade Filter */}
+                  <div>
+                    <Label className="font-paragraph text-sm mb-2 block">Prioridade</Label>
+                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                      <SelectTrigger className="font-paragraph">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="Alta">Alta</SelectItem>
+                        <SelectItem value="Média">Média</SelectItem>
+                        <SelectItem value="Baixa">Baixa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Clear Filters Button */}
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setResponsavelFilter('all');
-                      setPriorityFilter('all');
-                      setPrazoFilter('all');
-                      setSearchTerm('');
-                    }}
-                    className="w-full font-paragraph"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Limpar Filtros
-                  </Button>
+                  {/* Prazo Filter */}
+                  <div>
+                    <Label className="font-paragraph text-sm mb-2 block">Prazo</Label>
+                    <Select value={prazoFilter} onValueChange={setPrazoFilter}>
+                      <SelectTrigger className="font-paragraph">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="atrasado">Atrasado</SelectItem>
+                        <SelectItem value="hoje">Hoje</SelectItem>
+                        <SelectItem value="proximos-7-dias">Próximos 7 dias</SelectItem>
+                        <SelectItem value="proximos-30-dias">Próximos 30 dias</SelectItem>
+                        <SelectItem value="sem-prazo">Sem prazo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Clear Filters Button */}
+                  <div className="flex items-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedColumn('all');
+                        setResponsavelFilter('all');
+                        setPriorityFilter('all');
+                        setPrazoFilter('all');
+                        setSearchTerm('');
+                      }}
+                      className="w-full font-paragraph"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Limpar Filtros
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Pendências Table */}
           <Card className="mb-8">
@@ -1184,6 +1338,209 @@ export default function AdminFinancingPendenciasPage() {
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Ver Detalhes Completos
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Client Card Modal */}
+      <Dialog open={showClientModal} onOpenChange={setShowClientModal}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">
+              Cartão do Cliente
+            </DialogTitle>
+          </DialogHeader>
+          {selectedClientId && (() => {
+            const cliente = clientes.find(c => c._id === selectedClientId);
+            if (!cliente) {
+              return <div className="p-6 text-center text-dark-gray">Cliente não encontrado</div>;
+            }
+
+            // Find all atendimentos for this client
+            const clientAtendimentos = atendimentos.filter(a => 
+              a.clientePrincipalRef === selectedClientId ||
+              serviceParties.some(sp => sp.clientRef === selectedClientId && sp.serviceRecordRef === a._id)
+            );
+
+            // Find all pendencias for this client
+            const clientPendencias = pendencias.filter(p => 
+              p.status !== 'Concluída' && 
+              clientAtendimentos.some(a => a._id === p.atendimentoRef)
+            );
+
+            return (
+              <div className="space-y-6 p-6">
+                {/* Client Basic Info */}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Nome</Label>
+                      <p className="font-paragraph text-base font-semibold">
+                        {cliente.clientName || cliente.nomeRazaoSocial || '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">CPF/CNPJ</Label>
+                      <p className="font-paragraph text-base font-semibold">
+                        {cliente.cpfCnpj || '—'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Email</Label>
+                      <p className="font-paragraph text-base">
+                        {cliente.emailPrincipal || cliente.email || '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Telefone</Label>
+                      <p className="font-paragraph text-base">
+                        {cliente.telefonePrincipal || cliente.phoneNumber || '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {cliente.whatsAppPrincipal && (
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">WhatsApp</Label>
+                      <p className="font-paragraph text-base">{cliente.whatsAppPrincipal}</p>
+                    </div>
+                  )}
+
+                  {cliente.address && (
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Endereço</Label>
+                      <p className="font-paragraph text-base">{cliente.address}</p>
+                    </div>
+                  )}
+
+                  {cliente.tipoPessoa && (
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Tipo de Pessoa</Label>
+                      <p className="font-paragraph text-base">{cliente.tipoPessoa}</p>
+                    </div>
+                  )}
+
+                  {cliente.status && (
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Status</Label>
+                      <p className="font-paragraph text-base">{cliente.status}</p>
+                    </div>
+                  )}
+
+                  {cliente.notes && (
+                    <div>
+                      <Label className="font-paragraph text-sm text-dark-gray">Observações</Label>
+                      <p className="font-paragraph text-base">{cliente.notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Atendimentos */}
+                <div>
+                  <h3 className="font-heading text-lg font-bold mb-3">
+                    Atendimentos ({clientAtendimentos.length})
+                  </h3>
+                  {clientAtendimentos.length === 0 ? (
+                    <p className="text-dark-gray font-paragraph">Nenhum atendimento encontrado</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {clientAtendimentos.map(a => {
+                        const { pasta } = getAtendimentoInfo(a._id);
+                        return (
+                          <Card key={a._id} className="p-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-paragraph font-semibold">
+                                    Pasta: {pasta}
+                                  </span>
+                                  {a.faseFinanciamento && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {a.faseFinanciamento}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {a.serviceType && (
+                                  <p className="text-sm text-dark-gray font-paragraph">
+                                    Tipo: {a.serviceType}
+                                  </p>
+                                )}
+                                {a.status && (
+                                  <p className="text-xs text-dark-gray font-paragraph mt-1">
+                                    Status: {a.status}
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setShowClientModal(false);
+                                  navigate(`/admin/financiamento/${a._id}`);
+                                }}
+                                className="text-buttonbackground hover:text-buttonbackground"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pendências */}
+                <div>
+                  <h3 className="font-heading text-lg font-bold mb-3">
+                    Pendências Abertas ({clientPendencias.length})
+                  </h3>
+                  {clientPendencias.length === 0 ? (
+                    <p className="text-dark-gray font-paragraph">Nenhuma pendência aberta</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {clientPendencias.map(p => (
+                        <Card key={p._id} className="p-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-paragraph font-semibold">{p.title}</span>
+                                {getPriorityBadge(p.priority)}
+                                {p.bloqueiaFase && (
+                                  <Badge variant="destructive" className="text-xs">Bloqueante</Badge>
+                                )}
+                              </div>
+                              {p.description && (
+                                <p className="text-sm text-dark-gray font-paragraph">{p.description}</p>
+                              )}
+                              {p.dueDate && (
+                                <p className="text-xs text-dark-gray font-paragraph mt-1">
+                                  Prazo: {format(new Date(p.dueDate), 'dd/MM/yyyy', { locale: ptBR })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowClientModal(false)}
+                    className="font-paragraph"
+                  >
+                    Fechar
                   </Button>
                 </div>
               </div>
