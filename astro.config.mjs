@@ -1,14 +1,14 @@
 // @ts-check
-import react from "@astrojs/react";
-import tailwind from "@astrojs/tailwind";
-import wix from "@wix/astro";
-import dynamicDataPlugin from "@wix/babel-plugin-jsx-dynamic-data";
-import sourceAttrsPlugin from "@wix/babel-plugin-jsx-source-attrs";
-import cloudProviderFetchAdapter from "@wix/cloud-provider-fetch-adapter";
-import monitoring from "@wix/monitoring-astro";
-import postcssPseudoToData from "@wix/postcss-pseudo-to-data";
 import { defineConfig } from "astro/config";
+import tailwind from "@astrojs/tailwind";
+import cloudProviderFetchAdapter from "@wix/cloud-provider-fetch-adapter";
+import wix from "@wix/astro";
+import monitoring from "@wix/monitoring-astro";
+import react from "@astrojs/react";
+import sourceAttrsPlugin from "@wix/babel-plugin-jsx-source-attrs";
+import dynamicDataPlugin from "@wix/babel-plugin-jsx-dynamic-data";
 import customErrorOverlayPlugin from "./vite-error-overlay-plugin.js";
+import postcssPseudoToData from "@wix/postcss-pseudo-to-data";
 
 const isBuild = process.env.NODE_ENV == "production";
 
@@ -36,28 +36,10 @@ export default defineConfig({
       auth: true,
     }),
     ...(isBuild ? [monitoring()] : []),
-    react(isBuild ? {} : {
-      babel: { plugins: [sourceAttrsPlugin, dynamicDataPlugin] },
-    }),
+    react({ babel: { plugins: [sourceAttrsPlugin, dynamicDataPlugin] } }),
   ],
   vite: {
     plugins: [customErrorOverlayPlugin()],
-    cacheDir: 'node_modules/.cache/.vite',
-    optimizeDeps: {
-      include: [
-        'react',
-        'react-dom',
-        'zustand',
-        'framer-motion',
-        'date-fns',
-        'clsx',
-        'class-variance-authority',
-        'tailwind-merge',
-        '@radix-ui/*',
-        '@wix/*',
-        'zod',
-      ],
-    },
     css: !isBuild ? {
       postcss: {
         plugins: [
