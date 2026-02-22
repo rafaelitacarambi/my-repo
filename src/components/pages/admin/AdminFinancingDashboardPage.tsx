@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
-import { BaseCrudService } from '@/integrations';
-import { FinancingTasks, ServiceRecords, Clients } from '@/entities';
-import { useMember } from '@/integrations';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import KPICards from '@/components/FinancingDashboard/KPICards';
 import MyTasks from '@/components/FinancingDashboard/MyTasks';
-import SectorTasks from '@/components/FinancingDashboard/SectorTasks';
-import QuickActions from '@/components/FinancingDashboard/QuickActions';
 import ProcessDetailsModal from '@/components/FinancingDashboard/ProcessDetailsModal';
+import QuickActions from '@/components/FinancingDashboard/QuickActions';
+import SectorTasks from '@/components/FinancingDashboard/SectorTasks';
+import Footer from '@/components/Footer';
+import Header from '@/components/Header';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Clients, FinancingTasks, ServiceRecords } from '@/entities';
+import { BaseCrudService, useMember } from '@/integrations';
+import { useEffect, useState } from 'react';
 
 export default function AdminFinancingDashboardPage() {
   const { member } = useMember();
@@ -27,7 +26,7 @@ export default function AdminFinancingDashboardPage() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      
+
       // Load all tasks
       const tasksResult = await BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento', {}, { limit: 500 });
       setTasks(tasksResult.items || []);
@@ -63,7 +62,7 @@ export default function AdminFinancingDashboardPage() {
   return (
     <div className="min-h-screen bg-light-gray flex flex-col">
       <Header />
-      
+
       <main className="flex-1 w-full max-w-[100rem] mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard de Financiamento</h1>
@@ -78,16 +77,16 @@ export default function AdminFinancingDashboardPage() {
 
         {/* My Tasks and Sector Tasks */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <MyTasks 
-            tasks={tasks} 
-            currentUserId={member?._id} 
+          <MyTasks
+            tasks={tasks}
+            currentUserId={member?._id}
             serviceRecords={serviceRecords}
             clients={clients}
             onOpenProcess={handleOpenProcess}
             onTasksUpdated={loadData}
           />
-          <SectorTasks 
-            tasks={tasks} 
+          <SectorTasks
+            tasks={tasks}
             serviceRecords={serviceRecords}
             clients={clients}
             onOpenProcess={handleOpenProcess}
@@ -100,8 +99,8 @@ export default function AdminFinancingDashboardPage() {
 
       {/* Process Details Modal */}
       {showModal && selectedProcess && (
-        <ProcessDetailsModal 
-          process={selectedProcess} 
+        <ProcessDetailsModal
+          process={selectedProcess}
           isOpen={showModal}
           onClose={() => {
             setShowModal(false);
