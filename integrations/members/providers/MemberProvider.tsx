@@ -127,6 +127,90 @@ export const MemberProvider: React.FC<MemberProviderProps> = ({ children }) => {
     }, []),
 
     /**
+     * Login with credentials (Local Dev only)
+     */
+    loginWithCredentials: useCallback(async (email, password) => {
+      // Basic mock validation
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+
+      try {
+        const { items: { query, insert, update } } = await import('@/lib/wix-data-mock');
+
+        // Find user case-insensitively
+        const result = await query('usuariossistema').find();
+        let userRecord = result.items.find(u => u.emailLogin?.toLowerCase() === email.toLowerCase());
+
+        // Seeding / Repair logic for dev convenience
+        const MOCK_EMAIL = "RSales";
+        const MOCK_PASS = "1234";
+        const ALT_MOCK_EMAIL = "admin@rsales.com";
+        const ALT_MOCK_PASS = "123456";
+
+        const isMockAdmin = (email.toLowerCase() === MOCK_EMAIL.toLowerCase() && password === MOCK_PASS) ||
+          (email.toLowerCase() === ALT_MOCK_EMAIL.toLowerCase() && password === ALT_MOCK_PASS);
+
+        if (isMockAdmin) {
+          const defaultSectors = ["Financiamento", "Venda, Compra e Locação", "Administrativo"];
+          if (!userRecord) {
+            userRecord = await insert('usuariossistema', {
+              emailLogin: email.toLowerCase() === MOCK_EMAIL.toLowerCase() ? MOCK_EMAIL : ALT_MOCK_EMAIL,
+              password: email.toLowerCase() === MOCK_EMAIL.toLowerCase() ? MOCK_PASS : ALT_MOCK_PASS,
+              name: "Admin User",
+              profile: "Admin",
+              ativo: true,
+              status: "Ativo",
+              setores: defaultSectors
+            });
+            console.log("Seeded mock admin user into usuariossistema");
+          } else {
+            let needsUpdate = false;
+            if (userRecord.password !== password) {
+              userRecord.password = password;
+              needsUpdate = true;
+            }
+            // Ensure admin always has all sectors assigned
+            if (!userRecord.setores || userRecord.setores.length < 3) {
+              userRecord.setores = defaultSectors;
+              needsUpdate = true;
+            }
+            if (needsUpdate) {
+              await update('usuariossistema', userRecord);
+              console.log("Repaired mock admin record in usuariossistema");
+            }
+          }
+        }
+
+        if (userRecord && userRecord.password === password) {
+          const mockMember: Member = {
+            _id: userRecord._id || "mock-member-id-" + Date.now(),
+            loginEmail: userRecord.emailLogin,
+            profile: {
+              nickname: userRecord.name || "Usuário",
+              title: userRecord.profile || "Usuário"
+            },
+            contact: {
+              firstName: userRecord.name?.split(' ')[0] || "Usuário",
+              lastName: userRecord.name?.split(' ').slice(1).join(' ') || ""
+            },
+            status: "APPROVED"
+          };
+
+          updateState({
+            member: mockMember,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          });
+          return;
+        }
+      } catch (e) {
+        console.warn("Failed to validate credentials against usuariossistema:", e);
+      }
+
+      throw new Error("Credenciais inválidas. Tente novamente.");
+    }, [updateState]),
+
+    /**
      * Logout action
      */
     logout: useCallback(() => {

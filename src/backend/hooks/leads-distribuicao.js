@@ -25,14 +25,14 @@ export async function leadsdecontato_afterInsert(item) {
 
     // 2. Selecionar corretor elegível (round-robin)
     const corretor = await selecionarCorretorRoundRobin(setor._id);
-    
+
     if (!corretor) {
       console.warn('⚠️ Nenhum corretor disponível para o setor:', setor.sectorName);
-      
+
       // Registrar em histórico
-      await registrarHistorico(item._id, 'Distribuição Falhou', 
+      await registrarHistorico(item._id, 'Distribuição Falhou',
         'Nenhum corretor disponível para o setor');
-      
+
       return {
         success: false,
         motivo: 'Nenhum corretor disponível'
@@ -66,7 +66,7 @@ export async function leadsdecontato_afterInsert(item) {
 
   } catch (error) {
     console.error('❌ Erro ao distribuir lead:', error);
-    
+
     // Registrar erro em histórico
     try {
       await registrarHistorico(item._id, 'Erro na Distribuição',
@@ -86,14 +86,18 @@ async function identificarSetor(lead) {
   try {
     let setorId = null;
 
-    // Regras básicas de identificação
-    if (lead.tipoImovelDesejado === 'Apartamento' || lead.interessePrincipal === 'Moradia') {
+    // Regras básicas de identificação (suporte a multi-seleção via inclusão de string)
+    const tipoImovel = (lead.tipoImovelDesejado || '').toLowerCase();
+    const interesse = (lead.interessePrincipal || '').toLowerCase();
+    const perfil = (lead.perfilCompra || '').toLowerCase();
+
+    if (tipoImovel.includes('apartamento') || interesse.includes('moradia')) {
       setorId = 'setor-residencial';
-    } else if (lead.tipoImovelDesejado === 'Comercial' || lead.interessePrincipal === 'Comercial') {
+    } else if (tipoImovel.includes('comercial') || interesse.includes('comercial')) {
       setorId = 'setor-comercial';
-    } else if (lead.perfilCompra === 'Investidor') {
+    } else if (perfil.includes('investidor')) {
       setorId = 'setor-investimento';
-    } else if (lead.tipoImovelDesejado === 'Terreno') {
+    } else if (tipoImovel.includes('terreno')) {
       setorId = 'setor-terrenos';
     } else {
       // Setor padrão
@@ -120,7 +124,7 @@ async function identificarSetor(lead) {
     return setor;
   } catch (error) {
     console.error('Erro ao identificar setor:', error);
-    
+
     // Retornar setor padrão em caso de erro
     return {
       _id: 'setor-geral',
@@ -147,7 +151,7 @@ async function selecionarCorretorRoundRobin(setorId) {
     }
 
     // 2. Ordenar por queueOrder (round-robin)
-    const corretoresOrdenados = equipes.items.sort((a, b) => 
+    const corretoresOrdenados = equipes.items.sort((a, b) =>
       (a.queueOrder || 0) - (b.queueOrder || 0)
     );
 
@@ -261,7 +265,7 @@ export async function getLeadsDoCorretor(corretorId) {
 export async function reatribuirLead(leadId, novoCorretorId) {
   try {
     const lead = await wixData.get('leadsdecontato', leadId);
-    
+
     if (!lead) {
       throw new Error('Lead não encontrado');
     }

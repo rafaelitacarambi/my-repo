@@ -1,0 +1,19 @@
+{
+    "name": "property-import-scripts",
+    "version": "1.0.0",
+    "description": "Scripts para importação de imóveis com scraping de imagens",
+    "scripts": {
+        "import-properties": "ts-node scripts/import-properties.ts",
+        "import:dry-run": "ts-node scripts/import-properties.ts --dry-run"
+    },
+    "dependencies": {
+        "axios": "^1.6.0",
+        "cheerio": "^1.0.0-rc.12",
+        "xlsx": "^0.18.5"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "ts-node": "^10.9.0",
+        "typescript": "^5.0.0"
+    }
+}

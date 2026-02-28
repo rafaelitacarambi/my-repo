@@ -2,16 +2,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
-import { 
-  Building2, 
-  Calculator, 
-  Users, 
-  TrendingUp, 
-  Home, 
-  Key, 
-  ArrowRight, 
-  Search, 
-  CheckCircle2, 
+import {
+  Building2,
+  Calculator,
+  Users,
+  TrendingUp,
+  Home,
+  Key,
+  ArrowRight,
+  Search,
+  CheckCircle2,
   MapPin,
   BadgePercent,
   ShieldCheck
@@ -28,7 +28,7 @@ import { Imveis } from '@/entities';
 // Scroll Reveal Component (Intersection Observer)
 const ScrollReveal = ({ children, className = "", delay = 0 }) => {
   const ref = useRef(null);
-  
+
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
@@ -45,8 +45,8 @@ const ScrollReveal = ({ children, className = "", delay = 0 }) => {
   }, []);
 
   return (
-    <div 
-      ref={ref} 
+    <div
+      ref={ref}
       className={`transition-all duration-1000 ease-out opacity-0 translate-y-12 motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-y-0 ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
@@ -68,7 +68,7 @@ const ParallaxImage = ({ src, alt, className, speed = 0.5 }) => {
     target: ref,
     offset: ["start end", "end start"]
   });
-  
+
   const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
 
   return (
@@ -123,7 +123,19 @@ export default function HomePage() {
     const loadFeaturedProperties = async () => {
       try {
         const { items } = await BaseCrudService.getAll<Imveis>('imoveis');
-        setFeaturedProperties(items.slice(0, 3)); // Utilizing the canonical source
+        console.log(`[Diagnostic] Total properties fetched: ${items.length}`);
+
+        // Sort by date (newest first)
+        const sortedItems = [...items].sort((a, b) => {
+          const dateA = a._createdDate ? new Date(a._createdDate).getTime() : 0;
+          const dateB = b._createdDate ? new Date(b._createdDate).getTime() : 0;
+          return dateB - dateA;
+        });
+
+        // Only show active properties on public homepage
+        const activeItems = sortedItems.filter(p => p.statusImovel === 'Ativo');
+        console.log(`[Diagnostic] Active properties found: ${activeItems.length}`);
+        setFeaturedProperties(activeItems.slice(0, 3)); // Utilizing the canonical source
       } catch (error) {
         console.error('Error loading properties:', error);
       } finally {
@@ -157,10 +169,10 @@ export default function HomePage() {
         </div>
 
         <div className="w-full max-w-[120rem] mx-auto px-6 lg:px-12 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-          
+
           {/* Left: Typography & Action */}
           <div className="space-y-10">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
@@ -169,20 +181,20 @@ export default function HomePage() {
                 <div className="w-3 h-3 rounded-full bg-secondary animate-pulse" />
                 <span className="font-heading text-sm tracking-widest uppercase text-secondary">Especialistas Caixa</span>
               </div>
-              
+
               <h1 className="font-heading text-6xl lg:text-8xl font-bold leading-[0.95] tracking-tight text-primary-foreground mb-8">
                 O Futuro do <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-brandaccent">
                   Seu Patrimônio
                 </span>
               </h1>
-              
+
               <p className="font-paragraph text-xl text-dark-gray max-w-lg leading-relaxed border-l-2 border-secondary/30 pl-6">
                 Conectamos você às melhores oportunidades imobiliárias com a segurança e facilidade do financiamento Caixa.
               </p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
@@ -225,16 +237,16 @@ export default function HomePage() {
                 }}
               />
             ))}
-            
+
             {/* Central Focus Element */}
-            <motion.div 
+            <motion.div
               className="relative z-20 w-64 h-64 rounded-full bg-gradient-to-br from-secondary to-brandaccent p-1 shadow-[0_0_100px_rgba(0,92,169,0.2)]"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1, delay: 0.4 }}
             >
               <div className="w-full h-full rounded-full bg-primary flex items-center justify-center overflow-hidden relative">
-                <Image 
+                <Image
                   src="https://static.wixstatic.com/media/9b23b4_389dd5b071f347f5abc678757ab04e8f~mv2.png?originWidth=576&originHeight=576"
                   alt="Abstract architectural detail"
                   className="w-full h-full object-cover opacity-60 mix-blend-overlay"
@@ -300,15 +312,15 @@ export default function HomePage() {
         </div>
       </div>
       {/* --- STICKY SERVICES SECTION --- */}
-      <StickySection 
-        title="Soluções Completas" 
+      <StickySection
+        title="Soluções Completas"
         subtitle="Uma abordagem 360º para garantir que seu investimento seja seguro, rentável e sem burocracia."
       >
         {/* Card 1 */}
         <ScrollReveal className="w-full">
           <div className="group relative w-full bg-light-gray border border-border-gray rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-secondary/50 transition-colors duration-500">
             <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-secondary/10 transition-all duration-500" />
-            
+
             <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
               <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center shrink-0">
                 <Calculator className="w-8 h-8 text-secondary-foreground" />
@@ -330,7 +342,7 @@ export default function HomePage() {
         <ScrollReveal className="w-full" delay={100}>
           <div className="group relative w-full bg-light-gray border border-border-gray rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-brandaccent/50 transition-colors duration-500">
             <div className="absolute top-0 right-0 w-64 h-64 bg-brandaccent/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-brandaccent/10 transition-all duration-500" />
-            
+
             <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
               <div className="w-16 h-16 rounded-2xl bg-brandaccent flex items-center justify-center shrink-0">
                 <Search className="w-8 h-8 text-white" />
@@ -352,7 +364,7 @@ export default function HomePage() {
         <ScrollReveal className="w-full" delay={200}>
           <div className="group relative w-full bg-light-gray border border-border-gray rounded-3xl p-8 lg:p-12 overflow-hidden hover:border-primary-foreground/30 transition-colors duration-500">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-foreground/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary-foreground/10 transition-all duration-500" />
-            
+
             <div className="relative z-10 flex flex-col lg:flex-row gap-8 items-start">
               <div className="w-16 h-16 rounded-2xl bg-primary-foreground/10 flex items-center justify-center shrink-0">
                 <Users className="w-8 h-8 text-primary-foreground" />
@@ -374,7 +386,7 @@ export default function HomePage() {
       <section className="w-full py-24 bg-primary relative">
         {/* Decorative Background Line */}
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border-gray to-transparent" />
-        
+
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
             <ScrollReveal>
@@ -385,7 +397,7 @@ export default function HomePage() {
                 Uma seleção criteriosa dos melhores imóveis disponíveis para venda e financiamento imediato.
               </p>
             </ScrollReveal>
-            
+
             <ScrollReveal delay={100}>
               <Link to="/imoveis">
                 <Button variant="outline" className="border-border-gray text-primary-foreground hover:bg-light-gray hover:text-primary-foreground rounded-full px-8 h-12 font-heading">
@@ -415,10 +427,10 @@ export default function HomePage() {
                             {property.transactionType || 'Venda'}
                           </span>
                         </div>
-                        {property.propertyImages ? (
+                        {property.propertyImages || (property.galeriaFotos && property.galeriaFotos.length > 0) ? (
                           <Image
-                            src={property.propertyImages}
-                            alt={property.propertyName || 'Imóvel'}
+                            src={(Array.isArray(property.propertyImages) ? property.propertyImages[0] : property.propertyImages) || (property.galeriaFotos && property.galeriaFotos[0]) || ''}
+                            alt={property.resumoImovel || property.propertyName || 'Imóvel'}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             width={600}
                           />
@@ -433,25 +445,25 @@ export default function HomePage() {
                       <div className="p-8 relative z-20 -mt-12">
                         <div className="bg-primary border border-border-gray p-6 rounded-2xl shadow-xl group-hover:shadow-secondary/10 transition-shadow duration-500">
                           <h3 className="font-heading text-xl text-primary-foreground font-bold mb-2 line-clamp-1">
-                            {property.propertyName}
+                            {property.resumoImovel || property.propertyName}
                           </h3>
                           <div className="flex items-center text-dark-gray mb-4 text-sm">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            <span className="line-clamp-1">{property.address}</span>
+                            <MapPin className="w-4 h-4 mr-1 text-secondary" />
+                            <span className="line-clamp-1">{property.bairro || property.address || 'Bairro não informado'}</span>
                           </div>
-                          
+
                           <div className="grid grid-cols-3 gap-4 py-4 border-y border-border-gray mb-4">
                             <div className="text-center">
                               <p className="text-xs text-dark-gray uppercase tracking-wider mb-1">Área</p>
-                              <p className="font-bold text-primary-foreground">{property.area}m²</p>
+                              <p className="font-bold text-primary-foreground">{property.area || property.areaUtil || property.areaTotal || property.areaConstruida || 0}m²</p>
                             </div>
                             <div className="text-center border-l border-border-gray">
                               <p className="text-xs text-dark-gray uppercase tracking-wider mb-1">Quartos</p>
-                              <p className="font-bold text-primary-foreground">{property.bedrooms}</p>
+                              <p className="font-bold text-primary-foreground">{property.bedrooms || property.dormitorios || property.quartos || 0}</p>
                             </div>
                             <div className="text-center border-l border-border-gray">
                               <p className="text-xs text-dark-gray uppercase tracking-wider mb-1">Banheiros</p>
-                              <p className="font-bold text-primary-foreground">{property.bathrooms}</p>
+                              <p className="font-bold text-primary-foreground">{property.bathrooms || property.banheiros || 0}</p>
                             </div>
                           </div>
 
@@ -479,7 +491,7 @@ export default function HomePage() {
       {/* --- PARALLAX BREAK SECTION --- */}
       <section className="relative w-full h-[80vh] overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 z-0">
-          <ParallaxImage 
+          <ParallaxImage
             src="https://static.wixstatic.com/media/9b23b4_ec68d604df694bbcbb1e346fd328c752~mv2.png?originWidth=1024&originHeight=576"
             alt="Modern living room interior"
             className="w-full h-full"
@@ -519,7 +531,7 @@ export default function HomePage() {
           <div className="relative">
             {/* Connecting Line */}
             <div className="absolute top-1/2 left-0 w-full h-px bg-border-gray -translate-y-1/2 hidden lg:block" />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
               {[
                 { icon: Search, title: "Escolha", desc: "Navegue pelo nosso portfólio curado." },
@@ -544,7 +556,7 @@ export default function HomePage() {
       {/* --- CTA SECTION --- */}
       <section className="w-full py-24 bg-light-gray relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-secondary/5 rounded-full blur-[120px]" />
-        
+
         <div className="max-w-5xl mx-auto px-6 relative z-10 text-center">
           <ScrollReveal>
             <h2 className="font-heading text-5xl lg:text-6xl text-primary-foreground font-bold mb-8">

@@ -1,15 +1,21 @@
-import { members } from "@wix/members";
+/**
+ * Mock Members Service
+ */
 import { Member } from ".";
 
 export const getCurrentMember = async (): Promise<Member | null> => {
+  if (typeof window === 'undefined') return null;
+
   try {
-    const member = await members.getCurrentMember({ fieldsets: ["FULL"] });
-    if (!member) {
-      console.log('==== No member found');
+    const stored = localStorage.getItem('member-store');
+    if (stored) {
+      const state = JSON.parse(stored);
+      if (state.member) return state.member;
     }
-    return member.member;
-  } catch (error) {
-    console.log(error);
-    return null;
+  } catch (e) {
+    console.error('Error reading member from storage:', e);
   }
+
+  return null;
 };
+

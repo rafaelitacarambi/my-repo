@@ -25,17 +25,21 @@ export default function MyTasks({
 }: MyTasksProps) {
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
 
-  // Filter tasks assigned to current user
-  const myTasks = tasks.filter(t => t.internalResponsibleId === currentUserId);
+  // Filter tasks assigned to current user and are not completed or canceled
+  const myTasks = tasks.filter(t =>
+    t.internalResponsibleId === currentUserId &&
+    t.status !== 'Concluída' &&
+    t.status !== 'Cancelado'
+  );
 
   // Sort tasks: overdue first, then open, then in progress
   const sortedTasks = [...myTasks].sort((a, b) => {
     const statusOrder = { 'Atrasada': 0, 'Aberta': 1, 'Em andamento': 2, 'Concluída': 3 };
     const aOrder = statusOrder[a.status as keyof typeof statusOrder] ?? 999;
     const bOrder = statusOrder[b.status as keyof typeof statusOrder] ?? 999;
-    
+
     if (aOrder !== bOrder) return aOrder - bOrder;
-    
+
     // If same status, sort by due date
     const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
     const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
@@ -47,9 +51,9 @@ export default function MyTasks({
       case 'Atrasada':
         return 'bg-red-100 text-red-800';
       case 'Aberta':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-red-50 text-red-700 border-red-200';
       case 'Em andamento':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-red-50 text-red-700 border-red-200';
       case 'Concluída':
         return 'bg-green-100 text-green-800';
       default:
@@ -97,7 +101,7 @@ export default function MyTasks({
   return (
     <div className="bg-white rounded-lg border border-border-gray p-6">
       <h2 className="text-xl font-bold text-foreground mb-4">Minhas Tarefas</h2>
-      
+
       {sortedTasks.length === 0 ? (
         <p className="text-dark-gray text-center py-8">Nenhuma tarefa atribuída</p>
       ) : (
@@ -105,7 +109,10 @@ export default function MyTasks({
           {sortedTasks.map(task => (
             <div
               key={task._id}
-              className="flex items-start justify-between p-3 border border-border-gray rounded-lg hover:bg-light-gray transition-colors"
+              className={`flex items-start justify-between p-3 border rounded-lg transition-all ${task.status === 'Concluída'
+                ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                : 'bg-red-50 border-red-200 hover:bg-red-100 shadow-sm'
+                }`}
             >
               <div className="flex-1">
                 <p className="font-semibold text-foreground text-sm">{task.titulo}</p>
@@ -121,7 +128,7 @@ export default function MyTasks({
                   {task.status}
                 </Badge>
               </div>
-              
+
               <div className="flex gap-2 ml-4">
                 {task.status !== 'Em andamento' && task.status !== 'Concluída' && (
                   <Button

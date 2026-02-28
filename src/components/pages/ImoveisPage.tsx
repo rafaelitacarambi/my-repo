@@ -40,7 +40,7 @@ export default function ImoveisPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [segmentoFilter, setSegmentoFilter] = useState<string | null>(null);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  
+
   // Advanced filters
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
@@ -51,9 +51,17 @@ export default function ImoveisPage() {
   useEffect(() => {
     const loadProperties = async () => {
       try {
-        const { items } = await BaseCrudService.getAll<Imveis>('imoveis');
-        setProperties(items);
-        setFilteredProperties(items);
+        const { items } = await BaseCrudService.getAll<Imveis>('imoveis', undefined, { limit: 1000 });
+
+        // Sort by date (newest first)
+        const sortedItems = [...items].sort((a, b) => {
+          const dateA = a._createdDate ? new Date(a._createdDate).getTime() : 0;
+          const dateB = b._createdDate ? new Date(b._createdDate).getTime() : 0;
+          return dateB - dateA;
+        });
+
+        setProperties(sortedItems);
+        setFilteredProperties(sortedItems);
       } catch (error) {
         console.error('Error loading properties:', error);
       } finally {
@@ -70,10 +78,13 @@ export default function ImoveisPage() {
     if (searchTerm) {
       filtered = filtered.filter(
         (p) =>
-          p.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.address?.toLowerCase().includes(searchTerm.toLowerCase())
+          (p.resumoImovel || p.propertyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (p.address || p.logradouro || p.bairro || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+
+    // Hard filter: Only Active properties
+    filtered = filtered.filter(p => p.statusImovel === 'Ativo');
 
     if (typeFilter !== 'all') {
       filtered = filtered.filter((p) => p.propertyType === typeFilter);
@@ -180,11 +191,10 @@ export default function ImoveisPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
                 onClick={() => setSegmentoFilter(segmentoFilter === segmento.id ? null : segmento.id)}
-                className={`p-6 rounded-2xl border-2 transition-all text-left group ${
-                  segmentoFilter === segmento.id
-                    ? 'border-secondary bg-secondary/10'
-                    : 'border-border-gray bg-primary hover:border-secondary/50'
-                }`}
+                className={`p-6 rounded-2xl border-2 transition-all text-left group ${segmentoFilter === segmento.id
+                  ? 'border-secondary bg-secondary/10'
+                  : 'border-border-gray bg-primary hover:border-secondary/50'
+                  }`}
               >
                 <div className="text-4xl mb-3">{segmento.icon}</div>
                 <h3 className="font-heading text-xl text-primary-foreground mb-2 group-hover:text-secondary transition-colors">
@@ -432,11 +442,11 @@ export default function ImoveisPage() {
                   <Link to={`/imoveis/${property._id}`}>
                     <div className="bg-light-gray rounded-2xl overflow-hidden border border-border-gray hover:border-secondary/30 transition-all group h-full">
                       <div className="relative h-64 bg-light-gray overflow-hidden">
-                        {property.propertyImages ? (
+                        {property.propertyImages || (property.galeriaFotos && property.galeriaFotos.length > 0) ? (
                           <Image
-                            src={property.propertyImages}
-                            alt={property.propertyName || 'Imóvel'}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            src={(Array.isArray(property.propertyImages) ? property.propertyImages[0] : property.propertyImages) || (property.galeriaFotos && property.galeriaFotos[0]) || ''}
+                            alt={property.resumoImovel || property.propertyName || 'Imóvel'}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             width={400}
                           />
                         ) : (
@@ -444,16 +454,15 @@ export default function ImoveisPage() {
                             <Home className="w-16 h-16 text-primary-foreground/30" />
                           </div>
                         )}
-                        {property.status && (
+                        {(property.statusImovel || property.status) && (
                           <div className="absolute top-4 right-4">
-                            <span className={`font-paragraph text-xs px-3 py-1 rounded-lg font-semibold ${
-                              property.status === 'Disponível'
-                                ? 'bg-secondary text-secondary-foreground'
-                                : property.status === 'Reservado'
+                            <span className={`font-paragraph text-xs px-3 py-1 rounded-lg font-semibold ${(property.statusImovel || property.status) === 'Ativo' || (property.statusImovel || property.status) === 'Disponível'
+                              ? 'bg-secondary text-secondary-foreground'
+                              : (property.statusImovel || property.status) === 'Reservado'
                                 ? 'bg-dark-gray text-white'
-                                : 'bg-destructive text-destructiveforeground'
-                            }`}>
-                              {property.status}
+                                : 'bg-destructive text-destructive-foreground'
+                              }`}>
+                              {property.statusImovel || property.status}
                             </span>
                           </div>
                         )}
@@ -468,23 +477,23 @@ export default function ImoveisPage() {
                           </span>
                         </div>
                         <h3 className="font-heading text-xl text-primary-foreground mb-2 font-semibold line-clamp-1">
-                          {property.propertyName}
+                          {property.resumoImovel || property.propertyName || 'Imóvel sem título'}
                         </h3>
                         <p className="font-paragraph text-sm text-dark-gray mb-4 line-clamp-1">
-                          {property.address}
+                          {property.bairro || property.address || 'Bairro não informado'}
                         </p>
                         <div className="flex items-center justify-between mb-4">
                           <span className="font-paragraph text-sm text-dark-gray">
-                            {property.bedrooms} quartos • {property.bathrooms} banheiros
+                            {property.bedrooms || property.dormitorios || property.quartos || 0} quartos • {property.bathrooms || property.banheiros || 0} banheiros
                           </span>
                           <span className="font-paragraph text-sm text-dark-gray">
-                            {property.area}m²
+                            {property.area || property.areaUtil || property.areaTotal || property.areaConstruida || 0}m²
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="font-heading text-2xl text-secondary font-bold">
-                            {property.price
-                              ? `R$ ${property.price.toLocaleString('pt-BR')}`
+                            {property.price || property.precoVenda || property.precoLocacao
+                              ? `R$ ${(property.price || property.precoVenda || property.precoLocacao || 0).toLocaleString('pt-BR')}`
                               : 'Consulte'}
                           </span>
                         </div>

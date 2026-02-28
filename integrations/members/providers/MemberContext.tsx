@@ -13,6 +13,7 @@ export interface MemberState {
 export interface MemberActions {
   loadCurrentMember: () => Promise<void>;
   login: () => void;
+  loginWithCredentials: (email: string, password: string) => Promise<void>;
   logout: () => void;
   clearMember: () => void;
 }

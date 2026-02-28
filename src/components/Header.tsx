@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, Home } from 'lucide-react';
+import { Menu, X, Home, Building2, Key, Users, Settings, LogOut, FileText, Calendar, LayoutDashboard, DollarSign, Clock, MessageSquare, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
@@ -22,9 +22,9 @@ export default function Header() {
       <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <Image 
-              src="https://static.wixstatic.com/media/9b23b4_8b5ff4d697054133a09457af0365ebeb~mv2.png" 
+          <Link to={isAuthenticated ? "/area-restrita" : "/"} className="flex items-center gap-3 group">
+            <Image
+              src="https://static.wixstatic.com/media/9b23b4_8b5ff4d697054133a09457af0365ebeb~mv2.png"
               alt="R. Sales Imóveis Logo"
               width={120}
               className="h-auto"
@@ -35,8 +35,8 @@ export default function Header() {
           <nav className="hidden lg:flex items-center gap-8">
             {isAdminRoute && isAuthenticated && (
               <Link to="/area-restrita">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="font-paragraph flex items-center gap-2"
                 >
                   <Home className="w-4 h-4" />
@@ -46,51 +46,46 @@ export default function Header() {
             )}
             <Link
               to="/imoveis"
-              className={`font-paragraph text-base transition-colors ${
-                isActive('/imoveis')
-                  ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
-              }`}
+              className={`font-paragraph text-base transition-colors ${isActive('/imoveis')
+                ? 'text-secondary'
+                : 'text-primary-foreground hover:text-secondary'
+                }`}
             >
               Imóveis
             </Link>
             <Link
               to="/leilao-caixa"
-              className={`font-paragraph text-base transition-colors ${
-                isActive('/leilao-caixa')
-                  ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
-              }`}
+              className={`font-paragraph text-base transition-colors ${isActive('/leilao-caixa')
+                ? 'text-secondary'
+                : 'text-primary-foreground hover:text-secondary'
+                }`}
             >
               Leilão Caixa
             </Link>
             <Link
               to="/simulador"
-              className={`font-paragraph text-base transition-colors ${
-                isActive('/simulador')
-                  ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
-              }`}
+              className={`font-paragraph text-base transition-colors ${isActive('/simulador')
+                ? 'text-secondary'
+                : 'text-primary-foreground hover:text-secondary'
+                }`}
             >
               Simulador
             </Link>
             <Link
               to="/corretores"
-              className={`font-paragraph text-base transition-colors ${
-                isActive('/corretores')
-                  ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
-              }`}
+              className={`font-paragraph text-base transition-colors ${isActive('/corretores')
+                ? 'text-secondary'
+                : 'text-primary-foreground hover:text-secondary'
+                }`}
             >
               Corretores
             </Link>
             <Link
               to="/contato"
-              className={`font-paragraph text-base transition-colors ${
-                isActive('/contato')
-                  ? 'text-secondary'
-                  : 'text-primary-foreground hover:text-secondary'
-              }`}
+              className={`font-paragraph text-base transition-colors ${isActive('/contato')
+                ? 'text-secondary'
+                : 'text-primary-foreground hover:text-secondary'
+                }`}
             >
               Contato
             </Link>
@@ -101,7 +96,26 @@ export default function Header() {
                     Área Restrita
                   </Button>
                 </Link>
-                <Button 
+                {isAdminRoute && (
+                  <Link
+                    to="/admin/whatsapp"
+                    className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-primary-foreground hover:bg-secondary/10 hover:text-secondary rounded-lg transition-colors"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    WhatsApp Inbox
+                  </Link>
+                )}
+                {isAdminRoute && (
+                  <Link
+                    to="/admin/imoveis/importar"
+                    className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-primary-foreground hover:bg-secondary/10 hover:text-secondary rounded-lg transition-colors"
+                    title="Importar Imóveis"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Migrar
+                  </Link>
+                )}
+                <Button
                   onClick={handleLogout}
                   variant="outline"
                   className="h-11 px-4 rounded-lg"
@@ -135,8 +149,8 @@ export default function Header() {
             <div className="flex flex-col gap-4">
               {isAdminRoute && isAuthenticated && (
                 <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full font-paragraph flex items-center gap-2"
                   >
                     <Home className="w-4 h-4" />
@@ -147,55 +161,50 @@ export default function Header() {
               <Link
                 to="/imoveis"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
-                  isActive('/imoveis')
-                    ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
-                }`}
+                className={`font-paragraph text-base py-2 transition-colors ${isActive('/imoveis')
+                  ? 'text-secondary'
+                  : 'text-primary-foreground hover:text-secondary'
+                  }`}
               >
                 Imóveis
               </Link>
               <Link
                 to="/leilao-caixa"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
-                  isActive('/leilao-caixa')
-                    ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
-                }`}
+                className={`font-paragraph text-base py-2 transition-colors ${isActive('/leilao-caixa')
+                  ? 'text-secondary'
+                  : 'text-primary-foreground hover:text-secondary'
+                  }`}
               >
                 Leilão Caixa
               </Link>
               <Link
                 to="/simulador"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
-                  isActive('/simulador')
-                    ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
-                }`}
+                className={`font-paragraph text-base py-2 transition-colors ${isActive('/simulador')
+                  ? 'text-secondary'
+                  : 'text-primary-foreground hover:text-secondary'
+                  }`}
               >
                 Simulador
               </Link>
               <Link
                 to="/corretores"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
-                  isActive('/corretores')
-                    ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
-                }`}
+                className={`font-paragraph text-base py-2 transition-colors ${isActive('/corretores')
+                  ? 'text-secondary'
+                  : 'text-primary-foreground hover:text-secondary'
+                  }`}
               >
                 Corretores
               </Link>
               <Link
                 to="/contato"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`font-paragraph text-base py-2 transition-colors ${
-                  isActive('/contato')
-                    ? 'text-secondary'
-                    : 'text-primary-foreground hover:text-secondary'
-                }`}
+                className={`font-paragraph text-base py-2 transition-colors ${isActive('/contato')
+                  ? 'text-secondary'
+                  : 'text-primary-foreground hover:text-secondary'
+                  }`}
               >
                 Contato
               </Link>
@@ -206,7 +215,7 @@ export default function Header() {
                       Área Restrita
                     </Button>
                   </Link>
-                  <Button 
+                  <Button
                     onClick={() => {
                       setMobileMenuOpen(false);
                       handleLogout();

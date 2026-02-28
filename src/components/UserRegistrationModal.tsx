@@ -3,11 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { UsuriosdoSistema, Units } from '@/entities';
 import { useMember } from '@/integrations';
 import { Search, X } from 'lucide-react';
+import { CheckboxWithText } from '@/components/ui/checkbox';
 
 interface UserRegistrationModalProps {
   isOpen: boolean;
@@ -17,22 +19,24 @@ interface UserRegistrationModalProps {
   units: Units[];
 }
 
-export function UserRegistrationModal({ 
-  isOpen, 
-  onOpenChange, 
-  onSave, 
+export function UserRegistrationModal({
+  isOpen,
+  onOpenChange,
+  onSave,
   user,
-  units 
+  units
 }: UserRegistrationModalProps) {
   const { member } = useMember();
   const [formData, setFormData] = useState<Partial<UsuriosdoSistema>>({
     name: '',
     emailLogin: '',
+    password: '',
     profile: '',
     status: 'Pendente',
     ativo: true,
     unidadeRef: '',
-    memberRef: ''
+    memberRef: '',
+    setores: []
   });
   const [isSaving, setIsSaving] = useState(false);
   const [showMemberSearch, setShowMemberSearch] = useState(false);
@@ -42,24 +46,37 @@ export function UserRegistrationModal({
       setFormData({
         name: user.name || '',
         emailLogin: user.emailLogin || '',
+        password: user.password || '',
         profile: user.profile || '',
         status: user.status || 'Pendente',
         ativo: user.ativo ?? true,
         unidadeRef: user.unidadeRef || '',
-        memberRef: user.memberRef || ''
+        memberRef: user.memberRef || '',
+        setores: user.setores || []
       });
     } else {
       setFormData({
         name: '',
         emailLogin: '',
+        password: '',
         profile: '',
         status: 'Pendente',
         ativo: true,
         unidadeRef: '',
-        memberRef: ''
+        memberRef: '',
+        setores: []
       });
     }
   }, [user, isOpen]);
+
+  const toggleSector = (sector: string) => {
+    const currentSetores = formData.setores || [];
+    if (currentSetores.includes(sector)) {
+      setFormData({ ...formData, setores: currentSetores.filter(s => s !== sector) });
+    } else {
+      setFormData({ ...formData, setores: [...currentSetores, sector] });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +86,7 @@ export function UserRegistrationModal({
         ...formData,
         inviteDate: user?.inviteDate || new Date().toISOString()
       };
-      
+
       await onSave(dataToSave);
       onOpenChange(false);
     } catch (error) {
@@ -113,17 +130,32 @@ export function UserRegistrationModal({
             />
           </div>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="emailLogin">Email de Login *</Label>
-            <Input
-              id="emailLogin"
-              type="email"
-              value={formData.emailLogin}
-              onChange={(e) => setFormData({ ...formData, emailLogin: e.target.value })}
-              placeholder="email@exemplo.com"
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Email / Login */}
+            <div className="space-y-2">
+              <Label htmlFor="emailLogin">Login *</Label>
+              <Input
+                id="emailLogin"
+                type="text"
+                value={formData.emailLogin}
+                onChange={(e) => setFormData({ ...formData, emailLogin: e.target.value })}
+                placeholder="Digite o login (email ou usuário)"
+                required
+              />
+            </div>
+
+            {/* Senha */}
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha *</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="********"
+                required={!user}
+              />
+            </div>
           </div>
 
           {/* Wix Member Integration */}
@@ -139,7 +171,7 @@ export function UserRegistrationModal({
                 {showMemberSearch ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
               </Button>
             </div>
-            
+
             {showMemberSearch && (
               <div className="space-y-3 pt-2">
                 <p className="text-sm text-foreground/60">
@@ -167,6 +199,19 @@ export function UserRegistrationModal({
                     Nenhum membro logado no momento
                   </p>
                 )}
+              </div>
+            )}
+
+            {user?.setores && user.setores.length > 0 && (
+              <div className="mt-2">
+                <Label className="text-sm font-semibold">Setores do Usuário:</Label>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {user.setores.map(sector => (
+                    <Badge key={sector} variant="secondary" className="text-[10px] bg-blue-50 text-blue-700 border-blue-100">
+                      {sector}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -200,25 +245,32 @@ export function UserRegistrationModal({
             </p>
           </div>
 
-          {/* Unidade */}
-          <div className="space-y-2">
-            <Label htmlFor="unidadeRef">Unidade</Label>
-            <Select
-              value={formData.unidadeRef}
-              onValueChange={(value) => setFormData({ ...formData, unidadeRef: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Nenhuma unidade</SelectItem>
-                {units.map((unit) => (
-                  <SelectItem key={unit._id} value={unit._id}>
-                    {unit.unitName} - {unit.cityState}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Setores (Unidade) */}
+          <div className="space-y-3">
+            <Label className="text-base">Setores do Sistema (Unidade) *</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-xl bg-slate-50/50">
+              <CheckboxWithText
+                id="sector-financiamento"
+                label="Setor de Financiamento"
+                checked={formData.setores?.includes('Financiamento')}
+                onCheckedChange={() => toggleSector('Financiamento')}
+              />
+              <CheckboxWithText
+                id="sector-vendas"
+                label="Venda, Compra e Locação"
+                checked={formData.setores?.includes('Venda, Compra e Locação')}
+                onCheckedChange={() => toggleSector('Venda, Compra e Locação')}
+              />
+              <CheckboxWithText
+                id="sector-administrativo"
+                label="Administrativo"
+                checked={formData.setores?.includes('Administrativo')}
+                onCheckedChange={() => toggleSector('Administrativo')}
+              />
+            </div>
+            <p className="text-xs text-foreground/60">
+              Selecione todos os setores que este usuário terá acesso. O dashboard será personalizado conforme a seleção.
+            </p>
           </div>
 
           {/* Status */}

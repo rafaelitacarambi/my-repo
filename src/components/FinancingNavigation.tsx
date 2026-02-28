@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, AlertCircle, CheckSquare } from 'lucide-react';
+import { LayoutDashboard, AlertCircle, CheckSquare, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import { BaseCrudService } from '@/integrations';
@@ -25,7 +25,7 @@ export default function FinancingNavigation() {
     try {
       // Contar pendências em aberto
       const pendenciasResult = await BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento');
-      const pendenciasAbertas = pendenciasResult.items.filter(p => 
+      const pendenciasAbertas = pendenciasResult.items.filter(p =>
         p.status === 'Pendente' || p.status === 'Em Andamento'
       );
       setPendingCount(pendenciasAbertas.length);
@@ -60,6 +60,11 @@ export default function FinancingNavigation() {
       label: 'Tarefas',
       icon: <CheckSquare className="w-5 h-5" />,
     },
+    {
+      path: '/admin/financiamento-andamento',
+      label: 'Em Andamento',
+      icon: <Play className="w-5 h-5" />,
+    },
   ];
 
   const handleNavigation = (path: string) => {
@@ -79,7 +84,7 @@ export default function FinancingNavigation() {
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-white border-b border-border-gray shadow-md">
+    <div className="bg-white border-b border-border-gray shadow-md">
       <div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8">
         <nav className="flex items-center gap-1 sm:gap-2 py-3 overflow-x-auto">
           {navItems.map((item) => {

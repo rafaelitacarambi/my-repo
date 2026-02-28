@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  Save, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  Save,
+  Plus,
+  Edit2,
+  Trash2,
+  CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
@@ -27,7 +27,8 @@ import {
   CreditCard,
   Building2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Archive
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,9 +44,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
-import { 
-  ServiceRecords, 
-  Clients, 
+import {
+  ServiceRecords,
+  Clients,
   UsuriosdoSistema,
   PendnciasdoFinanciamento,
   FinancingTasks,
@@ -128,16 +129,16 @@ interface Vendedor {
 export default function AdminFinanciamentoDetalhePage() {
   const { atendimentoId } = useParams<{ atendimentoId: string }>();
   const navigate = useNavigate();
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('dados');
-  
+
   // Main data
   const [atendimento, setAtendimento] = useState<ServiceRecords | null>(null);
   const [phaseEntryDate, setPhaseEntryDate] = useState<string>('');
   const [daysInPhase, setDaysInPhase] = useState(0);
-  
+
   // Related data
   const [clientes, setClientes] = useState<Clients[]>([]);
   const [usuarios, setUsuarios] = useState<UsuriosdoSistema[]>([]);
@@ -147,7 +148,7 @@ export default function AdminFinanciamentoDetalhePage() {
   const [historico, setHistorico] = useState<HistricodeInteraes[]>([]);
   const [proponentes, setProponentes] = useState<Proponente[]>([]);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
-  
+
   // Form states
   const [formData, setFormData] = useState({
     contactName: '',
@@ -172,6 +173,7 @@ export default function AdminFinanciamentoDetalhePage() {
     possuiPropostaComercial: '',
     faseFinanciamento: 'novos-clientes',
     status: 'Cadastro de cliente',
+    isArchived: false,
     creationDate: new Date().toISOString()
   });
 
@@ -275,7 +277,7 @@ export default function AdminFinanciamentoDetalhePage() {
     try {
       // Check if principal proponent already exists
       const existingProponentePrincipal = proponentes.find(p => p.isPrincipal);
-      
+
       if (!existingProponentePrincipal) {
         // Create new principal proponent
         const proponentePrincipal: Proponente = {
@@ -305,9 +307,9 @@ export default function AdminFinanciamentoDetalhePage() {
             { tipo: 'Declaração de Imposto de Renda', status: 'Pendente' }
           ]
         };
-        
+
         setProponentes([proponentePrincipal, ...proponentes]);
-        
+
         // Create checklist in database
         const checklistData: ChecklistdosProponentes = {
           _id: crypto.randomUUID(),
@@ -321,16 +323,16 @@ export default function AdminFinanciamentoDetalhePage() {
           isFirstAcquisition: false
         };
         await BaseCrudService.create('checklistproponentes', checklistData);
-        
+
         await createHistoryEntry(`Proponente principal criado automaticamente: ${proponentePrincipal.nome}`);
         setPrincipalProponentCreated(true);
       } else {
         // Update existing principal proponent if data changed
-        const hasChanges = 
+        const hasChanges =
           existingProponentePrincipal.nome !== atend.contactName ||
           existingProponentePrincipal.cpf !== cpfValue ||
           existingProponentePrincipal.telefone !== (atend.contactPhone || '');
-        
+
         if (hasChanges) {
           const updatedProponentes = proponentes.map(p => {
             if (p.isPrincipal) {
@@ -356,7 +358,7 @@ export default function AdminFinanciamentoDetalhePage() {
   useEffect(() => {
     const loadData = async () => {
       if (!atendimentoId) return;
-      
+
       try {
         // Load main atendimento
         const atend = await BaseCrudService.getById<ServiceRecords>('atendimentos', atendimentoId);
@@ -365,13 +367,13 @@ export default function AdminFinanciamentoDetalhePage() {
           return;
         }
         setAtendimento(atend);
-        
+
         // Calculate days in phase
         const entryDate = atend.dataPrevistaConclusao ? new Date(atend.dataPrevistaConclusao).toISOString() : new Date(atend._createdDate || new Date()).toISOString();
         setPhaseEntryDate(entryDate);
         const days = Math.floor((new Date().getTime() - new Date(entryDate).getTime()) / (1000 * 60 * 60 * 24));
         setDaysInPhase(days);
-        
+
         setFormData({
           contactName: atend.contactName || '',
           cpf: '',
@@ -395,6 +397,7 @@ export default function AdminFinanciamentoDetalhePage() {
           possuiPropostaComercial: '',
           faseFinanciamento: atend.faseFinanciamento || 'novos-clientes',
           status: atend.status || 'Cadastro de cliente',
+          isArchived: atend.isArchived || false,
           creationDate: atend.creationDate?.toString() || new Date().toISOString()
         });
 
@@ -414,7 +417,7 @@ export default function AdminFinanciamentoDetalhePage() {
         setPendencias(pendenciasRes.items.filter(p => p.atendimentoRef === atendimentoId));
         setTarefas(tarefasRes.items.filter(t => t.atendimentoRef === atendimentoId));
         setDocumentos(documentosRes.items.filter(d => d.atendimentoRef === atendimentoId));
-        setHistorico(historicoRes.items.filter(h => h.atendimentoRef === atendimentoId).sort((a, b) => 
+        setHistorico(historicoRes.items.filter(h => h.atendimentoRef === atendimentoId).sort((a, b) =>
           new Date(b.interactionDate || '').getTime() - new Date(a.interactionDate || '').getTime()
         ));
 
@@ -431,25 +434,25 @@ export default function AdminFinanciamentoDetalhePage() {
   // Auto-save function
   const handleAutoSave = async (field: string, value: any) => {
     if (!atendimento) return;
-    
+
     try {
       const updates: Partial<ServiceRecords> = {
         _id: atendimento._id,
         [field]: value
       };
-      
+
       await BaseCrudService.update('atendimentos', updates);
-      
+
       // Create history entry
       await createHistoryEntry(`Campo "${field}" atualizado`);
-      
+
       setAtendimento({ ...atendimento, ...updates });
-      
+
       // Auto-create or update proponente principal when contactName or CPF changes
       if (field === 'contactName' || field === 'cpf') {
         const updatedAtendimento = { ...atendimento, ...updates };
         const cpfValue = field === 'cpf' ? value : formData.cpf;
-        
+
         if (updatedAtendimento.contactName && cpfValue) {
           await ensurePrincipalProponent(updatedAtendimento, cpfValue);
         }
@@ -469,7 +472,7 @@ export default function AdminFinanciamentoDetalhePage() {
   // Create history entry
   const createHistoryEntry = async (description: string) => {
     if (!atendimento) return;
-    
+
     try {
       const historyEntry: HistricodeInteraes = {
         _id: crypto.randomUUID(),
@@ -480,7 +483,7 @@ export default function AdminFinanciamentoDetalhePage() {
         autorTipo: 'Sistema',
         tipoEvento: 'Atualização'
       };
-      
+
       await BaseCrudService.create('historicointeracoes', historyEntry);
       setHistorico([historyEntry, ...historico]);
     } catch (error) {
@@ -491,29 +494,29 @@ export default function AdminFinanciamentoDetalhePage() {
   // Handle phase change
   const handlePhaseChange = async (newPhase: string, newSubPhase: string) => {
     if (!atendimento) return;
-    
+
     try {
       const now = new Date().toISOString();
-      
+
       await BaseCrudService.update('atendimentos', {
         _id: atendimento._id,
         faseFinanciamento: newPhase,
         status: newSubPhase,
         dataPrevistaConclusao: now
       });
-      
+
       setPhaseEntryDate(now);
       setDaysInPhase(0);
-      
+
       await createHistoryEntry(`Fase alterada para: ${newPhase} - ${newSubPhase}`);
-      
+
       setAtendimento({
         ...atendimento,
         faseFinanciamento: newPhase,
         status: newSubPhase,
         dataPrevistaConclusao: now
       });
-      
+
       setFormData({
         ...formData,
         faseFinanciamento: newPhase,
@@ -528,7 +531,7 @@ export default function AdminFinanciamentoDetalhePage() {
   const handleAddProponente = async () => {
     const proponente = { ...newProponente, _id: crypto.randomUUID() };
     setProponentes([...proponentes, proponente]);
-    
+
     // Create checklist in database
     if (atendimento) {
       const checklistData: ChecklistdosProponentes = {
@@ -544,7 +547,7 @@ export default function AdminFinanciamentoDetalhePage() {
       };
       await BaseCrudService.create('checklistproponentes', checklistData);
     }
-    
+
     createHistoryEntry(`Proponente adicionado: ${proponente.nome}`);
     setNewProponente({
       _id: '',
@@ -604,12 +607,12 @@ export default function AdminFinanciamentoDetalhePage() {
       return p;
     });
     setProponentes(updatedProponentes);
-    
+
     // Update in database
     if (atendimento) {
       const checklistRes = await BaseCrudService.getAll<ChecklistdosProponentes>('checklistproponentes');
       const existingChecklist = checklistRes.items.find(c => c.clientRef === proponenteId && c.atendimentoRef === atendimento._id);
-      
+
       if (existingChecklist) {
         await BaseCrudService.update('checklistproponentes', {
           _id: existingChecklist._id,
@@ -617,7 +620,7 @@ export default function AdminFinanciamentoDetalhePage() {
         });
       }
     }
-    
+
     const proponente = proponentes.find(p => p._id === proponenteId);
     if (proponente) {
       await createHistoryEntry(`Checklist do proponente ${proponente.nome} atualizado: ${field} = ${value ? 'Sim' : 'Não'}`);
@@ -672,7 +675,7 @@ export default function AdminFinanciamentoDetalhePage() {
     // Check if it's a mandatory document (case-insensitive check)
     const mandatoryDocs = ['RG, CPF ou CNH', 'rg, cpf ou cnh'];
     const isMandatory = mandatoryDocs.some(doc => doc.toLowerCase() === documentoTipo.toLowerCase());
-    
+
     if (isMandatory) {
       alert('Este documento é obrigatório e não pode ser removido. Apenas o status pode ser alterado.');
       return;
@@ -753,28 +756,28 @@ export default function AdminFinanciamentoDetalhePage() {
   // Add vendedor
   const handleAddVendedor = () => {
     const vendedorId = crypto.randomUUID();
-    
+
     // Get all existing vendedores IDs to create vinculoVendedores
     const allVendedoresIds = vendedores.map(v => v._id);
-    
+
     // Create new vendedor with automatic linking
-    const vendedor: Vendedor = { 
-      ...newVendedor, 
+    const vendedor: Vendedor = {
+      ...newVendedor,
       _id: vendedorId,
       vinculoVendedores: allVendedoresIds // Link to all existing vendedores
     };
-    
+
     // Update all existing vendedores to include the new vendedor in their vinculoVendedores
     const updatedVendedores = vendedores.map(v => ({
       ...v,
       vinculoVendedores: [...(v.vinculoVendedores || []), vendedorId]
     }));
-    
+
     // Add new vendedor to the list
     setVendedores([...updatedVendedores, vendedor]);
-    
+
     createHistoryEntry(`Vendedor adicionado: ${vendedor.nome}${vendedor.conjugeVendedorId ? ' (vinculado como cônjuge)' : ''}`);
-    
+
     // Reset form
     setNewVendedor({
       _id: '',
@@ -938,7 +941,7 @@ export default function AdminFinanciamentoDetalhePage() {
   // Add pendencia
   const handleAddPendencia = async () => {
     if (!atendimento || !newPendencia.title) return;
-    
+
     try {
       const now = new Date().toISOString();
       const pendencia: PendnciasdoFinanciamento = {
@@ -955,11 +958,11 @@ export default function AdminFinanciamentoDetalhePage() {
         creationDate: now,
         dataUltimaAtualizacao: now
       };
-      
+
       await BaseCrudService.create('pendenciasfinanciamento', pendencia);
       setPendencias([...pendencias, pendencia]);
       await createHistoryEntry(`Pendência criada: ${pendencia.title}`);
-      
+
       setNewPendencia({
         title: '',
         description: '',
@@ -982,10 +985,10 @@ export default function AdminFinanciamentoDetalhePage() {
 
     try {
       const now = new Date().toISOString();
-      
+
       // Optimistic update - remove from active list immediately
       setPendencias(pendencias.filter(p => p._id !== id));
-      
+
       // Update pendencia status in database
       await BaseCrudService.update('pendenciasfinanciamento', {
         _id: id,
@@ -995,11 +998,11 @@ export default function AdminFinanciamentoDetalhePage() {
         concluidoPorRef: 'current-user-id', // TODO: Replace with actual user ID from auth context
         dataUltimaAtualizacao: now
       });
-      
+
       // Create detailed history entry with type 'Pendencia_Concluida'
       const clientName = atendimento?.contactName || 'Cliente não identificado';
       const responsibleName = pendencia.responsiblePartyDetails || pendencia.responsiblePartyType || 'Não informado';
-      
+
       const historyEntry: HistricodeInteraes = {
         _id: crypto.randomUUID(),
         atendimentoRef: atendimento?._id || '',
@@ -1009,10 +1012,10 @@ export default function AdminFinanciamentoDetalhePage() {
         autorTipo: 'Sistema',
         tipoEvento: 'Pendencia_Concluida'
       };
-      
+
       await BaseCrudService.create('historicointeracoes', historyEntry);
       setHistorico([historyEntry, ...historico]);
-      
+
       await createHistoryEntry(`Pendência "${pendencia.title}" marcada como concluída`);
     } catch (error) {
       console.error('Error resolving pendencia:', error);
@@ -1032,24 +1035,24 @@ export default function AdminFinanciamentoDetalhePage() {
 
     try {
       const now = new Date().toISOString();
-      
+
       // Optimistic update - add back to active list immediately
-      const reopenedPendencia = { 
-        ...pendencia, 
-        status: 'PENDENTE', 
+      const reopenedPendencia = {
+        ...pendencia,
+        status: 'PENDENTE',
         dataUltimaAtualizacao: now,
         resolvedDate: undefined,
         dataHoraConclusao: undefined,
         concluidoPorRef: undefined
       };
       setPendencias([...pendencias.filter(p => p._id !== id), reopenedPendencia]);
-      
+
       await BaseCrudService.update('pendenciasfinanciamento', {
         _id: id,
         status: 'PENDENTE',
         dataUltimaAtualizacao: now
       });
-      
+
       await createHistoryEntry(`Pendência reaberta: ${pendencia.title}`);
     } catch (error) {
       console.error('Error reopening pendencia:', error);
@@ -1059,7 +1062,7 @@ export default function AdminFinanciamentoDetalhePage() {
   // Add tarefa
   const handleAddTarefa = async () => {
     if (!atendimento || !newTarefa.description) return;
-    
+
     try {
       const tarefa: FinancingTasks = {
         _id: crypto.randomUUID(),
@@ -1072,11 +1075,11 @@ export default function AdminFinanciamentoDetalhePage() {
         status: 'Pendente',
         creationDate: new Date().toISOString()
       };
-      
+
       await BaseCrudService.create('tarefasfinanciamento', tarefa);
       setTarefas([...tarefas, tarefa]);
       await createHistoryEntry(`Tarefa criada: ${tarefa.description}`);
-      
+
       setNewTarefa({
         description: '',
         responsibleType: 'Interno',
@@ -1097,12 +1100,12 @@ export default function AdminFinanciamentoDetalhePage() {
         _id: id,
         status: 'Concluída'
       });
-      
-      const updatedTarefas = tarefas.map(t => 
+
+      const updatedTarefas = tarefas.map(t =>
         t._id === id ? { ...t, status: 'Concluída' } : t
       );
       setTarefas(updatedTarefas);
-      
+
       const tarefa = tarefas.find(t => t._id === id);
       if (tarefa) {
         await createHistoryEntry(`Tarefa concluída: ${tarefa.description}`);
@@ -1119,12 +1122,12 @@ export default function AdminFinanciamentoDetalhePage() {
         _id: id,
         status: 'Pendente'
       });
-      
-      const updatedTarefas = tarefas.map(t => 
+
+      const updatedTarefas = tarefas.map(t =>
         t._id === id ? { ...t, status: 'Pendente' } : t
       );
       setTarefas(updatedTarefas);
-      
+
       const tarefa = tarefas.find(t => t._id === id);
       if (tarefa) {
         await createHistoryEntry(`Tarefa reaberta: ${tarefa.description}`);
@@ -1137,7 +1140,7 @@ export default function AdminFinanciamentoDetalhePage() {
   // Add documento
   const handleAddDocumento = async () => {
     if (!atendimento || !newDocumento.documentName) return;
-    
+
     try {
       const documento: DocumentosdoFinanciamento = {
         _id: crypto.randomUUID(),
@@ -1149,11 +1152,11 @@ export default function AdminFinanciamentoDetalhePage() {
         uploadDate: new Date().toISOString(),
         origem: 'Sistema'
       };
-      
+
       await BaseCrudService.create('documentosfinanciamento', documento);
       setDocumentos([...documentos, documento]);
       await createHistoryEntry(`Documento adicionado: ${documento.documentName}`);
-      
+
       setNewDocumento({
         documentName: '',
         documentType: 'RG',
@@ -1173,18 +1176,40 @@ export default function AdminFinanciamentoDetalhePage() {
         _id: id,
         documentStatus: status
       });
-      
-      const updatedDocumentos = documentos.map(d => 
+
+      const updatedDocumentos = documentos.map(d =>
         d._id === id ? { ...d, documentStatus: status } : d
       );
       setDocumentos(updatedDocumentos);
-      
+
       const documento = documentos.find(d => d._id === id);
       if (documento) {
         await createHistoryEntry(`Status do documento "${documento.documentName}" alterado para: ${status}`);
       }
     } catch (error) {
       console.error('Error updating documento status:', error);
+    }
+  };
+
+  // Archive / Unarchive
+  const handleToggleArchive = async () => {
+    if (!atendimento) return;
+
+    try {
+      const newStatus = !formData.isArchived;
+
+      await BaseCrudService.update('atendimentos', {
+        _id: atendimento._id,
+        isArchived: newStatus
+      });
+
+      setFormData({ ...formData, isArchived: newStatus });
+      setAtendimento({ ...atendimento, isArchived: newStatus });
+
+      await createHistoryEntry(newStatus ? 'Atendimento Arquivado' : 'Atendimento Desarquivado');
+
+    } catch (error) {
+      console.error('Error toggling archive status:', error);
     }
   };
 
@@ -1237,6 +1262,14 @@ export default function AdminFinanciamentoDetalhePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={handleToggleArchive}
+                className={`h-10 px-4 ${formData.isArchived ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-white/10 text-primary-foreground border-white/20 hover:bg-white/20'}`}
+              >
+                <Archive className="w-4 h-4 mr-2" />
+                {formData.isArchived ? 'Desarquivar' : 'Arquivar'}
+              </Button>
               <Badge className={`${daysBadgeColor} text-white px-3 py-1`}>
                 {daysInPhase} {daysInPhase === 1 ? 'dia' : 'dias'} nesta fase
               </Badge>
@@ -1287,19 +1320,18 @@ export default function AdminFinanciamentoDetalhePage() {
                           handleAutoSave('cpf', displayValue);
                         }}
                         placeholder="000.000.000-00"
-                        className={`h-10 bg-primary border-border-gray ${
-                          formData.cpf && 
-                          formData.cpf.length === 14 && 
+                        className={`h-10 bg-primary border-border-gray ${formData.cpf &&
+                          formData.cpf.length === 14 &&
                           !validateCPF(formData.cpf)
-                            ? 'border-red-500 border-2'
-                            : ''
-                        }`}
+                          ? 'border-red-500 border-2'
+                          : ''
+                          }`}
                       />
-                      {formData.cpf && 
-                       formData.cpf.length === 14 && 
-                       !validateCPF(formData.cpf) && (
-                        <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
-                      )}
+                      {formData.cpf &&
+                        formData.cpf.length === 14 &&
+                        !validateCPF(formData.cpf) && (
+                          <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
+                        )}
                     </div>
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Contato WhatsApp</Label>
@@ -1360,8 +1392,8 @@ export default function AdminFinanciamentoDetalhePage() {
                     </div>
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Fase Atual do Financiamento</Label>
-                      <Select 
-                        value={formData.faseFinanciamento} 
+                      <Select
+                        value={formData.faseFinanciamento}
                         onValueChange={(value) => {
                           const phase = FINANCING_PHASES.find(p => p.id === value);
                           if (phase) {
@@ -1381,8 +1413,8 @@ export default function AdminFinanciamentoDetalhePage() {
                     </div>
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Subetapa Atual</Label>
-                      <Select 
-                        value={formData.status} 
+                      <Select
+                        value={formData.status}
                         onValueChange={(value) => handlePhaseChange(formData.faseFinanciamento, value)}
                       >
                         <SelectTrigger className="h-10 bg-primary border-border-gray">
@@ -1667,19 +1699,18 @@ export default function AdminFinanciamentoDetalhePage() {
                             setNewProponente({ ...newProponente, cpf: displayValue });
                           }}
                           placeholder="000.000.000-00"
-                          className={`h-10 bg-primary border-border-gray ${
-                            newProponente.cpf && 
-                            newProponente.cpf.length === 14 && 
+                          className={`h-10 bg-primary border-border-gray ${newProponente.cpf &&
+                            newProponente.cpf.length === 14 &&
                             !validateCPF(newProponente.cpf)
-                              ? 'border-red-500 border-2'
-                              : ''
-                          }`}
+                            ? 'border-red-500 border-2'
+                            : ''
+                            }`}
                         />
-                        {newProponente.cpf && 
-                         newProponente.cpf.length === 14 && 
-                         !validateCPF(newProponente.cpf) && (
-                          <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
-                        )}
+                        {newProponente.cpf &&
+                          newProponente.cpf.length === 14 &&
+                          !validateCPF(newProponente.cpf) && (
+                            <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
+                          )}
                       </div>
                       <div>
                         <Label className="font-paragraph text-sm mb-2 block">Telefone/WhatsApp</Label>
@@ -1735,7 +1766,7 @@ export default function AdminFinanciamentoDetalhePage() {
                       <User className="w-12 h-12 text-primary-foreground/30 mx-auto mb-3" />
                       <p className="font-paragraph text-primary-foreground/60">Nenhum proponente cadastrado</p>
                       <p className="font-paragraph text-sm text-primary-foreground/40 mt-1">
-                        {formData.contactName && formData.cpf 
+                        {formData.contactName && formData.cpf
                           ? 'O proponente principal será criado automaticamente ao salvar os dados do processo'
                           : 'Preencha o Nome do Cliente Principal e CPF em "Dados do Processo" para habilitar esta aba'}
                       </p>
@@ -1756,25 +1787,23 @@ export default function AdminFinanciamentoDetalhePage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="relative"
                       >
-                        <Card 
-                          className={`cursor-pointer transition-all border-2 ${
-                            isExpanded 
-                              ? 'border-secondary shadow-lg' 
-                              : isComplete 
-                                ? 'border-green-300 bg-green-50/50' 
-                                : hasPending 
-                                  ? 'border-yellow-300 bg-yellow-50/50' 
-                                  : 'border-border-gray'
-                          }`}
+                        <Card
+                          className={`cursor-pointer transition-all border-2 ${isExpanded
+                            ? 'border-secondary shadow-lg'
+                            : isComplete
+                              ? 'border-green-300 bg-green-50/50'
+                              : hasPending
+                                ? 'border-yellow-300 bg-yellow-50/50'
+                                : 'border-border-gray'
+                            }`}
                           onClick={() => setSelectedProponente(isExpanded ? null : proponente._id)}
                         >
                           <CardContent className="py-4">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-3">
-                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                    proponente.isPrincipal ? 'bg-secondary' : isComplete ? 'bg-green-500' : hasPending ? 'bg-yellow-500' : 'bg-gray-400'
-                                  }`}>
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${proponente.isPrincipal ? 'bg-secondary' : isComplete ? 'bg-green-500' : hasPending ? 'bg-yellow-500' : 'bg-gray-400'
+                                    }`}>
                                     <User className="w-5 h-5 text-white" />
                                   </div>
                                   <div className="flex-1">
@@ -1903,13 +1932,12 @@ export default function AdminFinanciamentoDetalhePage() {
                                           {proponente.documentos.filter(doc => !doc.removed).map((doc) => {
                                             const isMandatory = doc.tipo === 'RG, CPF ou CNH';
                                             return (
-                                              <div 
-                                                key={doc.tipo} 
-                                                className={`p-3 rounded border-2 transition-all ${
-                                                  doc.status === 'Recebido' 
-                                                    ? 'bg-green-50 border-green-300' 
-                                                    : 'bg-yellow-50 border-yellow-300'
-                                                }`}
+                                              <div
+                                                key={doc.tipo}
+                                                className={`p-3 rounded border-2 transition-all ${doc.status === 'Recebido'
+                                                  ? 'bg-green-50 border-green-300'
+                                                  : 'bg-yellow-50 border-yellow-300'
+                                                  }`}
                                               >
                                                 <div className="flex items-start gap-3">
                                                   <Checkbox
@@ -1952,17 +1980,6 @@ export default function AdminFinanciamentoDetalhePage() {
                                                         >
                                                           <Trash2 className="w-3 h-3 mr-1" />
                                                           Excluir
-                                                        </Button>
-                                                      )}
-                                                      {doc.status === 'Pendente' && (
-                                                        <Button
-                                                          size="sm"
-                                                          variant="outline"
-                                                          onClick={() => handleCreatePendenciaFromProponenteDoc(proponente._id, doc.tipo)}
-                                                          className="h-8 text-xs"
-                                                        >
-                                                          <AlertCircle className="w-3 h-3 mr-1" />
-                                                          Criar Pendência
                                                         </Button>
                                                       )}
                                                     </div>
@@ -2083,27 +2100,26 @@ export default function AdminFinanciamentoDetalhePage() {
                                 }
                               }}
                               placeholder={newVendedor.tipoPessoa === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'}
-                              className={`h-10 bg-primary border-border-gray ${
-                                newVendedor.tipoPessoa === 'PF' && 
-                                newVendedor.cpfCnpj && 
-                                newVendedor.cpfCnpj.length === 14 && 
+                              className={`h-10 bg-primary border-border-gray ${newVendedor.tipoPessoa === 'PF' &&
+                                newVendedor.cpfCnpj &&
+                                newVendedor.cpfCnpj.length === 14 &&
                                 !validateCPF(newVendedor.cpfCnpj)
-                                  ? 'border-red-500 border-2'
-                                  : ''
-                              }`}
+                                ? 'border-red-500 border-2'
+                                : ''
+                                }`}
                             />
-                            {newVendedor.tipoPessoa === 'PF' && 
-                             newVendedor.cpfCnpj && 
-                             newVendedor.cpfCnpj.length === 14 && 
-                             !validateCPF(newVendedor.cpfCnpj) && (
-                              <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
-                            )}
+                            {newVendedor.tipoPessoa === 'PF' &&
+                              newVendedor.cpfCnpj &&
+                              newVendedor.cpfCnpj.length === 14 &&
+                              !validateCPF(newVendedor.cpfCnpj) && (
+                                <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
+                              )}
                           </div>
                           {newVendedor.tipoPessoa === 'PF' && (
                             <div className="md:col-span-2">
                               <Label className="font-paragraph text-sm mb-2 block">Estado Civil</Label>
-                              <Select 
-                                value={newVendedor.estadoCivil} 
+                              <Select
+                                value={newVendedor.estadoCivil}
                                 onValueChange={(value) => {
                                   setNewVendedor({ ...newVendedor, estadoCivil: value });
                                   // Show conjugal question if married or in stable union
@@ -2160,8 +2176,8 @@ export default function AdminFinanciamentoDetalhePage() {
                               {isConjuge === true && (
                                 <div>
                                   <Label className="font-paragraph text-sm mb-2 block">Selecione o cônjuge</Label>
-                                  <Select 
-                                    value={newVendedor.conjugeVendedorId} 
+                                  <Select
+                                    value={newVendedor.conjugeVendedorId}
                                     onValueChange={(value) => setNewVendedor({ ...newVendedor, conjugeVendedorId: value })}
                                   >
                                     <SelectTrigger className="h-10 bg-primary border-border-gray">
@@ -2251,27 +2267,26 @@ export default function AdminFinanciamentoDetalhePage() {
                                 }
                               }}
                               placeholder="000.000.000-00"
-                              className={`h-10 bg-primary border-border-gray ${
-                                newVendedor.tipoPessoa === 'PF' && 
-                                newVendedor.cpfCnpjTitular && 
-                                newVendedor.cpfCnpjTitular.length === 14 && 
+                              className={`h-10 bg-primary border-border-gray ${newVendedor.tipoPessoa === 'PF' &&
+                                newVendedor.cpfCnpjTitular &&
+                                newVendedor.cpfCnpjTitular.length === 14 &&
                                 !validateCPF(newVendedor.cpfCnpjTitular)
-                                  ? 'border-red-500 border-2'
-                                  : ''
-                              }`}
+                                ? 'border-red-500 border-2'
+                                : ''
+                                }`}
                             />
-                            {newVendedor.tipoPessoa === 'PF' && 
-                             newVendedor.cpfCnpjTitular && 
-                             newVendedor.cpfCnpjTitular.length === 14 && 
-                             !validateCPF(newVendedor.cpfCnpjTitular) && (
-                              <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
-                            )}
+                            {newVendedor.tipoPessoa === 'PF' &&
+                              newVendedor.cpfCnpjTitular &&
+                              newVendedor.cpfCnpjTitular.length === 14 &&
+                              !validateCPF(newVendedor.cpfCnpjTitular) && (
+                                <p className="text-xs text-red-600 font-semibold mt-1">CPF inválido</p>
+                              )}
                           </div>
                         </div>
                       </div>
 
-                      <Button 
-                        onClick={handleAddVendedor} 
+                      <Button
+                        onClick={handleAddVendedor}
                         className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
                         disabled={!newVendedor.nome || !newVendedor.cpfCnpj || !newVendedor.banco || !newVendedor.agencia || !newVendedor.conta || !newVendedor.titularConta || !newVendedor.cpfCnpjTitular}
                       >
@@ -2322,7 +2337,7 @@ export default function AdminFinanciamentoDetalhePage() {
                       </CardContent>
                     </Card>
                   )}
-                  
+
                   {vendedores.map((vendedor) => {
                     const isSelected = selectedVendedor === vendedor._id;
                     const totalDocs = vendedor.documentos.length;
@@ -2337,25 +2352,23 @@ export default function AdminFinanciamentoDetalhePage() {
                         animate={{ opacity: 1, y: 0 }}
                         className="relative"
                       >
-                        <Card 
-                          className={`cursor-pointer transition-all border-2 ${
-                            isSelected 
-                              ? 'border-secondary shadow-lg' 
-                              : isComplete 
-                                ? 'border-green-300 bg-green-50/50' 
-                                : hasPending 
-                                  ? 'border-red-300 bg-red-50/50' 
-                                  : 'border-border-gray'
-                          }`}
+                        <Card
+                          className={`cursor-pointer transition-all border-2 ${isSelected
+                            ? 'border-secondary shadow-lg'
+                            : isComplete
+                              ? 'border-green-300 bg-green-50/50'
+                              : hasPending
+                                ? 'border-red-300 bg-red-50/50'
+                                : 'border-border-gray'
+                            }`}
                           onClick={() => setSelectedVendedor(isSelected ? null : vendedor._id)}
                         >
                           <CardContent className="py-4">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-3">
-                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                    isComplete ? 'bg-green-500' : hasPending ? 'bg-red-500' : 'bg-gray-400'
-                                  }`}>
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isComplete ? 'bg-green-500' : hasPending ? 'bg-red-500' : 'bg-gray-400'
+                                    }`}>
                                     <User className="w-5 h-5 text-white" />
                                   </div>
                                   <div className="flex-1">
@@ -2443,7 +2456,7 @@ export default function AdminFinanciamentoDetalhePage() {
                                           </div>
                                         )}
                                       </div>
-                                      
+
                                       {/* Vendedores Vinculados */}
                                       {vendedor.vinculoVendedores && vendedor.vinculoVendedores.length > 0 && (
                                         <div className="mt-3 p-3 bg-secondary/5 border border-secondary/20 rounded">
@@ -2509,13 +2522,12 @@ export default function AdminFinanciamentoDetalhePage() {
                                         {vendedor.documentos.filter(doc => !doc.removed).map((doc) => {
                                           const isMandatory = ['Documento de identificação', 'Certidão de nascimento/casamento'].includes(doc.tipo);
                                           return (
-                                            <div 
-                                              key={doc.tipo} 
-                                              className={`p-3 rounded border-2 transition-all ${
-                                                doc.status === 'Recebido' 
-                                                  ? 'bg-green-50 border-green-300' 
-                                                  : 'bg-red-50 border-red-300'
-                                              }`}
+                                            <div
+                                              key={doc.tipo}
+                                              className={`p-3 rounded border-2 transition-all ${doc.status === 'Recebido'
+                                                ? 'bg-green-50 border-green-300'
+                                                : 'bg-red-50 border-red-300'
+                                                }`}
                                             >
                                               <div className="flex items-start gap-3">
                                                 <Checkbox
@@ -2558,17 +2570,6 @@ export default function AdminFinanciamentoDetalhePage() {
                                                       >
                                                         <Trash2 className="w-3 h-3 mr-1" />
                                                         Excluir
-                                                      </Button>
-                                                    )}
-                                                    {doc.status === 'Pendente' && (
-                                                      <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleCreatePendenciaFromVendedorDoc(vendedor._id, doc.tipo)}
-                                                        className="h-8 text-xs"
-                                                      >
-                                                        <AlertCircle className="w-3 h-3 mr-1" />
-                                                        Criar Pendência
                                                       </Button>
                                                     )}
                                                   </div>
@@ -2728,24 +2729,24 @@ export default function AdminFinanciamentoDetalhePage() {
                           const priorityOrder = { 'Alta': 0, 'Média': 1, 'Baixa': 2 };
                           const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3;
                           const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3;
-                          
+
                           if (aPriority !== bPriority) {
                             return aPriority - bPriority;
                           }
-                          
+
                           // Then sort by overdue status
                           const aOverdue = new Date(a.dueDate || '') < new Date();
                           const bOverdue = new Date(b.dueDate || '') < new Date();
                           if (aOverdue && !bOverdue) return -1;
                           if (!aOverdue && bOverdue) return 1;
-                          
+
                           // Finally sort by due date
                           return new Date(a.dueDate || '').getTime() - new Date(b.dueDate || '').getTime();
                         })
                         .map((pendencia) => {
                           const isOverdue = new Date(pendencia.dueDate || '') < new Date();
                           const bgColor = isOverdue ? 'bg-red-50 border-red-300' : 'bg-yellow-50 border-yellow-300';
-                          
+
                           return (
                             <Card key={pendencia._id} className={`border-2 ${bgColor}`}>
                               <CardContent className="py-3">
@@ -2755,11 +2756,10 @@ export default function AdminFinanciamentoDetalhePage() {
                                 </div>
                                 <p className="font-paragraph text-xs text-primary-foreground/70 mb-2">{pendencia.description}</p>
                                 <div className="flex flex-wrap gap-2 mb-3">
-                                  <Badge className={`text-xs ${
-                                    pendencia.priority === 'Alta' ? 'bg-red-500' :
+                                  <Badge className={`text-xs ${pendencia.priority === 'Alta' ? 'bg-red-500' :
                                     pendencia.priority === 'Média' ? 'bg-yellow-500' :
-                                    'bg-blue-500'
-                                  }`}>{pendencia.priority}</Badge>
+                                      'bg-blue-500'
+                                    }`}>{pendencia.priority}</Badge>
                                   <Badge className="text-xs">{pendencia.status || 'PENDENTE'}</Badge>
                                   <Badge className="text-xs">{pendencia.responsiblePartyType}</Badge>
                                 </div>
@@ -2948,7 +2948,7 @@ export default function AdminFinanciamentoDetalhePage() {
                         .map((tarefa) => {
                           const isOverdue = new Date(tarefa.dueDate || '') < new Date();
                           const bgColor = isOverdue ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-300';
-                          
+
                           return (
                             <Card key={tarefa._id} className={`border-2 ${bgColor}`}>
                               <CardContent className="py-3">
@@ -3123,12 +3123,11 @@ export default function AdminFinanciamentoDetalhePage() {
                               <p className="font-paragraph text-xs text-primary-foreground/70 mb-2">{documento.description}</p>
                               <div className="flex flex-wrap gap-2 mb-2">
                                 <Badge className="text-xs">{documento.documentType}</Badge>
-                                <Badge className={`text-xs ${
-                                  documento.documentStatus === 'Aprovado' ? 'bg-green-500' :
+                                <Badge className={`text-xs ${documento.documentStatus === 'Aprovado' ? 'bg-green-500' :
                                   documento.documentStatus === 'Rejeitado' ? 'bg-red-500' :
-                                  documento.documentStatus === 'Recebido' ? 'bg-blue-500' :
-                                  'bg-yellow-500'
-                                }`}>
+                                    documento.documentStatus === 'Recebido' ? 'bg-blue-500' :
+                                      'bg-yellow-500'
+                                  }`}>
                                   {documento.documentStatus}
                                 </Badge>
                               </div>
@@ -3162,7 +3161,7 @@ export default function AdminFinanciamentoDetalhePage() {
             {/* Tab: Histórico */}
             <TabsContent value="historico" className="space-y-6">
               <h2 className="font-heading text-2xl text-primary-foreground">Linha do Tempo do Processo</h2>
-              
+
               <div className="space-y-4">
                 {historico.length === 0 ? (
                   <Card>
@@ -3175,7 +3174,7 @@ export default function AdminFinanciamentoDetalhePage() {
                     <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border-gray"></div>
                     {historico.map((entry, index) => {
                       const isPendenciaConcluida = entry.interactionType === 'Pendencia_Concluida';
-                      
+
                       return (
                         <motion.div
                           key={entry._id}
@@ -3184,9 +3183,8 @@ export default function AdminFinanciamentoDetalhePage() {
                           transition={{ delay: index * 0.05 }}
                           className="relative pl-12 pb-8"
                         >
-                          <div className={`absolute left-2 top-1 w-4 h-4 rounded-full border-2 border-primary ${
-                            isPendenciaConcluida ? 'bg-green-500' : 'bg-secondary'
-                          }`}></div>
+                          <div className={`absolute left-2 top-1 w-4 h-4 rounded-full border-2 border-primary ${isPendenciaConcluida ? 'bg-green-500' : 'bg-secondary'
+                            }`}></div>
                           <Card className={isPendenciaConcluida ? 'border-2 border-green-300 bg-green-50/30' : ''}>
                             <CardContent className="py-3">
                               <div className="flex items-start justify-between gap-4 mb-2">

@@ -1,0 +1,5 @@
+
+CS: Imoveis
+HEADERS: ["Status","Referência","Referência alternativa","Tipo","Finalidade","Endereço","Compl.","Bairro","Edf. / Cond.","Cidade","R$ Venda","R$ Locação","R$ Venda M²","R$ Locação M²","R$ Cond.","R$ Iptu","Dormitórios","Suítes","Vagas","Data de cadastro","Data de atualização","Área total","Área","Fotos","Captador(es)","Promotor(es)","Indicador(es)","Marcador(es)","Permuta por"]
+SAMPLE: ["Ativo","CA0149","","Casa","Residencial","Rua Joaquim Inácio Cardoso, nº 401","","Jardim das Oliveiras","","São Paulo",1100000,0,3666.67,0,0,0,3,0,0,"01/02/2026","02/02/2026",300,300,30,"Juliana Almeida da Costa","","","",""]
+  

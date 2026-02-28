@@ -11,6 +11,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
 import { ServiceRecords } from '@/entities';
+import { toast } from 'sonner';
 
 function AdminAtendimentosContent() {
   const [atendimentos, setAtendimentos] = useState<ServiceRecords[]>([]);
@@ -54,6 +55,19 @@ function AdminAtendimentosContent() {
           ...formData,
         });
       } else {
+        // Duplicate check before creating
+        if (formData.contactPhone && formData.serviceType) {
+          const { items: existing } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
+          const dup = existing.find(s =>
+            s.contactPhone === (formData as any).contactPhone &&
+            s.serviceType === (formData as any).serviceType &&
+            !s.isArchived
+          );
+          if (dup) {
+            toast.error(`Este cliente já possui um processo de ${(formData as any).serviceType} ativo (Pasta: ${dup.pastaInterna}). Arquive o atual antes de criar um novo.`);
+            return;
+          }
+        }
         await BaseCrudService.create('atendimentos', {
           _id: crypto.randomUUID(),
           creationDate: new Date(),

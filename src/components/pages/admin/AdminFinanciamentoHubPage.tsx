@@ -12,7 +12,7 @@ import { PendnciasdoFinanciamento, FinancingTasks } from '@/entities';
 
 export default function AdminFinanciamentoHubPage() {
   console.log('[AdminFinanciamentoHubPage] Component mounted');
-  
+
   const navigate = useNavigate();
   const [pendenciasAtrasadas, setPendenciasAtrasadas] = useState(0);
   const [tarefasAtrasadas, setTarefasAtrasadas] = useState(0);
@@ -48,7 +48,7 @@ export default function AdminFinanciamentoHubPage() {
     setPendenciasAtrasadas(pendenciasCount);
     setTarefasAtrasadas(tarefasCount);
     setIsLoading(false);
-    
+
     console.log('[AdminFinanciamentoHubPage] Counts loaded:', {
       pendenciasAtrasadas: pendenciasCount,
       tarefasAtrasadas: tarefasCount
@@ -56,6 +56,16 @@ export default function AdminFinanciamentoHubPage() {
   };
 
   const cards = [
+    {
+      title: 'Dashboard Operacional',
+      description: 'Visão de produtividade, KPIs e tarefas do setor',
+      icon: Columns3,
+      color: 'text-secondary',
+      bgColor: 'bg-secondary/10',
+      buttonText: 'Acessar Dashboard',
+      route: '/admin/financiamento/dashboard',
+      badge: null
+    },
     {
       title: 'Kanban de Financiamento',
       description: 'Acompanhe todos os processos por etapa',
@@ -88,10 +98,11 @@ export default function AdminFinanciamentoHubPage() {
     }
   ];
 
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       <main className="flex-1 w-full">
         <div className="max-w-[100rem] mx-auto px-6 py-12">
           {/* Page Header */}
@@ -115,7 +126,7 @@ export default function AdminFinanciamentoHubPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  <Card 
+                  <Card
                     className="h-full cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-border-gray"
                     onClick={() => {
                       console.log('[AdminFinanciamentoHubPage] Card clicked - navigating to:', card.route);
@@ -143,7 +154,7 @@ export default function AdminFinanciamentoHubPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <Button 
+                      <Button
                         className="w-full bg-buttonbackground hover:bg-buttonbackground/90 text-white font-paragraph"
                         onClick={(e) => {
                           e.stopPropagation();

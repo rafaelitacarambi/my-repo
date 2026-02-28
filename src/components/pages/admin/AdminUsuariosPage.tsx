@@ -126,7 +126,7 @@ export default function AdminUsuariosPage() {
       'Pendente': { variant: 'secondary' as const, color: 'bg-yellow-500' },
       'Inativo': { variant: 'destructive' as const, color: 'bg-red-500' }
     };
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['Pendente'];
     return (
       <Badge variant={config.variant} className="flex items-center gap-1">
@@ -143,7 +143,7 @@ export default function AdminUsuariosPage() {
       'Operacional': 'bg-blue-100 text-blue-800',
       'Financeiro': 'bg-orange-100 text-orange-800'
     };
-    
+
     const colorClass = profileColors[profile as keyof typeof profileColors] || 'bg-gray-100 text-gray-800';
     return (
       <Badge variant="outline" className={colorClass}>
@@ -229,8 +229,8 @@ export default function AdminUsuariosPage() {
                   {searchTerm ? 'Nenhum usuário encontrado' : 'Nenhum usuário cadastrado'}
                 </h3>
                 <p className="font-paragraph text-foreground/60 mb-6">
-                  {searchTerm 
-                    ? 'Tente ajustar os filtros de busca' 
+                  {searchTerm
+                    ? 'Tente ajustar os filtros de busca'
                     : 'Comece cadastrando o primeiro usuário do sistema'}
                 </p>
                 {!searchTerm && (
@@ -273,10 +273,13 @@ export default function AdminUsuariosPage() {
                                     <span>{user.emailLogin}</span>
                                   </div>
                                 )}
-                                {user.unidadeRef && (
-                                  <div className="flex items-center gap-2">
-                                    <Building2 className="w-4 h-4" />
-                                    <span>{getUnitName(user.unidadeRef)}</span>
+                                {user.setores && user.setores.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {user.setores.map(sector => (
+                                      <Badge key={sector} variant="secondary" className="text-[10px] bg-blue-50 text-blue-700 border-blue-100">
+                                        {sector}
+                                      </Badge>
+                                    ))}
                                   </div>
                                 )}
                                 {user.lastLogin && (

@@ -1,4 +1,4 @@
-import { items } from "@wix/data";
+import { items } from "../../src/lib/wix-data-mock";
 import { WixDataItem } from ".";
 
 /**
@@ -115,6 +115,29 @@ export class BaseCrudService {
     }
   }
 
+  static async bulkCreate<T extends WixDataItem>(
+    collectionId: string,
+    itemsData: any[]
+  ): Promise<number> {
+    try {
+      // @ts-ignore
+      if (items.bulkInsert) {
+        // @ts-ignore
+        return await items.bulkInsert(collectionId, itemsData);
+      } else {
+        let count = 0;
+        for (const item of itemsData) {
+          await this.create(collectionId, item);
+          count++;
+        }
+        return count;
+      }
+    } catch (error) {
+      console.error(`Error bulk creating ${collectionId}:`, error);
+      throw error;
+    }
+  }
+
   /**
    * Retrieves items from the collection with pagination (default: 50 per page)
    * @param includeRefs - { singleRef: [...], multiRef: [...] } or string[] for backward compatibility
@@ -125,7 +148,7 @@ export class BaseCrudService {
     pagination?: PaginationOptions
   ): Promise<PaginatedResult<T>> {
     try {
-      const limit = Math.min(pagination?.limit ?? 50, 1000);
+      const limit = Math.min(pagination?.limit ?? 50, 5000);
       const skip = pagination?.skip ?? 0;
 
       // Support both old format (string[]) and new format ({ singleRef, multiRef })

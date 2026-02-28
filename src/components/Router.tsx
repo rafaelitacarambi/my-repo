@@ -22,7 +22,6 @@ import AdminProcessosPage from '@/components/pages/admin/AdminProcessosPage';
 import AdminChavesPage from '@/components/pages/admin/AdminChavesPage';
 import AdminFinanceiroPage from '@/components/pages/admin/AdminFinanceiroPage';
 import AdminClientesPage from '@/components/pages/admin/AdminClientesPage';
-import AdminAtendimentosPage from '@/components/pages/admin/AdminAtendimentosPage';
 import AdminAgendamentosPage from '@/components/pages/admin/AdminAgendamentosPage';
 import AdminHistoricoPage from '@/components/pages/admin/AdminHistoricoPage';
 import AdminFinancingKanbanPage from '@/components/pages/admin/AdminFinancingKanbanPage';
@@ -32,6 +31,15 @@ import DiagnosticoUsuarioPage from '@/components/pages/DiagnosticoUsuarioPage';
 import AdminFinanciamentoHubPage from '@/components/pages/admin/AdminFinanciamentoHubPage';
 import AdminFinancingPendenciasPage from '@/components/pages/admin/AdminFinancingPendenciasPage';
 import AdminFinancingTarefasPage from '@/components/pages/admin/AdminFinancingTarefasPage';
+import AdminFinancingAndamentoPage from '@/components/pages/admin/AdminFinancingAndamentoPage';
+import AdminFinanciamentoDashboardPage from '@/components/pages/admin/AdminFinanciamentoDashboardPage';
+import AdminVendasKanbanPage from '@/components/pages/admin/AdminVendasKanbanPage';
+import AdminVendasDashboardPage from '@/components/pages/admin/AdminVendasDashboardPage';
+import AdminLocacoesKanbanPage from '@/components/pages/admin/AdminLocacoesKanbanPage';
+import AdminLeilaoKanbanPage from '@/components/pages/admin/AdminLeilaoKanbanPage';
+
+import AdminWhatsAppInboxPage from '@/components/pages/admin/AdminWhatsAppInboxPage';
+import AdminPropertyImportPage from '@/components/pages/admin/AdminPropertyImportPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -94,6 +102,14 @@ const router = createBrowserRouter([
         element: <DiagnosticoUsuarioPage />,
       },
       {
+        path: "admin/imoveis/importar",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminPropertyImportPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
         path: "admin/imoveis",
         element: (
           <ProtectedAdminRoute>
@@ -109,14 +125,8 @@ const router = createBrowserRouter([
           </ProtectedAdminRoute>
         ),
       },
-      {
-        path: "admin/processos",
-        element: (
-          <ProtectedAdminRoute>
-            <AdminProcessosPage />
-          </ProtectedAdminRoute>
-        ),
-      },
+
+
       {
         path: "admin/chaves",
         element: (
@@ -141,14 +151,7 @@ const router = createBrowserRouter([
           </ProtectedAdminRoute>
         ),
       },
-      {
-        path: "admin/atendimentos",
-        element: (
-          <ProtectedAdminRoute>
-            <AdminAtendimentosPage />
-          </ProtectedAdminRoute>
-        ),
-      },
+
       {
         path: "admin/agendamentos",
         element: (
@@ -166,6 +169,24 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "admin/financiamento/dashboard",
+        element: (
+          <ProtectedAdminRoute allowedProfiles={['Admin', 'Operacional', 'Financeiro']}>
+            <AdminFinanciamentoDashboardPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+
+      {
+        path: "admin/vendas/dashboard",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminVendasDashboardPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+
+      {
         path: "admin/financiamento",
         element: (
           <ProtectedAdminRoute allowedProfiles={['Admin', 'Operacional', 'Financeiro']}>
@@ -181,6 +202,31 @@ const router = createBrowserRouter([
           </ProtectedAdminRoute>
         ),
       },
+      {
+        path: "admin/negocios/kanban",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminVendasKanbanPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/locacoes/kanban",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminLocacoesKanbanPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/leilao/kanban",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminLeilaoKanbanPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+
       {
         path: "admin/financiamento/:atendimentoId",
         element: (
@@ -206,10 +252,26 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "admin/financiamento-andamento",
+        element: (
+          <ProtectedAdminRoute allowedProfiles={['Admin', 'Operacional', 'Financeiro']}>
+            <AdminFinancingAndamentoPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
         path: "admin/usuarios",
         element: (
           <ProtectedAdminRoute allowedProfiles={['Admin']}>
             <AdminUsuariosPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/whatsapp",
+        element: (
+          <ProtectedAdminRoute allowedProfiles={['Admin', 'Corretor', 'Operacional', 'Financeiro']}>
+            <AdminWhatsAppInboxPage />
           </ProtectedAdminRoute>
         ),
       },

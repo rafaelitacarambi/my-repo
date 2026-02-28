@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
-import { 
-  CheckSquare, 
-  Plus, 
-  Edit2, 
-  Trash2, 
+import {
+  CheckSquare,
+  Plus,
+  Edit2,
+  Trash2,
   Clock,
   Search,
   Filter,
@@ -67,8 +67,6 @@ export default function AdminFinancingTarefasPage() {
   const [atendimentos, setAtendimentos] = useState<ServiceRecords[]>([]);
   const [usuarios, setUsuarios] = useState<UsuriosdoSistema[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [atendimentoFilter, setAtendimentoFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTarefa, setEditingTarefa] = useState<FinancingTasks | null>(null);
 
@@ -89,7 +87,7 @@ export default function AdminFinancingTarefasPage() {
 
   const loadData = async () => {
     setIsLoading(true);
-    
+
     const [tarefasResult, atendimentosResult, usuariosResult] = await Promise.all([
       BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento'),
       BaseCrudService.getAll<ServiceRecords>('atendimentos'),
@@ -101,6 +99,8 @@ export default function AdminFinancingTarefasPage() {
     setUsuarios(usuariosResult.items.filter(u => u.ativo));
     setIsLoading(false);
   };
+
+  const financingTeam = usuarios.filter(u => u.setores?.includes('Financiamento') && u.ativo !== false);
 
   // Get filtered tasks by column and filters (only active tasks - not completed)
   const getTasksByColumn = (columnId: string) => {
@@ -116,16 +116,7 @@ export default function AdminFinancingTarefasPage() {
       }
     });
 
-    if (searchTerm) {
-      filtered = filtered.filter(t => 
-        t.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
 
-    if (atendimentoFilter !== 'all') {
-      filtered = filtered.filter(t => t.atendimentoRef === atendimentoFilter);
-    }
 
     return filtered;
   };
@@ -152,9 +143,10 @@ export default function AdminFinancingTarefasPage() {
       description: tarefa.description || '',
       atendimentoRef: tarefa.atendimentoRef || '',
       responsibleType: tarefa.responsibleType || 'Interno',
-      responsavelExternoRef: tarefa.responsavelExternoRef || '',
-      externalResponsibleName: tarefa.externalResponsibleName || '',
-      externalResponsibleContact: tarefa.externalResponsibleContact || '',
+      responsavelExternoRef: tarefa.responsibleType === 'Sem responsável' ? 'sem_responsavel' : (tarefa.responsavelExternoRef || ''),
+      // internalResponsibleId is mapped to responsavelExternoRef in the form
+      externalResponsibleName: '',
+      externalResponsibleContact: '',
       dueDate: tarefa.dueDate ? format(new Date(tarefa.dueDate), 'yyyy-MM-dd') : ''
     });
     setIsDialogOpen(true);
@@ -164,9 +156,9 @@ export default function AdminFinancingTarefasPage() {
     if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
 
     setTarefas(prev => prev.filter(t => t._id !== id));
-    
+
     await BaseCrudService.delete('tarefasfinanciamento', id);
-    
+
     toast({
       title: "Tarefa excluída",
       description: "A tarefa foi removida com sucesso"
@@ -176,34 +168,36 @@ export default function AdminFinancingTarefasPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.titulo || !formData.atendimentoRef) {
+    if (!formData.description || !formData.atendimentoRef) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha o título e selecione um processo",
+        description: "Preencha a descrição e selecione um processo",
         variant: "destructive"
       });
       return;
     }
 
+    const isSemResponsavel = formData.responsavelExternoRef === 'sem_responsavel';
+
     const tarefaData = {
-      titulo: formData.titulo,
+      titulo: formData.description.substring(0, 100),
       description: formData.description,
       status: 'A Fazer',
       atendimentoRef: formData.atendimentoRef,
-      responsibleType: formData.responsibleType,
-      responsavelExternoRef: formData.responsavelExternoRef || undefined,
-      internalResponsibleId: formData.responsibleType === 'Interno' ? formData.responsavelExternoRef : undefined,
-      externalResponsibleName: formData.externalResponsibleName || undefined,
-      externalResponsibleContact: formData.externalResponsibleContact || undefined,
+      responsibleType: isSemResponsavel ? 'Sem responsável' : 'Interno',
+      responsavelExternoRef: isSemResponsavel ? undefined : formData.responsavelExternoRef,
+      internalResponsibleId: isSemResponsavel ? undefined : formData.responsavelExternoRef,
+      externalResponsibleName: undefined,
+      externalResponsibleContact: undefined,
       dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
       creationDate: editingTarefa ? undefined : new Date().toISOString()
     };
 
     if (editingTarefa) {
-      setTarefas(prev => prev.map(t => 
+      setTarefas(prev => prev.map(t =>
         t._id === editingTarefa._id ? { ...t, ...tarefaData } : t
       ));
-      
+
       await BaseCrudService.update('tarefasfinanciamento', {
         _id: editingTarefa._id,
         ...tarefaData
@@ -220,7 +214,7 @@ export default function AdminFinancingTarefasPage() {
       } as FinancingTasks;
 
       setTarefas(prev => [newTarefa, ...prev]);
-      
+
       await BaseCrudService.create('tarefasfinanciamento', newTarefa);
 
       if (newTarefa.atendimentoRef) {
@@ -242,7 +236,7 @@ export default function AdminFinancingTarefasPage() {
     }
 
     setIsDialogOpen(false);
-    
+
     // Reload data to update counters
     await loadData();
   };
@@ -303,7 +297,7 @@ export default function AdminFinancingTarefasPage() {
       title: "✅ Tarefa concluída",
       description: `"${tarefa.titulo || tarefa.description}" foi finalizada e movida para o histórico`
     });
-    
+
     // Reload data to update counters
     await loadData();
   };
@@ -335,7 +329,7 @@ export default function AdminFinancingTarefasPage() {
       title: "🔄 Tarefa reaberta",
       description: `"${tarefa.titulo || tarefa.description}" foi reaberta e movida para 'A Fazer'`
     });
-    
+
     // Reload data to update counters
     await loadData();
   };
@@ -374,13 +368,22 @@ export default function AdminFinancingTarefasPage() {
       title: "📋 Tarefa movida",
       description: `Movida para: ${TASK_COLUMNS.find(c => c.id === destination.droppableId)?.name}`
     });
-    
+
     // Reload data to update counters
     await loadData();
   };
 
   const getResponsibleName = (tarefa: FinancingTasks) => {
+    if (tarefa.responsibleType === 'Interno' && tarefa.internalResponsibleId) {
+      const usuario = usuarios.find(u => u._id === tarefa.internalResponsibleId);
+      if (usuario) return usuario.name || usuario.emailLogin;
+    }
+
+    // Fallback for legacy data or external refs
     if (tarefa.responsavelExternoRef) {
+      const usuario = usuarios.find(u => u._id === tarefa.responsavelExternoRef);
+      if (usuario) return usuario.name || usuario.emailLogin;
+
       const rsalesMap: Record<string, string> = {
         'catarina': 'Catarina',
         'rafael': 'Rafael',
@@ -389,6 +392,7 @@ export default function AdminFinancingTarefasPage() {
       };
       return rsalesMap[tarefa.responsavelExternoRef.toLowerCase()] || tarefa.responsavelExternoRef;
     }
+    if (tarefa.responsibleType === 'Sem responsável') return 'Sem responsável';
     if (tarefa.responsibleType === 'Interno' && tarefa.internalResponsibleId) {
       const usuario = usuarios.find(u => u._id === tarefa.internalResponsibleId);
       return usuario?.name || 'Usuário não encontrado';
@@ -455,7 +459,7 @@ export default function AdminFinancingTarefasPage() {
                   Controle operacional estilo Trello - Arraste cartões entre colunas
                 </p>
               </div>
-              
+
               <Button
                 onClick={handleCreate}
                 className="h-11 bg-white text-secondary hover:bg-white/90 font-semibold"
@@ -464,32 +468,10 @@ export default function AdminFinancingTarefasPage() {
                 Nova Tarefa
               </Button>
             </div>
-            
-            {/* Filters */}
+
+            {/* Filters removed as per user request */}
             <div className="flex flex-wrap gap-3">
-              <div className="relative flex-1 min-w-[300px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
-                <Input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar tarefas..."
-                  className="pl-10 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                />
-              </div>
-              <Select value={atendimentoFilter} onValueChange={setAtendimentoFilter}>
-                <SelectTrigger className="w-[280px] h-11 bg-white/10 border-white/20 text-white">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Filtrar por processo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os processos</SelectItem>
-                  {atendimentos.map(atendimento => (
-                    <SelectItem key={atendimento._id} value={atendimento._id}>
-                      {atendimento.contactName || `Processo ${atendimento._id.substring(0, 8)}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
             </div>
           </motion.div>
         </div>
@@ -514,9 +496,8 @@ export default function AdminFinancingTarefasPage() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`${column.color} border-2 ${column.borderColor} rounded-xl p-4 min-h-[600px] transition-all ${
-                            snapshot.isDraggingOver ? 'ring-4 ring-secondary/30 scale-[1.02]' : ''
-                          }`}
+                          className={`${column.color} border-2 ${column.borderColor} rounded-xl p-4 min-h-[600px] transition-all ${snapshot.isDraggingOver ? 'ring-4 ring-secondary/30 scale-[1.02]' : ''
+                            }`}
                         >
                           {/* Column Header */}
                           <div className="mb-4 pb-3 border-b-2 border-gray-300">
@@ -533,22 +514,24 @@ export default function AdminFinancingTarefasPage() {
                             {columnTasks.map((tarefa, index) => {
                               const daysOpen = getDaysOpen(tarefa.creationDate);
                               const overdueStatus = isOverdue(tarefa.dueDate, tarefa.status);
-                              const slaColor = daysOpen <= 1 ? 'bg-green-500' : daysOpen <= 3 ? 'bg-yellow-500' : 'bg-red-500';
-                              
+                              const slaColor = tarefa.status === 'Concluída' ? 'bg-green-500' : 'bg-red-500';
+
                               return (
                                 <Draggable key={tarefa._id} draggableId={tarefa._id} index={index}>
                                   {(provided, snapshot) => (
                                     <motion.div
                                       ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
+                                      {...provided.draggableProps as any}
+                                      {...provided.dragHandleProps as any}
                                       initial={{ opacity: 0, scale: 0.95 }}
                                       animate={{ opacity: 1, scale: 1 }}
                                       whileHover={{ scale: snapshot.isDragging ? 1 : 1.02 }}
                                       transition={{ duration: 0.2 }}
-                                      className={`bg-white rounded-lg p-4 border-2 border-gray-200 hover:shadow-lg transition-all cursor-grab active:cursor-grabbing group ${
-                                        snapshot.isDragging ? 'shadow-2xl ring-4 ring-secondary/50 rotate-1 scale-105' : ''
-                                      } ${overdueStatus ? 'border-red-400 bg-red-50' : ''}`}
+                                      className={`rounded-lg p-4 border-2 transition-all cursor-grab active:cursor-grabbing group ${snapshot.isDragging ? 'shadow-2xl ring-4 ring-secondary/50 rotate-1 scale-105' : ''
+                                        } ${tarefa.status === 'Concluída'
+                                          ? 'bg-green-50 border-green-200'
+                                          : 'bg-red-50 border-red-200'
+                                        }`}
                                       style={{
                                         ...provided.draggableProps.style,
                                         opacity: snapshot.isDragging ? 0.9 : 1
@@ -665,17 +648,18 @@ export default function AdminFinancingTarefasPage() {
                                             variant="ghost"
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              navigate(`/admin/financiamento/${tarefa.atendimentoRef}`);
+                                              navigate(`/admin/financiamento-kanban?openCard=${tarefa.atendimentoRef}&origin=tarefas&initialTab=tarefas`);
                                             }}
                                             className="h-8 w-8 p-0"
-                                            title="Abrir processo"
+                                            title="Abrir no Kanban"
                                           >
                                             <ExternalLink className="w-3 h-3" />
                                           </Button>
                                         )}
                                       </div>
                                     </motion.div>
-                                  )}
+                                  )
+                                  }
                                 </Draggable>
                               );
                             })}
@@ -698,7 +682,7 @@ export default function AdminFinancingTarefasPage() {
             </div>
           </DragDropContext>
         </div>
-      </section>
+      </section >
 
       <Footer />
 
@@ -713,8 +697,8 @@ export default function AdminFinancingTarefasPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label className="font-paragraph text-sm mb-2 block font-semibold">Processo de Financiamento *</Label>
-              <Select 
-                value={formData.atendimentoRef} 
+              <Select
+                value={formData.atendimentoRef}
                 onValueChange={(value) => setFormData({ ...formData, atendimentoRef: value })}
               >
                 <SelectTrigger className="h-11">
@@ -730,15 +714,7 @@ export default function AdminFinancingTarefasPage() {
               </Select>
             </div>
 
-            <div>
-              <Label className="font-paragraph text-sm mb-2 block font-semibold">Título da Tarefa *</Label>
-              <Input
-                value={formData.titulo}
-                onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                placeholder="Ex: Enviar documentos para análise"
-                className="h-11"
-              />
-            </div>
+
 
             <div>
               <Label className="font-paragraph text-sm mb-2 block font-semibold">Descrição</Label>
@@ -753,22 +729,6 @@ export default function AdminFinancingTarefasPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="font-paragraph text-sm mb-2 block font-semibold">Tipo de Responsável *</Label>
-                <Select 
-                  value={formData.responsibleType} 
-                  onValueChange={(value) => setFormData({ ...formData, responsibleType: value })}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Interno">Interno (R Sales)</SelectItem>
-                    <SelectItem value="Externo">Externo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
                 <Label className="font-paragraph text-sm mb-2 block font-semibold">Prazo</Label>
                 <Input
                   type="date"
@@ -777,48 +737,27 @@ export default function AdminFinancingTarefasPage() {
                   className="h-11"
                 />
               </div>
-            </div>
 
-            {formData.responsibleType === 'Interno' ? (
               <div>
-                <Label className="font-paragraph text-sm mb-2 block font-semibold">Responsável (R Sales) *</Label>
-                <Select 
-                  value={formData.responsavelExternoRef} 
+                <Label className="font-paragraph text-sm mb-2 block font-semibold">Responsável</Label>
+                <Select
+                  value={formData.responsavelExternoRef}
                   onValueChange={(value) => setFormData({ ...formData, responsavelExternoRef: value })}
                 >
                   <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Selecione um membro da equipe" />
+                    <SelectValue placeholder="Selecione o responsável" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="catarina">Catarina</SelectItem>
-                    <SelectItem value="rafael">Rafael</SelectItem>
-                    <SelectItem value="gabriela">Gabriela</SelectItem>
-                    <SelectItem value="isabela">Isabela</SelectItem>
+                    <SelectItem value="sem_responsavel">Sem Responsável</SelectItem>
+                    {financingTeam.map(user => (
+                      <SelectItem key={user._id} value={user._id}>
+                        {user.name || user.emailLogin}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block font-semibold">Nome do Responsável Externo</Label>
-                  <Input
-                    value={formData.externalResponsibleName}
-                    onChange={(e) => setFormData({ ...formData, externalResponsibleName: e.target.value })}
-                    placeholder="Nome completo"
-                    className="h-11"
-                  />
-                </div>
-                <div>
-                  <Label className="font-paragraph text-sm mb-2 block font-semibold">Contato</Label>
-                  <Input
-                    value={formData.externalResponsibleContact}
-                    onChange={(e) => setFormData({ ...formData, externalResponsibleContact: e.target.value })}
-                    placeholder="Telefone ou email"
-                    className="h-11"
-                  />
-                </div>
-              </div>
-            )}
+            </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border-gray">
               <Button
@@ -840,6 +779,6 @@ export default function AdminFinancingTarefasPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 }

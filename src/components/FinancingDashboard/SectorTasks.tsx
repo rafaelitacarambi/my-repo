@@ -27,7 +27,9 @@ export default function SectorTasks({
   // Filter tasks by status
   let filteredTasks = tasks;
 
-  if (filterStatus === 'Em atraso') {
+  if (filterStatus === 'Todas') {
+    filteredTasks = tasks.filter(t => t.status !== 'Concluída' && t.status !== 'Cancelado');
+  } else if (filterStatus === 'Em atraso') {
     filteredTasks = tasks.filter(t => {
       if (t.status === 'Concluída' || t.status === 'Cancelado') return false;
       if (!t.dueDate) return false;
@@ -35,15 +37,6 @@ export default function SectorTasks({
     });
   } else if (filterStatus === 'Abertas') {
     filteredTasks = tasks.filter(t => t.status === 'Aberta');
-  } else if (filterStatus === 'Concluídas (mês)') {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    filteredTasks = tasks.filter(t => {
-      if (t.status !== 'Concluída') return false;
-      if (!t._updatedDate) return false;
-      const updateDate = new Date(t._updatedDate);
-      return updateDate >= monthStart && updateDate <= monthEnd;
-    });
   }
 
   // Sort: overdue first, then by creation date (newest first)
@@ -87,15 +80,14 @@ export default function SectorTasks({
 
       {/* Filters */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        {['Todas', 'Em atraso', 'Abertas', 'Concluídas (mês)'].map(status => (
+        {['Todas', 'Em atraso', 'Abertas'].map(status => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
-            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-              filterStatus === status
-                ? 'bg-buttonbackground text-white'
-                : 'bg-light-gray text-foreground hover:bg-border-gray'
-            }`}
+            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filterStatus === status
+              ? 'bg-buttonbackground text-white'
+              : 'bg-light-gray text-foreground hover:bg-border-gray'
+              }`}
           >
             {status}
           </button>

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Check } from 'lucide-react';
 import { BaseCrudService } from '@/integrations';
 import { LeadsdeContato, Clients } from '@/entities';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 interface LeadRegistrationModalProps {
   isOpen: boolean;
@@ -29,8 +30,8 @@ export function LeadRegistrationModal({
   const [createdLeadId, setCreatedLeadId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    interessePrincipal: '',
-    tipoImovelDesejado: '',
+    interessePrincipal: [] as string[],
+    tipoImovelDesejado: [] as string[],
     cidadeDesejada: '',
     bairroDesejado: '',
     faixaValorMin: '',
@@ -50,7 +51,7 @@ export function LeadRegistrationModal({
 
   const loadClientData = async () => {
     if (!clientId) return;
-    
+
     try {
       const client = await BaseCrudService.getById<Clients>('clientes', clientId);
       setClientData(client);
@@ -61,8 +62,8 @@ export function LeadRegistrationModal({
 
   const resetForm = () => {
     setFormData({
-      interessePrincipal: '',
-      tipoImovelDesejado: '',
+      interessePrincipal: [],
+      tipoImovelDesejado: [],
       cidadeDesejada: '',
       bairroDesejado: '',
       faixaValorMin: '',
@@ -87,7 +88,7 @@ export function LeadRegistrationModal({
     e.preventDefault();
     setError(null);
 
-    if (!formData.interessePrincipal) {
+    if (formData.interessePrincipal.length === 0) {
       setError('Interesse principal é obrigatório');
       return;
     }
@@ -100,15 +101,15 @@ export function LeadRegistrationModal({
     setLoading(true);
     try {
       const leadId = crypto.randomUUID();
-      
+
       // Create lead with all required fields
       await BaseCrudService.create('leadsdecontato', {
         _id: leadId,
         fullName: clientData?.clientName || '',
         email: clientData?.email || '',
         phoneNumber: clientData?.phoneNumber || '',
-        interessePrincipal: formData.interessePrincipal,
-        tipoImovelDesejado: formData.tipoImovelDesejado,
+        interessePrincipal: formData.interessePrincipal.join(', '),
+        tipoImovelDesejado: formData.tipoImovelDesejado.join(', '),
         cidadeDesejada: formData.cidadeDesejada,
         bairroDesejado: formData.bairroDesejado,
         faixaValorMin: formData.faixaValorMin ? parseFloat(formData.faixaValorMin) : undefined,
@@ -126,13 +127,13 @@ export function LeadRegistrationModal({
 
       setCreatedLeadId(leadId);
       setSuccess(true);
-      
+
       // The backend hook (leads-distribuicao.js) will automatically:
       // 1. Identify the sector
       // 2. Assign a broker using round-robin
       // 3. Create a task for the broker
       // 4. Register in history
-      
+
       onSuccess?.(leadId);
     } catch (err) {
       setError('Erro ao criar lead');
@@ -150,7 +151,7 @@ export function LeadRegistrationModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl bg-primary border-primary-foreground/20 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-heading text-2xl text-secondary">
+          <DialogTitle className="font-heading text-2xl text-black">
             {success ? 'Lead Criado com Sucesso!' : 'Cadastrar Novo Lead'}
           </DialogTitle>
         </DialogHeader>
@@ -168,19 +169,19 @@ export function LeadRegistrationModal({
 
             {clientData && (
               <div className="bg-secondary/10 rounded-lg p-4 border border-secondary/30">
-                <p className="font-paragraph text-sm text-primary-foreground font-semibold mb-1">
+                <p className="font-paragraph text-sm text-black font-semibold mb-1">
                   Cliente vinculado:
                 </p>
-                <p className="font-paragraph text-sm text-primary-foreground">
+                <p className="font-paragraph text-sm text-black">
                   {clientData.clientName}
                 </p>
                 {clientData.email && (
-                  <p className="font-paragraph text-xs text-primary-foreground/60">
+                  <p className="font-paragraph text-xs text-black/60">
                     {clientData.email}
                   </p>
                 )}
                 {clientData.phoneNumber && (
-                  <p className="font-paragraph text-xs text-primary-foreground/60">
+                  <p className="font-paragraph text-xs text-black/60">
                     {clientData.phoneNumber}
                   </p>
                 )}
@@ -189,71 +190,67 @@ export function LeadRegistrationModal({
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="interessePrincipal" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="interessePrincipal" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Interesse Principal *
                 </Label>
-                <Select
+                <ToggleGroup
+                  type="multiple"
+                  variant="outline"
                   value={formData.interessePrincipal}
                   onValueChange={(value) => setFormData({ ...formData, interessePrincipal: value })}
+                  className="flex flex-wrap justify-start gap-2"
                 >
-                  <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Compra">Compra</SelectItem>
-                    <SelectItem value="Locação">Locação</SelectItem>
-                    <SelectItem value="Investimento">Investimento</SelectItem>
-                    <SelectItem value="Leilão Caixa">Leilão Caixa</SelectItem>
-                    <SelectItem value="Imóvel na Planta">Imóvel na Planta</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <ToggleGroupItem value="Compra" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Compra</ToggleGroupItem>
+                  <ToggleGroupItem value="Locação" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Locação</ToggleGroupItem>
+                  <ToggleGroupItem value="Investimento" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Investimento</ToggleGroupItem>
+                  <ToggleGroupItem value="Leilão Caixa" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Leilão Caixa</ToggleGroupItem>
+                  <ToggleGroupItem value="Imóvel na Planta" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Imóvel na Planta</ToggleGroupItem>
+                </ToggleGroup>
               </div>
 
               <div>
-                <Label htmlFor="tipoImovelDesejado" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="tipoImovelDesejado" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Tipo de Imóvel Desejado
                 </Label>
-                <Select
+                <ToggleGroup
+                  type="multiple"
+                  variant="outline"
                   value={formData.tipoImovelDesejado}
                   onValueChange={(value) => setFormData({ ...formData, tipoImovelDesejado: value })}
+                  className="flex flex-wrap justify-start gap-2"
                 >
-                  <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Casa">Casa</SelectItem>
-                    <SelectItem value="Apartamento">Apartamento</SelectItem>
-                    <SelectItem value="Terreno">Terreno</SelectItem>
-                    <SelectItem value="Área">Área</SelectItem>
-                    <SelectItem value="Comercial">Comercial</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <ToggleGroupItem value="Casa" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Casa</ToggleGroupItem>
+                  <ToggleGroupItem value="Apartamento" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Apartamento</ToggleGroupItem>
+                  <ToggleGroupItem value="Terreno" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Terreno</ToggleGroupItem>
+                  <ToggleGroupItem value="Área" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Área</ToggleGroupItem>
+                  <ToggleGroupItem value="Comercial" className="bg-primary-foreground/5 border-primary-foreground/20 text-xs py-1 h-auto data-[state=on]:bg-secondary data-[state=on]:text-white text-black font-medium">Comercial</ToggleGroupItem>
+                </ToggleGroup>
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="cidadeDesejada" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="cidadeDesejada" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Cidade Desejada
                 </Label>
                 <Input
                   id="cidadeDesejada"
                   value={formData.cidadeDesejada}
                   onChange={(e) => setFormData({ ...formData, cidadeDesejada: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  className="bg-primary-foreground/5 border-primary-foreground/20 text-black placeholder:text-black/40"
                   placeholder="Ex: São Paulo"
                 />
               </div>
 
               <div>
-                <Label htmlFor="bairroDesejado" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="bairroDesejado" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Bairro Desejado
                 </Label>
                 <Input
                   id="bairroDesejado"
                   value={formData.bairroDesejado}
                   onChange={(e) => setFormData({ ...formData, bairroDesejado: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  className="bg-primary-foreground/5 border-primary-foreground/20 text-black placeholder:text-black/40"
                   placeholder="Ex: Centro"
                 />
               </div>
@@ -261,7 +258,7 @@ export function LeadRegistrationModal({
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="faixaValorMin" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="faixaValorMin" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Faixa de Valor Mínima (R$)
                 </Label>
                 <Input
@@ -269,13 +266,13 @@ export function LeadRegistrationModal({
                   type="number"
                   value={formData.faixaValorMin}
                   onChange={(e) => setFormData({ ...formData, faixaValorMin: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  className="bg-primary-foreground/5 border-primary-foreground/20 text-black placeholder:text-black/40"
                   placeholder="Ex: 200000"
                 />
               </div>
 
               <div>
-                <Label htmlFor="faixaValorMax" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="faixaValorMax" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Faixa de Valor Máxima (R$)
                 </Label>
                 <Input
@@ -283,7 +280,7 @@ export function LeadRegistrationModal({
                   type="number"
                   value={formData.faixaValorMax}
                   onChange={(e) => setFormData({ ...formData, faixaValorMax: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  className="bg-primary-foreground/5 border-primary-foreground/20 text-black placeholder:text-black/40"
                   placeholder="Ex: 500000"
                 />
               </div>
@@ -291,7 +288,7 @@ export function LeadRegistrationModal({
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="potencialEntrada" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="potencialEntrada" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Entrada Disponível (R$)
                 </Label>
                 <Input
@@ -299,13 +296,13 @@ export function LeadRegistrationModal({
                   type="number"
                   value={formData.potencialEntrada}
                   onChange={(e) => setFormData({ ...formData, potencialEntrada: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  className="bg-primary-foreground/5 border-primary-foreground/20 text-black placeholder:text-black/40"
                   placeholder="Ex: 50000"
                 />
               </div>
 
               <div>
-                <Label htmlFor="rendaBruta" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="rendaBruta" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Renda Bruta Aproximada (R$)
                 </Label>
                 <Input
@@ -313,7 +310,7 @@ export function LeadRegistrationModal({
                   type="number"
                   value={formData.rendaBruta}
                   onChange={(e) => setFormData({ ...formData, rendaBruta: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  className="bg-primary-foreground/5 border-primary-foreground/20 text-black placeholder:text-black/40"
                   placeholder="Ex: 8000"
                 />
               </div>
@@ -321,14 +318,14 @@ export function LeadRegistrationModal({
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="perfilCompra" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="perfilCompra" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Perfil de Compra
                 </Label>
                 <Select
                   value={formData.perfilCompra}
                   onValueChange={(value) => setFormData({ ...formData, perfilCompra: value })}
                 >
-                  <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
+                  <SelectTrigger className="bg-primary-foreground/5 border-primary-foreground/20 text-black">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -343,14 +340,14 @@ export function LeadRegistrationModal({
               </div>
 
               <div>
-                <Label htmlFor="urgencia" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <Label htmlFor="urgencia" className="font-paragraph text-sm text-black mb-2 block font-medium">
                   Urgência
                 </Label>
                 <Select
                   value={formData.urgencia}
                   onValueChange={(value) => setFormData({ ...formData, urgencia: value })}
                 >
-                  <SelectTrigger className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground">
+                  <SelectTrigger className="bg-primary-foreground/5 border-primary-foreground/20 text-black">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -387,20 +384,20 @@ export function LeadRegistrationModal({
             </div>
 
             <div>
-              <h3 className="font-heading text-xl text-primary-foreground font-semibold mb-2">
+              <h3 className="font-heading text-xl text-black font-semibold mb-2">
                 Lead criado com sucesso!
               </h3>
-              <p className="font-paragraph text-sm text-primary-foreground/70">
+              <p className="font-paragraph text-sm text-black/70">
                 O lead foi registrado e será distribuído automaticamente para um corretor responsável.
               </p>
             </div>
 
             {clientData && (
               <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
-                <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
+                <p className="font-paragraph text-xs text-black/60 mb-2">
                   Cliente vinculado:
                 </p>
-                <p className="font-paragraph text-sm text-primary-foreground font-semibold">
+                <p className="font-paragraph text-sm text-black font-semibold">
                   {clientData.clientName}
                 </p>
               </div>

@@ -31,8 +31,33 @@ function AreaRestritaContent() {
   };
 
   const handleCreateClient = () => {
-    setIsClientModalOpen(true);
+    navigate('/admin/clientes', { state: { openNewClient: true } });
   };
+
+  useEffect(() => {
+    if (isAuthorized && userProfile) {
+      const sectors = userProfile.setores || [];
+
+      // If user is Admin, they might want the Hub, but let's check if we should auto-redirect
+      // If they only have one sector, definitely redirect
+      if (sectors.length === 1) {
+        if (sectors.includes('Financiamento')) {
+          navigate('/admin/financiamento/dashboard');
+        } else if (sectors.includes('Venda, Compra e Locação')) {
+          navigate('/admin/vendas/dashboard');
+        }
+      }
+      // If multiple sectors, we can prioritize one or stay in the hub.
+      // Given the user's request, let's prioritize Vendas if available.
+      else if (sectors.length > 1) {
+        if (sectors.includes('Venda, Compra e Locação')) {
+          navigate('/admin/negocios/kanban');
+        } else if (sectors.includes('Financiamento')) {
+          navigate('/admin/financiamento/dashboard');
+        }
+      }
+    }
+  }, [isAuthorized, userProfile, navigate]);
 
   // Show loading state while validating
   if (isValidating) {
@@ -59,7 +84,7 @@ function AreaRestritaContent() {
             </AlertDescription>
           </Alert>
           <div className="text-center mt-8">
-            <Button 
+            <Button
               onClick={handleLogout}
               variant="outline"
               className="font-paragraph"
@@ -87,8 +112,8 @@ function AreaRestritaContent() {
             transition={{ duration: 0.6 }}
             className="flex flex-col items-center text-center gap-6"
           >
-            <Image 
-              src="https://static.wixstatic.com/media/9b23b4_901f6032bce24b56a3af78024a71a840~mv2.png" 
+            <Image
+              src="https://static.wixstatic.com/media/9b23b4_901f6032bce24b56a3af78024a71a840~mv2.png"
               alt="R. Sales Imóveis Logo"
               width={100}
               className="h-auto"
@@ -105,11 +130,11 @@ function AreaRestritaContent() {
               </p>
             </div>
             <div className="flex items-center gap-4 mt-4">
-              <CreateNewModal 
+              <CreateNewModal
                 onSelectProperty={handleCreateProperty}
                 onSelectClient={handleCreateClient}
               />
-              <Button 
+              <Button
                 onClick={handleLogout}
                 variant="outline"
                 className="font-paragraph"
@@ -135,8 +160,8 @@ function AreaRestritaContent() {
               <Link to="/admin/imoveis">
                 <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
                   <div className="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Image 
-                      src="https://static.wixstatic.com/media/9b23b4_901f6032bce24b56a3af78024a71a840~mv2.png" 
+                    <Image
+                      src="https://static.wixstatic.com/media/9b23b4_901f6032bce24b56a3af78024a71a840~mv2.png"
                       alt="Logo"
                       width={28}
                       className="h-auto"
@@ -152,7 +177,7 @@ function AreaRestritaContent() {
               </Link>
             </motion.div>
 
-            {/* Gestão de Leads */}
+            {/* Leads */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -164,7 +189,7 @@ function AreaRestritaContent() {
                     <Users className="w-7 h-7 text-secondary-foreground" />
                   </div>
                   <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
-                    Gestão de Leads
+                    Leads
                   </h3>
                   <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
                     Visualize e gerencie leads de contato e distribua automaticamente
@@ -173,26 +198,9 @@ function AreaRestritaContent() {
               </Link>
             </motion.div>
 
-            {/* Gestão de Processos */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <Link to="/admin/processos">
-                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
-                  <div className="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <TrendingUp className="w-7 h-7 text-secondary-foreground" />
-                  </div>
-                  <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
-                    Gestão de Processos
-                  </h3>
-                  <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
-                    Acompanhe processos de venda e locação em andamento
-                  </p>
-                </div>
-              </Link>
-            </motion.div>
+
+
+
 
             {/* Gestão de Chaves */}
             <motion.div
@@ -278,26 +286,7 @@ function AreaRestritaContent() {
               </Link>
             </motion.div>
 
-            {/* Gestão de Atendimentos */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-            >
-              <Link to="/admin/atendimentos">
-                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
-                  <div className="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Headphones className="w-7 h-7 text-secondary-foreground" />
-                  </div>
-                  <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
-                    Gestão de Atendimentos
-                  </h3>
-                  <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
-                    Registre e acompanhe solicitações de serviço
-                  </p>
-                </div>
-              </Link>
-            </motion.div>
+
 
             {/* Gestão de Agendamentos */}
             <motion.div
@@ -336,6 +325,27 @@ function AreaRestritaContent() {
                   </h3>
                   <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
                     Registre e acompanhe todas as interações com clientes
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Dashboard Financiamento */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.1 }}
+            >
+              <Link to="/admin/financiamento/dashboard">
+                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
+                  <div className="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <TrendingUp className="w-7 h-7 text-secondary-foreground" />
+                  </div>
+                  <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
+                    Dashboard Financiamento
+                  </h3>
+                  <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
+                    Painel operacional focado em produtividade e controle de financiamentos
                   </p>
                 </div>
               </Link>
@@ -388,7 +398,7 @@ function AreaRestritaContent() {
 
       <Footer />
 
-      <ClientRegistrationModal 
+      <ClientRegistrationModal
         isOpen={isClientModalOpen}
         onOpenChange={setIsClientModalOpen}
       />

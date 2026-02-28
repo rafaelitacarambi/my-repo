@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useMember } from '@/integrations';
-import { SignIn } from '@/components/ui/sign-in';
+import { LocalLoginModal } from '@/components/auth/LocalLoginModal';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface SignInProps {
@@ -60,11 +60,9 @@ export function MemberProtectedRoute({
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <SignIn
-          title={signInTitle}
-          message={messageToSignIn}
-          className={signInClassName}
-          {...signInProps}
+        <LocalLoginModal
+          title="Acesso Restrito"
+          message="Faça login com suas credenciais de acesso."
         />
       </div>
     );

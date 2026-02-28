@@ -1,24 +1,28 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Home, MapPin, Bed, Bath, Maximize, ArrowLeft, Calculator, Phone, CheckCircle, Zap, Shield, Sofa } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Image } from '@/components/ui/image';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import { ArrowLeft, Home, MapPin, Bed, Bath, Maximize, X, Check, Share2, Printer, ChevronLeft, ChevronRight, Sofa, Zap, CheckCircle, Shield, Calculator, Phone } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { BaseCrudService } from '@/integrations';
 import { Imveis } from '@/entities';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { PropertyAIChat } from '@/components/PropertyAIChat';
 
 export default function ImovelDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Imveis | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
     const loadProperty = async () => {
       if (!id) return;
-      
+
       try {
         const item = await BaseCrudService.getById<Imveis>('imoveis', id);
         setProperty(item);
@@ -47,14 +51,14 @@ export default function ImovelDetailPage() {
     );
   }
 
-  if (!property) {
+  if (!property || property.statusImovel !== 'Ativo') {
     return (
       <div className="min-h-screen bg-primary">
         <Header />
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12 py-20 text-center">
           <Home className="w-16 h-16 text-primary-foreground/30 mx-auto mb-4" />
           <h2 className="font-heading text-3xl text-primary-foreground mb-4">
-            Imóvel não encontrado
+            Imóvel não encontrado ou indisponível
           </h2>
           <Link to="/imoveis">
             <Button className="bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 px-6 rounded-lg">
@@ -66,6 +70,32 @@ export default function ImovelDetailPage() {
       </div>
     );
   }
+
+  // --- Data Fidelity Protocol: Gallery Sync ---
+  const mergeGallery = () => {
+    const gallery: string[] = [];
+
+    // Add primary images
+    if (property.propertyImages) {
+      if (Array.isArray(property.propertyImages)) {
+        gallery.push(...property.propertyImages);
+      } else if (typeof property.propertyImages === 'string') {
+        gallery.push(property.propertyImages);
+      }
+    }
+
+    // Add secondary gallery if exists
+    if (property.galeriaFotos && Array.isArray(property.galeriaFotos)) {
+      property.galeriaFotos.forEach(img => {
+        if (!gallery.includes(img)) gallery.push(img);
+      });
+    }
+
+    return gallery;
+  };
+
+  const allPhotos = mergeGallery();
+
 
   return (
     <div className="min-h-screen bg-primary">
@@ -92,39 +122,98 @@ export default function ImovelDetailPage() {
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Image */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="relative h-96 lg:h-[500px] bg-primary-foreground/10 rounded-2xl overflow-hidden"
-              >
-                {property.propertyImages ? (
-                  <Image
-                    src={property.propertyImages}
-                    alt={property.propertyName || 'Imóvel'}
-                    className="w-full h-full object-cover"
-                    width={800}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Home className="w-24 h-24 text-primary-foreground/30" />
-                  </div>
+              {/* Image Carousel */}
+              <div className="relative h-96 lg:h-[500px] bg-black rounded-2xl overflow-hidden group">
+                <AnimatePresence mode="wait">
+                  {allPhotos.length > 0 ? (
+                    <motion.div
+                      key={selectedImage}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="absolute inset-0 flex items-center justify-center"
+                    >
+                      {/* Blurred Background */}
+                      <div
+                        className="absolute inset-0 bg-cover bg-center blur-2xl opacity-50 contrast-125 saturate-150"
+                        style={{ backgroundImage: `url(${allPhotos[selectedImage]})` }}
+                      />
+
+                      {/* Main Image */}
+                      <motion.img
+                        src={allPhotos[selectedImage]}
+                        alt={property.resumoImovel || property.propertyName || 'Imóvel'}
+                        className="relative z-10 w-full h-full object-contain cursor-grab active:cursor-grabbing"
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={1}
+                        onDragEnd={(e, { offset, velocity }) => {
+                          const swipe = Math.abs(offset.x) * velocity.x;
+                          if (swipe < -10000) {
+                            setSelectedImage((prev) => (prev + 1) % allPhotos.length);
+                          } else if (swipe > 10000) {
+                            setSelectedImage((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
+                          }
+                        }}
+                      />
+                    </motion.div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Home className="w-24 h-24 text-muted-foreground/30" />
+                    </div>
+                  )}
+                </AnimatePresence>
+
+                {/* Navigation Buttons */}
+                {allPhotos.length > 1 && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
+                      }}
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage((prev) => (prev + 1) % allPhotos.length);
+                      }}
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </Button>
+                  </>
                 )}
-                {property.status && (
-                  <div className="absolute top-6 right-6">
-                    <span className={`font-paragraph text-sm px-4 py-2 rounded-lg font-semibold ${
-                      property.status === 'Disponível'
-                        ? 'bg-secondary text-secondary-foreground'
-                        : property.status === 'Reservado'
+
+                {/* Status Badge */}
+                {(property.statusImovel || property.status) && (
+                  <div className="absolute top-6 right-6 z-20">
+                    <span className={`font-paragraph text-sm px-4 py-2 rounded-lg font-semibold shadow-lg ${(property.statusImovel || property.status) === 'Ativo' || (property.statusImovel || property.status) === 'Disponível'
+                      ? 'bg-secondary text-secondary-foreground'
+                      : (property.statusImovel || property.status) === 'Reservado'
                         ? 'bg-dark-gray text-white'
-                        : 'bg-destructive text-destructiveforeground'
-                    }`}>
-                      {property.status}
+                        : 'bg-destructive text-destructive-foreground'
+                      }`}>
+                      {property.statusImovel || property.status}
                     </span>
                   </div>
                 )}
-              </motion.div>
+
+                {/* Counter */}
+                {allPhotos.length > 0 && (
+                  <div className="absolute bottom-4 right-4 z-20 bg-black/50 backdrop-blur text-white px-3 py-1 rounded-full text-xs font-medium">
+                    {selectedImage + 1} / {allPhotos.length}
+                  </div>
+                )}
+              </div>
 
               {/* Property Info */}
               <motion.div
@@ -143,11 +232,11 @@ export default function ImovelDetailPage() {
                     </span>
                   </div>
                   <h1 className="font-heading text-4xl lg:text-5xl text-secondary mb-4">
-                    {property.propertyName}
+                    {property.resumoImovel || property.propertyName}
                   </h1>
                   <div className="flex items-start gap-2 text-primary-foreground/70">
                     <MapPin className="w-5 h-5 mt-1 flex-shrink-0" />
-                    <span className="font-paragraph text-lg">{property.address}</span>
+                    <span className="font-paragraph text-lg">{property.bairro || property.address || property.logradouro || 'Bairro não informado'}</span>
                   </div>
                 </div>
 
@@ -160,7 +249,7 @@ export default function ImovelDetailPage() {
                     <div>
                       <p className="font-paragraph text-sm text-primary-foreground/60">Quartos</p>
                       <p className="font-heading text-xl text-primary-foreground font-semibold">
-                        {property.bedrooms}
+                        {property.bedrooms || property.dormitorios || property.quartos || 0}
                       </p>
                     </div>
                   </div>
@@ -171,7 +260,7 @@ export default function ImovelDetailPage() {
                     <div>
                       <p className="font-paragraph text-sm text-primary-foreground/60">Banheiros</p>
                       <p className="font-heading text-xl text-primary-foreground font-semibold">
-                        {property.bathrooms}
+                        {property.bathrooms || property.banheiros || 0}
                       </p>
                     </div>
                   </div>
@@ -182,7 +271,7 @@ export default function ImovelDetailPage() {
                     <div>
                       <p className="font-paragraph text-sm text-primary-foreground/60">Área</p>
                       <p className="font-heading text-xl text-primary-foreground font-semibold">
-                        {property.area}m²
+                        {property.area || property.areaUtil || property.areaTotal || property.areaConstruida || 0}m²
                       </p>
                     </div>
                   </div>
@@ -194,9 +283,24 @@ export default function ImovelDetailPage() {
                     Sobre o Imóvel
                   </h2>
                   <p className="font-paragraph text-base text-primary-foreground/80 leading-relaxed whitespace-pre-line">
-                    {property.description || 'Descrição não disponível.'}
+                    {property.descricaoAnuncio || property.description || 'Descrição não disponível.'}
                   </p>
                 </div>
+
+                {/* --- Gallery Grid --- */}
+                {allPhotos.length > 1 && (
+                  <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+                    {allPhotos.map((photo, idx) => (
+                      <div
+                        key={idx}
+                        className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${selectedImage === idx ? 'border-secondary scale-95' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                        onClick={() => setSelectedImage(idx)}
+                      >
+                        <img src={photo} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" width={200} />
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Tabs for Additional Info */}
                 <Tabs defaultValue="detalhes" className="w-full">
@@ -393,8 +497,8 @@ export default function ImovelDetailPage() {
                     Valor do Imóvel
                   </p>
                   <p className="font-heading text-4xl text-secondary font-bold mb-6">
-                    {property.price
-                      ? `R$ ${property.price.toLocaleString('pt-BR')}`
+                    {property.price || property.precoVenda || property.precoLocacao
+                      ? `R$ ${(property.price || property.precoVenda || property.precoLocacao || 0).toLocaleString('pt-BR')}`
                       : 'Consulte'}
                   </p>
 
@@ -414,23 +518,9 @@ export default function ImovelDetailPage() {
                   </div>
                 </div>
 
-                {/* Mídia */}
+                {/* Mídia & Chat */}
                 <div className="space-y-6">
-                  {property.galeriaFotos && (
-                    <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
-                      <h3 className="font-heading text-lg text-primary-foreground mb-4 font-semibold">
-                        Galeria de Fotos
-                      </h3>
-                      <div className="bg-foreground p-4 rounded-lg">
-                        <Image
-                          src={property.galeriaFotos}
-                          alt="Galeria"
-                          className="w-full h-auto rounded-lg"
-                          width={400}
-                        />
-                      </div>
-                    </div>
-                  )}
+                  <PropertyAIChat property={property} />
 
                   {property.plantaBaixa && (
                     <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10">
@@ -438,7 +528,7 @@ export default function ImovelDetailPage() {
                         Planta Baixa
                       </h3>
                       <div className="bg-foreground p-4 rounded-lg">
-                        <Image
+                        <img
                           src={property.plantaBaixa}
                           alt="Planta Baixa"
                           className="w-full h-auto rounded-lg"
@@ -472,7 +562,7 @@ export default function ImovelDetailPage() {
                         QR Code da Chave
                       </h3>
                       <div className="bg-foreground p-4 rounded-lg">
-                        <Image
+                        <img
                           src={property.keyQrCodeUrl}
                           alt="QR Code"
                           className="w-full h-auto"

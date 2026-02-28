@@ -6,10 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Check } from 'lucide-react';
+import { AlertCircle, Check, TrendingUp, Building2, Gavel, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { BaseCrudService } from '@/integrations';
-import { Clients } from '@/entities';
+import { Clients, ServiceRecords } from '@/entities';
 import { LeadRegistrationModal } from '@/components/LeadRegistrationModal';
+import { formatCPF, handleCPFInput, validateCPF } from '@/lib/input-masks';
 
 interface ClientRegistrationModalProps {
   isOpen: boolean;
@@ -36,27 +39,34 @@ export function ClientRegistrationModal({
   const [step, setStep] = useState<'form' | 'roles' | 'success'>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [duplicateWarning, setDuplicateWarning] = useState<Clients | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<{ client: Clients; services: ServiceRecords[] } | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [createLead, setCreateLead] = useState<'sim' | 'nao'>('nao');
   const [createdClientId, setCreatedClientId] = useState<string | null>(null);
   const [showLeadModal, setShowLeadModal] = useState(false);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     clientName: '',
     email: '',
     phoneNumber: '',
+    cpfCnpj: '',
     address: '',
     notes: '',
+    gender: 'Masculino' as 'Masculino' | 'Feminino' | 'Outro',
   });
+
+  const isCPFInvalid = formData.cpfCnpj.length === 14 && !validateCPF(formData.cpfCnpj);
 
   const resetForm = () => {
     setFormData({
       clientName: '',
       email: '',
       phoneNumber: '',
+      cpfCnpj: '',
       address: '',
       notes: '',
+      gender: 'Masculino',
     });
     setSelectedRoles([]);
     setCreateLead('nao');
@@ -72,15 +82,23 @@ export function ClientRegistrationModal({
     onOpenChange(false);
   };
 
-  const checkDuplicateClient = async (): Promise<Clients | null> => {
+  const checkDuplicateClient = async (): Promise<{ client: Clients; services: ServiceRecords[] } | null> => {
     try {
-      const { items } = await BaseCrudService.getAll<Clients>('clientes');
-      const duplicate = items.find(
+      const { items: allClients } = await BaseCrudService.getAll<Clients>('clientes');
+      const duplicate = allClients.find(
         (c) =>
+          (formData.cpfCnpj && c.cpfCnpj === formData.cpfCnpj) ||
           (formData.phoneNumber && c.phoneNumber === formData.phoneNumber) ||
-          (formData.email && c.email === formData.email)
+          (formData.email && c.email === formData.email) ||
+          (formData.address && c.address?.toLowerCase() === formData.address?.toLowerCase())
       );
-      return duplicate || null;
+
+      if (duplicate) {
+        const { items: allServices } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
+        const clientServices = allServices.filter(s => s.clientePrincipalRef === duplicate._id && !s.isArchived);
+        return { client: duplicate, services: clientServices };
+      }
+      return null;
     } catch {
       return null;
     }
@@ -133,13 +151,14 @@ export function ClientRegistrationModal({
 
     try {
       const clientId = crypto.randomUUID();
-      
+
       // Create client with optional roles saved in papeis field
       await BaseCrudService.create('clientes', {
         _id: clientId,
         clientName: formData.clientName,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
+        cpfCnpj: formData.cpfCnpj,
         address: formData.address,
         notes: formData.notes,
         status: 'Ativo',
@@ -147,7 +166,7 @@ export function ClientRegistrationModal({
       });
 
       setCreatedClientId(clientId);
-      
+
       // Check if user wants to create a lead
       if (createLead === 'sim') {
         setStep('success');
@@ -178,8 +197,81 @@ export function ClientRegistrationModal({
     // Lead was created successfully
   };
 
+  const handleGenerateService = async (serviceType: string) => {
+    setLoading(true);
+    try {
+      // Duplication check for Financing
+      const { items: existingServices } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
+      const duplicate = existingServices.find(s =>
+        s.clientePrincipalRef === createdClientId &&
+        s.serviceType === serviceType &&
+        !s.isArchived
+      );
+
+      if (duplicate) {
+        toast.error(`Este cliente já possui um processo de ${serviceType} ativo (Pasta: ${duplicate.pastaInterna}). Arquive o atual antes de criar um novo.`);
+        setLoading(false);
+        return;
+      }
+
+      const getInitialStatus = (type: string): string => {
+        if (type === 'Financiamento' || type === 'Crédito') return 'novos-clientes';
+        return 'Novos';
+      };
+
+      const newServiceRecord: any = {
+        _id: crypto.randomUUID(),
+        serviceType: serviceType,
+        contactName: formData.clientName,
+        contactEmail: formData.email,
+        contactPhone: formData.phoneNumber,
+        clientePrincipalRef: createdClientId,
+        status: getInitialStatus(serviceType),
+        pastaInterna: `${serviceType.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-6)}`,
+        creationDate: new Date().toISOString(),
+        priority: 'Média',
+        notes: `Gerado via cadastro de cliente.`
+      };
+
+      // Sector specific defaults
+      if (serviceType === 'Financiamento') {
+        newServiceRecord.faseFinanciamento = 'novos-clientes';
+      }
+
+      await BaseCrudService.create('atendimentos', newServiceRecord);
+
+      if (onSuccess && createdClientId) {
+        onSuccess(createdClientId);
+      }
+
+      // Wait for persistence
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Redirection mapping
+      const routeMap: Record<string, string> = {
+        'Financiamento': '/admin/financiamento-kanban',
+        'Venda': '/admin/negocios/kanban',
+        'Locação': '/admin/locacoes/kanban',
+        'Leilão': '/admin/leilao/kanban'
+      };
+
+      onOpenChange(false);
+      navigate(routeMap[serviceType] || '/admin/atendimentos', {
+        state: {
+          openCardId: newServiceRecord._id,
+          newCardData: newServiceRecord
+        }
+      });
+    } catch (err) {
+      console.error(`Erro ao gerar ${serviceType}:`, err);
+      alert(`Erro ao gerar processo de ${serviceType}.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose} >
       <DialogContent className="max-w-2xl bg-primary border-primary-foreground/20 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl text-secondary">
@@ -205,10 +297,48 @@ export function ClientRegistrationModal({
               <Alert className="bg-brandaccent/10 border-brandaccent/30">
                 <AlertCircle className="h-4 w-4 text-brandaccent" />
                 <AlertDescription className="text-foreground ml-2">
-                  <p className="font-semibold mb-2">Cliente já existe no sistema:</p>
-                  <p>{duplicateWarning.clientName}</p>
-                  {duplicateWarning.email && <p>Email: {duplicateWarning.email}</p>}
-                  {duplicateWarning.phoneNumber && <p>Telefone: {duplicateWarning.phoneNumber}</p>}
+                  <p className="font-semibold mb-2 text-destructive">Impossível continuar: Este cliente já possui cadastro!</p>
+                  <p className="font-medium">{duplicateWarning.client.clientName}</p>
+                  {duplicateWarning.client.cpfCnpj && <p className="text-sm">CPF/CNPJ: {duplicateWarning.client.cpfCnpj}</p>}
+
+                  {duplicateWarning.services.length > 0 ? (
+                    <div className="mt-3 p-3 bg-white/50 rounded-lg border border-brandaccent/20">
+                      <p className="font-semibold text-sm mb-2">Cartões já existentes para este cliente:</p>
+                      <ul className="space-y-1">
+                        {duplicateWarning.services.map(s => (
+                          <li key={s._id} className="text-xs flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                            <strong>{s.serviceType}</strong> - Pasta: {s.pastaInterna} ({s.status})
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-3 text-[10px] text-slate-500 italic">Não é permitido criar um novo cadastro para o mesmo cliente/endereço.</p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm italic">O cliente existe mas não possui cartões ativos no momento.</p>
+                  )}
+
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs border-brandaccent/30 text-brandaccent hover:bg-brandaccent/10"
+                      onClick={() => {
+                        navigate('/admin/clientes', { state: { highlightId: duplicateWarning.client._id } });
+                        handleClose();
+                      }}
+                    >
+                      Ver Cadastro Existente
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-slate-500"
+                      onClick={() => setDuplicateWarning(null)}
+                    >
+                      Corrigir Dados
+                    </Button>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}
@@ -229,6 +359,19 @@ export function ClientRegistrationModal({
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
+                <Label htmlFor="cpfCnpj" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                  CPF/CNPJ
+                </Label>
+                <Input
+                  id="cpfCnpj"
+                  value={formData.cpfCnpj}
+                  onChange={(e) => setFormData({ ...formData, cpfCnpj: e.target.value })}
+                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
+                  placeholder="000.000.000-00"
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="email" className="font-paragraph text-sm text-primary-foreground mb-2 block">
                   Email
                 </Label>
@@ -241,7 +384,9 @@ export function ClientRegistrationModal({
                   placeholder="email@exemplo.com"
                 />
               </div>
+            </div>
 
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="phoneNumber" className="font-paragraph text-sm text-primary-foreground mb-2 block">
                   Telefone
@@ -253,6 +398,30 @@ export function ClientRegistrationModal({
                   className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
                   placeholder="(11) 99999-9999"
                 />
+              </div>
+
+              <div>
+                <Label className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                  Gênero (Para Contratos)
+                </Label>
+                <RadioGroup
+                  value={formData.gender}
+                  onValueChange={(v: any) => setFormData({ ...formData, gender: v })}
+                  className="flex gap-3 h-12 items-center"
+                >
+                  <div className="flex items-center space-x-1">
+                    <RadioGroupItem value="Masculino" id="masc" className="border-primary-foreground/20 text-primary-foreground" />
+                    <Label htmlFor="masc" className="text-xs text-primary-foreground font-medium">Masc</Label>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <RadioGroupItem value="Feminino" id="fem" className="border-primary-foreground/20 text-primary-foreground" />
+                    <Label htmlFor="fem" className="text-xs text-primary-foreground font-medium">Fem</Label>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <RadioGroupItem value="Outro" id="outro" className="border-primary-foreground/20 text-primary-foreground" />
+                    <Label htmlFor="outro" className="text-xs text-primary-foreground font-medium">Outro</Label>
+                  </div>
+                </RadioGroup>
               </div>
             </div>
 
@@ -428,22 +597,69 @@ export function ClientRegistrationModal({
               </div>
             )}
 
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={() => {
-                  window.location.href = '/admin/clientes';
-                }}
-                className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-12 rounded-lg"
-              >
-                Ver Cliente
-              </Button>
-              <Button
-                onClick={handleSuccessClose}
-                variant="outline"
-                className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
-              >
-                Fechar
-              </Button>
+            <div className="pt-4 space-y-4">
+              <p className="font-paragraph text-sm text-primary-foreground/70 mb-4">
+                Deseja gerar um cartão/processo para este cliente agora?
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => handleGenerateService('Financiamento')}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-900/20"
+                >
+                  <DollarSign className="w-5 h-5" />
+                  <span className="text-xs">Financiamento</span>
+                </Button>
+
+                <Button
+                  onClick={() => handleGenerateService('Venda')}
+                  disabled={loading}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-900/20"
+                >
+                  <TrendingUp className="w-5 h-5" />
+                  <span className="text-xs">Venda / Compra</span>
+                </Button>
+
+                <Button
+                  onClick={() => handleGenerateService('Locação')}
+                  disabled={loading}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-purple-900/20"
+                >
+                  <Building2 className="w-5 h-5" />
+                  <span className="text-xs">Locação</span>
+                </Button>
+
+                <Button
+                  onClick={() => handleGenerateService('Leilão')}
+                  disabled={loading}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-amber-900/20"
+                >
+                  <Gavel className="w-5 h-5" />
+                  <span className="text-xs">Leilão</span>
+                </Button>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    navigate('/admin/clientes');
+                    if (onSuccess && createdClientId) onSuccess(createdClientId);
+                    handleClose();
+                  }}
+                  variant="outline"
+                  className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
+                >
+                  Ver Cliente
+                </Button>
+                <Button
+                  onClick={handleSuccessClose}
+                  variant="ghost"
+                  className="flex-1 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
+                >
+                  Fechar
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -456,6 +672,6 @@ export function ClientRegistrationModal({
         clientId={createdClientId}
         onSuccess={handleLeadSuccess}
       />
-    </Dialog>
+    </Dialog >
   );
 }

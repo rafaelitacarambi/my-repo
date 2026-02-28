@@ -63,6 +63,8 @@ export interface ServiceParties {
   participationPercentage?: number;
   /** @wixFieldType text */
   notes?: string;
+  /** @wixFieldType text */
+  spouseRef?: string;
 }
 
 
@@ -116,6 +118,12 @@ export interface ServiceRecords {
   creationDate?: Date | string;
   /** @wixFieldType text */
   priority?: string;
+  /** @wixFieldType boolean */
+  isArchived?: boolean;
+  /** @wixFieldType boolean */
+  ehEmpreendimento?: boolean;
+  /** @wixFieldType text */
+  spouseRef?: string;
 }
 
 
@@ -182,34 +190,14 @@ export interface Clients {
   address?: string;
   /** @wixFieldType text */
   notes?: string;
+  /** @wixFieldType text */
+  gender?: 'Masculino' | 'Feminino' | 'Outro';
 }
 
 
 /**
- * Collection ID: contratos
- * Interface for GeneratedContracts
+ * Collection ID: contratos_legacy? (Removing duplication and focusing on the newer Contracts structure)
  */
-export interface GeneratedContracts {
-  _id: string;
-  _createdDate?: Date;
-  _updatedDate?: Date;
-  /** @wixFieldType text */
-  serviceRecordRef?: string;
-  /** @wixFieldType text */
-  clientRefs?: string;
-  /** @wixFieldType text */
-  contractType?: string;
-  /** @wixFieldType number */
-  version?: number;
-  /** @wixFieldType text */
-  filledData?: string;
-  /** @wixFieldType url */
-  generatedPdf?: string;
-  /** @wixFieldType text */
-  status?: string;
-  /** @wixFieldType datetime */
-  creationDate?: Date | string;
-}
 
 
 /**
@@ -485,101 +473,357 @@ export interface Imveis {
   _createdDate?: Date;
   _updatedDate?: Date;
   /** @wixFieldType text */
-  resumoImovel?: string;
-  /** @wixFieldType number */
-  rendaMinimaEstimada?: number;
+  statusImovel?: string; // Ativo, Suspenso, Vendido, Locado, Desatualizado
+  /** @wixFieldType text */
+  midiaOrigem?: string;
+  /** @wixFieldType text */
+  codImovel?: string;
+  /** @wixFieldType text */
+  codigoReference?: string;
+
+  // PROPRIETÁRIO
+  /** @wixFieldType text */
+  nomeProprietario?: string;
+  /** @wixFieldType text */
+  telefoneProprietario?: string;
+  /** @wixFieldType text */
+  emailProprietario?: string;
+
+  // CORRETOR
+  /** @wixFieldType text */
+  corretorResponsavelId?: string; // ID do usuário
+
+  // IMÓVEL INFO
+  /** @wixFieldType text */
+  finalidade?: string; // Residencial, Comercial, etc
+  /** @wixFieldType text */
+  tipoImovel?: string; // Casa, Apartamento, etc
+  /** @wixFieldType text */
+  pretensao?: string; // Venda, Locação, Venda e Locação
+
+  // VALORES
   /** @wixFieldType number */
   entradaMinimaEstimada?: number;
-  /** @wixFieldType text */
-  bairro?: string;
-  /** @wixFieldType text */
-  cidade?: string;
-  /** @wixFieldType url */
-  tourVirtual?: string;
-  /** @wixFieldType url */
-  plantaBaixa?: string;
-  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
-  galeriaFotos?: string;
-  /** @wixFieldType text */
-  segmentosCompra?: string;
-  /** @wixFieldType text */
-  corretorResponsavelId?: string;
-  /** @wixFieldType text */
-  proprietarioId?: string;
-  /** @wixFieldType boolean */
-  aceitaFgts?: boolean;
-  /** @wixFieldType text */
-  diferenciais?: string;
-  /** @wixFieldType boolean */
-  acessibilidade?: boolean;
-  /** @wixFieldType boolean */
-  seguranca24h?: boolean;
-  /** @wixFieldType boolean */
-  playground?: boolean;
-  /** @wixFieldType boolean */
-  piscina?: boolean;
-  /** @wixFieldType boolean */
-  churrasqueira?: boolean;
-  /** @wixFieldType boolean */
-  academia?: boolean;
-  /** @wixFieldType boolean */
-  elevador?: boolean;
-  /** @wixFieldType boolean */
-  sacadaVaranda?: boolean;
-  /** @wixFieldType boolean */
-  armariosPlanejados?: boolean;
-  /** @wixFieldType boolean */
-  aceitaFinanciamentoCaixa?: boolean;
-  /** @wixFieldType number */
-  andar?: number;
-  /** @wixFieldType boolean */
-  permiteFinanciamento?: boolean;
-  /** @wixFieldType text */
-  posicaoSol?: string;
-  /** @wixFieldType number */
-  numeroPavimentos?: number;
-  /** @wixFieldType number */
-  areaUtil?: number;
-  /** @wixFieldType number */
-  valorCondominio?: number;
-  /** @wixFieldType number */
-  suites?: number;
-  /** @wixFieldType number */
-  valorSinal?: number;
-  /** @wixFieldType number */
-  iptuAnual?: number;
   /** @wixFieldType number */
   precoVenda?: number;
   /** @wixFieldType number */
   precoLocacao?: number;
+  /** @wixFieldType number */
+  pacoteLocacao?: number;
   /** @wixFieldType boolean */
-  investimentoOportunidade?: boolean;
+  imovelCondominio?: boolean;
+  /** @wixFieldType number */
+  valorCondominio?: number;
+  /** @wixFieldType number */
+  valorIPTU?: number;
   /** @wixFieldType text */
-  segmentoCompra?: string;
+  periodicidadeIPTU?: string; // Mensal, Anual
+
+  // LOCALIZAÇÃO
   /** @wixFieldType text */
+  cep?: string;
+  /** @wixFieldType text */
+  logradouro?: string;
+  /** @wixFieldType text */
+  numero?: string;
+  /** @wixFieldType text */
+  complemento?: string;
+  /** @wixFieldType text */
+  bairro?: string;
+  /** @wixFieldType text */
+  cidade?: string;
+  /** @wixFieldType text */
+  estado?: string;
+  /** @wixFieldType text */
+  address?: string; // Campo legado/Full address
+
+  // TÉCNICO
+  /** @wixFieldType number */
+  areaTerreno?: number;
+  /** @wixFieldType number */
+  areaConstruida?: number; // ou areaUtil
+  /** @wixFieldType number */
+  dormitorios?: number;
+  /** @wixFieldType number */
+  banheiros?: number;
+  /** @wixFieldType number */
+  lavabos?: number;
+  /** @wixFieldType number */
+  vagasCobertas?: number;
+  /** @wixFieldType number */
+  vagasDescobertas?: number;
+
+  // IMPORT SPECIFIC FIELDS (Not in legacy)
+  /** @wixFieldType number */
+  quartos?: number;
+  /** @wixFieldType number */
+  vagas?: number;
+  /** @wixFieldType number */
+  areaTotal?: number;
+  /** @wixFieldType text */
+  enderecoBairro?: string;
+  /** @wixFieldType text */
+  enderecoRua?: string;
+  /** @wixFieldType text */
+  enderecoCidade?: string;
+  /** @wixFieldType text */
+  enderecoComplemento?: string;
+  /** @wixFieldType text */
+  enderecoEstado?: string;
+
+  // AMENIDADES (JSON Stringified List or Boolean fields - Using Booleans as requested)
+  // CARACTERÍSTICAS
+  /** @wixFieldType boolean */
+  mobiliado?: boolean;
+  /** @wixFieldType boolean */
+  dormitorioReversivel?: boolean;
+  /** @wixFieldType boolean */
+  escritorio?: boolean;
+  /** @wixFieldType boolean */
+  aceitaPet?: boolean;
+  /** @wixFieldType boolean */
+  edicula?: boolean;
+  /** @wixFieldType boolean */
+  despensa?: boolean;
+  /** @wixFieldType boolean */
+  adega?: boolean;
+  /** @wixFieldType boolean */
+  lavanderia?: boolean;
+  /** @wixFieldType boolean */
+  vestiario?: boolean;
+
+  // AMBIENTES INTERNOS
+  /** @wixFieldType boolean */
+  closet?: boolean;
+  /** @wixFieldType boolean */
+  suiteHidro?: boolean;
+  /** @wixFieldType boolean */
+  banheira?: boolean;
+  /** @wixFieldType boolean */
+  peDireitoDuplo?: boolean;
+  /** @wixFieldType boolean */
+  homeOffice?: boolean;
+  /** @wixFieldType boolean */
+  salaJantar?: boolean; // Salas genérico?
+  /** @wixFieldType boolean */
+  salaEstar?: boolean;
+  /** @wixFieldType boolean */
+  cozinhaAmericana?: boolean;
+  /** @wixFieldType boolean */
+  cozinhaPlanejada?: boolean;
+  /** @wixFieldType boolean */
+  ilha?: boolean;
+  /** @wixFieldType boolean */
+  lareira?: boolean;
+  /** @wixFieldType boolean */
+  arCondicionado?: boolean;
+  /** @wixFieldType boolean */
+  aquecimentoGas?: boolean; // Aquecimentos genérico
+  /** @wixFieldType boolean */
+  energiaSolar?: boolean;
+  /** @wixFieldType boolean */
+  automacao?: boolean;
+  /** @wixFieldType boolean */
+  iluminacaoLed?: boolean;
+  /** @wixFieldType boolean */
+  persianas?: boolean;
+  /** @wixFieldType boolean */
+  fechaduraEletronica?: boolean;
+  /** @wixFieldType boolean */
+  deposito?: boolean;
+
+  // EXTERNA PRIVATIVA
+  /** @wixFieldType boolean */
+  quintal?: boolean;
+  /** @wixFieldType boolean */
+  jardim?: boolean;
+  /** @wixFieldType boolean */
+  pergolado?: boolean;
+  /** @wixFieldType boolean */
+  espacoZen?: boolean;
+  /** @wixFieldType boolean */
+  firePit?: boolean;
+  /** @wixFieldType boolean */
+  redario?: boolean;
+  /** @wixFieldType boolean */
+  pomar?: boolean;
+  /** @wixFieldType boolean */
+  horta?: boolean;
+  /** @wixFieldType boolean */
+  canil?: boolean;
+  /** @wixFieldType boolean */
+  lounge?: boolean;
+  /** @wixFieldType boolean */
+  gazebo?: boolean;
+  /** @wixFieldType boolean */
+  solarium?: boolean;
+  /** @wixFieldType boolean */
+  espacoPet?: boolean;
+  /** @wixFieldType boolean */
+  espacoDescanso?: boolean;
+
+  // LAZER PRIVATIVO
+  /** @wixFieldType boolean */
+  churrasqueira?: boolean;
+  /** @wixFieldType boolean */
+  varandaGourmet?: boolean;
+  /** @wixFieldType boolean */
+  piscina?: boolean; // Privativa
+  /** @wixFieldType boolean */
+  ofuro?: boolean;
+  /** @wixFieldType boolean */
+  sauna?: boolean;
+
+  // CONDOMÍNIO / LAZER COLETIVO
+  /** @wixFieldType boolean */
+  playground?: boolean;
+  /** @wixFieldType boolean */
+  quadraPoliesportiva?: boolean;
+  /** @wixFieldType boolean */
+  quadraTenis?: boolean;
+  /** @wixFieldType boolean */
+  salaoFestas?: boolean;
+  /** @wixFieldType boolean */
+  salaoJogos?: boolean;
+  /** @wixFieldType boolean */
+  academia?: boolean;
+  /** @wixFieldType boolean */
+  piscinaCondominio?: boolean;
+  /** @wixFieldType boolean */
+  spa?: boolean;
+  /** @wixFieldType boolean */
+  cinema?: boolean;
+  /** @wixFieldType boolean */
+  coworking?: boolean;
+  /** @wixFieldType boolean */
+  biblioteca?: boolean;
+  /** @wixFieldType boolean */
+  loungeCondominio?: boolean;
+
+  // INFRAESTRUTURA
+  /** @wixFieldType boolean */
+  vagasVisitantes?: boolean;
+  /** @wixFieldType boolean */
+  carroEletrico?: boolean;
+  /** @wixFieldType boolean */
+  bicicletario?: boolean;
+  /** @wixFieldType boolean */
+  portaria24h?: boolean;
+  /** @wixFieldType boolean */
+  seguranca?: boolean;
+  /** @wixFieldType boolean */
+  elevador?: boolean;
+  /** @wixFieldType boolean */
+  acessibilidade?: boolean;
+
+  // SUSTENTABILIDADE
+  /** @wixFieldType boolean */
+  coletaSeletiva?: boolean;
+  /** @wixFieldType boolean */
+  reusoAgua?: boolean;
+  /** @wixFieldType boolean */
+  captacaoChuva?: boolean;
+  /** @wixFieldType boolean */
+  telhadoVerde?: boolean;
+  /** @wixFieldType boolean */
+  ventilacaoCruzada?: boolean;
+  /** @wixFieldType boolean */
+  iluminacaoNatural?: boolean;
+  /** @wixFieldType boolean */
+  tratamentoAcustico?: boolean;
+  /** @wixFieldType boolean */
+  isolamentoTermico?: boolean;
+
+  // SITUAÇÃO
+  /** @wixFieldType text */
+  situacaoImovel?: string; // Desocupado, Ocupado, etc
+
+  // FINANCIAMENTO
+  /** @wixFieldType boolean */
+  aceitaFinanciamento?: boolean;
+  /** @wixFieldType boolean */
+  aceitaFgts?: boolean; // Manter compatibilidade
+
+  // INTERNO
+  /** @wixFieldType text */
+  comentariosInternos?: string;
+  /** @wixFieldType text */
+  localChaves?: string;
+
+  // DESCRIÇÃO
+  /** @wixFieldType text */
+  resumoImovel?: string; // Manter
+  /** @wixFieldType text */
+  descricaoAnuncio?: string; // Novo
+  /** @wixFieldType text */
+  description?: string; // Legado (manter sync)
+
+  // MÍDIA
+  /** @wixFieldType array */
+  galeriaFotos?: string[]; // Manter
+  /** @wixFieldType array */
+  propertyImages?: string[]; // Legado
+  /** @wixFieldType url */
+  tourVirtual?: string;
+  /** @wixFieldType url */
+  plantaBaixa?: string;
+  /** @wixFieldType url */
+  keyQrCodeUrl?: string;
+
+  // AUDITORIA
+  /** @wixFieldType text */
+  cadastradoOuAtualizadoPor?: string;
+
+  // Legado mantido para não quebrar compatibilidade imediata
   propertyName?: string;
   /** @wixFieldType text */
-  propertyType?: string;
+  propertyType?: string; // Manter sync com tipoImovel
   /** @wixFieldType text */
-  transactionType?: string;
+  transactionType?: string; // Manter sync com pretensao
   /** @wixFieldType number */
-  price?: number;
-  /** @wixFieldType text */
-  address?: string;
+  price?: number; // Manter sync com precoVenda
   /** @wixFieldType number */
-  bedrooms?: number;
+  bedrooms?: number; // Manter sync
   /** @wixFieldType number */
   bathrooms?: number;
   /** @wixFieldType number */
   area?: number;
   /** @wixFieldType text */
-  description?: string;
-  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
-  propertyImages?: string;
+  status?: string; // Manter sync com statusImovel
   /** @wixFieldType text */
-  status?: string;
-  /** @wixFieldType url */
-  keyQrCodeUrl?: string;
+  segmentoCompra?: string;
+  /** @wixFieldType text */
+  posicaoSol?: string;
+  /** @wixFieldType number */
+  apartmentsPerFloor?: number;
+  /** @wixFieldType number */
+  suites?: number;
+  /** @wixFieldType number */
+  andar?: number;
+  /** @wixFieldType number */
+  numeroPavimentos?: number;
+  /** @wixFieldType number */
+  areaUtil?: number;
+  /** @wixFieldType number */
+  valorSinal?: number;
+  /** @wixFieldType number */
+  iptuAnual?: number;
+  /** @wixFieldType boolean */
+  investimentoOportunidade?: boolean;
+  /** @wixFieldType boolean */
+  permiteFinanciamento?: boolean;
+  /** @wixFieldType boolean */
+  aceitaFinanciamentoCaixa?: boolean;
+  /** @wixFieldType boolean */
+  armariosPlanejados?: boolean;
+  /** @wixFieldType boolean */
+  sacadaVaranda?: boolean;
+  /** @wixFieldType boolean */
+  seguranca24h?: boolean;
+  /** @wixFieldType text */
+  diferenciais?: string;
+  /** @wixFieldType text */
+  proprietarioId?: string; // Referencia ID da tabela Users ou texto livre antigo? Vamos usar os novos campos de proprietário.
 }
 
 
@@ -853,13 +1097,106 @@ export interface ContractTemplates {
   /** @wixFieldType text */
   templateName?: string;
   /** @wixFieldType text */
-  targetServiceType?: string;
+  contractType?: 'LocacaoResidencial' | 'LocacaoComercial' | 'CompraEVenda' | 'EntregaChaves' | 'AutorizacaoDivulgacao';
   /** @wixFieldType number */
   version?: number;
   /** @wixFieldType text */
-  templateContent?: string;
+  templateFormat: 'HTML' | 'DOCX';
+  /** @wixFieldType text */
+  templateContent?: string; // HTML body or reference
+  /** @wixFieldType text */
+  templateBody?: string; // Full HTML content
+  /** @wixFieldType text */
+  placeholders?: string[]; // List of expected placeholders
   /** @wixFieldType boolean */
   isActive?: boolean;
+  /** @wixFieldType text */
+  requiredFields?: string[]; // Lista de slugs de campos obrigatórios
+  /** @wixFieldType text */
+  conditionalRules?: string; // JSON stringificando as regras
+}
+
+
+/**
+ * Collection ID: contratos
+ * Interface for Contracts
+ */
+export interface Contracts {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  atendimentoRef?: string;
+  /** @wixFieldType text */
+  imovelRef?: string;
+  /** @wixFieldType text */
+  parts?: string; // JSON string com a lista de participantes e papéis
+  /** @wixFieldType text */
+  contractType?: string;
+  /** @wixFieldType text */
+  templateRef?: string;
+  /** @wixFieldType number */
+  templateVersion?: number;
+  /** @wixFieldType text */
+  filledData?: string; // JSON com todos os valores preenchidos (payloadJson)
+  /** @wixFieldType text */
+  htmlFinal?: string; // The rendered HTML content
+  /** @wixFieldType text */
+  status?: 'Rascunho' | 'Gerado' | 'EmRevisao' | 'Assinado' | 'Cancelado';
+  /** @wixFieldType url */
+  generatedPdfUrl?: string; // (pdfFileRef)
+  /** @wixFieldType url */
+  generatedDocxUrl?: string;
+  /** @wixFieldType text */
+  createdBy?: string;
+  /** @wixFieldType number */
+  currentStep?: number;
+}
+
+
+/**
+ * Collection ID: contratoassinaturas
+ * Interface for ContractSignatures
+ */
+export interface ContractSignatures {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  contractRef?: string;
+  /** @wixFieldType text */
+  participantRef?: string;
+  /** @wixFieldType text */
+  role?: string;
+  /** @wixFieldType text */
+  status?: 'Pendente' | 'Assinado' | 'Rejeitado';
+  /** @wixFieldType datetime */
+  signatureDate?: Date | string;
+  /** @wixFieldType text */
+  ipAddress?: string;
+  /** @wixFieldType text */
+  method?: 'ICP' | 'Eletronica' | 'Manual';
+}
+
+
+/**
+ * Collection ID: historicocontratos
+ * Interface for ContractHistory
+ */
+export interface ContractHistory {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  contractRef?: string;
+  /** @wixFieldType text */
+  templateRef?: string;
+  /** @wixFieldType text */
+  action?: string;
+  /** @wixFieldType text */
+  performedBy?: string;
+  /** @wixFieldType text */
+  details?: string;
 }
 
 
@@ -916,6 +1253,10 @@ export interface UsuriosdoSistema {
   inviteDate?: Date | string;
   /** @wixFieldType datetime */
   lastLogin?: Date | string;
+  /** @wixFieldType text */
+  setores?: string[];
+  /** @wixFieldType text */
+  password?: string;
 }
 
 
