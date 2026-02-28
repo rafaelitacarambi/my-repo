@@ -41,17 +41,26 @@ A modern, full-featured Wix Astro template built with React, TypeScript, and Tai
 
 ### Installation
 
-1. **Install dependencies**:
+1. **Clone the repository**:
    ```bash
-   npm run install-template
+   git clone <repository-url>
+   cd my-repo
    ```
 
 2. **Set up environment variables**:
+   Create a local copy of the environment variables.
    ```bash
-   npm run env
+   cp .env.example .env
+   ```
+   *(Note: The `.env` file is ignored by Git by design, so this step is mandatory for new environments).*
+
+3. **Install dependencies**:
+   **Important:** Always use `npm ci` instead of `npm install` for fresh clones. This ensures reproducibility by strictly following the `package-lock.json` and helps avoid unintentional version upgrades due to Node.js/npm version mismatches.
+   ```bash
+   npm ci
    ```
 
-3. **Start development server**:
+4. **Start development server**:
    ```bash
    npm run dev
    ```
