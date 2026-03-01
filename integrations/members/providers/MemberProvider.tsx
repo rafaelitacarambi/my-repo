@@ -141,7 +141,7 @@ export const MemberProvider: React.FC<MemberProviderProps> = ({ children }) => {
         let userRecord = result.items.find(u => u.emailLogin?.toLowerCase() === email.toLowerCase());
 
         // Seeding / Repair logic for dev convenience
-        const MOCK_EMAIL = "RSales";
+        const MOCK_EMAIL = "RS";
         const MOCK_PASS = "1234";
         const ALT_MOCK_EMAIL = "admin@rsales.com";
         const ALT_MOCK_PASS = "123456";

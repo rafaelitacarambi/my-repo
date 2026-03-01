@@ -5,11 +5,12 @@ import { Imveis } from '@/entities';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, CheckCircle, Upload } from 'lucide-react';
+import { AlertCircle, CheckCircle, Upload, Database, CloudUpload } from 'lucide-react';
 import Header from '@/components/Header';
 
 // Import the Kenlo data for specialized sync
 import kenloData from '../../../../kenlo_import.json';
+import { items as mockDb } from '@/lib/wix-data-mock';
 
 export default function AdminPropertyImportPage() {
     const [jsonInput, setJsonInput] = useState('');
@@ -165,6 +166,112 @@ export default function AdminPropertyImportPage() {
                     </CardContent>
                 </Card>
 
+                {/* SESSÃO DE MIGRAÇÃO NOTEBOOK A -> NUVEM */}
+                <Card className="mb-6 border-purple-200 bg-purple-50/10">
+                    <CardHeader>
+                        <CardTitle className="text-purple-700 flex items-center">
+                            <Database className="w-5 h-5 mr-2" />
+                            Migração de Dados (Local para Servidor Prisma)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Quando acessar o sistema pelo <b>Notebook A</b>, clique nos botões abaixo para transferir todos os dados que estavam presos no navegador para o novo Banco de Dados Centralizado (PostgreSQL). Esse processo é seguro e não duplica dados.
+                        </p>
+                        <div className="flex gap-4 flex-wrap">
+                            <Button
+                                onClick={async () => {
+                                    setImportStatus('importing');
+                                    setLogs(prev => [...prev, 'Iniciando extração de Imóveis do Navegador...']);
+                                    const allProps = await BaseCrudService.getAll('imoveis', [], { limit: 5000 });
+                                    setLogs(prev => [...prev, `Enviando ${allProps.items.length} propriedades para nuvem...`]);
+
+                                    try {
+                                        const res = await fetch('/api/sync-to-postgres', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ collectionId: 'imoveis', items: allProps.items })
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                            setLogs(prev => [...prev, `✅ Sucesso! ${data.imported} imóveis salvos no PostgreSQL.`]);
+                                        } else throw new Error(data.error);
+                                    } catch (e: any) {
+                                        setLogs(prev => [...prev, `❌ Erro no envio: ${e.message}`]);
+                                    }
+                                    setImportStatus('success');
+                                }}
+                                variant="outline"
+                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                disabled={importStatus === 'importing'}
+                            >
+                                <CloudUpload className="w-4 h-4 mr-2" />
+                                1. Enviar Imóveis (Vitrine)
+                            </Button>
+
+                            <Button
+                                onClick={async () => {
+                                    setImportStatus('importing');
+                                    setLogs(prev => [...prev, 'Iniciando extração de Usuários da Equipe...']);
+                                    const allUsers = await BaseCrudService.getAll('usuariossistema', [], { limit: 5000 });
+
+                                    try {
+                                        const res = await fetch('/api/sync-to-postgres', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ collectionId: 'usuariossistema', items: allUsers.items })
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                            setLogs(prev => [...prev, `✅ Sucesso! ${data.imported} usuários salvos no PostgreSQL.`]);
+                                        } else throw new Error(data.error);
+                                    } catch (e: any) {
+                                        setLogs(prev => [...prev, `❌ Erro no envio: ${e.message}`]);
+                                    }
+                                    setImportStatus('success');
+                                }}
+                                variant="outline"
+                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                disabled={importStatus === 'importing'}
+                            >
+                                <CloudUpload className="w-4 h-4 mr-2" />
+                                2. Enviar Usuários (Admin)
+                            </Button>
+
+                            <Button
+                                onClick={async () => {
+                                    setImportStatus('importing');
+                                    setLogs(prev => [...prev, 'Iniciando extração de Clientes...']);
+                                    // Hack manual para puxar dados diretamente caso o baseCrudService tenha limite no backend-less
+                                    const rawClientsQuery = mockDb.query('clientes');
+                                    const rawClients = await rawClientsQuery.find();
+
+                                    try {
+                                        const res = await fetch('/api/sync-to-postgres', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ collectionId: 'clientes', items: rawClients.items })
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                            setLogs(prev => [...prev, `✅ Sucesso! ${data.imported} clientes salvos no PostgreSQL.`]);
+                                        } else throw new Error(data.error);
+                                    } catch (e: any) {
+                                        setLogs(prev => [...prev, `❌ Erro no envio: ${e.message}`]);
+                                    }
+                                    setImportStatus('success');
+                                }}
+                                variant="outline"
+                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                                disabled={importStatus === 'importing'}
+                            >
+                                <CloudUpload className="w-4 h-4 mr-2" />
+                                3. Enviar Clientes & Leads
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card className="mb-6">
                     <CardHeader>
                         <CardTitle>1. Importação Manual (Cole o JSON)</CardTitle>
@@ -225,6 +332,6 @@ export default function AdminPropertyImportPage() {
                     </Card>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

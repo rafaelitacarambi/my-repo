@@ -1,8 +1,8 @@
-import { useMember } from '@/integrations';
+import { useClerk, useUser } from '@clerk/clerk-react';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Users, TrendingUp, FileText, Key, DollarSign, UserCheck, Headphones, Calendar, History, UserCog, LogOut } from 'lucide-react';
+import { Users, TrendingUp, FileText, Key, DollarSign, UserCheck, Headphones, Calendar, History, UserCog, LogOut, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -15,14 +15,15 @@ import { useState, useEffect } from 'react';
 import { useAuthValidation } from '@/hooks/use-auth-validation';
 
 function AreaRestritaContent() {
-  const { member, actions } = useMember();
+  const { signOut } = useClerk();
+  const { user } = useUser();
   const { isValidating, isAuthorized, userProfile, error } = useAuthValidation();
   const navigate = useNavigate();
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
 
   const handleLogout = () => {
-    actions.logout();
+    signOut();
   };
 
   const handleCreateProperty = () => {
@@ -123,7 +124,7 @@ function AreaRestritaContent() {
                 Área Restrita
               </h1>
               <p className="font-paragraph text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-                Bem-vindo, {userProfile?.name || member?.profile?.nickname || member?.contact?.firstName || 'Usuário'}!
+                Bem-vindo, {userProfile?.nome || user?.firstName || 'Usuário'}!
               </p>
               <p className="font-paragraph text-sm text-primary-foreground/60 mt-2">
                 Perfil: {userProfile?.profile || 'Não definido'}
@@ -392,6 +393,27 @@ function AreaRestritaContent() {
                 </div>
               </Link>
             </motion.div>
+
+            {/* Módulo de Emails Transacionais */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+            >
+              <Link to="/admin/emails">
+                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-blue-500/50 transition-all group h-full">
+                  <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <Mail className="w-7 h-7 text-blue-600" />
+                  </div>
+                  <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
+                    Caixa de Saída (E-mails)
+                  </h3>
+                  <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
+                    Dispare e-mails para clientes, audite entregas e falhas (API Gateway)
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -408,7 +430,7 @@ function AreaRestritaContent() {
 
 export default function AreaRestritaPage() {
   return (
-    <MemberProtectedRoute messageToSignIn="Faça login para acessar a área restrita">
+    <MemberProtectedRoute>
       <AreaRestritaContent />
     </MemberProtectedRoute>
   );

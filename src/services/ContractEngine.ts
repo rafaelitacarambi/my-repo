@@ -110,7 +110,14 @@ export class ContractEngine {
             TESTEMUNHA2_RG: extraData?.TESTEMUNHA2_RG || '',
 
             // Legacy support
-            ...extraData
+            ...extraData,
+
+            // Variáveis Booleanas de Exclusão (Evitar múltiplas garantias no DOC)
+            GARANTIA_CAUCAO: extraData?.GARANTIA === 'Caucao',
+            GARANTIA_FIANCA: extraData?.GARANTIA === 'Fianca',
+            GARANTIA_SEGURO: extraData?.GARANTIA === 'Seguro',
+            GARANTIA_NENHUMA: extraData?.GARANTIA === 'SemGarantia',
+            PRAZO_IGUAL_SUPERIOR_30: parseInt(extraData?.PRAZO_MESES || '0') >= 30
         };
 
         // Helper para qualificação detalhada com overrides

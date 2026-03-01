@@ -38,7 +38,35 @@ async function getCollectionAsync(collectionId: string): Promise<WixDataItem[]> 
             const tx = db.transaction(STORE_NAME, 'readonly');
             const store = tx.objectStore(STORE_NAME);
             const req = store.get(collectionId);
-            req.onsuccess = () => resolve(req.result || []);
+            req.onsuccess = async () => {
+                let result = req.result || [];
+
+                // --- AUTO SEEDER PARA AMBIENTE B ---
+                // Se a coleção imoveis estiver vazia, auto-importa os arquivos de backup
+                if (collectionId === 'imoveis' && result.length === 0) {
+                    try {
+                        console.log("Auto-seeding imoveis from local json backup...");
+                        // Tentando importar o JSON estático direto do Vite builder
+                        const seedData = await import('../../scraped.json').then(m => m.default).catch(() => null);
+                        if (seedData && Array.isArray(seedData)) {
+                            // Fix IDs and timestamps
+                            result = seedData.map(item => ({
+                                ...item,
+                                _id: item._id || crypto.randomUUID(),
+                                status: 'Disponível',
+                                _createdDate: new Date(),
+                                _updatedDate: new Date()
+                            }));
+                            // Não salvamos recursivamente aqui para evitar travamento síncrono da promise IDB,
+                            // vamos salvar logo após resolver.
+                            setTimeout(() => saveCollectionAsync(collectionId, result).catch(console.error), 100);
+                        }
+                    } catch (e) { console.error("Auto-seed failed", e); }
+                }
+                // -----------------------------------
+
+                resolve(result);
+            };
             req.onerror = () => reject(req.error);
         });
     } catch (e) {

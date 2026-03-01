@@ -3,18 +3,19 @@ import { Menu, X, Home, Building2, Key, Users, Settings, LogOut, FileText, Calen
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Image } from '@/components/ui/image';
-import { useMember } from '@/integrations';
+import { useAuth, useClerk } from '@clerk/clerk-react';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { isAuthenticated, actions } = useMember();
+  const { isSignedIn: isAuthenticated } = useAuth();
+  const { signOut } = useClerk();
 
   const isActive = (path: string) => location.pathname === path;
   const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname === '/area-restrita' || location.pathname === '/perfil';
 
   const handleLogout = () => {
-    actions.logout();
+    signOut();
   };
 
   return (

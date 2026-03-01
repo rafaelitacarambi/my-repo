@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -------------------------------------------------------------------------
+// 1. Usuários do Sistema (Equipe Administradora e Corretores)
+// -------------------------------------------------------------------------
+model User {
+  id      String  @id @default(uuid())
+  clerkId String? @unique // Integração futura com o Clerk
+  name    String
+  email   String  @unique
+  role    String  @default("USER") // ADMIN, MANAGER, BROKER, etc.
+  status  String  @default("ACTIVE") // ACTIVE, INACTIVE
+
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -------------------------------------------------------------------------
+// 2. Clientes (Locatários, Proprietários, Fiadores, Leads)
+// -------------------------------------------------------------------------
+model Client {
+  id       String  @id @default(uuid())
+  name     String
+  email    String?
+  phone    String?
+  document String? @unique // CPF ou CNPJ
+  type     String  @default("LEAD") // LEAD, TENANT, OWNER, GUARANTOR
+  address  String?
+
+  // Relacionamentos para Contratos e Imóveis
+  ownedProperties   Property[] @relation("PropertyOwner")
+  contractsAsTenant Contract[] @relation("ContractTenant")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -------------------------------------------------------------------------
+// 3. Imóveis (Vitrine e Locação)
+// -------------------------------------------------------------------------
+model Property {
+  id     String @id @default(uuid())
+  code   String @unique // Ex: CA0149
+  title  String // Ex: Casa em Suzano
+  type   String // Ex: Casa, Apartamento, Terreno
+  status String @default("AVAILABLE") // AVAILABLE, RENTED, SOLD
+
+  // Valores
+  salePrice  Float?
+  rentPrice  Float?
+  condoPrice Float?
+  iptuPrice  Float?
+
+  // Características
+  areaTotal Float?
+  areaUtil  Float?
+  bedrooms  Int?
+  suites    Int?
+  bathrooms Int?
+  garages   Int?
+
+  // Localização
+  zipCode      String?
+  street       String?
+  number       String?
+  complement   String?
+  neighborhood String?
+  city         String?
+  state        String?
+
+  ownerId String?
+  owner   Client? @relation("PropertyOwner", fields: [ownerId], references: [id])
+
+  contracts Contract[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -------------------------------------------------------------------------
+// 4. Contratos de Locação / Vendas
+// -------------------------------------------------------------------------
+model Contract {
+  id     String @id @default(uuid())
+  type   String @default("RENT") // RENT, SALE
+  status String @default("ACTIVE") // ACTIVE, FINISHED, CANCELED
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  tenantId String
+  tenant   Client @relation("ContractTenant", fields: [tenantId], references: [id])
+
+  startDate DateTime
+  endDate   DateTime?
+  rentValue Float
+  guarantee String? // CAUCAO, FIADOR, SEGURO
+
+  invoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -------------------------------------------------------------------------
+// 5. Cobranças e Faturas (Mensalidades / Boletos / PJBank)
+// -------------------------------------------------------------------------
+model Invoice {
+  id         String   @id @default(uuid())
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id])
+
+  amount  Float
+  dueDate DateTime
+  status  String   @default("PENDING") // PENDING, PAID, LATE, CANCELED
+
+  // Dados do Gateway de Pagamento (PJBank)
+  gatewayId   String? // ID do boleto gerado no PJBank
+  bankSlipUrl String? // Link do boleto
+  paidAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -------------------------------------------------------------------------
+// 6. Log de Auditoria
+// -------------------------------------------------------------------------
+model AuditLog {
+  id     String  @id @default(uuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  action     String // CREATE_PROPERTY, UPDATE_CONTRACT, DELETE_USER
+  entityType String // Model q sofreu a alteração
+  entityId   String // ID do registro alterado
+  details    String? // JSON com os dados "antes e depois"
+
+  createdAt DateTime @default(now())
+}
+
+// -------------------------------------------------------------------------
+// 7. Log de E-mails Transacionais (Disparos API)
+// -------------------------------------------------------------------------
+model EmailLog {
+  id         String   @id @default(uuid())
+  to         String
+  subject    String
+  status     String   @default("PENDING") // PENDING, SENT, FAILED
+  resendId   String?  // ID de transação retornado pela API do Resend
+  errorMsg   String?  // Motivo do bloqueio / falha
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

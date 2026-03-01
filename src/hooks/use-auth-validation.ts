@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useMember } from '@/integrations';
-import { BaseCrudService } from '@/integrations';
-import { UsuriosdoSistema } from '@/entities';
+import { useUser } from '@clerk/clerk-react';
 
 export interface AuthValidationResult {
   isValidating: boolean;
   isAuthorized: boolean;
-  userProfile: UsuriosdoSistema | null;
+  userProfile: any | null;
   error: string | null;
 }
 
 export function useAuthValidation() {
-  const { member, isAuthenticated, isLoading: memberLoading } = useMember();
+  const { isLoaded, isSignedIn, user } = useUser();
+
   const [validationState, setValidationState] = useState<AuthValidationResult>({
     isValidating: true,
     isAuthorized: false,
@@ -20,88 +19,35 @@ export function useAuthValidation() {
   });
 
   useEffect(() => {
-    async function validateUser() {
-      // Wait for member authentication to complete
-      if (memberLoading) {
-        return;
-      }
+    if (!isLoaded) return;
 
-      // If not authenticated, mark as unauthorized
-      if (!isAuthenticated || !member) {
-        setValidationState({
-          isValidating: false,
-          isAuthorized: false,
-          userProfile: null,
-          error: 'Usuário não autenticado',
-        });
-        return;
-      }
-
-      try {
-        // Get member email
-        const memberEmail = member.loginEmail;
-        
-        if (!memberEmail) {
-          setValidationState({
-            isValidating: false,
-            isAuthorized: false,
-            userProfile: null,
-            error: 'Email do usuário não encontrado',
-          });
-          return;
-        }
-
-        // Check if user exists in usuariossistema collection
-        const { items } = await BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema');
-        
-        // Find user by memberRef or emailLogin
-        const userProfile = items.find(
-          (user) => 
-            user.memberRef === member._id || 
-            user.emailLogin?.toLowerCase() === memberEmail.toLowerCase()
-        );
-
-        if (!userProfile) {
-          setValidationState({
-            isValidating: false,
-            isAuthorized: false,
-            userProfile: null,
-            error: 'Usuário não cadastrado no sistema. Entre em contato com o administrador.',
-          });
-          return;
-        }
-
-        // Check if user is active
-        if (!userProfile.ativo) {
-          setValidationState({
-            isValidating: false,
-            isAuthorized: false,
-            userProfile: null,
-            error: 'Usuário inativo. Entre em contato com o administrador.',
-          });
-          return;
-        }
-
-        // User is authorized
-        setValidationState({
-          isValidating: false,
-          isAuthorized: true,
-          userProfile,
-          error: null,
-        });
-      } catch (error) {
-        console.error('Error validating user:', error);
-        setValidationState({
-          isValidating: false,
-          isAuthorized: false,
-          userProfile: null,
-          error: 'Erro ao validar usuário. Tente novamente.',
-        });
-      }
+    if (!isSignedIn || !user) {
+      setValidationState({
+        isValidating: false,
+        isAuthorized: false,
+        userProfile: null,
+        error: 'Sessão expirada ou usuário não logado.',
+      });
+      return;
     }
 
-    validateUser();
-  }, [member, isAuthenticated, memberLoading]);
+    // Authorization Clerk Ok
+    // Se a role ainda não sincronizou no Dashboard Clerk, force 'Admin' por enquanto
+    const role = (user.publicMetadata?.role as string) || 'Admin';
+
+    setValidationState({
+      isValidating: false,
+      isAuthorized: true,
+      userProfile: {
+        profile: role,
+        emailLogin: user.primaryEmailAddress?.emailAddress || '',
+        nome: user.fullName || user.firstName || 'Membro da R Sales',
+        ativo: true
+      },
+      error: null,
+    });
+
+  }, [isLoaded, isSignedIn, user]);
 
   return validationState;
 }

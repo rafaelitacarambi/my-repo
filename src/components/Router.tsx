@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-rou
 import { ScrollToTop } from '@/lib/scroll-to-top';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { ProtectedAdminRoute } from '@/components/ui/protected-admin-route';
+import { ClerkProvider } from '@clerk/clerk-react';
 import ErrorPage from '@/integrations/errorHandlers/ErrorPage';
 
 // Pages
@@ -40,6 +41,7 @@ import AdminLeilaoKanbanPage from '@/components/pages/admin/AdminLeilaoKanbanPag
 
 import AdminWhatsAppInboxPage from '@/components/pages/admin/AdminWhatsAppInboxPage';
 import AdminPropertyImportPage from '@/components/pages/admin/AdminPropertyImportPage';
+import AdminEmailsPage from '@/components/pages/admin/AdminEmailsPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -132,6 +134,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedAdminRoute>
             <AdminChavesPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/emails",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminEmailsPage />
           </ProtectedAdminRoute>
         ),
       },
@@ -285,10 +295,18 @@ const router = createBrowserRouter([
   basename: import.meta.env.BASE_NAME,
 });
 
+const clerkPk = import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 export default function AppRouter() {
+  if (!clerkPk) {
+    return <div>Erro: PUBLIC_CLERK_PUBLISHABLE_KEY ausente ou não instalada.</div>;
+  }
+
   return (
-    <MemberProvider>
-      <RouterProvider router={router} />
-    </MemberProvider>
+    <ClerkProvider publishableKey={clerkPk}>
+      <MemberProvider>
+        <RouterProvider router={router} />
+      </MemberProvider>
+    </ClerkProvider>
   );
 }

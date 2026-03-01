@@ -1,5 +1,5 @@
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
-import { useMember } from '@/integrations';
+import { useClerk, useUser } from '@clerk/clerk-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { User, Mail, Calendar, ArrowLeft, LogOut } from 'lucide-react';
@@ -9,7 +9,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 function PerfilContent() {
-  const { member, actions } = useMember();
+  const { signOut } = useClerk();
+  const { user } = useUser();
 
   const formatDate = (date: Date | undefined) => {
     if (!date) return 'N/A';
@@ -61,10 +62,10 @@ function PerfilContent() {
             >
               <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 text-center">
                 <div className="w-32 h-32 mx-auto mb-6 bg-primary-foreground/10 rounded-full flex items-center justify-center overflow-hidden">
-                  {member?.profile?.photo?.url ? (
+                  {user?.hasImage ? (
                     <Image
-                      src={member.profile.photo.url}
-                      alt={member?.profile?.nickname || 'Perfil'}
+                      src={user.imageUrl}
+                      alt={user?.fullName || 'Perfil'}
                       className="w-full h-full object-cover"
                       width={128}
                     />
@@ -74,17 +75,17 @@ function PerfilContent() {
                 </div>
 
                 <h2 className="font-heading text-2xl text-primary-foreground mb-2 font-semibold">
-                  {member?.profile?.nickname || member?.contact?.firstName || 'Usuário'}
+                  {user?.fullName || user?.firstName || 'Usuário'}
                 </h2>
 
-                {member?.profile?.title && (
+                {(user?.publicMetadata?.title as string) && (
                   <p className="font-paragraph text-base text-primary-foreground/60 mb-6">
-                    {member.profile.title}
+                    {user.publicMetadata.title as string}
                   </p>
                 )}
 
                 <Button
-                  onClick={actions.logout}
+                  onClick={() => signOut()}
                   variant="outline"
                   className="w-full border-destructive/50 text-destructive hover:bg-destructive/10"
                 >
@@ -107,7 +108,7 @@ function PerfilContent() {
                 </h3>
 
                 <div className="space-y-6">
-                  {member?.contact?.firstName && (
+                  {user?.firstName && (
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
                         <User className="w-6 h-6 text-secondary" />
@@ -117,13 +118,13 @@ function PerfilContent() {
                           Nome
                         </p>
                         <p className="font-paragraph text-base text-primary-foreground">
-                          {member.contact.firstName} {member.contact.lastName || ''}
+                          {user.firstName} {user.lastName || ''}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {member?.loginEmail && (
+                  {user?.primaryEmailAddress && (
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Mail className="w-6 h-6 text-secondary" />
@@ -133,9 +134,9 @@ function PerfilContent() {
                           E-mail
                         </p>
                         <p className="font-paragraph text-base text-primary-foreground">
-                          {member.loginEmail}
+                          {user.primaryEmailAddress.emailAddress}
                         </p>
-                        {member.loginEmailVerified && (
+                        {user.primaryEmailAddress.verification?.status === 'verified' && (
                           <span className="inline-block mt-1 font-paragraph text-xs text-secondary bg-secondary/20 px-2 py-1 rounded">
                             Verificado
                           </span>
@@ -144,7 +145,7 @@ function PerfilContent() {
                     </div>
                   )}
 
-                  {member?._createdDate && (
+                  {user?.createdAt && (
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-6 h-6 text-secondary" />
@@ -154,13 +155,13 @@ function PerfilContent() {
                           Membro desde
                         </p>
                         <p className="font-paragraph text-base text-primary-foreground">
-                          {formatDate(member._createdDate)}
+                          {formatDate(user.createdAt)}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {member?.lastLoginDate && (
+                  {user?.lastSignInAt && (
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-6 h-6 text-secondary" />
@@ -170,7 +171,7 @@ function PerfilContent() {
                           Último acesso
                         </p>
                         <p className="font-paragraph text-base text-primary-foreground">
-                          {formatDate(member.lastLoginDate)}
+                          {formatDate(user.lastSignInAt)}
                         </p>
                       </div>
                     </div>
@@ -203,7 +204,7 @@ function PerfilContent() {
 
 export default function PerfilPage() {
   return (
-    <MemberProtectedRoute messageToSignIn="Faça login para ver seu perfil">
+    <MemberProtectedRoute>
       <PerfilContent />
     </MemberProtectedRoute>
   );

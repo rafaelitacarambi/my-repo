@@ -14,12 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { BaseCrudService, useMember } from '@/integrations';
+import { BaseCrudService } from '@/integrations';
+import { useUser } from '@clerk/clerk-react';
 import { ServiceRecords, FinancingTasks, Clients } from '@/entities';
 import AdminLayout from '@/components/layouts/AdminLayout';
 
 export default function AdminFinanciamentoDashboardPage() {
-    const { member } = useMember();
+    const { user } = useUser();
     const [tasks, setTasks] = useState<FinancingTasks[]>([]);
     const [processes, setProcesses] = useState<ServiceRecords[]>([]);
     const [loading, setLoading] = useState(true);
@@ -89,7 +90,7 @@ export default function AdminFinanciamentoDashboardPage() {
 
 
     // Filters logic
-    const myTasks = tasks.filter(t => t.internalResponsibleId === member?._id && t.status !== 'Concluída');
+    const myTasks = tasks.filter(t => t.internalResponsibleId === user?.id && t.status !== 'Concluída');
     const sectorTasks = tasks.filter(t => {
         if (sectorFilter === 'all') return t.status !== 'Concluída' && t.status !== 'Cancelado';
         if (sectorFilter === 'overdue') return t.status === 'Atrasada';

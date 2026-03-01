@@ -28,8 +28,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { LeadRegistrationModal } from '@/components/LeadRegistrationModal';
 import { ClientRegistrationModal } from '@/components/ClientRegistrationModal';
-import { useMember } from '@/integrations';
-import { items as wixData } from '@/lib/wix-data-mock';
+import { useAuthValidation } from '@/hooks/use-auth-validation';
+import { useClerk } from '@clerk/clerk-react';
 import { UsuriosdoSistema } from '@/entities';
 
 interface AdminLayoutProps {
@@ -39,33 +39,14 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
     const navigate = useNavigate();
     const location = useLocation();
-    const { member } = useMember();
+
+    const { userProfile } = useAuthValidation();
+    const { signOut } = useClerk();
+
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [userProfile, setUserProfile] = useState<UsuriosdoSistema | null>(null);
     const [showCreateMainDialog, setShowCreateMainDialog] = useState(false);
     const [showLeadModal, setShowLeadModal] = useState(false);
     const [showClientModal, setShowClientModal] = useState(false);
-
-    useEffect(() => {
-        const fetchUserProfile = async () => {
-            if (member?.loginEmail) {
-                try {
-                    const result = await wixData.query('usuariossistema').find();
-                    const profile = result.items.find((u: any) =>
-                        u.emailLogin?.toLowerCase() === member.loginEmail?.toLowerCase()
-                    );
-
-                    if (profile) {
-                        setUserProfile(profile as UsuriosdoSistema);
-                    }
-                } catch (error) {
-                    console.error('Error fetching user profile:', error);
-                }
-            }
-        };
-
-        fetchUserProfile();
-    }, [member]);
 
     const userSectors = userProfile?.setores || [];
     const isAdmin = userProfile?.profile === 'Admin';
@@ -222,7 +203,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             variant="ghost"
                             className="w-full flex items-center justify-start gap-4 p-3 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all"
                             onClick={() => {
-                                window.location.href = '/area-restrita';
+                                signOut();
+                                navigate('/');
                             }}
                         >
                             <LogOut className="w-5 h-5 shrink-0" />

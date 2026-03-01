@@ -41,3 +41,5 @@ docs/*
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+/generated/prisma
