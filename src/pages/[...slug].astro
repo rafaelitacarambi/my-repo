@@ -1,5 +1,4 @@
 ---
-import { ClerkProvider } from "@clerk/astro/components";
 import { Head } from "@/components/Head";
 import AppRouter from "@/components/Router";
 // import "@wix/wix-vibe-plugins/plugins-vars.css"; // Likely not needed or can be mocked if styles are essential
@@ -13,7 +12,6 @@ const seoTagsServiceConfig = {
 };
 ---
 
-<ClerkProvider>
   <html lang="en" class="w-full h-full">
     <head>
       <Head />
@@ -25,4 +23,3 @@ const seoTagsServiceConfig = {
       </div>
     </body>
   </html>
-</ClerkProvider>

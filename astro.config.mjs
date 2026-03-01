@@ -4,10 +4,14 @@ import tailwind from "@astrojs/tailwind";
 import react from "@astrojs/react";
 import customErrorOverlayPlugin from "./vite-error-overlay-plugin.js";
 import clerk from "@clerk/astro";
+import node from "@astrojs/node";
 
 // https://astro.build/config
 export default defineConfig({
   output: "server",
+  adapter: node({
+    mode: "standalone"
+  }),
   integrations: [
     {
       name: "framewire",
