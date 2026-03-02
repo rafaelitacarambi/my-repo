@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
+import { mapForFrontend } from './index';
 
 const resolveModel = (collectionId: string) => {
     switch (collectionId) {
@@ -21,7 +22,8 @@ export const GET: APIRoute = async ({ params }) => {
     try {
         // @ts-ignore
         const item = await model.findUnique({ where: { id: id as string } });
-        return new Response(JSON.stringify(item), { status: 200 });
+        const mappedItem = item ? mapForFrontend(collection as string, item) : null;
+        return new Response(JSON.stringify(mappedItem), { status: 200 });
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
     }

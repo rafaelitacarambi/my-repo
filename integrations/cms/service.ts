@@ -43,6 +43,12 @@ export interface PaginatedResult<T> {
 }
 
 /**
+ * Mock implementation of @wix/data using IndexedDB (replacing LocalStorage)
+ */
+const POSTGRES_COLLECTIONS = ['imoveis', 'clientes', 'leads', 'usuariossistema', 'contratos', 'cobrancas'];
+const isPostgres = (collectionId: string) => POSTGRES_COLLECTIONS.includes(collectionId);
+
+/**
  * Generic CRUD Service class for Wix Data collections
  * Provides type-safe CRUD operations with error handling
  */
@@ -94,6 +100,21 @@ export class BaseCrudService {
     itemData: Partial<T> | Record<string, unknown>,
     multiReferences?: Record<string, any>
   ): Promise<T> {
+    if (isPostgres(collectionId)) {
+      try {
+        const res = await fetch(`/api/v1/${collectionId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(itemData)
+        });
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        return await res.json() as T;
+      } catch (e) {
+        console.error(`Error creating ${collectionId} in Postgres API:`, e);
+        throw e;
+      }
+    }
+
     try {
       const result = await items.insert(collectionId, itemData as Record<string, unknown>);
 
@@ -107,7 +128,6 @@ export class BaseCrudService {
 
       return result as T;
     } catch (error) {
-      // Should consider reverting the insert with a remove in order to prevent partial insert.
       console.error(`Error creating ${collectionId}:`, error);
       throw new Error(
         error instanceof Error ? error.message : `Failed to create ${collectionId}`
@@ -147,10 +167,22 @@ export class BaseCrudService {
     includeRefs?: { singleRef?: string[]; multiRef?: string[] } | string[],
     pagination?: PaginationOptions
   ): Promise<PaginatedResult<T>> {
-    try {
-      const limit = Math.min(pagination?.limit ?? 50, 5000);
-      const skip = pagination?.skip ?? 0;
+    const limit = Math.min(pagination?.limit ?? 50, 5000);
+    const skip = pagination?.skip ?? 0;
 
+    if (isPostgres(collectionId)) {
+      try {
+        const res = await fetch(`/api/v1/${collectionId}?limit=${limit}&skip=${skip}`);
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        const data = await res.json();
+        return data as PaginatedResult<T>;
+      } catch (e) {
+        console.error(`Error fetching ${collectionId} from Postgres API:`, e);
+        throw e;
+      }
+    }
+
+    try {
       // Support both old format (string[]) and new format ({ singleRef, multiRef })
       const allRefs = Array.isArray(includeRefs)
         ? includeRefs
@@ -190,6 +222,20 @@ export class BaseCrudService {
     itemId: string,
     includeRefs?: { singleRef?: string[]; multiRef?: string[] } | string[]
   ): Promise<T | null> {
+    if (isPostgres(collectionId)) {
+      try {
+        const res = await fetch(`/api/v1/${collectionId}/${itemId}`);
+        if (!res.ok) {
+          if (res.status === 404) return null;
+          throw new Error(`API returned ${res.status}`);
+        }
+        return await res.json() as T;
+      } catch (e) {
+        console.error(`Error fetching ${collectionId} by ID from Postgres API:`, e);
+        throw e;
+      }
+    }
+
     try {
       // Support both old format (string[]) and new format ({ singleRef, multiRef })
       const isLegacyFormat = Array.isArray(includeRefs);
@@ -220,11 +266,26 @@ export class BaseCrudService {
    * @returns Promise<T> - The updated item
    */
   static async update<T extends WixDataItem>(collectionId: string, itemData: T): Promise<T> {
-    try {
-      if (!itemData._id) {
-        throw new Error(`${collectionId} ID is required for update`);
-      }
+    if (!itemData._id) {
+      throw new Error(`${collectionId} ID is required for update`);
+    }
 
+    if (isPostgres(collectionId)) {
+      try {
+        const res = await fetch(`/api/v1/${collectionId}/${itemData._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(itemData)
+        });
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        return await res.json() as T;
+      } catch (e) {
+        console.error(`Error updating ${collectionId} in Postgres API:`, e);
+        throw e;
+      }
+    }
+
+    try {
       const currentItem = await this.getById<T>(collectionId, itemData._id);
 
       const mergedData = { ...currentItem, ...itemData };
@@ -245,11 +306,24 @@ export class BaseCrudService {
    * @returns Promise<T> - The deleted item
    */
   static async delete<T extends WixDataItem>(collectionId: string, itemId: string): Promise<T> {
-    try {
-      if (!itemId) {
-        throw new Error(`${collectionId} ID is required for deletion`);
-      }
+    if (!itemId) {
+      throw new Error(`${collectionId} ID is required for deletion`);
+    }
 
+    if (isPostgres(collectionId)) {
+      try {
+        const res = await fetch(`/api/v1/${collectionId}/${itemId}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        return await res.json() as T;
+      } catch (e) {
+        console.error(`Error deleting ${collectionId} in Postgres API:`, e);
+        throw e;
+      }
+    }
+
+    try {
       const result = await items.remove(collectionId, itemId);
       return result as T;
     } catch (error) {
