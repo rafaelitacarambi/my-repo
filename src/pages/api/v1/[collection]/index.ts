@@ -146,3 +146,49 @@ export const mapForFrontend = (collection: string, row: any) => {
     return { ...row, _id: row.id || row._id, _createdDate: row.createdAt, _updatedDate: row.updatedAt };
 }
 
+export const mapForPrismaUpdate = (collection: string, item: any) => {
+    if (collection === 'imoveis') {
+        const updateData: any = {};
+
+        if (item.tipoImovel !== undefined) updateData.type = item.tipoImovel;
+
+        if (item.statusImovel !== undefined) {
+            updateData.status = item.statusImovel === 'Ativo' ? 'AVAILABLE' : (item.statusImovel === 'Locado' ? 'RENTED' : (item.statusImovel === 'Vendido' ? 'SOLD' : 'UNAVAILABLE'));
+        }
+
+        if (item.resumoImovel !== undefined) updateData.title = item.resumoImovel;
+        if (item.precoVenda !== undefined) updateData.salePrice = Number(item.precoVenda) || null;
+        if (item.precoLocacao !== undefined) updateData.rentPrice = Number(item.precoLocacao) || null;
+        if (item.valorCondominio !== undefined) updateData.condoPrice = Number(item.valorCondominio) || null;
+        if (item.valorIPTU !== undefined) updateData.iptuPrice = Number(item.valorIPTU) || null;
+        if (item.descricaoAnuncio !== undefined) updateData.description = item.descricaoAnuncio;
+        if (item.galeriaFotos !== undefined) {
+            updateData.images = item.galeriaFotos;
+            if (item.galeriaFotos.length > 0) updateData.mainImage = item.galeriaFotos[0];
+        }
+        if (item.areaTotal !== undefined || item.areaTerreno !== undefined) updateData.areaTotal = Number(item.areaTerreno || item.areaTotal) || null;
+        if (item.areaUtil !== undefined || item.areaConstruida !== undefined) updateData.areaUtil = Number(item.areaConstruida || item.areaUtil) || null;
+        if (item.dormitorios !== undefined || item.quartos !== undefined) updateData.bedrooms = Number(item.dormitorios || item.quartos) || null;
+        if (item.suites !== undefined) updateData.suites = Number(item.suites) || null;
+        if (item.banheiros !== undefined) updateData.bathrooms = Number(item.banheiros) || null;
+        if (item.vagasCobertas !== undefined || item.vagas !== undefined) updateData.garages = Number(item.vagasCobertas || item.vagas) || null;
+        if (item.cep !== undefined) updateData.zipCode = item.cep;
+        if (item.enderecoRua !== undefined || item.logradouro !== undefined) updateData.street = item.enderecoRua || item.logradouro;
+        if (item.numero !== undefined) updateData.number = item.numero;
+        if (item.enderecoComplemento !== undefined || item.complemento !== undefined) updateData.complement = item.enderecoComplemento || item.complemento;
+        if (item.enderecoBairro !== undefined || item.bairro !== undefined) updateData.neighborhood = item.enderecoBairro || item.bairro;
+        if (item.enderecoCidade !== undefined || item.cidade !== undefined) updateData.city = item.enderecoCidade || item.cidade;
+        if (item.enderecoEstado !== undefined || item.estado !== undefined) updateData.state = item.enderecoEstado || item.estado;
+        if (item.corretorResponsavelId !== undefined) updateData.ownerId = item.corretorResponsavelId;
+
+        return updateData;
+    }
+
+    // Cleanup internal mock fields before DB update
+    const cleaned = { ...item };
+    delete cleaned._id;
+    delete cleaned.id;
+    delete cleaned._createdDate;
+    delete cleaned._updatedDate;
+    return cleaned;
+}

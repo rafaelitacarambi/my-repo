@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
-import { mapForFrontend } from './index';
+import { mapForFrontend, mapForPrismaUpdate } from './index';
 
 const resolveModel = (collectionId: string) => {
     switch (collectionId) {
@@ -36,8 +36,10 @@ export const PUT: APIRoute = async ({ params, request }) => {
 
     try {
         const body = await request.json();
+        const dataForPrisma = mapForPrismaUpdate(collection as string, body);
+
         // @ts-ignore
-        const updated = await model.update({ where: { id: id as string }, data: body });
+        const updated = await model.update({ where: { id: id as string }, data: dataForPrisma });
         return new Response(JSON.stringify(updated), { status: 200 });
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
