@@ -1,0 +1,33 @@
+STATUS: 400
+RESPONSE: {"code":"23502","details":"Failing row contains (81c7e879-afd7-4496-a51f-481f80fd2229, AUTO721974, Terreno à venda, 150 m² por R$ 120.000,00 - Jardim Ipanema - F..., Imóvel, AVAILABLE, 120000, 0, 0, 0, 0, 150, 0, 0, 0, 0, , , null, null, , , , null, 2026-03-02 00:28:36.19, null, Terreno à Venda  Ferraz de Vasconcelos/SP\n 5x30 m | 150 m²\n R$..., https://imgs.kenlo.io/VWRCUkQ2Tnp3d1BJRDBJVe1szkhnWr9UfpZS9ftWwj..., {https://imgs.kenlo.io/VWRCUkQ2Tnp3d1BJRDBJVe1szkhnWr9UfpZS9ftWw...).","hint":null,"message":"null value in column \"updatedAt\" of relation \"Property\" violates not-null constraint"}
+PAYLOAD: {
+  "id": "81c7e879-afd7-4496-a51f-481f80fd2229",
+  "code": "AUTO721974",
+  "title": "Terreno à venda, 150 m² por R$ 120.000,00 - Jardim Ipanema - Ferraz de Vasconcelos/SP",
+  "type": "Imóvel",
+  "status": "AVAILABLE",
+  "salePrice": 120000,
+  "rentPrice": 0,
+  "condoPrice": 0,
+  "iptuPrice": 0,
+  "areaTotal": 0,
+  "areaUtil": 150,
+  "bedrooms": 0,
+  "suites": 0,
+  "bathrooms": 0,
+  "garages": 0,
+  "street": "",
+  "neighborhood": "",
+  "city": "",
+  "state": "",
+  "zipCode": "",
+  "description": "Terreno à Venda  Ferraz de Vasconcelos/SP\n 5x30 m | 150 m²\n R$ 120.000\n\nExcelente oportunidade para construir a casa dos seus sonhos ou investir!\n\n Localizado na Avenida Luiz Antônio de Paiva, em Ferraz de Vasconcelos  região em expansão, com fácil acesso a comércios, escolas e transporte público.\n\n Características do terreno:\nÁrea total de 150 m² (5 metros de frente x 30 metros de profundidade)\n\nRua asfaltada, com infraestrutura completa (água, luz e esgoto)\n\nEntre em contato para mais informações e agende já uma visita!",
+  "mainImage": "https://imgs.kenlo.io/VWRCUkQ2Tnp3d1BJRDBJVe1szkhnWr9UfpZS9ftWwjXgr7v5Znen3XVcMHllDVRJJeIbi3YwVYEtu0da0+I1+S0kstE3ZIK-rSm2zLWf64eohU7GwKHpsu71-MHiZeHs2ZwlzIH0Sw+JvfVmSeAsNUcoRdtqeRX3D7yZFSB-jDOdgUH8TJhxfHtlhS0A1QZhyGqlQbGi0nh14CaaKvb7tS-VdZrvL3V1QPlLCdkx8QdQ8Bi1SUxy8h8d4563vSCAaKyyLIOvkiMYDwYu6oa6SeKv15TFJsonDqooL34J41sRFqAe2beFX6J24QkLuOfUB1+EkBnHl+8kYMGwWtpJmKQcwlzEG+FM7xa4zoTH0PatZhjXOgY08O2aq-ayPvunHqrsUm2viJgH44-ZapgLFo+rSDQVdGN5JD1d+x7z+LeLsE36IGDY50VHVhOSnI5y52R3Pw==.jpg",
+  "images": [
+    "https://imgs.kenlo.io/VWRCUkQ2Tnp3d1BJRDBJVe1szkhnWr9UfpZS9ftWwjXgr7v5Znen3XVcMHllDVRJJeIbi3YwVYEtu0da0+I1+S0kstE3ZIK-rSm2zLWf64eohU7GwKHpsu71-MHiZeHs2ZwlzIH0Sw+JvfVmSeAsNUcoRdtqeRX3D7yZFSB-jDOdgUH8TJhxfHtlhS0A1QZhyGqlQbGi0nh14CaaKvb7tS-VdZrvL3V1QPlLCdkx8QdQ8Bi1SUxy8h8d55m-oS7TO7S-K5+hxzlXFx5k9oa+Squ619jCLJU4Vr0lNm4L5VMZWe0S2-TJT-8+5wEDqv3JFhXchgzWgPAoc9j0QdpMnacEiFqQHLId6BuzxYzHhPH-bkTTYlpo-L3K-aG1P-z3Ta-yOU6pg5EC8ojKLo8JdbmjACMXAlBiLjYcpQD6vbmF4lLmcXjAtkESWB3fg9xq7GV3clU=.jpg",
+    "https://imgs.kenlo.io/VWRCUkQ2Tnp3d1BJRDBJVe1szkhnWr9UfpZS9ftWwjXgr7v5Znen3XVcMHllDVRJJeIbi3YwVYEtu3BNje1Z3AkSrMxAV5KYpiO+16K798eakWKw6brWtL-+09jfYv7ukt1k34LaMnCNtvZZQ8YEHmVcRsk-eSeyT5mgNyBVjjOrr0aQUboWfGBl2CMxnCdOxB6jAZW9yG5t5TP1BeHkrQ6tTP7hIWVDErMNAdIz7EIJ8RC9W0J8p0oF7Jq1qTLdaOenJpi9yWxNWAZ8vJq+TqjzwtiOK59nSeUyO3cb51URUaJf1-aKA+9jrwcLou-TCwSW3hrDkec3f8vtBcFMmKIHkBCWSLVOuRy+zofPhKX4PEyPZgI0oLGarffiOP3wHfz3JyWKhZoL95nNPcsed9qVCGsAACZRNTwX5F7ktPyL7AD5bSnYrhAWDRPRzsM49G52chhc.jpg",
+    "https://imgs.kenlo.io/VWRCUkQ2Tnp3d1BJRDBJVe1szkhnWr9UfpZS9ftWwjXgr7v5Znen3XVcMHllDVRJJeIbi3YwVYEtu3030N914hkszZsidb7l5CSw9dmTzfaDk0Ov87XWjYL1jOP2fsfalbA29PLuOUP3hPI8cft5FGdmYuM-akbHDrW6OnhOqR3R+RzwXYl-HC8FziBvnQx23leoBImM3EEugAb+DvL2kHGoUJz+OFFlQPlLCdkx8QdQ8Bi1SUxy8h8d55m-oS7TO7S-K5+hxzlXFx5k9oa+Squ619jCLJU4Vr0lNm4L5VMZWe0S2-TJT-8+5wEDqv3JFhXchgzWgPAoc9j0QdpMnacEiFqQHLId6BuzxYzHhPH-bkTTYlpo-L3K-aG1P-z3Ta-yOU6pg5EC8ojKLo8JdbmjACMXAlBiLjYcpQD6vbmF4lLmcXjAtkESWB3fg9xq7GV3clU=.jpg",
+    "https://imgs.kenlo.io/VWRCUkQ2Tnp3d1BJRDBJVe1szkhnWr9UfpZS9ftWwjXgr7v5Znen3XVcMHllDVRJJeIbi3YwVYEtu0di1dFS3RswiZIUAOexgwis7KKGu8+Crk3J6b7ysJ-R6cSmQOPO94ck-4CuD2CAub87GdILKWwnZ-BxeCHBXouwMyJ6jGGprFzIa-5tH0xL-AsXux1+nEGHfZec8XIx5DGiFOrl8w6NaanqJ2V5RbMNAdIz7EIJ8RC9W0J8p0oF7Jq1qTLdaOenJpi9yWxNWAZ8vJq+TqjzwtiOK59nSeUyO3cb51URUaJf1-aKA+9jrwcLou-TCwSW3hrDkec3f8vtBcFMmKIHkBCWSLVOuRy+zofPhKX4PEyPZgI0oLGarffiOP3wHfz3JyWKhZoL95nNPcsed9qVCGsAACZRNTwX5F7ktPyL7AD5bSnYrhAWDRPRzsM49G52chhc.jpg",
+    "https://imgs.kenlo.io/VWRCUkQ2Tnp3d1BJRDBJVe1szkhnWr9UfpZS9ftWwjXgr7v5Znen3XVcMHllDVRJJeIbi3YwVYEtuwJD0PlB9g4EzP0Sd4a-sTO+j4y45e21pUHI6KPWpJTB8fylRuvv8tgZwZ-CDlGVi5lLZ9E6Ghp2e7VDRSvUWL-RLk9bgyWL+1fJTqNHU3Fk8DsKmS1Z6V+GQbmup0AyhQCCWvz8jAiufZvFLHJXNL5HR9o47l9MqBG1U1ByqR9Q9JG2ozrBZrT0PpW61WIYQklkpNCiTqzwi82OZ5htFvpqLHoC91cXWaoQmvqIQKNz8k8NqufBERmHlELVhPYgYMf+HIVXmKcCkwjcTuFJ6k25w4zEjKWsOx6HOgZs-O2W-ae0b-rxGqykIjvhppwA-pzcOthaYNj2PmNIFyQnBicd7x+6qvXO4g6rcjWJtghHCUbfwI4npnZ9cxgRoA==.jpg"
+  ]
+}
