@@ -1,0 +1,243 @@
+# Relatório de Auditoria de Fotos (02/03/2026, 19:54:00)
+
+- **Total de Imóveis**: 505
+- **Imóveis SEM fotos**: 43
+- **Imóveis COM ERRO de mídia (URL quebrada)**: 193
+
+## Detalhamento de Problemas:
+- **[GA0004]** ID: `ebb89754-1383-4a8e-bef1-f20ec2d5f911` | Endereço: Avenida Quinze de Novembro, 437 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0022]** ID: `e627b1fe-19b9-40df-a735-8e261a130a2c` | Endereço: Rua Dom Pedro Segundo, 1 | Fotos: 0 | **Status: Sem Fotos**
+- **[SO0060]** ID: `6d6693a5-cc92-4a05-a474-376e5958b297` | Endereço: Rua Mongaguá, 50 | Fotos: 0 | **Status: Sem Fotos**
+- **[SO0064]** ID: `ea9aaba5-d319-4939-acdd-09adbd80f889` | Endereço: Rua Fernando de Noronha, 51 | Fotos: 0 | **Status: Sem Fotos**
+- **[AUTO791123]** ID: `f3bfc435-ab0d-40e2-bfd5-8344e3950591` | Endereço: N/A | Fotos: 26 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO471992]** ID: `1cc577af-1492-4693-ad22-35853a7bbea3` | Endereço: N/A | Fotos: 31 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO266545]** ID: `e26ff9e3-b538-41de-8d98-4c55cb2f6b0b` | Endereço: N/A | Fotos: 9 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO100192]** ID: `627f6ca0-43df-469c-b8ec-82c0324096f5` | Endereço: N/A | Fotos: 39 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO981267]** ID: `f2329412-c90f-4828-97cc-e96cbad24d91` | Endereço: N/A | Fotos: 19 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO234735]** ID: `64bd38fc-4405-42fc-980b-f07e83a70ce2` | Endereço: N/A | Fotos: 25 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO134201]** ID: `e93bbc55-438d-4219-bc0f-fd4137080fbf` | Endereço: N/A | Fotos: 18 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO699601]** ID: `ea1b46b5-6b26-4a93-b0bb-41575daa538f` | Endereço: N/A | Fotos: 25 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO806599]** ID: `06830043-8ab5-4821-9331-5317d0f9f29f` | Endereço: N/A | Fotos: 17 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO155234]** ID: `6df9313a-a0ac-4dca-a1e9-c5861c427c5a` | Endereço: N/A | Fotos: 21 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO43445]** ID: `a14a5537-caa2-4f7a-9efe-61bd8e9a5588` | Endereço: N/A | Fotos: 60 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO631883]** ID: `aa15aa08-6468-42a9-a5d3-e3c73c1541f0` | Endereço: N/A | Fotos: 18 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO722784]** ID: `be8b56ab-03d9-4027-a5bd-a42d93749020` | Endereço: N/A | Fotos: 25 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO815982]** ID: `099a9275-4c61-44d9-b834-f12c86abdee3` | Endereço: N/A | Fotos: 42 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO223092]** ID: `35b6ee2e-c97a-4062-8dec-3df1d3d1373c` | Endereço: N/A | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO913864]** ID: `3795b245-63e9-453a-b385-09cf2005cadf` | Endereço: N/A | Fotos: 37 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO264274]** ID: `5198b095-7853-42e5-9d24-af1971c72827` | Endereço: N/A | Fotos: 41 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO446178]** ID: `2c02542c-788c-4bb1-8a9b-4c4476ec1855` | Endereço: N/A | Fotos: 24 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO961970]** ID: `db58374f-54e4-45e4-9c68-e8e95845afdc` | Endereço: N/A | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO866492]** ID: `b9f7a4e8-ea3e-4247-ba0e-8c750991b33f` | Endereço: N/A | Fotos: 35 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO922844]** ID: `65f1ddaa-3d60-43fb-bbdf-e54ccec571a2` | Endereço: N/A | Fotos: 23 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO812224]** ID: `741e6571-ba27-4d91-9e05-6c87ad6cf3d7` | Endereço: N/A | Fotos: 29 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO352321]** ID: `9b058780-2f84-49b7-8357-48d23bd54df1` | Endereço: N/A | Fotos: 34 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO889485]** ID: `802370da-4fd9-4621-ae83-e970421245e8` | Endereço: N/A | Fotos: 21 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO565340]** ID: `d56d43f8-1e73-4e79-8cce-a0d6dc9659b6` | Endereço: N/A | Fotos: 20 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO920052]** ID: `3de0c2f9-040f-48f2-9e86-bb0c96e515b7` | Endereço: N/A | Fotos: 32 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO496706]** ID: `5dcc52e8-db47-4913-a76e-f9562d20cb9a` | Endereço: N/A | Fotos: 56 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO548988]** ID: `8699ec1e-1e19-4479-b333-2e95b359ee7a` | Endereço: N/A | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO93024]** ID: `ace7cff4-214a-4950-a5e6-7384b80b8911` | Endereço: N/A | Fotos: 59 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO685580]** ID: `d540ece7-bbfc-49c6-a6f1-4a46351d9d9e` | Endereço: N/A | Fotos: 38 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO767681]** ID: `8436a8d9-c3ae-475c-ae5f-dff7c9b0441e` | Endereço: N/A | Fotos: 18 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO936019]** ID: `1ec6c032-652a-4105-b284-91287b3ad774` | Endereço: N/A | Fotos: 15 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO323343]** ID: `59bcb8e1-216c-4910-9e05-471191d5ff12` | Endereço: N/A | Fotos: 26 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO453266]** ID: `4046a8e2-a6db-4fad-8351-e9c7cdf931eb` | Endereço: N/A | Fotos: 10 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO682108]** ID: `1dfa3f37-760d-4733-9c12-efc18202cc28` | Endereço: N/A | Fotos: 30 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO730594]** ID: `4ec9ebda-9620-4453-9988-47de76ab9553` | Endereço: N/A | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO387587]** ID: `3e8c6760-dad7-42f1-b5cd-2bf948c23c30` | Endereço: N/A | Fotos: 33 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO295621]** ID: `2551939a-1e9f-4596-9827-742dff4ecaaf` | Endereço: N/A | Fotos: 17 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO93597]** ID: `afbbea1e-a457-49bf-ac13-ebdef0bdb5e2` | Endereço: N/A | Fotos: 6 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO822684]** ID: `98f067d8-81ce-415d-bda9-5b54e6751018` | Endereço: N/A | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO635787]** ID: `eacd1481-3de1-483a-9410-14ecfaa335a3` | Endereço: N/A | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO950576]** ID: `8600e257-baa9-4d0d-a98e-de68d15ae1c8` | Endereço: N/A | Fotos: 6 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO201270]** ID: `f2621813-0945-4d1f-98d7-28acb3d4bcba` | Endereço: N/A | Fotos: 24 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO776629]** ID: `7d370491-3184-47aa-8d8f-ca612a55066e` | Endereço: N/A | Fotos: 39 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO650887]** ID: `3ac68692-e961-4ec7-9857-6c0e193f03a9` | Endereço: N/A | Fotos: 31 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO493768]** ID: `d24df048-81bf-4d0d-a5b1-57a7f690313e` | Endereço: N/A | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO553788]** ID: `89eafa7b-97c2-4951-a27d-ac6cdc3b0568` | Endereço: N/A | Fotos: 31 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO414977]** ID: `0b52c6ba-ae38-4010-8de8-0d711d7bf091` | Endereço: N/A | Fotos: 40 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO850335]** ID: `57bd42e0-4f3e-4797-b302-00bf3b596d28` | Endereço: N/A | Fotos: 6 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO977461]** ID: `c79b8164-aad5-4524-9066-5205f2266e11` | Endereço: N/A | Fotos: 14 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO437082]** ID: `204e0864-2b0e-49c7-bc6c-9bc5a5ba992a` | Endereço: N/A | Fotos: 28 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO352813]** ID: `6a1dc64c-64fb-48ad-aff7-f107bc61d685` | Endereço: N/A | Fotos: 29 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO380866]** ID: `aafdbe90-e587-4489-aedd-27592b12d4d8` | Endereço: N/A | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO658571]** ID: `8d396595-0ce7-4b7e-b84c-34e97d730dff` | Endereço: N/A | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO214698]** ID: `0eb0dace-9fa5-41ec-8461-fdabcfe39ee7` | Endereço: N/A | Fotos: 43 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO830415]** ID: `f22a3384-0d88-41ea-8baa-c6de7648dc96` | Endereço: N/A | Fotos: 10 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO425064]** ID: `93c5336d-0332-4ccf-8d55-9bb29461147f` | Endereço: N/A | Fotos: 46 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO75482]** ID: `8598ff23-5035-4345-a5a1-5d61daef1c0a` | Endereço: N/A | Fotos: 32 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0128]** ID: `6a1b1a59-6998-4ec9-92ef-db0ef2f5f8e2` | Endereço: Rua Luiz Monteiro, 49 | Fotos: 13 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO916459]** ID: `e6f4d906-0096-4068-a4bb-83db01c214ce` | Endereço: N/A | Fotos: 30 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO218259]** ID: `591e93ec-ed7f-447c-860d-5fe0ed68c51c` | Endereço: N/A | Fotos: 2 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO823876]** ID: `b8cedc3c-9fe4-4d03-80fa-452fbf568596` | Endereço: N/A | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO582791]** ID: `d7ea5365-d214-4aa4-96f4-4b6157a38469` | Endereço: N/A | Fotos: 5 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO575571]** ID: `232435eb-de47-411f-b242-ba0d486eb5b4` | Endereço: N/A | Fotos: 37 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO336415]** ID: `0000ec9e-f03e-4cd2-9361-efd927fed7b9` | Endereço: N/A | Fotos: 24 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO331387]** ID: `211c1ef7-03af-41bd-8f60-0ca8a093a871` | Endereço: N/A | Fotos: 29 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO300699]** ID: `232ec2a8-50de-4c41-a016-10cd9e0c8ea6` | Endereço: N/A | Fotos: 26 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO303956]** ID: `787c26ed-bf03-41a8-b178-b204554a5ec7` | Endereço: N/A | Fotos: 20 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO104115]** ID: `3ed0908c-574b-423e-bfce-e5e6a02e259f` | Endereço: N/A | Fotos: 38 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO64331]** ID: `d8c6c255-d5c6-4d22-ade6-d07e787ccc8f` | Endereço: N/A | Fotos: 44 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO786111]** ID: `68c529d2-6608-4acc-8bbc-fccb2194c23f` | Endereço: N/A | Fotos: 14 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO931173]** ID: `24e25c76-2ab8-45d7-a24c-4fb05872931e` | Endereço: N/A | Fotos: 34 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO317321]** ID: `7346d174-5fd0-4b14-a4eb-4e575189b7a1` | Endereço: N/A | Fotos: 30 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO292140]** ID: `10d68514-a886-4669-9cbb-ac56e4ff0e2a` | Endereço: N/A | Fotos: 23 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO111691]** ID: `727d4cfd-d285-43e2-8d93-d83e973620d3` | Endereço: N/A | Fotos: 30 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO954379]** ID: `76af85ef-c58a-4fda-b8bd-bbd6aefc569f` | Endereço: N/A | Fotos: 35 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO514057]** ID: `a190a29b-857c-46f0-b4cf-7b11e1769b2a` | Endereço: N/A | Fotos: 29 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO430515]** ID: `6485780e-ab75-429c-a40c-e5a7461f782c` | Endereço: N/A | Fotos: 27 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO253831]** ID: `07aa56b8-ed36-42b8-a8d4-88774cbd047b` | Endereço: N/A | Fotos: 33 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AUTO401868]** ID: `16c87095-2357-45b9-ac98-d04fbcbf3333` | Endereço: N/A | Fotos: 7 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0117]** ID: `8d92e266-83d6-4cc0-908f-ba19e878fcf2` | Endereço: Rua Coronel Benedito de Almeida, 149 | Fotos: 0 | **Status: Sem Fotos**
+- **[SL0014]** ID: `1a23875b-055e-47d0-a8cf-8c810ed65817` | Endereço: Rua Getúlio Vargas, 59 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0145]** ID: `c8da29e2-9b2c-423d-abbf-7d17b96ad85b` | Endereço: Rua Getúlio Vargas, 67 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0147]** ID: `92fa2e21-483b-49e9-933c-cd9b525896c7` | Endereço: Rua Treze de Maio, 197 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0214]** ID: `d08ab2fd-da58-4b7b-ae2c-80d49b3497bd` | Endereço: Rua União, 483 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0140]** ID: `acbd242f-8257-48ed-be9f-570ba59933bf` | Endereço: Rua João Francisco Ferreirinha, 92 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0210]** ID: `1e211bdf-8715-473d-a80b-8799e17e5d64` | Endereço: Avenida Prefeito Francisco Rodrigues Filho, 323 | Fotos: 0 | **Status: Sem Fotos**
+- **[GA0006]** ID: `acf5ad88-6b66-4075-8d7c-fe8ef05c9c16` | Endereço: Rodovia João Afonso de Souza Castellano, 751 | Fotos: 0 | **Status: Sem Fotos**
+- **[SL0010]** ID: `968f2d98-b65c-4c9d-bdc5-33d8921f7a08` | Endereço: Rua Visconde de Aguiar Toledo, 320 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0178]** ID: `708173bf-5c9d-4f02-bafa-b705bafe6a90` | Endereço: Rua Poanópolis, 400 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0179]** ID: `c7cb3939-cd05-4be0-b153-dd5701a5184f` | Endereço: Rua Poanópolis, 400 | Fotos: 0 | **Status: Sem Fotos**
+- **[GA0009]** ID: `f5f556b6-491c-4015-9cba-4ffa408fa82c` | Endereço: Rodovia João Afonso de Souza Castellano, 1021 | Fotos: 0 | **Status: Sem Fotos**
+- **[SO0124]** ID: `ae7fcc7f-0cf5-42e7-b63f-ad97873333be` | Endereço: Rua Maria Janoni Novazzi, 480 | Fotos: 46 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0134]** ID: `c3a3d3ca-5c99-4bba-b252-43af052b33c3` | Endereço: Rua João Vinte e Três, 131 | Fotos: 49 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0187]** ID: `01aa9ba1-e147-4600-a6be-970042bc6b88` | Endereço: Rua Dona Leopolda, 0 | Fotos: 0 | **Status: Sem Fotos**
+- **[SO0143]** ID: `f7821f7d-dc4c-49bd-85e5-7f3f2f395ae6` | Endereço: Rua João Afonso, 150 | Fotos: 0 | **Status: Sem Fotos**
+- **[SL0013]** ID: `c8a2c85b-0a8f-4b8b-9310-2813d56ed465` | Endereço: Avenida Marechal Tito, 6420 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0200]** ID: `2ef2bef8-05de-4573-9a2d-2808e4a748c6` | Endereço: Rua Jerônimo Mariano, 152 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0199]** ID: `e38a9e5f-85e7-4017-bb2f-dd0de6c81537` | Endereço: Avenida Prefeito Francisco Rodrigues Filho, 323 | Fotos: 35 | **Status: Erro de Mídia (URL Quebrada)**
+- **[TE0028]** ID: `12962db9-104e-4a72-8fe0-4d65484c9b26` | Endereço: Rua Vista Alegre, 25 | Fotos: 9 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0129]** ID: `fc8b3899-9efd-4ce0-8f1b-d355420381a6` | Endereço: Rua Dom Pedro Primeiro, 380 | Fotos: 125 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SL0012]** ID: `c2d47eb6-10ee-4f7a-9a9a-97e4a528d2e4` | Endereço: Avenida Lucas Nogueira Garcez, 37 | Fotos: 0 | **Status: Sem Fotos**
+- **[SO0144]** ID: `16291f87-9b49-4cdb-aae6-27fcd9223a00` | Endereço: Rua Fernando de Noronha, 31 | Fotos: 29 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0126]** ID: `72086ccd-2366-49e5-8e73-89d549b26a94` | Endereço: Rua Santa Teresa, 41 | Fotos: 28 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0125]** ID: `67b2d486-8d75-42dc-a3b5-927ab586cf6b` | Endereço: Rua Fernando de Noronha, 281 | Fotos: 23 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0192]** ID: `740378dc-ca6b-4fad-b484-42117932a36c` | Endereço: Rua São Luís, 136 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0124]** ID: `63276fd5-96eb-4c47-9217-f7541ba931f1` | Endereço: Rua Estado da Bahia, 175 | Fotos: 25 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0121]** ID: `78bc1ef4-d1e5-4ec0-94ab-51ef53108640` | Endereço: Avenida Manoel Casanova, 1150 | Fotos: 27 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0119]** ID: `01b98268-8704-4bda-9906-fdc623b9195d` | Endereço: Rua Dário Carneiro, 0 | Fotos: 31 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0190]** ID: `c8ad5244-e02d-49d4-84a1-2b0be576b232` | Endereço: Rua João Pekny, 80 | Fotos: 26 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0123]** ID: `74905e97-097e-4f8d-ab38-24633c4a4eb6` | Endereço: Estrada de Santa Mônica, 1083 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0122]** ID: `c90a779b-7130-4cdd-b2a1-7842715e9136` | Endereço: Rua Florianópolis, 207 | Fotos: 37 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0132]** ID: `03cf1bdc-a28d-4071-9fd5-ac3241ed12a1` | Endereço: Rua Poanópolis, 400 | Fotos: 36 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0116]** ID: `5ee37c09-e13b-47b1-a3aa-484f2f93502b` | Endereço: Rua Poanópolis, 400 | Fotos: 40 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0157]** ID: `d8227a88-9eb0-4a8d-bc09-820d61e03184` | Endereço: Rua Alberto Rossi, 192 | Fotos: 36 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0188]** ID: `bb308627-8cba-47b4-bb5a-07d292bff061` | Endereço: Avenida Boa Vista, 820 | Fotos: 19 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0149]** ID: `582e7810-bd3f-430c-8140-7a37a10c3adb` | Endereço: Rua Tanque Verde, 204 | Fotos: 7 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SL0011]** ID: `06ef9cb4-a79a-4fa1-b740-0ffd295f3dad` | Endereço: Alameda Pedro Calil, 81 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0176]** ID: `b76d0c71-e986-46d1-9ec8-cb0dacdd3fad` | Endereço: Rua Ijaci, 125 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0181]** ID: `5a22e15e-b653-4972-98a6-10dd7fee5000` | Endereço: Avenida Mariano Souza Mello, 580 | Fotos: 0 | **Status: Sem Fotos**
+- **[GA0005]** ID: `562862ef-60c7-4575-99f5-58c7af672040` | Endereço: Rua Monsenhor Nuno, 348 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0110]** ID: `8525640b-e7eb-420c-a889-ab26082d1a18` | Endereço: Rua Iracy Umbelina de Jesus, 409 | Fotos: 60 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0174]** ID: `20f6b2b1-65a6-47d0-94ac-45976b46dad8` | Endereço: Rua União, 483 | Fotos: 10 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0105]** ID: `79baf57c-c58e-4434-bb4f-ed7f30301495` | Endereço: Rua Princesa Isabel, 569 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0173]** ID: `85161887-5f1b-4902-b48b-22e43c764087` | Endereço: Rua Luís Ramalho, 96 | Fotos: 36 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0172]** ID: `eea34266-c6c2-435f-9b7e-97f5200f2680` | Endereço: Rua Marabá, 179 | Fotos: 35 | **Status: Erro de Mídia (URL Quebrada)**
+- **[GA0007]** ID: `f8e76e2e-8b8b-43c4-a785-b7b1a9ec56b8` | Endereço: Avenida Major Pinheiro Froes, 1085 | Fotos: 0 | **Status: Sem Fotos**
+- **[SA0002]** ID: `e50058b0-69d1-4944-910d-76fc3cb05ab5` | Endereço: Rua Poanópolis, 136 | Fotos: 0 | **Status: Sem Fotos**
+- **[SO0134]** ID: `fb719b4b-6fca-4194-9208-ea3a5ddc2cac` | Endereço: Rua Ilha da Madeira, 198 | Fotos: 24 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0163]** ID: `da6a8d8b-81fa-460c-8a30-301af14713a9` | Endereço: Travessa Ângelo Biancolin, 7 | Fotos: 32 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0109]** ID: `d8fba6e9-5a28-4a0f-a23e-42130ec1f2a4` | Endereço: Rua Fernando José dos Santos, 5 | Fotos: 10 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0162]** ID: `013984ba-03a0-41b0-8240-e81646e25e37` | Endereço: Rua João Pekny, 80 | Fotos: 23 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CH0005]** ID: `0a8afacb-9446-4503-b6bb-f642243446e2` | Endereço: Avenida Claudino Novaes, 0 | Fotos: 21 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0160]** ID: `50f73932-de3d-4250-80b7-558f84d552f5` | Endereço: Avenida Armando Salles de Oliveira, 1601 | Fotos: 18 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0115]** ID: `d3083f0d-0528-403b-a607-b1c7958a45d6` | Endereço: Rua Oswaldo Teixeira, 163 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0108]** ID: `43784cd2-8dfa-4f68-b566-2653467e03f7` | Endereço: Rua Conde dos Arcos, 0 | Fotos: 38 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0156]** ID: `949f334e-0d63-436c-bd1c-9aa1ee43d382` | Endereço: Estrada dos Fernandes, 2000 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0130]** ID: `5d7370e6-87ee-443e-afa5-b850da2e2aaa` | Endereço: Rua Luiz Monteiro, 0 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CH0007]** ID: `24e66070-81b1-42a0-bf32-3a3d1fe46b18` | Endereço: Estrada Hiroshi Tobinaga, 0 | Fotos: 45 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0106]** ID: `97a4b853-61e3-4c4d-a569-9003e3027591` | Endereço: Rua Antenor Leite da Cunha, 2051 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0106]** ID: `a9f37483-cedb-44ef-8db3-6c3d6e5cdbd4` | Endereço: Rua Pedro Xara Ravasco, 5 | Fotos: 23 | **Status: Erro de Mídia (URL Quebrada)**
+- **[TE0025]** ID: `d2c2446e-480d-4be4-9392-a588b85d2412` | Endereço: Rua Marabá, 0 | Fotos: 0 | **Status: Sem Fotos**
+- **[TE0026]** ID: `88f296d9-9153-4c88-8ffa-94d6400fcefa` | Endereço: Rua Estado da Bahia, 0 | Fotos: 6 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0153]** ID: `09e69254-361f-4384-905d-e0b2b32c63df` | Endereço: Avenida Vinte e Seis de Março, 560 | Fotos: 21 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0154]** ID: `ea1c81c1-b884-494f-837a-0d4f14991341` | Endereço: Rua Clemente Cunha Ferreira, 121 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0104]** ID: `4340b0b1-ed97-4e61-963f-2ada40939fca` | Endereço: Rua Doutor Emílio Ribas, 23 | Fotos: 34 | **Status: Erro de Mídia (URL Quebrada)**
+- **[TE0024]** ID: `3b0494df-6cb0-4c8c-a148-9b408cfbf1cb` | Endereço: Rua São José do Rio Preto, 277 | Fotos: 6 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0127]** ID: `07d13b16-64a0-4b91-9397-49d834969558` | Endereço: Rua Xingu, 2 | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0147]** ID: `b6b877ae-6d69-4fa8-9d0d-0122abc68dcc` | Endereço: Avenida Vinte e Seis de Março, 560 | Fotos: 30 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SA0003]** ID: `b91aaf1b-840d-42de-ab7e-efa3cf7feff5` | Endereço: Avenida Getúlio Vargas, 915 | Fotos: 35 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0100]** ID: `b6560371-4cb0-44a1-a4a5-ad6d8441e36f` | Endereço: Rua Masaji Takegawa, 0 | Fotos: 29 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0099]** ID: `ad4b0080-8435-42b0-a7f8-de27e19f33c5` | Endereço: Avenida Três Pontes, 83 | Fotos: 52 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0099]** ID: `35cc1bdf-55c1-4264-8036-8a5cfae98136` | Endereço: Rua Marquês de Pombal, 219 | Fotos: 27 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0098]** ID: `9ec7eeee-41b7-4c44-984f-abed4690d523` | Endereço: Avenida Locarno, 306 | Fotos: 34 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0138]** ID: `78fccbdf-4cba-4e90-9b5b-e95b4e38431d` | Endereço: Avenida Aricanduva, 9110 | Fotos: 18 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0143]** ID: `40edf628-035b-4e54-a8a0-e5d7e68a602a` | Endereço: Rua José de Oliveira Gomes, 361 | Fotos: 13 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0141]** ID: `1380f830-e6f9-4c3e-b36c-d82104d98fb3` | Endereço: Estrada Takashi Kobat, 535 | Fotos: 0 | **Status: Sem Fotos**
+- **[TE0022]** ID: `6524d027-71ed-42d0-88da-d399cb3d8286` | Endereço: Estrada Municipal Anibal Maciel, 2500 | Fotos: 15 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0096]** ID: `3dd4bc55-85fe-44f4-aa14-851d926766b0` | Endereço: Rua União, 896 | Fotos: 39 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0120]** ID: `8952822d-dd8f-4e1a-be6b-826d87aec05e` | Endereço: Rua Quinze de Novembro, 113 | Fotos: 33 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CH0006]** ID: `abdfab57-82c6-47ab-9827-77d5dc3e65c4` | Endereço: Estrada do Mato Dentro, 1500 | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0119]** ID: `2af408d4-fe35-4395-8e39-0090fec92ebb` | Endereço: Rua Angelina Ipolliti, 52 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0056]** ID: `0f51e065-e935-4986-9a69-8917d97975c6` | Endereço: Travessa Coari, 22 | Fotos: 14 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0065]** ID: `39936cdf-d4a2-470a-8e79-211c4b61e690` | Endereço: Rua Piauí, 385 | Fotos: 19 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0099]** ID: `9b79ecb7-6586-4b41-9013-ae852aec6dc9` | Endereço: Avenida Doutor Benedicto Laporte Vieira da Motta, 201 | Fotos: 84 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0100]** ID: `95b34244-c71a-4fbc-85fa-6839ce5ef30e` | Endereço: Avenida Doutor Benedicto Laporte Vieira da Motta, 201 | Fotos: 82 | **Status: Erro de Mídia (URL Quebrada)**
+- **[ST0002]** ID: `d3a2b67f-1da3-42ac-a120-f28d63b8af18` | Endereço: Rua Capitão Mariano, 229 | Fotos: 38 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0107]** ID: `2419e2fe-700b-4d46-93c2-dc0163e9b9c3` | Endereço: Rua Castanha, 94 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0097]** ID: `e2218430-f137-4c50-a984-c601a7246c0a` | Endereço: Rua Marechal Floriano Peixoto, 441 | Fotos: 38 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0124]** ID: `7ab6ee98-8c1c-4bd0-a8a4-d558e7e47e42` | Endereço: Rua Itaporanga, 230 | Fotos: 32 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0110]** ID: `a9fa8e3c-6627-46a1-8e07-07fbde19b028` | Endereço: Rua Judith Guagliano Navarro, 107 | Fotos: 37 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0131]** ID: `0da93de2-ccd5-40e0-80dd-95d08d2f58f7` | Endereço: Rua Ângela Giustti Zampese, 0 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0091]** ID: `c8c9abe3-2f16-40c0-8aa2-011894ea38e7` | Endereço: Rua Assis Chateaubriand, 43 | Fotos: 23 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0092]** ID: `a625fef0-e6b5-4a58-bc85-bc0ac231970e` | Endereço: Rua Ibirapuera, 31 | Fotos: 39 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0048]** ID: `4001f296-98e6-47f5-8abe-408001a448c8` | Endereço: Rua João Antônio Cebriam, 73 | Fotos: 27 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AR0001]** ID: `fc4fb2df-66ec-4d9d-ac3f-93bfe7b6293f` | Endereço: Rua Barão de Cocaes, 340 | Fotos: 9 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0086]** ID: `9159e61a-5eb4-4125-b2a1-4e8591482238` | Endereço: Avenida Pantaleão Trandafilou Filho, 58 | Fotos: 32 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0087]** ID: `683d76a9-479a-440a-b98e-d64ec43f40b4` | Endereço: Alameda Tenente José Bernardino, 76 | Fotos: 25 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0058]** ID: `15660117-f5ce-40c6-a341-1fcf19ac136f` | Endereço: Rua Fernando de Noronha, 31 | Fotos: 56 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0086]** ID: `1fae1dfb-49a9-484f-8730-fa2469ae61dd` | Endereço: Rua Eugênio Rossoni, 265 | Fotos: 38 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0084]** ID: `83693335-d177-4865-af2e-ef7204a5c7c4` | Endereço: Rua José Garcia de Souza, 43 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AR0002]** ID: `5b5714c4-5134-4225-b0de-684df53661a5` | Endereço: Rua Prudente de Moraes, 1327 | Fotos: 0 | **Status: Sem Fotos**
+- **[SO0082]** ID: `524a9394-2c5c-40b3-9d03-469c60be9dbd` | Endereço: Rua Bocaina, 93 | Fotos: 34 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0048]** ID: `ec4ff24c-6a47-405c-bf4e-8d0a23396598` | Endereço: Rua João Romero, 177 | Fotos: 28 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0092]** ID: `f24e5d52-cf2d-4eb7-b9af-f344679aaa20` | Endereço: Rua Marechal Floriano Peixoto, 552 | Fotos: 21 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0083]** ID: `4069b5c3-b088-4abc-a751-6cfdab78bec5` | Endereço: Rua Roque Heroles, 220 | Fotos: 29 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CH0004]** ID: `72795189-93a5-43a5-8ca3-4c7df3f7f731` | Endereço: Rua Dezessete, 200 | Fotos: 19 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0081]** ID: `f4cf36cd-2ec8-40d3-bd98-9b2331326732` | Endereço: Rua Presidente Bernardes, 75 | Fotos: 20 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SL0007]** ID: `ff487270-9e2b-419b-9f83-76a0d5b8d981` | Endereço: Rua Raphael da Anunciação Fontes, 872 | Fotos: 0 | **Status: Sem Fotos**
+- **[SL0006]** ID: `6eb945a9-219c-4a7f-9220-82332167a2cd` | Endereço: Avenida Antônio Marques Figueira, 257 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0038]** ID: `59a2532e-39d5-417d-b13a-30a5279fb0d2` | Endereço: Rua Camélia, 166 | Fotos: 31 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0104]** ID: `683f6c6b-55fe-444e-93fb-393e7d4c6cdf` | Endereço: Rua Palhoça, 81 | Fotos: 0 | **Status: Sem Fotos**
+- **[SL0005]** ID: `4403e172-b3df-4d94-a72a-822e322fd230` | Endereço: Avenida Emancipação, 354 | Fotos: 0 | **Status: Sem Fotos**
+- **[SL0003]** ID: `360e76b2-1e57-4ceb-975c-119cdb926df2` | Endereço: Avenida Emancipação, 356 | Fotos: 0 | **Status: Sem Fotos**
+- **[SL0004]** ID: `d25afa2e-a556-4dcd-b213-f3f4ee58ff9d` | Endereço: Avenida Emancipação, 357 | Fotos: 0 | **Status: Sem Fotos**
+- **[CA0078]** ID: `5723222e-8a19-4362-9512-4fb185549760` | Endereço: Rua Lília, 15 | Fotos: 10 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0102]** ID: `f8afa34e-1107-4901-8d3f-2a0464d8d283` | Endereço: Rua Farias Lemos, 115 | Fotos: 33 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0076]** ID: `ff0454ff-fa1c-4e3c-a334-a1a7dcf10747` | Endereço: Rua Honduras, 1253 | Fotos: 13 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SI0001]** ID: `95899001-5127-43ca-b168-b0086c18d2a5` | Endereço: Rodovia Engenheiro Cândido do Rego Chaves, 0 | Fotos: 36 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0096]** ID: `4e4f8008-8561-453e-81e0-28569886ae58` | Endereço: Rua Taquaritinga, 145 | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0072]** ID: `08920f09-30db-4c01-bcb4-7022cb0e4653` | Endereço: Rua Mariana Rosina Anberje, 344 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0094]** ID: `5d32fc7e-3dd4-4c77-b624-9ca2bc56ad80` | Endereço: Rua do Lavapés, 463 | Fotos: 21 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0093]** ID: `c8616a46-2bfd-46bf-acc5-a236e84df898` | Endereço: Rua Cabo João Monteiro da Rocha, 371 | Fotos: 17 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0090]** ID: `2fa5996f-f2f0-45e1-b6ae-fcde13a0d375` | Endereço: Rua Projetada Principal, 194 | Fotos: 20 | **Status: Erro de Mídia (URL Quebrada)**
+- **[GD0002]** ID: `5748e03f-5290-4843-b276-4d8c8119a5f8` | Endereço: Rua Marabá, 141 | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0088]** ID: `ae427b35-d59d-4298-bd7d-5d1238f8aecc` | Endereço: Rua Diogenes Ribas Aguiar, 107 | Fotos: 30 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0089]** ID: `f8f6fdfa-bf07-4bf5-81e7-d6c5145e353a` | Endereço: Rua João Pekny, 115 | Fotos: 26 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0067]** ID: `0ca515ad-a209-4004-9580-c819c2311f85` | Endereço: Rua Gradaus, 131 | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CH0003]** ID: `be7b26db-c2d3-4e69-9638-d7e4d7a287dd` | Endereço: Estrada Mogi-Taiacupeba, 1500 | Fotos: 46 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0066]** ID: `d24143e1-ed1a-4797-8b83-7f4bfaa1d933` | Endereço: Rua Padre Eustáquio, 107 | Fotos: 17 | **Status: Erro de Mídia (URL Quebrada)**
+- **[ST0001]** ID: `5a5ed236-8943-4e88-b224-f44811a184dc` | Endereço: Avenida Cásper Líbero, 501 | Fotos: 21 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0078]** ID: `ffaeb94c-9c22-4351-970b-9c69834caaf7` | Endereço: Rua Ijaci, 125 | Fotos: 32 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CH0002]** ID: `9b2684bc-c780-44bf-80a6-7b47dc3fa9f5` | Endereço: Rua Dez, 0 | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0031]** ID: `fb7af6df-e885-4e88-b296-dbcfd1d7f396` | Endereço: Rua João Pekny, 0 | Fotos: 47 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0016]** ID: `5bbb95b8-2f8e-4f1f-8452-bb6da5d8367f` | Endereço: Rua Barão de Cocaes, 0 | Fotos: 10 | **Status: Erro de Mídia (URL Quebrada)**
+- **[TE0011]** ID: `0c0e9221-a333-4047-8f4f-08c35e3ee76a` | Endereço: Rua Natalino dos Santos Gonçalves, 16 | Fotos: 3 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0086]** ID: `2e2b94d2-c820-4878-b5ab-11c975b553c4` | Endereço: Rua Quixadá, 60 | Fotos: 23 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0076]** ID: `d5f65c29-575f-4869-9ac8-6c2ba8c110a7` | Endereço: Travessa Serra Negra, 86 | Fotos: 20 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0074]** ID: `cb011b07-562c-4229-aec7-a457aeb028f2` | Endereço: Rua Sumaré, 89 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**
+- **[GA0002]** ID: `e68931f1-721a-42dc-94fa-ef495f89e664` | Endereço: Rua Rio Grande do Sul, 159 | Fotos: 0 | **Status: Sem Fotos**
+- **[AP0061]** ID: `ad637641-0396-4585-af0d-1aa16a2bc98c` | Endereço: Rua Guararema, 90 | Fotos: 0 | **Status: Sem Fotos**
+- **[AD0002]** ID: `0220977f-00e2-4ade-80da-22d5fc24a842` | Endereço: Rua Dário Carneiro, 0 | Fotos: 38 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0063]** ID: `aea9282f-7b31-4f84-9f1c-bffb969fde2e` | Endereço: Rua Bauru, 70 | Fotos: 28 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0028]** ID: `ec6f047b-0979-44e1-9e11-d46d4d95aaf1` | Endereço: Rua Getúlio Moreira de Souza, 1192 | Fotos: 13 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0013]** ID: `c0c20cca-3531-456d-a901-9ee1b5aa6e07` | Endereço: Avenida Nossa Senhora de Lourdes, 0 | Fotos: 21 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0076]** ID: `bf22c2f4-e283-4b5e-9d75-805ea80c4824` | Endereço: Rua Oswaldo Teixeira, 163 | Fotos: 29 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0047]** ID: `b59ce457-c611-4b5e-8bfe-a2c5eea483a3` | Endereço: Rua Brigadeiro Eduardo Gomes, 79 | Fotos: 24 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0052]** ID: `ef7f6b29-b43f-454f-9b51-c3700b600990` | Endereço: Rua Barão do Rio Branco, 120 | Fotos: 30 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CH0001]** ID: `79b43ea0-840a-4683-9890-22168edcc9a0` | Endereço: Avenida Conceição, 360 | Fotos: 70 | **Status: Erro de Mídia (URL Quebrada)**
+- **[CA0049]** ID: `6ddb6987-613e-41f2-8242-996ef4a80fd8` | Endereço: Rua Buíque, 50 | Fotos: 30 | **Status: Erro de Mídia (URL Quebrada)**
+- **[AP0060]** ID: `d4404963-6f59-4e36-9ef6-e4f7cb78c783` | Endereço: Rua Barão do Rio Branco, 161 | Fotos: 22 | **Status: Erro de Mídia (URL Quebrada)**
+- **[SO0024]** ID: `83c67faf-9ecf-4059-9570-89fcabe536be` | Endereço: Rua Urais, 6 | Fotos: 16 | **Status: Erro de Mídia (URL Quebrada)**

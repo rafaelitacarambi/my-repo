@@ -1,0 +1,3537 @@
+[
+  {
+    "id": "81c7e879-afd7-4496-a51f-481f80fd2229",
+    "codigo": "AUTO287786",
+    "endereco": "N/A",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "f8ef9d66-0e43-43c2-910a-f31db5df8271",
+    "codigo": "AUTO802987",
+    "endereco": "N/A",
+    "quantidade_fotos": 21,
+    "status": "OK"
+  },
+  {
+    "id": "d7cf00fe-efec-46d9-b70d-8fcb53d39fd6",
+    "codigo": "AUTO75309",
+    "endereco": "N/A",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "dff8826e-9817-4e52-9f2d-e4b3d61e301c",
+    "codigo": "AUTO508821",
+    "endereco": "N/A",
+    "quantidade_fotos": 28,
+    "status": "OK"
+  },
+  {
+    "id": "57bf9b77-6967-450e-bf47-53362311161b",
+    "codigo": "AUTO472466",
+    "endereco": "N/A",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "3fe67172-b40a-4b4e-bf45-fd249a04adc7",
+    "codigo": "AUTO519044",
+    "endereco": "N/A",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "72d70a3c-be06-4b7b-b5c1-7d05eca38d0f",
+    "codigo": "AUTO94748",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "fab151e5-469b-485b-95ed-cca335f0532c",
+    "codigo": "AUTO569766",
+    "endereco": "N/A",
+    "quantidade_fotos": 12,
+    "status": "OK"
+  },
+  {
+    "id": "3e825c93-1e97-41ed-85eb-515b23c3abf8",
+    "codigo": "AUTO406807",
+    "endereco": "N/A",
+    "quantidade_fotos": 10,
+    "status": "OK"
+  },
+  {
+    "id": "311a1523-e06b-4c8f-8cc0-88766db63442",
+    "codigo": "AUTO174180",
+    "endereco": "N/A",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "44a17e1b-4575-43d7-8c72-41aceba578a3",
+    "codigo": "AUTO95353",
+    "endereco": "N/A",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "e7722319-c974-4a12-b5fa-7d5365cf506d",
+    "codigo": "AUTO195428",
+    "endereco": "N/A",
+    "quantidade_fotos": 17,
+    "status": "OK"
+  },
+  {
+    "id": "70c31596-c2af-484b-b919-3642aabe2471",
+    "codigo": "AUTO182326",
+    "endereco": "N/A",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "b0ecf326-febd-4524-b1f3-fc8101f13add",
+    "codigo": "AUTO803654",
+    "endereco": "N/A",
+    "quantidade_fotos": 36,
+    "status": "OK"
+  },
+  {
+    "id": "ad635939-39b3-4af5-ae94-73d8e757a69e",
+    "codigo": "AUTO731801",
+    "endereco": "N/A",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "745679ab-97f5-479b-89cf-34cd25446475",
+    "codigo": "AUTO413408",
+    "endereco": "N/A",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "915f36e6-6cef-430f-a262-1f7712a91d79",
+    "codigo": "AUTO507473",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "b9a1f2a4-367f-4aec-810e-d50a19cc70ad",
+    "codigo": "AUTO625684",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "6ca1664d-bd0c-43c8-8983-a3eb7663486b",
+    "codigo": "AUTO107974",
+    "endereco": "N/A",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "ebb89754-1383-4a8e-bef1-f20ec2d5f911",
+    "codigo": "GA0004",
+    "endereco": "Avenida Quinze de Novembro, 437",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "2dc35c08-ab39-493c-a68e-55af5dd160b3",
+    "codigo": "AUTO852573",
+    "endereco": "N/A",
+    "quantidade_fotos": 20,
+    "status": "OK"
+  },
+  {
+    "id": "0d0a3650-faf2-40f2-9854-4a144958cf69",
+    "codigo": "AUTO483914",
+    "endereco": "N/A",
+    "quantidade_fotos": 21,
+    "status": "OK"
+  },
+  {
+    "id": "bdba955f-1438-4e9f-aef1-78e3286064e6",
+    "codigo": "AUTO791818",
+    "endereco": "N/A",
+    "quantidade_fotos": 25,
+    "status": "OK"
+  },
+  {
+    "id": "35830ade-736d-424c-8307-1cf6ea1a3f0e",
+    "codigo": "AUTO578407",
+    "endereco": "N/A",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "819c942b-cb60-47d3-98fa-eb2f03c67287",
+    "codigo": "AUTO90737",
+    "endereco": "N/A",
+    "quantidade_fotos": 18,
+    "status": "OK"
+  },
+  {
+    "id": "f5297293-38db-4d49-b859-58261782aa79",
+    "codigo": "AUTO703416",
+    "endereco": "N/A",
+    "quantidade_fotos": 12,
+    "status": "OK"
+  },
+  {
+    "id": "e627b1fe-19b9-40df-a735-8e261a130a2c",
+    "codigo": "CA0022",
+    "endereco": "Rua Dom Pedro Segundo, 1",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "f920a359-d71f-47d3-b79d-dfe3b5950d3e",
+    "codigo": "AUTO125861",
+    "endereco": "N/A",
+    "quantidade_fotos": 3,
+    "status": "OK"
+  },
+  {
+    "id": "b070a42f-e038-46fe-9cdf-40855a0bac44",
+    "codigo": "AUTO483057",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "971f2169-5754-46e4-a2fb-c8305a0df5e6",
+    "codigo": "AUTO497569",
+    "endereco": "N/A",
+    "quantidade_fotos": 14,
+    "status": "OK"
+  },
+  {
+    "id": "35c2e010-ec9c-43c5-b668-7cc72b5ff0d4",
+    "codigo": "AUTO669696",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "37c4677e-a00f-4131-ba95-85bbe3c5d8ce",
+    "codigo": "AUTO964609",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "02bd8e17-54bb-4b16-aba2-f51c954f4a5b",
+    "codigo": "AUTO446810",
+    "endereco": "N/A",
+    "quantidade_fotos": 29,
+    "status": "OK"
+  },
+  {
+    "id": "6d6693a5-cc92-4a05-a474-376e5958b297",
+    "codigo": "SO0060",
+    "endereco": "Rua Mongaguá, 50",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "db5c02e7-26cf-4177-9ec4-542cfd05e265",
+    "codigo": "AUTO112900",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "b5c83754-777d-4000-9792-4704d8029dc7",
+    "codigo": "AUTO848293",
+    "endereco": "N/A",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "58e7c4d3-707c-4708-acc6-93f0559f01fd",
+    "codigo": "AUTO607054",
+    "endereco": "N/A",
+    "quantidade_fotos": 24,
+    "status": "OK"
+  },
+  {
+    "id": "bca47a43-8805-4a67-8e1e-a08161f0447f",
+    "codigo": "AUTO149344",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "8e13b709-7b02-4f3e-ad06-90b744885dcf",
+    "codigo": "AUTO649431",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "2dd4995e-652d-4f1d-8007-1c224c7bc1de",
+    "codigo": "AUTO877749",
+    "endereco": "N/A",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "ea9aaba5-d319-4939-acdd-09adbd80f889",
+    "codigo": "SO0064",
+    "endereco": "Rua Fernando de Noronha, 51",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "215250a8-8de6-44d5-be5b-2a6a5da8c595",
+    "codigo": "AUTO130796",
+    "endereco": "N/A",
+    "quantidade_fotos": 17,
+    "status": "OK"
+  },
+  {
+    "id": "cccfe754-9e61-425f-9988-997f2fdbd8e4",
+    "codigo": "AUTO985441",
+    "endereco": "N/A",
+    "quantidade_fotos": 42,
+    "status": "OK"
+  },
+  {
+    "id": "946a0757-ec89-4da7-aa4b-6b75e462b062",
+    "codigo": "AUTO423124",
+    "endereco": "N/A",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "f95580eb-03f4-4a7c-acc5-41e2f190af8e",
+    "codigo": "AUTO558010",
+    "endereco": "N/A",
+    "quantidade_fotos": 12,
+    "status": "OK"
+  },
+  {
+    "id": "5c67b057-884d-4eec-8464-e020eaa931ba",
+    "codigo": "AUTO213540",
+    "endereco": "N/A",
+    "quantidade_fotos": 21,
+    "status": "OK"
+  },
+  {
+    "id": "d4c9dbb2-3dd6-40a9-8fbc-acef6daa7126",
+    "codigo": "AUTO915195",
+    "endereco": "N/A",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "a03cebf6-3a9f-4cc4-8d05-b9190dc3a01a",
+    "codigo": "AUTO564482",
+    "endereco": "N/A",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "da22e29a-ba9e-4780-ab1d-830dd08ddf91",
+    "codigo": "AUTO277642",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "6a87ec2b-6ea2-4ab3-88a3-a8c6dae7c870",
+    "codigo": "AUTO26224",
+    "endereco": "N/A",
+    "quantidade_fotos": 8,
+    "status": "OK"
+  },
+  {
+    "id": "abc34e4f-c4a3-4938-a6cb-7ca3b6f784e7",
+    "codigo": "AUTO914107",
+    "endereco": "N/A",
+    "quantidade_fotos": 94,
+    "status": "OK"
+  },
+  {
+    "id": "9993b552-7da5-4411-b208-8187e5a6a54e",
+    "codigo": "AUTO900124",
+    "endereco": "N/A",
+    "quantidade_fotos": 26,
+    "status": "OK"
+  },
+  {
+    "id": "6e93ab26-6ff7-4949-8583-a654fcc95845",
+    "codigo": "AUTO659075",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "5f5c576e-8a34-4bc0-a0c1-e0a3dff277fe",
+    "codigo": "AUTO952054",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "1f8081a4-521b-4d2c-a761-b333785e9f35",
+    "codigo": "AUTO451218",
+    "endereco": "N/A",
+    "quantidade_fotos": 7,
+    "status": "OK"
+  },
+  {
+    "id": "3478a6fe-e9ea-43bd-b5e5-b3a69b9019ac",
+    "codigo": "AUTO298839",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "fe38cc44-3c8d-40ee-a4c4-bd1b0618fa63",
+    "codigo": "AUTO68365",
+    "endereco": "N/A",
+    "quantidade_fotos": 33,
+    "status": "OK"
+  },
+  {
+    "id": "405fcac1-410e-4f80-8a63-39ecc94bdb1a",
+    "codigo": "AUTO917366",
+    "endereco": "N/A",
+    "quantidade_fotos": 22,
+    "status": "OK"
+  },
+  {
+    "id": "48e8ce76-4eb7-4ce1-b421-58d3c25c530c",
+    "codigo": "AUTO92752",
+    "endereco": "N/A",
+    "quantidade_fotos": 30,
+    "status": "OK"
+  },
+  {
+    "id": "e5810875-311f-41e5-826a-6b49a8ad9311",
+    "codigo": "AUTO901607",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "743cb1fe-58df-414d-9083-60d76ebc4251",
+    "codigo": "AUTO220722",
+    "endereco": "N/A",
+    "quantidade_fotos": 7,
+    "status": "OK"
+  },
+  {
+    "id": "3256beaf-b880-484d-8fdf-5e2d86111fb9",
+    "codigo": "AUTO557317",
+    "endereco": "N/A",
+    "quantidade_fotos": 22,
+    "status": "OK"
+  },
+  {
+    "id": "ddb8b6e2-fa2f-4d77-88aa-1fef1ccba3ea",
+    "codigo": "AUTO508330",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "40932148-d399-49a3-bc17-0ce1c7d516a4",
+    "codigo": "AUTO3842",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "fe0eb2d5-d5cb-4462-a9bc-bf35871f2bbe",
+    "codigo": "AUTO474225",
+    "endereco": "N/A",
+    "quantidade_fotos": 27,
+    "status": "OK"
+  },
+  {
+    "id": "1fd33f54-abf8-4d47-9466-c261f06c344e",
+    "codigo": "AUTO669645",
+    "endereco": "N/A",
+    "quantidade_fotos": 35,
+    "status": "OK"
+  },
+  {
+    "id": "2c1d891a-6e21-47b3-bcb9-729fb1e0fc11",
+    "codigo": "AUTO723814",
+    "endereco": "N/A",
+    "quantidade_fotos": 40,
+    "status": "OK"
+  },
+  {
+    "id": "77b45230-1ca7-4663-b39a-3cb6ee0622ac",
+    "codigo": "AUTO352723",
+    "endereco": "N/A",
+    "quantidade_fotos": 36,
+    "status": "OK"
+  },
+  {
+    "id": "dffc2ca4-a6f2-4fd2-a9cd-c3a245b885bb",
+    "codigo": "AUTO218825",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "6618b604-7a1c-495e-bc88-98d4d7bab114",
+    "codigo": "AUTO623705",
+    "endereco": "N/A",
+    "quantidade_fotos": 21,
+    "status": "OK"
+  },
+  {
+    "id": "a180ad13-85f1-4f89-9622-4cfeeea02513",
+    "codigo": "AUTO641538",
+    "endereco": "N/A",
+    "quantidade_fotos": 75,
+    "status": "OK"
+  },
+  {
+    "id": "4aec9ae6-376b-4c51-bac8-3627c17316ce",
+    "codigo": "AUTO595870",
+    "endereco": "N/A",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "fb1dcfab-098d-4491-8448-a3923cbfd987",
+    "codigo": "AUTO453986",
+    "endereco": "N/A",
+    "quantidade_fotos": 3,
+    "status": "OK"
+  },
+  {
+    "id": "4689ddf6-7b0b-47f3-8904-d9496d88472a",
+    "codigo": "AUTO642277",
+    "endereco": "N/A",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "28028b3f-57f3-4915-bae3-5ab90fc87501",
+    "codigo": "AUTO956002",
+    "endereco": "N/A",
+    "quantidade_fotos": 52,
+    "status": "OK"
+  },
+  {
+    "id": "aebca2a0-9d4a-44db-997b-5b1532a861ef",
+    "codigo": "AUTO235338",
+    "endereco": "N/A",
+    "quantidade_fotos": 25,
+    "status": "OK"
+  },
+  {
+    "id": "ce25763f-55a9-46ed-8d4f-c9f0cbde308e",
+    "codigo": "AUTO213093",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "33fa5a0d-0c44-4396-863b-fb1d70f85ca1",
+    "codigo": "AUTO303076",
+    "endereco": "N/A",
+    "quantidade_fotos": 22,
+    "status": "OK"
+  },
+  {
+    "id": "5b0ecd1a-22e8-45e3-8795-58ea904df147",
+    "codigo": "AUTO756975",
+    "endereco": "N/A",
+    "quantidade_fotos": 22,
+    "status": "OK"
+  },
+  {
+    "id": "22749c15-2352-4ea7-bfe8-cfabf0d30e1e",
+    "codigo": "AUTO785742",
+    "endereco": "N/A",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "695583a0-86ea-463f-b2d3-15b0c7283e50",
+    "codigo": "AUTO319246",
+    "endereco": "N/A",
+    "quantidade_fotos": 22,
+    "status": "OK"
+  },
+  {
+    "id": "08677b31-d6d9-4e75-ad74-050e51f62772",
+    "codigo": "AUTO467850",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "b090de5e-e602-4366-8398-dd8a1c58623e",
+    "codigo": "AUTO536390",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "4f80c661-13db-4432-9283-7f5588211d02",
+    "codigo": "AUTO25691",
+    "endereco": "N/A",
+    "quantidade_fotos": 10,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "96bfad21-b7b0-42d2-aeb4-6604aeedc708",
+    "codigo": "AUTO737323",
+    "endereco": "N/A",
+    "quantidade_fotos": 8,
+    "status": "OK"
+  },
+  {
+    "id": "dc653a90-f03a-4be4-8859-73ecbf1a6143",
+    "codigo": "AUTO379299",
+    "endereco": "N/A",
+    "quantidade_fotos": 27,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "e5ae13a6-d0cd-435b-8b23-58ef159d8509",
+    "codigo": "AUTO529581",
+    "endereco": "N/A",
+    "quantidade_fotos": 26,
+    "status": "OK"
+  },
+  {
+    "id": "3cf3d78e-2618-4640-8326-69aaa43d8be9",
+    "codigo": "AUTO281890",
+    "endereco": "N/A",
+    "quantidade_fotos": 15,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "8f393d81-0226-4da9-bd71-15da059dcb5f",
+    "codigo": "AUTO80187",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "802228da-a92e-4d43-baee-52f7caa53021",
+    "codigo": "AUTO633270",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "576c970c-b440-4877-a0b2-5a33b3dca4ff",
+    "codigo": "AUTO689378",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "de2dd603-7b4f-4a53-aeb1-684f06c6d44e",
+    "codigo": "AUTO814011",
+    "endereco": "N/A",
+    "quantidade_fotos": 10,
+    "status": "OK"
+  },
+  {
+    "id": "63dccc00-72a0-4128-9baa-da718ac8870f",
+    "codigo": "AUTO740384",
+    "endereco": "N/A",
+    "quantidade_fotos": 34,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "03aa3ed9-2b5f-4ac2-8dfb-0e7c61868fc9",
+    "codigo": "AUTO48562",
+    "endereco": "N/A",
+    "quantidade_fotos": 4,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "da1f9c3c-46dc-48e3-bf09-a8e3d81c39e3",
+    "codigo": "AUTO321065",
+    "endereco": "N/A",
+    "quantidade_fotos": 18,
+    "status": "OK"
+  },
+  {
+    "id": "a37359b8-2587-4c31-b184-7472f0d1537f",
+    "codigo": "AUTO916940",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "bf9cdf42-f516-421d-8432-8d35db94f685",
+    "codigo": "AUTO285694",
+    "endereco": "N/A",
+    "quantidade_fotos": 25,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "f3bfc435-ab0d-40e2-bfd5-8344e3950591",
+    "codigo": "AUTO791123",
+    "endereco": "N/A",
+    "quantidade_fotos": 26,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "1cc577af-1492-4693-ad22-35853a7bbea3",
+    "codigo": "AUTO471992",
+    "endereco": "N/A",
+    "quantidade_fotos": 31,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "e26ff9e3-b538-41de-8d98-4c55cb2f6b0b",
+    "codigo": "AUTO266545",
+    "endereco": "N/A",
+    "quantidade_fotos": 9,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "627f6ca0-43df-469c-b8ec-82c0324096f5",
+    "codigo": "AUTO100192",
+    "endereco": "N/A",
+    "quantidade_fotos": 39,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "f2329412-c90f-4828-97cc-e96cbad24d91",
+    "codigo": "AUTO981267",
+    "endereco": "N/A",
+    "quantidade_fotos": 19,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "64bd38fc-4405-42fc-980b-f07e83a70ce2",
+    "codigo": "AUTO234735",
+    "endereco": "N/A",
+    "quantidade_fotos": 25,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "e93bbc55-438d-4219-bc0f-fd4137080fbf",
+    "codigo": "AUTO134201",
+    "endereco": "N/A",
+    "quantidade_fotos": 18,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ea1b46b5-6b26-4a93-b0bb-41575daa538f",
+    "codigo": "AUTO699601",
+    "endereco": "N/A",
+    "quantidade_fotos": 25,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "06830043-8ab5-4821-9331-5317d0f9f29f",
+    "codigo": "AUTO806599",
+    "endereco": "N/A",
+    "quantidade_fotos": 17,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "6df9313a-a0ac-4dca-a1e9-c5861c427c5a",
+    "codigo": "AUTO155234",
+    "endereco": "N/A",
+    "quantidade_fotos": 21,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "862cf21e-4deb-4d07-8b2d-4f8a59d6aa9f",
+    "codigo": "AUTO311809",
+    "endereco": "N/A",
+    "quantidade_fotos": 1,
+    "status": "OK"
+  },
+  {
+    "id": "a14a5537-caa2-4f7a-9efe-61bd8e9a5588",
+    "codigo": "AUTO43445",
+    "endereco": "N/A",
+    "quantidade_fotos": 60,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "aa15aa08-6468-42a9-a5d3-e3c73c1541f0",
+    "codigo": "AUTO631883",
+    "endereco": "N/A",
+    "quantidade_fotos": 18,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "be8b56ab-03d9-4027-a5bd-a42d93749020",
+    "codigo": "AUTO722784",
+    "endereco": "N/A",
+    "quantidade_fotos": 25,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "099a9275-4c61-44d9-b834-f12c86abdee3",
+    "codigo": "AUTO815982",
+    "endereco": "N/A",
+    "quantidade_fotos": 42,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "35b6ee2e-c97a-4062-8dec-3df1d3d1373c",
+    "codigo": "AUTO223092",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "3795b245-63e9-453a-b385-09cf2005cadf",
+    "codigo": "AUTO913864",
+    "endereco": "N/A",
+    "quantidade_fotos": 37,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5198b095-7853-42e5-9d24-af1971c72827",
+    "codigo": "AUTO264274",
+    "endereco": "N/A",
+    "quantidade_fotos": 41,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "2c02542c-788c-4bb1-8a9b-4c4476ec1855",
+    "codigo": "AUTO446178",
+    "endereco": "N/A",
+    "quantidade_fotos": 24,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "db58374f-54e4-45e4-9c68-e8e95845afdc",
+    "codigo": "AUTO961970",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "b9f7a4e8-ea3e-4247-ba0e-8c750991b33f",
+    "codigo": "AUTO866492",
+    "endereco": "N/A",
+    "quantidade_fotos": 35,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "65f1ddaa-3d60-43fb-bbdf-e54ccec571a2",
+    "codigo": "AUTO922844",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "741e6571-ba27-4d91-9e05-6c87ad6cf3d7",
+    "codigo": "AUTO812224",
+    "endereco": "N/A",
+    "quantidade_fotos": 29,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "9b058780-2f84-49b7-8357-48d23bd54df1",
+    "codigo": "AUTO352321",
+    "endereco": "N/A",
+    "quantidade_fotos": 34,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "802370da-4fd9-4621-ae83-e970421245e8",
+    "codigo": "AUTO889485",
+    "endereco": "N/A",
+    "quantidade_fotos": 21,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d56d43f8-1e73-4e79-8cce-a0d6dc9659b6",
+    "codigo": "AUTO565340",
+    "endereco": "N/A",
+    "quantidade_fotos": 20,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "3de0c2f9-040f-48f2-9e86-bb0c96e515b7",
+    "codigo": "AUTO920052",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5dcc52e8-db47-4913-a76e-f9562d20cb9a",
+    "codigo": "AUTO496706",
+    "endereco": "N/A",
+    "quantidade_fotos": 56,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "8699ec1e-1e19-4479-b333-2e95b359ee7a",
+    "codigo": "AUTO548988",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ace7cff4-214a-4950-a5e6-7384b80b8911",
+    "codigo": "AUTO93024",
+    "endereco": "N/A",
+    "quantidade_fotos": 59,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d540ece7-bbfc-49c6-a6f1-4a46351d9d9e",
+    "codigo": "AUTO685580",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "8436a8d9-c3ae-475c-ae5f-dff7c9b0441e",
+    "codigo": "AUTO767681",
+    "endereco": "N/A",
+    "quantidade_fotos": 18,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "1ec6c032-652a-4105-b284-91287b3ad774",
+    "codigo": "AUTO936019",
+    "endereco": "N/A",
+    "quantidade_fotos": 15,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "59bcb8e1-216c-4910-9e05-471191d5ff12",
+    "codigo": "AUTO323343",
+    "endereco": "N/A",
+    "quantidade_fotos": 26,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "4046a8e2-a6db-4fad-8351-e9c7cdf931eb",
+    "codigo": "AUTO453266",
+    "endereco": "N/A",
+    "quantidade_fotos": 10,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "1dfa3f37-760d-4733-9c12-efc18202cc28",
+    "codigo": "AUTO682108",
+    "endereco": "N/A",
+    "quantidade_fotos": 30,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "4ec9ebda-9620-4453-9988-47de76ab9553",
+    "codigo": "AUTO730594",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "3e8c6760-dad7-42f1-b5cd-2bf948c23c30",
+    "codigo": "AUTO387587",
+    "endereco": "N/A",
+    "quantidade_fotos": 33,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "2551939a-1e9f-4596-9827-742dff4ecaaf",
+    "codigo": "AUTO295621",
+    "endereco": "N/A",
+    "quantidade_fotos": 17,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "afbbea1e-a457-49bf-ac13-ebdef0bdb5e2",
+    "codigo": "AUTO93597",
+    "endereco": "N/A",
+    "quantidade_fotos": 6,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "98f067d8-81ce-415d-bda9-5b54e6751018",
+    "codigo": "AUTO822684",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "eacd1481-3de1-483a-9410-14ecfaa335a3",
+    "codigo": "AUTO635787",
+    "endereco": "N/A",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "8600e257-baa9-4d0d-a98e-de68d15ae1c8",
+    "codigo": "AUTO950576",
+    "endereco": "N/A",
+    "quantidade_fotos": 6,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "f2621813-0945-4d1f-98d7-28acb3d4bcba",
+    "codigo": "AUTO201270",
+    "endereco": "N/A",
+    "quantidade_fotos": 24,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "7d370491-3184-47aa-8d8f-ca612a55066e",
+    "codigo": "AUTO776629",
+    "endereco": "N/A",
+    "quantidade_fotos": 39,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "3ac68692-e961-4ec7-9857-6c0e193f03a9",
+    "codigo": "AUTO650887",
+    "endereco": "N/A",
+    "quantidade_fotos": 31,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d24df048-81bf-4d0d-a5b1-57a7f690313e",
+    "codigo": "AUTO493768",
+    "endereco": "N/A",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "89eafa7b-97c2-4951-a27d-ac6cdc3b0568",
+    "codigo": "AUTO553788",
+    "endereco": "N/A",
+    "quantidade_fotos": 31,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "0b52c6ba-ae38-4010-8de8-0d711d7bf091",
+    "codigo": "AUTO414977",
+    "endereco": "N/A",
+    "quantidade_fotos": 40,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "57bd42e0-4f3e-4797-b302-00bf3b596d28",
+    "codigo": "AUTO850335",
+    "endereco": "N/A",
+    "quantidade_fotos": 6,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "c79b8164-aad5-4524-9066-5205f2266e11",
+    "codigo": "AUTO977461",
+    "endereco": "N/A",
+    "quantidade_fotos": 14,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "204e0864-2b0e-49c7-bc6c-9bc5a5ba992a",
+    "codigo": "AUTO437082",
+    "endereco": "N/A",
+    "quantidade_fotos": 28,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "6a1dc64c-64fb-48ad-aff7-f107bc61d685",
+    "codigo": "AUTO352813",
+    "endereco": "N/A",
+    "quantidade_fotos": 29,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "aafdbe90-e587-4489-aedd-27592b12d4d8",
+    "codigo": "AUTO380866",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "8d396595-0ce7-4b7e-b84c-34e97d730dff",
+    "codigo": "AUTO658571",
+    "endereco": "N/A",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "0eb0dace-9fa5-41ec-8461-fdabcfe39ee7",
+    "codigo": "AUTO214698",
+    "endereco": "N/A",
+    "quantidade_fotos": 43,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "f22a3384-0d88-41ea-8baa-c6de7648dc96",
+    "codigo": "AUTO830415",
+    "endereco": "N/A",
+    "quantidade_fotos": 10,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "93c5336d-0332-4ccf-8d55-9bb29461147f",
+    "codigo": "AUTO425064",
+    "endereco": "N/A",
+    "quantidade_fotos": 46,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "8598ff23-5035-4345-a5a1-5d61daef1c0a",
+    "codigo": "AUTO75482",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "6a1b1a59-6998-4ec9-92ef-db0ef2f5f8e2",
+    "codigo": "SO0128",
+    "endereco": "Rua Luiz Monteiro, 49",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "e6f4d906-0096-4068-a4bb-83db01c214ce",
+    "codigo": "AUTO916459",
+    "endereco": "N/A",
+    "quantidade_fotos": 30,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "591e93ec-ed7f-447c-860d-5fe0ed68c51c",
+    "codigo": "AUTO218259",
+    "endereco": "N/A",
+    "quantidade_fotos": 2,
+    "status": "OK"
+  },
+  {
+    "id": "b8cedc3c-9fe4-4d03-80fa-452fbf568596",
+    "codigo": "AUTO823876",
+    "endereco": "N/A",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d7ea5365-d214-4aa4-96f4-4b6157a38469",
+    "codigo": "AUTO582791",
+    "endereco": "N/A",
+    "quantidade_fotos": 5,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "232435eb-de47-411f-b242-ba0d486eb5b4",
+    "codigo": "AUTO575571",
+    "endereco": "N/A",
+    "quantidade_fotos": 37,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "0000ec9e-f03e-4cd2-9361-efd927fed7b9",
+    "codigo": "AUTO336415",
+    "endereco": "N/A",
+    "quantidade_fotos": 24,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "211c1ef7-03af-41bd-8f60-0ca8a093a871",
+    "codigo": "AUTO331387",
+    "endereco": "N/A",
+    "quantidade_fotos": 29,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "232ec2a8-50de-4c41-a016-10cd9e0c8ea6",
+    "codigo": "AUTO300699",
+    "endereco": "N/A",
+    "quantidade_fotos": 26,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "787c26ed-bf03-41a8-b178-b204554a5ec7",
+    "codigo": "AUTO303956",
+    "endereco": "N/A",
+    "quantidade_fotos": 20,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "3ed0908c-574b-423e-bfce-e5e6a02e259f",
+    "codigo": "AUTO104115",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d8c6c255-d5c6-4d22-ade6-d07e787ccc8f",
+    "codigo": "AUTO64331",
+    "endereco": "N/A",
+    "quantidade_fotos": 44,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "68c529d2-6608-4acc-8bbc-fccb2194c23f",
+    "codigo": "AUTO786111",
+    "endereco": "N/A",
+    "quantidade_fotos": 14,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "24e25c76-2ab8-45d7-a24c-4fb05872931e",
+    "codigo": "AUTO931173",
+    "endereco": "N/A",
+    "quantidade_fotos": 34,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "7346d174-5fd0-4b14-a4eb-4e575189b7a1",
+    "codigo": "AUTO317321",
+    "endereco": "N/A",
+    "quantidade_fotos": 30,
+    "status": "OK"
+  },
+  {
+    "id": "10d68514-a886-4669-9cbb-ac56e4ff0e2a",
+    "codigo": "AUTO292140",
+    "endereco": "N/A",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "727d4cfd-d285-43e2-8d93-d83e973620d3",
+    "codigo": "AUTO111691",
+    "endereco": "N/A",
+    "quantidade_fotos": 30,
+    "status": "OK"
+  },
+  {
+    "id": "76af85ef-c58a-4fda-b8bd-bbd6aefc569f",
+    "codigo": "AUTO954379",
+    "endereco": "N/A",
+    "quantidade_fotos": 35,
+    "status": "OK"
+  },
+  {
+    "id": "a190a29b-857c-46f0-b4cf-7b11e1769b2a",
+    "codigo": "AUTO514057",
+    "endereco": "N/A",
+    "quantidade_fotos": 29,
+    "status": "OK"
+  },
+  {
+    "id": "6485780e-ab75-429c-a40c-e5a7461f782c",
+    "codigo": "AUTO430515",
+    "endereco": "N/A",
+    "quantidade_fotos": 27,
+    "status": "OK"
+  },
+  {
+    "id": "07aa56b8-ed36-42b8-a8d4-88774cbd047b",
+    "codigo": "AUTO253831",
+    "endereco": "N/A",
+    "quantidade_fotos": 33,
+    "status": "OK"
+  },
+  {
+    "id": "16c87095-2357-45b9-ac98-d04fbcbf3333",
+    "codigo": "AUTO401868",
+    "endereco": "N/A",
+    "quantidade_fotos": 7,
+    "status": "OK"
+  },
+  {
+    "id": "987ac939-5096-4c6a-82d2-541bbf29a08c",
+    "codigo": "AUTO165480",
+    "endereco": "N/A",
+    "quantidade_fotos": 21,
+    "status": "OK"
+  },
+  {
+    "id": "f501160f-5836-4d32-beae-29f533e8fbf3",
+    "codigo": "AUTO685777",
+    "endereco": "N/A",
+    "quantidade_fotos": 36,
+    "status": "OK"
+  },
+  {
+    "id": "d22b01ab-5884-4e16-aada-0dd21c07c757",
+    "codigo": "AUTO758196",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "299f47c8-9ecf-42e3-8b53-f9e9c702e929",
+    "codigo": "AUTO592645",
+    "endereco": "N/A",
+    "quantidade_fotos": 46,
+    "status": "OK"
+  },
+  {
+    "id": "f801ec64-a16a-4c40-8806-24ce39a4dcf8",
+    "codigo": "AUTO169640",
+    "endereco": "N/A",
+    "quantidade_fotos": 33,
+    "status": "OK"
+  },
+  {
+    "id": "b7995c83-4169-4754-897a-84d6150bdd40",
+    "codigo": "AUTO729582",
+    "endereco": "N/A",
+    "quantidade_fotos": 47,
+    "status": "OK"
+  },
+  {
+    "id": "0a74b9c5-2e2a-4220-9338-b4b2a8f2a709",
+    "codigo": "AUTO737247",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "58611c17-73c0-45d2-8bac-9cfdd4aee190",
+    "codigo": "AUTO383585",
+    "endereco": "N/A",
+    "quantidade_fotos": 47,
+    "status": "OK"
+  },
+  {
+    "id": "4125a40c-f97e-4f28-98aa-1d99febd1051",
+    "codigo": "AUTO448416",
+    "endereco": "N/A",
+    "quantidade_fotos": 84,
+    "status": "OK"
+  },
+  {
+    "id": "0a568105-b212-4497-aa6a-03b964b8141f",
+    "codigo": "AUTO470392",
+    "endereco": "N/A",
+    "quantidade_fotos": 45,
+    "status": "OK"
+  },
+  {
+    "id": "e3dd4348-79ea-4715-8e85-8a9ded821726",
+    "codigo": "AUTO397482",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "2800af4c-fd1c-4241-bc5c-d160c01a8f0a",
+    "codigo": "AUTO75058",
+    "endereco": "N/A",
+    "quantidade_fotos": 37,
+    "status": "OK"
+  },
+  {
+    "id": "b09a7ec1-8f76-424f-8a8b-50b1d092fdb7",
+    "codigo": "AUTO537584",
+    "endereco": "N/A",
+    "quantidade_fotos": 20,
+    "status": "OK"
+  },
+  {
+    "id": "6488f844-6558-4bbe-b1f0-90c69e85e7f4",
+    "codigo": "AUTO336499",
+    "endereco": "N/A",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "61d5a061-74fc-4096-a17c-0cddcbb69e82",
+    "codigo": "AUTO154127",
+    "endereco": "N/A",
+    "quantidade_fotos": 30,
+    "status": "OK"
+  },
+  {
+    "id": "bb9ae237-63b3-453f-b4d1-00fe8c9fb9cf",
+    "codigo": "AUTO907790",
+    "endereco": "N/A",
+    "quantidade_fotos": 24,
+    "status": "OK"
+  },
+  {
+    "id": "8f33d087-b313-4e5c-8e6e-8aa0fbd6d05c",
+    "codigo": "AUTO427733",
+    "endereco": "N/A",
+    "quantidade_fotos": 33,
+    "status": "OK"
+  },
+  {
+    "id": "b77245b1-0c8f-443d-8a52-eb16f406bebf",
+    "codigo": "AUTO56673",
+    "endereco": "N/A",
+    "quantidade_fotos": 39,
+    "status": "OK"
+  },
+  {
+    "id": "20b06e32-60a9-421d-aff3-3c0e74f28a1c",
+    "codigo": "AUTO701090",
+    "endereco": "N/A",
+    "quantidade_fotos": 82,
+    "status": "OK"
+  },
+  {
+    "id": "d8baa115-048d-4cc6-918f-f126343cef17",
+    "codigo": "AUTO474882",
+    "endereco": "N/A",
+    "quantidade_fotos": 5,
+    "status": "OK"
+  },
+  {
+    "id": "e9aa940b-88f2-4272-9a43-e0ca372a03f6",
+    "codigo": "AUTO26397",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "2ad46fda-d50f-4079-90fd-19125a6de0fa",
+    "codigo": "AUTO117085",
+    "endereco": "N/A",
+    "quantidade_fotos": 9,
+    "status": "OK"
+  },
+  {
+    "id": "e5fc9e84-fe49-4a0e-8f9a-9b6fa951c126",
+    "codigo": "AUTO860479",
+    "endereco": "N/A",
+    "quantidade_fotos": 17,
+    "status": "OK"
+  },
+  {
+    "id": "bb0727ba-0308-4894-b03d-2d4fc062bfa0",
+    "codigo": "AUTO235089",
+    "endereco": "N/A",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "96aa5cc1-1f3d-41ac-aed7-fe1e53472197",
+    "codigo": "AUTO783482",
+    "endereco": "N/A",
+    "quantidade_fotos": 39,
+    "status": "OK"
+  },
+  {
+    "id": "696fbd6a-b09c-4980-8e97-e306dd6272c7",
+    "codigo": "AUTO799914",
+    "endereco": "N/A",
+    "quantidade_fotos": 27,
+    "status": "OK"
+  },
+  {
+    "id": "fc55c786-2fbd-4b2f-8197-02c3e903ebef",
+    "codigo": "AUTO897878",
+    "endereco": "N/A",
+    "quantidade_fotos": 48,
+    "status": "OK"
+  },
+  {
+    "id": "8408c576-bed9-4e0a-ae0c-8a8f0ba37435",
+    "codigo": "AUTO31022",
+    "endereco": "N/A",
+    "quantidade_fotos": 31,
+    "status": "OK"
+  },
+  {
+    "id": "878ebc48-0d7d-4c6f-9d8b-9e7f1668e47a",
+    "codigo": "AUTO693592",
+    "endereco": "N/A",
+    "quantidade_fotos": 20,
+    "status": "OK"
+  },
+  {
+    "id": "de1678f0-ff2c-4c15-8d5c-3d18524bb32a",
+    "codigo": "AUTO539059",
+    "endereco": "N/A",
+    "quantidade_fotos": 9,
+    "status": "OK"
+  },
+  {
+    "id": "f49e3075-0b90-457b-abf1-883fa3a5502e",
+    "codigo": "AUTO900214",
+    "endereco": "N/A",
+    "quantidade_fotos": 29,
+    "status": "OK"
+  },
+  {
+    "id": "58460286-ba87-4500-9625-b64ee7db88c8",
+    "codigo": "AUTO718366",
+    "endereco": "N/A",
+    "quantidade_fotos": 57,
+    "status": "OK"
+  },
+  {
+    "id": "b2bb140b-1f2e-48c9-ac38-9b2089ba6dfa",
+    "codigo": "AUTO476613",
+    "endereco": "N/A",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "1f6ef428-8b65-4318-8758-f1d23d5fbf39",
+    "codigo": "AUTO417062",
+    "endereco": "N/A",
+    "quantidade_fotos": 10,
+    "status": "OK"
+  },
+  {
+    "id": "6d227091-1541-4d4c-8194-d88e83c27aa4",
+    "codigo": "AUTO572809",
+    "endereco": "N/A",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "da9faada-c02a-48f1-9d17-fb970e0b7258",
+    "codigo": "AUTO764613",
+    "endereco": "N/A",
+    "quantidade_fotos": 35,
+    "status": "OK"
+  },
+  {
+    "id": "a5b7fe88-2169-417f-ae3b-5712630d2302",
+    "codigo": "AUTO850880",
+    "endereco": "N/A",
+    "quantidade_fotos": 8,
+    "status": "OK"
+  },
+  {
+    "id": "c1270a53-7a83-4560-88ec-a4de4b47d334",
+    "codigo": "AUTO26137",
+    "endereco": "N/A",
+    "quantidade_fotos": 49,
+    "status": "OK"
+  },
+  {
+    "id": "cb0b064b-356d-4115-8080-888bcd2675d9",
+    "codigo": "AUTO373727",
+    "endereco": "N/A",
+    "quantidade_fotos": 45,
+    "status": "OK"
+  },
+  {
+    "id": "c4fe31df-26ce-493c-a353-67af1fc687a3",
+    "codigo": "AUTO580710",
+    "endereco": "N/A",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "299a7501-9418-427c-93e1-7a7bd561d227",
+    "codigo": "AUTO93214",
+    "endereco": "N/A",
+    "quantidade_fotos": 28,
+    "status": "OK"
+  },
+  {
+    "id": "b8ddab5e-5863-458d-b67c-744b29ac470f",
+    "codigo": "AUTO727548",
+    "endereco": "N/A",
+    "quantidade_fotos": 21,
+    "status": "OK"
+  },
+  {
+    "id": "385135fa-0d35-4e88-901a-06431789282c",
+    "codigo": "AUTO720807",
+    "endereco": "N/A",
+    "quantidade_fotos": 46,
+    "status": "OK"
+  },
+  {
+    "id": "15db4b2b-1152-4fa1-b716-51527989600d",
+    "codigo": "AUTO959012",
+    "endereco": "N/A",
+    "quantidade_fotos": 34,
+    "status": "OK"
+  },
+  {
+    "id": "264cde5f-1529-4813-b121-7a38d1321d22",
+    "codigo": "AUTO102846",
+    "endereco": "N/A",
+    "quantidade_fotos": 60,
+    "status": "OK"
+  },
+  {
+    "id": "f3df3f90-8de5-42f5-a2fa-9ea663084de2",
+    "codigo": "AUTO45182",
+    "endereco": "N/A",
+    "quantidade_fotos": 25,
+    "status": "OK"
+  },
+  {
+    "id": "25c1d8e6-b73e-4d9f-afb2-ed420c6424cf",
+    "codigo": "AUTO741682",
+    "endereco": "N/A",
+    "quantidade_fotos": 125,
+    "status": "OK"
+  },
+  {
+    "id": "620bc673-5ab2-42c1-9892-490187f58d8f",
+    "codigo": "AUTO189277",
+    "endereco": "N/A",
+    "quantidade_fotos": 7,
+    "status": "OK"
+  },
+  {
+    "id": "ee1a90cc-1f35-4b39-ac5a-b8b20e8ec4e3",
+    "codigo": "AUTO93744",
+    "endereco": "N/A",
+    "quantidade_fotos": 20,
+    "status": "OK"
+  },
+  {
+    "id": "b2db4b40-e3ec-4105-8102-3ed828a8ec13",
+    "codigo": "PR0001",
+    "endereco": "Avenida Nossa Senhora do Sabará, 234",
+    "quantidade_fotos": 27,
+    "status": "OK"
+  },
+  {
+    "id": "7862be83-abe4-4c9a-84eb-c2e0cfc4e185",
+    "codigo": "AUTO35931",
+    "endereco": "N/A",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "54c005b1-167b-41fd-af2b-e5f43ae3e3b4",
+    "codigo": "AUTO341160",
+    "endereco": "N/A",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "d9904abb-80ea-4ee9-9e51-5e5d43f7d59e",
+    "codigo": "AUTO775410",
+    "endereco": "N/A",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "84853af5-ad32-456c-b8b1-f73b69bcd3c7",
+    "codigo": "AUTO636569",
+    "endereco": "N/A",
+    "quantidade_fotos": 36,
+    "status": "OK"
+  },
+  {
+    "id": "8d4b8cfc-f0d3-477a-90d1-b745e2576c1b",
+    "codigo": "AUTO817902",
+    "endereco": "N/A",
+    "quantidade_fotos": 61,
+    "status": "OK"
+  },
+  {
+    "id": "71c8a6e3-a8ac-4a2b-9923-5136d3e94a97",
+    "codigo": "AUTO635727",
+    "endereco": "N/A",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "d7d1e27c-90dd-4ebf-a262-0961f03b2c25",
+    "codigo": "AUTO845384",
+    "endereco": "N/A",
+    "quantidade_fotos": 42,
+    "status": "OK"
+  },
+  {
+    "id": "dfd34de3-89ec-4865-94d2-53c4282856b2",
+    "codigo": "AUTO203835",
+    "endereco": "N/A",
+    "quantidade_fotos": 70,
+    "status": "OK"
+  },
+  {
+    "id": "0db5af07-f167-41f5-8847-5a29594af6f2",
+    "codigo": "AUTO395110",
+    "endereco": "N/A",
+    "quantidade_fotos": 27,
+    "status": "OK"
+  },
+  {
+    "id": "97912988-3019-4f9d-bd93-a6a1f53e362f",
+    "codigo": "CA0149",
+    "endereco": "Rua Joaquim Inácio Cardoso, 401",
+    "quantidade_fotos": 31,
+    "status": "OK"
+  },
+  {
+    "id": "8d92e266-83d6-4cc0-908f-ba19e878fcf2",
+    "codigo": "AP0117",
+    "endereco": "Rua Coronel Benedito de Almeida, 149",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "2576db8a-0b6d-4277-beec-e9f6b671fb1c",
+    "codigo": "CA0128",
+    "endereco": "Rua Itaporanga, 77",
+    "quantidade_fotos": 37,
+    "status": "OK"
+  },
+  {
+    "id": "95544ed2-2fb3-455e-adeb-7634d441d720",
+    "codigo": "CA0143",
+    "endereco": "Rua Luiza Augusta Garlippe, 0",
+    "quantidade_fotos": 18,
+    "status": "OK"
+  },
+  {
+    "id": "393cab93-5b09-49b9-bea2-b83e1592f1b3",
+    "codigo": "CA0144",
+    "endereco": "Rua Palmeira Tucuim, 56",
+    "quantidade_fotos": 8,
+    "status": "OK"
+  },
+  {
+    "id": "325708c5-8432-4ed3-9d71-a010e78e29d2",
+    "codigo": "AP0189",
+    "endereco": "Rua São Luís, 136",
+    "quantidade_fotos": 31,
+    "status": "OK"
+  },
+  {
+    "id": "5af2bd3d-9dc3-4d89-9ede-fed8cf03f99d",
+    "codigo": "CA0148",
+    "endereco": "Rua Figueira, 43",
+    "quantidade_fotos": 46,
+    "status": "OK"
+  },
+  {
+    "id": "4d39d552-3d8f-4e98-9ed1-c9b7967b993d",
+    "codigo": "AP0123",
+    "endereco": "Rua Marcondes Salgado, 20",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "0827d151-eb9e-4309-8873-b20306fe4285",
+    "codigo": "AP0215",
+    "endereco": "Rua Clemente Cunha Ferreira, 0",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "4ed67324-91de-4299-b110-2571797241b4",
+    "codigo": "CA0061",
+    "endereco": "Viela Barão de Almeida Vallim, 175",
+    "quantidade_fotos": 45,
+    "status": "OK"
+  },
+  {
+    "id": "1a23875b-055e-47d0-a8cf-8c810ed65817",
+    "codigo": "SL0014",
+    "endereco": "Rua Getúlio Vargas, 59",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "c8da29e2-9b2c-423d-abbf-7d17b96ad85b",
+    "codigo": "CA0145",
+    "endereco": "Rua Getúlio Vargas, 67",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "92fa2e21-483b-49e9-933c-cd9b525896c7",
+    "codigo": "CA0147",
+    "endereco": "Rua Treze de Maio, 197",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "3607069e-6266-414f-9714-2a09804f337f",
+    "codigo": "CA0146",
+    "endereco": "Rua Tanque Verde, 251",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "d08ab2fd-da58-4b7b-ae2c-80d49b3497bd",
+    "codigo": "AP0214",
+    "endereco": "Rua União, 483",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "d19c5a74-8499-4b9a-87b6-8d7130b6c788",
+    "codigo": "CA0141",
+    "endereco": "Avenida Vicente F Leporace, 875",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "7d344c11-8543-4815-8dee-7879150827c0",
+    "codigo": "CA0142",
+    "endereco": "Rua Mixira, 35",
+    "quantidade_fotos": 13,
+    "status": "OK"
+  },
+  {
+    "id": "c8c2365f-20a0-416b-aca4-ec345f43ee33",
+    "codigo": "AP0211",
+    "endereco": "Estrada de Santa Mônica, 1383",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "4270a709-b76b-4c33-bf69-2ec2ad55e3d6",
+    "codigo": "AP0212",
+    "endereco": "Rua União, 483",
+    "quantidade_fotos": 12,
+    "status": "OK"
+  },
+  {
+    "id": "acbd242f-8257-48ed-be9f-570ba59933bf",
+    "codigo": "CA0140",
+    "endereco": "Rua João Francisco Ferreirinha, 92",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "1e211bdf-8715-473d-a80b-8799e17e5d64",
+    "codigo": "AP0210",
+    "endereco": "Avenida Prefeito Francisco Rodrigues Filho, 323",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "8c964ac1-1db8-4b7f-986d-4731dd298eca",
+    "codigo": "SO0157",
+    "endereco": "Rua Monte Alegre, 26",
+    "quantidade_fotos": 25,
+    "status": "OK"
+  },
+  {
+    "id": "319a3683-c109-46cf-8eb9-c04a76a92aab",
+    "codigo": "AP0209",
+    "endereco": "Rua João Pekny, 80",
+    "quantidade_fotos": 12,
+    "status": "OK"
+  },
+  {
+    "id": "91fd378e-7a17-4634-b05e-71761b044553",
+    "codigo": "AP0208",
+    "endereco": "Rua Marechal Deodoro, 410",
+    "quantidade_fotos": 20,
+    "status": "OK"
+  },
+  {
+    "id": "d5214979-a710-4eea-9a4f-9215736c3a05",
+    "codigo": "CA0121",
+    "endereco": "Rua Santa Luiza, 85",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "6944a428-ce12-48f4-a613-243f58c98675",
+    "codigo": "AP0207",
+    "endereco": "Avenida Vital Brasil, 1140",
+    "quantidade_fotos": 22,
+    "status": "OK"
+  },
+  {
+    "id": "3064104e-551e-4da7-8b34-10522d07f37a",
+    "codigo": "AP0206",
+    "endereco": "Avenida Manoel Casanova, 1251",
+    "quantidade_fotos": 59,
+    "status": "OK"
+  },
+  {
+    "id": "ca065d6f-4676-4c99-a362-77d31a320eb8",
+    "codigo": "TE0035",
+    "endereco": "Rua Serra dos Carajás, 214",
+    "quantidade_fotos": 10,
+    "status": "OK"
+  },
+  {
+    "id": "acf5ad88-6b66-4075-8d7c-fe8ef05c9c16",
+    "codigo": "GA0006",
+    "endereco": "Rodovia João Afonso de Souza Castellano, 751",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "be3eb0c4-bc9c-40c2-8075-82430d91ac81",
+    "codigo": "GA0008",
+    "endereco": "Rua Gago Coutinho, 169",
+    "quantidade_fotos": 25,
+    "status": "OK"
+  },
+  {
+    "id": "b6cb6535-ac19-4397-830f-1e1984edafec",
+    "codigo": "CA0138",
+    "endereco": "Avenida Deputado Castro de Carvalho, 1841",
+    "quantidade_fotos": 24,
+    "status": "OK"
+  },
+  {
+    "id": "103a4174-b6a9-4b67-8845-83cfe8d55856",
+    "codigo": "AP0202",
+    "endereco": "Rua Ijaci, 125",
+    "quantidade_fotos": 24,
+    "status": "OK"
+  },
+  {
+    "id": "968f2d98-b65c-4c9d-bdc5-33d8921f7a08",
+    "codigo": "SL0010",
+    "endereco": "Rua Visconde de Aguiar Toledo, 320",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "8decec20-8238-4d8a-b78f-f12661bf7944",
+    "codigo": "CA0139",
+    "endereco": "Travessa Bruno Rossi, 21",
+    "quantidade_fotos": 1,
+    "status": "OK"
+  },
+  {
+    "id": "abfaab5e-c729-4fd6-a559-1b4752ca7d38",
+    "codigo": "TE0034",
+    "endereco": "Rua Serra dos Carajás, 214",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "708173bf-5c9d-4f02-bafa-b705bafe6a90",
+    "codigo": "AP0178",
+    "endereco": "Rua Poanópolis, 400",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "c7cb3939-cd05-4be0-b153-dd5701a5184f",
+    "codigo": "AP0179",
+    "endereco": "Rua Poanópolis, 400",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "314ed877-a63f-4c3e-8a4a-7ffc22489070",
+    "codigo": "CA0127",
+    "endereco": "Rua João Pereira dos Santos, 90",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "72a007e9-ab0b-4d2b-bea1-05ada2b82262",
+    "codigo": "CA0137",
+    "endereco": "Rua José Alexandre de Moura Negrini, 268",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "73e2687f-0968-4767-9bdb-68987a0071c7",
+    "codigo": "TE0027",
+    "endereco": "Rua Flórida, 0",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "f5f556b6-491c-4015-9cba-4ffa408fa82c",
+    "codigo": "GA0009",
+    "endereco": "Rodovia João Afonso de Souza Castellano, 1021",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "0f468579-bdff-49f9-83e0-2658017c1228",
+    "codigo": "SO0156",
+    "endereco": "Avenida Gilberto Rodrigues de Souza, 427",
+    "quantidade_fotos": 2,
+    "status": "OK"
+  },
+  {
+    "id": "a254109d-f497-4d22-9a5c-fd7f645c0f4a",
+    "codigo": "AD0004",
+    "endereco": "Rua Saint Hilaire, 145",
+    "quantidade_fotos": 42,
+    "status": "OK"
+  },
+  {
+    "id": "2f3eefce-4065-438a-9ec6-c643777dcefb",
+    "codigo": "AP0205",
+    "endereco": "Rua Morato Coelho, 1410",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "d26b7748-ea97-419e-83ba-1061e50f3a62",
+    "codigo": "CA0107",
+    "endereco": "Rua União, 200",
+    "quantidade_fotos": 21,
+    "status": "OK"
+  },
+  {
+    "id": "11bab1c9-b73c-48a4-9c4f-0e39da896d02",
+    "codigo": "TE0033",
+    "endereco": "Avenida Taiaçupeba, 1051",
+    "quantidade_fotos": 7,
+    "status": "OK"
+  },
+  {
+    "id": "e0307db0-8077-4572-8b4f-aa6a58e18070",
+    "codigo": "SO0155",
+    "endereco": "Rua Torquato de Carvalho, 18",
+    "quantidade_fotos": 18,
+    "status": "OK"
+  },
+  {
+    "id": "ae7fcc7f-0cf5-42e7-b63f-ad97873333be",
+    "codigo": "SO0124",
+    "endereco": "Rua Maria Janoni Novazzi, 480",
+    "quantidade_fotos": 46,
+    "status": "OK"
+  },
+  {
+    "id": "220ee787-0285-435f-94b9-f7ce76613584",
+    "codigo": "CA0135",
+    "endereco": "Rua Xingu, 123",
+    "quantidade_fotos": 41,
+    "status": "OK"
+  },
+  {
+    "id": "c3a3d3ca-5c99-4bba-b252-43af052b33c3",
+    "codigo": "CA0134",
+    "endereco": "Rua João Vinte e Três, 131",
+    "quantidade_fotos": 49,
+    "status": "OK"
+  },
+  {
+    "id": "ef3fcba1-d699-4d7c-8500-ddf856997ccb",
+    "codigo": "AP0201",
+    "endereco": "Rua Carlos de Campos, 801",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "4bda5be3-6028-4aca-8d13-ae294ec5b0e9",
+    "codigo": "CA0133",
+    "endereco": "Rua Ipaumirim, 100",
+    "quantidade_fotos": 30,
+    "status": "OK"
+  },
+  {
+    "id": "0a9d07af-bbd8-4804-9176-9a269e2b82d8",
+    "codigo": "SO0129",
+    "endereco": "Rua Miguel Comitre, 43",
+    "quantidade_fotos": 5,
+    "status": "OK"
+  },
+  {
+    "id": "80eb41c1-52a5-42c7-877d-fc30748660f0",
+    "codigo": "SO0151",
+    "endereco": "Avenida Deputado Castro de Carvalho, 1841",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "55bf09f6-3636-4342-b6a8-213ba4a3c2aa",
+    "codigo": "AP0203",
+    "endereco": "Rua Benedito Pinto da Cunha, 200",
+    "quantidade_fotos": 20,
+    "status": "OK"
+  },
+  {
+    "id": "7c9cc89c-12e5-4044-b17b-96273f01abf4",
+    "codigo": "SO0154",
+    "endereco": "Rua Joaquim Nabuco, 19",
+    "quantidade_fotos": 30,
+    "status": "OK"
+  },
+  {
+    "id": "01aa9ba1-e147-4600-a6be-970042bc6b88",
+    "codigo": "AP0187",
+    "endereco": "Rua Dona Leopolda, 0",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "f7821f7d-dc4c-49bd-85e5-7f3f2f395ae6",
+    "codigo": "SO0143",
+    "endereco": "Rua João Afonso, 150",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "1db35615-900b-46d1-ae57-25c9540769da",
+    "codigo": "SO0152",
+    "endereco": "Rua Fernando de Noronha, 31",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "c8a2c85b-0a8f-4b8b-9310-2813d56ed465",
+    "codigo": "SL0013",
+    "endereco": "Avenida Marechal Tito, 6420",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "966fa099-919a-4584-8da5-c608b3945c09",
+    "codigo": "SO0153",
+    "endereco": "Rua Narciso Lucarini, 0",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "6c3128bb-dd18-48e2-822f-7b39d98a8d1c",
+    "codigo": "AP0109",
+    "endereco": "Rua Iracy Umbelina de Jesus, 409",
+    "quantidade_fotos": 75,
+    "status": "OK"
+  },
+  {
+    "id": "2ef2bef8-05de-4573-9a2d-2808e4a748c6",
+    "codigo": "AP0200",
+    "endereco": "Rua Jerônimo Mariano, 152",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "d8463255-72c5-4198-8cbb-d50cb591a540",
+    "codigo": "CA0132",
+    "endereco": "Rua Marechal Floriano Peixoto, 152",
+    "quantidade_fotos": 21,
+    "status": "OK"
+  },
+  {
+    "id": "e38a9e5f-85e7-4017-bb2f-dd0de6c81537",
+    "codigo": "AP0199",
+    "endereco": "Avenida Prefeito Francisco Rodrigues Filho, 323",
+    "quantidade_fotos": 35,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "12962db9-104e-4a72-8fe0-4d65484c9b26",
+    "codigo": "TE0028",
+    "endereco": "Rua Vista Alegre, 25",
+    "quantidade_fotos": 9,
+    "status": "OK"
+  },
+  {
+    "id": "1df995f7-b720-46a8-8bc0-a660d94710be",
+    "codigo": "TE0032",
+    "endereco": "Estrada dos Índios, 2260",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "50a47de9-ff7a-4de6-8dce-87bb06603a54",
+    "codigo": "CA0131",
+    "endereco": "Rua Duque de Caxias, 130",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "12cc4791-80fd-4e23-b7cf-13331ce74333",
+    "codigo": "TE0007",
+    "endereco": "Rua Visconde de Ouro Preto, 103",
+    "quantidade_fotos": 9,
+    "status": "OK"
+  },
+  {
+    "id": "3fdb2183-17ad-408c-b60e-2d83dfa86599",
+    "codigo": "CA0130",
+    "endereco": "Rua Maria Eugênia Aguilar, 151",
+    "quantidade_fotos": 33,
+    "status": "OK"
+  },
+  {
+    "id": "735e5634-8a47-4a3a-a109-79e838616894",
+    "codigo": "AP0198",
+    "endereco": "Rua Teresa Haguiara Cardoso, 583",
+    "quantidade_fotos": 25,
+    "status": "OK"
+  },
+  {
+    "id": "fab894fc-9e38-479d-93f7-e36948a54fff",
+    "codigo": "AP0197",
+    "endereco": "Estrada de Santa Mônica, 100",
+    "quantidade_fotos": 18,
+    "status": "OK"
+  },
+  {
+    "id": "fc8b3899-9efd-4ce0-8f1b-d355420381a6",
+    "codigo": "CA0129",
+    "endereco": "Rua Dom Pedro Primeiro, 380",
+    "quantidade_fotos": 125,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "c2d47eb6-10ee-4f7a-9a9a-97e4a528d2e4",
+    "codigo": "SL0012",
+    "endereco": "Avenida Lucas Nogueira Garcez, 37",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "16291f87-9b49-4cdb-aae6-27fcd9223a00",
+    "codigo": "SO0144",
+    "endereco": "Rua Fernando de Noronha, 31",
+    "quantidade_fotos": 29,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "494b486b-ab52-48a7-a6a7-a75e13279ccb",
+    "codigo": "AP0152",
+    "endereco": "Rua Cambé, 150",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "72086ccd-2366-49e5-8e73-89d549b26a94",
+    "codigo": "CA0126",
+    "endereco": "Rua Santa Teresa, 41",
+    "quantidade_fotos": 28,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "67b2d486-8d75-42dc-a3b5-927ab586cf6b",
+    "codigo": "CA0125",
+    "endereco": "Rua Fernando de Noronha, 281",
+    "quantidade_fotos": 23,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "740378dc-ca6b-4fad-b484-42117932a36c",
+    "codigo": "AP0192",
+    "endereco": "Rua São Luís, 136",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "63276fd5-96eb-4c47-9217-f7541ba931f1",
+    "codigo": "CA0124",
+    "endereco": "Rua Estado da Bahia, 175",
+    "quantidade_fotos": 25,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "78bc1ef4-d1e5-4ec0-94ab-51ef53108640",
+    "codigo": "SO0121",
+    "endereco": "Avenida Manoel Casanova, 1150",
+    "quantidade_fotos": 27,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "01b98268-8704-4bda-9906-fdc623b9195d",
+    "codigo": "AP0119",
+    "endereco": "Rua Dário Carneiro, 0",
+    "quantidade_fotos": 31,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "c8ad5244-e02d-49d4-84a1-2b0be576b232",
+    "codigo": "AP0190",
+    "endereco": "Rua João Pekny, 80",
+    "quantidade_fotos": 26,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "74905e97-097e-4f8d-ab38-24633c4a4eb6",
+    "codigo": "CA0123",
+    "endereco": "Estrada de Santa Mônica, 1083",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "c90a779b-7130-4cdd-b2a1-7842715e9136",
+    "codigo": "CA0122",
+    "endereco": "Rua Florianópolis, 207",
+    "quantidade_fotos": 37,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "03cf1bdc-a28d-4071-9fd5-ac3241ed12a1",
+    "codigo": "AP0132",
+    "endereco": "Rua Poanópolis, 400",
+    "quantidade_fotos": 36,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5ee37c09-e13b-47b1-a3aa-484f2f93502b",
+    "codigo": "AP0116",
+    "endereco": "Rua Poanópolis, 400",
+    "quantidade_fotos": 40,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d8227a88-9eb0-4a8d-bc09-820d61e03184",
+    "codigo": "AP0157",
+    "endereco": "Rua Alberto Rossi, 192",
+    "quantidade_fotos": 36,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "6c397a98-6b7a-4d61-a6a5-fa3a6b36821b",
+    "codigo": "AP0046",
+    "endereco": "Rua Oswaldo Teixeira, 163",
+    "quantidade_fotos": 12,
+    "status": "OK"
+  },
+  {
+    "id": "bb308627-8cba-47b4-bb5a-07d292bff061",
+    "codigo": "AP0188",
+    "endereco": "Avenida Boa Vista, 820",
+    "quantidade_fotos": 19,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "582e7810-bd3f-430c-8140-7a37a10c3adb",
+    "codigo": "SO0149",
+    "endereco": "Rua Tanque Verde, 204",
+    "quantidade_fotos": 7,
+    "status": "OK"
+  },
+  {
+    "id": "bb153d29-a1bb-42e0-bce3-41447e421d88",
+    "codigo": "SO0148",
+    "endereco": "Rua Miracatu, 111",
+    "quantidade_fotos": 26,
+    "status": "OK"
+  },
+  {
+    "id": "f7eb8307-9c9a-479b-9b6d-70cee65b6d52",
+    "codigo": "SO0094",
+    "endereco": "Rua Yakushigim, 170",
+    "quantidade_fotos": 27,
+    "status": "OK"
+  },
+  {
+    "id": "f37ff5d8-3308-4b4f-8c45-b6525e73d586",
+    "codigo": "AP0177",
+    "endereco": "Rua Marechal Floriano Peixoto, 234",
+    "quantidade_fotos": 39,
+    "status": "OK"
+  },
+  {
+    "id": "943feb25-0b05-4531-bb03-a4f2df09ee72",
+    "codigo": "SO0081",
+    "endereco": "Avenida Deputado Joviano Alvim, 0",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "f4830f17-a3d6-4871-a2b6-95c673deaa5f",
+    "codigo": "CA0103",
+    "endereco": "Rua Itambé, 140",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "cb368c9b-0fce-4a97-82ee-cd96658cf2e7",
+    "codigo": "CA0117",
+    "endereco": "Rua Presidente Bernardes, 144",
+    "quantidade_fotos": 29,
+    "status": "OK"
+  },
+  {
+    "id": "8bed495d-30c7-44b6-a0a3-e5bbe5bd1847",
+    "codigo": "CA0080",
+    "endereco": "Rua Doutor Prudente de Morais, 186",
+    "quantidade_fotos": 39,
+    "status": "OK"
+  },
+  {
+    "id": "e3e1e555-1ab5-461f-8921-121400c89aae",
+    "codigo": "TE0013",
+    "endereco": "Avenida Prefeito Francisco Rodrigues Filho, 400",
+    "quantidade_fotos": 14,
+    "status": "OK"
+  },
+  {
+    "id": "3c26a23f-b93d-4d8c-a03e-df74bf842fa1",
+    "codigo": "SO0142",
+    "endereco": "Avenida Niterói, 390",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "c9cae00f-b0fb-4237-949e-c06b2a021c95",
+    "codigo": "SO0070",
+    "endereco": "Avenida Deputado Castro de Carvalho, 4",
+    "quantidade_fotos": 26,
+    "status": "OK"
+  },
+  {
+    "id": "6532f957-5527-4d9c-953f-d9b30d1d2dcd",
+    "codigo": "AP0186",
+    "endereco": "Rua Ribeira de Iguape, 0",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "06ef9cb4-a79a-4fa1-b740-0ffd295f3dad",
+    "codigo": "SL0011",
+    "endereco": "Alameda Pedro Calil, 81",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "84a795d4-8d69-46fd-a46c-ae48c29d6bca",
+    "codigo": "CA0116",
+    "endereco": "Rua União, 60",
+    "quantidade_fotos": 17,
+    "status": "OK"
+  },
+  {
+    "id": "0b68c424-97c3-4cea-9bb7-90449c56671b",
+    "codigo": "AP0182",
+    "endereco": "Avenida Mariano Souza Mello, 580",
+    "quantidade_fotos": 60,
+    "status": "OK"
+  },
+  {
+    "id": "715cc065-bf03-406a-a450-14551f6e2fc2",
+    "codigo": "TE0031",
+    "endereco": "Avenida Luiz Antônio de Paiva, 621",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "9d1ec507-8daf-4692-8941-af02ca08b991",
+    "codigo": "AP0184",
+    "endereco": "Rua Marabá, 141",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "b76d0c71-e986-46d1-9ec8-cb0dacdd3fad",
+    "codigo": "AP0176",
+    "endereco": "Rua Ijaci, 125",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "1a0a0cdd-68c2-456c-826e-74af0346e327",
+    "codigo": "AP0183",
+    "endereco": "Rua Marechal Deodoro, 410",
+    "quantidade_fotos": 44,
+    "status": "OK"
+  },
+  {
+    "id": "67a70d87-b240-4e20-88e2-8dbd6c6dd2e3",
+    "codigo": "CA0115",
+    "endereco": "Avenida Vital Brasil, 1177",
+    "quantidade_fotos": 43,
+    "status": "OK"
+  },
+  {
+    "id": "5a22e15e-b653-4972-98a6-10dd7fee5000",
+    "codigo": "AP0181",
+    "endereco": "Avenida Mariano Souza Mello, 580",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "72215674-c4fd-4fc7-92a4-3c81cca8c748",
+    "codigo": "GD0004",
+    "endereco": "Estrada Takashi Kobat, 185",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "6917cf95-4a56-42a9-b6c0-b0a1376fe2de",
+    "codigo": "AP0180",
+    "endereco": "Estrada Takashi Kobata, 303",
+    "quantidade_fotos": 23,
+    "status": "OK"
+  },
+  {
+    "id": "e881623f-beec-408a-84fa-34c0ed59e286",
+    "codigo": "AP0155",
+    "endereco": "Rua Coronel Benedito de Almeida, 49",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "562862ef-60c7-4575-99f5-58c7af672040",
+    "codigo": "GA0005",
+    "endereco": "Rua Monsenhor Nuno, 348",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "b7803aea-62b6-4496-829a-d18c678d269d",
+    "codigo": "SO0139",
+    "endereco": "Rua Tucano, 90",
+    "quantidade_fotos": 24,
+    "status": "OK"
+  },
+  {
+    "id": "9f9a92d7-4947-4487-80e1-f1909ba300cb",
+    "codigo": "CA0079",
+    "endereco": "Rua Venezuela, 70",
+    "quantidade_fotos": 17,
+    "status": "OK"
+  },
+  {
+    "id": "8525640b-e7eb-420c-a889-ab26082d1a18",
+    "codigo": "AP0110",
+    "endereco": "Rua Iracy Umbelina de Jesus, 409",
+    "quantidade_fotos": 60,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "20f6b2b1-65a6-47d0-94ac-45976b46dad8",
+    "codigo": "AP0174",
+    "endereco": "Rua União, 483",
+    "quantidade_fotos": 10,
+    "status": "OK"
+  },
+  {
+    "id": "23f860b1-b670-4fd3-aabf-156153605d4b",
+    "codigo": "CA0097",
+    "endereco": "Rua Brasilina, 65",
+    "quantidade_fotos": 20,
+    "status": "OK"
+  },
+  {
+    "id": "e71d4a55-c1dc-44d9-8921-74c58730fca2",
+    "codigo": "AP0159",
+    "endereco": "Rua Gato Cinzento, 89",
+    "quantidade_fotos": 14,
+    "status": "OK"
+  },
+  {
+    "id": "79baf57c-c58e-4434-bb4f-ed7f30301495",
+    "codigo": "CA0105",
+    "endereco": "Rua Princesa Isabel, 569",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "85161887-5f1b-4902-b48b-22e43c764087",
+    "codigo": "AP0173",
+    "endereco": "Rua Luís Ramalho, 96",
+    "quantidade_fotos": 36,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "eea34266-c6c2-435f-9b7e-97f5200f2680",
+    "codigo": "AP0172",
+    "endereco": "Rua Marabá, 179",
+    "quantidade_fotos": 35,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "9b12dbd2-3d55-40db-81dc-4255541bd16e",
+    "codigo": "TE0030",
+    "endereco": "Avenida Elvira, 21",
+    "quantidade_fotos": 8,
+    "status": "OK"
+  },
+  {
+    "id": "f1c2ec0b-ad2a-4875-8450-f6fba67a2924",
+    "codigo": "CA0110",
+    "endereco": "Rua Presidente Rodrigues Alves, 337",
+    "quantidade_fotos": 10,
+    "status": "OK"
+  },
+  {
+    "id": "c8346fb9-c033-44e2-b3fc-14585c1855b6",
+    "codigo": "AP0171",
+    "endereco": "Avenida Dom Pedro II, 823",
+    "quantidade_fotos": 26,
+    "status": "OK"
+  },
+  {
+    "id": "2eb571ed-39b9-4c20-8d4a-148175e7297d",
+    "codigo": "GA0001",
+    "endereco": "Rua Pedro Ribeiro Filho, 0",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "f745ae64-23f4-4d57-a7f1-396a51675bd1",
+    "codigo": "CA0090",
+    "endereco": "Rua Abílio Secundino Leite, 310",
+    "quantidade_fotos": 57,
+    "status": "OK"
+  },
+  {
+    "id": "ae48cd72-3e42-4c4a-bd4d-dc5e2728900b",
+    "codigo": "CA0113",
+    "endereco": "Rua Guilherme Garijo, Lt. 965",
+    "quantidade_fotos": 7,
+    "status": "OK"
+  },
+  {
+    "id": "8f88f14c-7af2-47b8-b6d2-4766c866871a",
+    "codigo": "SO0137",
+    "endereco": "Avenida das Américas, 1",
+    "quantidade_fotos": 61,
+    "status": "OK"
+  },
+  {
+    "id": "40ce527d-83ac-4a2e-82fe-a889e5063bb8",
+    "codigo": "AP0170",
+    "endereco": "Rua Araguaia, 67",
+    "quantidade_fotos": 25,
+    "status": "OK"
+  },
+  {
+    "id": "e658ad30-0252-47c8-a577-477d41b1147d",
+    "codigo": "AP0137",
+    "endereco": "Rua Doutor Luiz Pereira Barreto, 262",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "37e93a4d-d626-453f-bba1-83fe84f0547a",
+    "codigo": "AP0165",
+    "endereco": "Avenida Vital Brasil, 0",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "4c3c67d5-b596-4f7f-a197-9f21918f0fd7",
+    "codigo": "AP0169",
+    "endereco": "Rua Clemente Cunha Ferreira, 0",
+    "quantidade_fotos": 38,
+    "status": "OK"
+  },
+  {
+    "id": "381a1516-980b-46bd-82a9-a301faf54161",
+    "codigo": "SO0136",
+    "endereco": "Rua Jerônimo Joviano de Deus, 114",
+    "quantidade_fotos": 34,
+    "status": "OK"
+  },
+  {
+    "id": "29bfbdd0-02e3-447d-ae8c-30bda1a56290",
+    "codigo": "SO0135",
+    "endereco": "Rua Visconde de Aguiar Toledo, 529",
+    "quantidade_fotos": 33,
+    "status": "OK"
+  },
+  {
+    "id": "f8e76e2e-8b8b-43c4-a785-b7b1a9ec56b8",
+    "codigo": "GA0007",
+    "endereco": "Avenida Major Pinheiro Froes, 1085",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "e50058b0-69d1-4944-910d-76fc3cb05ab5",
+    "codigo": "SA0002",
+    "endereco": "Rua Poanópolis, 136",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "851b6029-1f6f-4077-9bc8-a0d698a649c3",
+    "codigo": "AP0168",
+    "endereco": "Rua José de Oliveira Gomes, 361",
+    "quantidade_fotos": 40,
+    "status": "OK"
+  },
+  {
+    "id": "2e340f46-3df9-40e3-8a73-6fb7bb198f5d",
+    "codigo": "AP0142",
+    "endereco": "Rua José de Oliveira Gomes, 361",
+    "quantidade_fotos": 29,
+    "status": "OK"
+  },
+  {
+    "id": "7fea1a1d-07cd-4a5b-97cd-0d8274cfc889",
+    "codigo": "SO0098",
+    "endereco": "Rua Doutor Campos Sales, 321",
+    "quantidade_fotos": 47,
+    "status": "OK"
+  },
+  {
+    "id": "ae9f8889-db07-437a-98ee-d1b43f5bed5a",
+    "codigo": "SO0133",
+    "endereco": "Rua Profeta Isaías, 266",
+    "quantidade_fotos": 25,
+    "status": "OK"
+  },
+  {
+    "id": "47f59997-704d-4b11-9a9f-633d9814e900",
+    "codigo": "AP0166",
+    "endereco": "Avenida Vital Brasil, 1343",
+    "quantidade_fotos": 94,
+    "status": "OK"
+  },
+  {
+    "id": "dab23d78-921e-4a27-8b2a-846c0adebcf5",
+    "codigo": "AP0164",
+    "endereco": "Rua Ribeira de Iguape, 1",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "fb719b4b-6fca-4194-9208-ea3a5ddc2cac",
+    "codigo": "SO0134",
+    "endereco": "Rua Ilha da Madeira, 198",
+    "quantidade_fotos": 24,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "da6a8d8b-81fa-460c-8a30-301af14713a9",
+    "codigo": "AP0163",
+    "endereco": "Travessa Ângelo Biancolin, 7",
+    "quantidade_fotos": 32,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d8fba6e9-5a28-4a0f-a23e-42130ec1f2a4",
+    "codigo": "CA0109",
+    "endereco": "Rua Fernando José dos Santos, 5",
+    "quantidade_fotos": 10,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "013984ba-03a0-41b0-8240-e81646e25e37",
+    "codigo": "AP0162",
+    "endereco": "Rua João Pekny, 80",
+    "quantidade_fotos": 23,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "0a8afacb-9446-4503-b6bb-f642243446e2",
+    "codigo": "CH0005",
+    "endereco": "Avenida Claudino Novaes, 0",
+    "quantidade_fotos": 21,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "50f73932-de3d-4250-80b7-558f84d552f5",
+    "codigo": "AP0160",
+    "endereco": "Avenida Armando Salles de Oliveira, 1601",
+    "quantidade_fotos": 18,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d3083f0d-0528-403b-a607-b1c7958a45d6",
+    "codigo": "AP0115",
+    "endereco": "Rua Oswaldo Teixeira, 163",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "43784cd2-8dfa-4f68-b566-2653467e03f7",
+    "codigo": "CA0108",
+    "endereco": "Rua Conde dos Arcos, 0",
+    "quantidade_fotos": 38,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "949f334e-0d63-436c-bd1c-9aa1ee43d382",
+    "codigo": "AP0156",
+    "endereco": "Estrada dos Fernandes, 2000",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5d7370e6-87ee-443e-afa5-b850da2e2aaa",
+    "codigo": "SO0130",
+    "endereco": "Rua Luiz Monteiro, 0",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "24e66070-81b1-42a0-bf32-3a3d1fe46b18",
+    "codigo": "CH0007",
+    "endereco": "Estrada Hiroshi Tobinaga, 0",
+    "quantidade_fotos": 45,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "97a4b853-61e3-4c4d-a569-9003e3027591",
+    "codigo": "AP0106",
+    "endereco": "Rua Antenor Leite da Cunha, 2051",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "a9f37483-cedb-44ef-8db3-6c3d6e5cdbd4",
+    "codigo": "CA0106",
+    "endereco": "Rua Pedro Xara Ravasco, 5",
+    "quantidade_fotos": 23,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d2c2446e-480d-4be4-9392-a588b85d2412",
+    "codigo": "TE0025",
+    "endereco": "Rua Marabá, 0",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "88f296d9-9153-4c88-8ffa-94d6400fcefa",
+    "codigo": "TE0026",
+    "endereco": "Rua Estado da Bahia, 0",
+    "quantidade_fotos": 6,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "09e69254-361f-4384-905d-e0b2b32c63df",
+    "codigo": "AP0153",
+    "endereco": "Avenida Vinte e Seis de Março, 560",
+    "quantidade_fotos": 21,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ea1c81c1-b884-494f-837a-0d4f14991341",
+    "codigo": "AP0154",
+    "endereco": "Rua Clemente Cunha Ferreira, 121",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "4340b0b1-ed97-4e61-963f-2ada40939fca",
+    "codigo": "CA0104",
+    "endereco": "Rua Doutor Emílio Ribas, 23",
+    "quantidade_fotos": 34,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "3b0494df-6cb0-4c8c-a148-9b408cfbf1cb",
+    "codigo": "TE0024",
+    "endereco": "Rua São José do Rio Preto, 277",
+    "quantidade_fotos": 6,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "07d13b16-64a0-4b91-9397-49d834969558",
+    "codigo": "SO0127",
+    "endereco": "Rua Xingu, 2",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "b6b877ae-6d69-4fa8-9d0d-0122abc68dcc",
+    "codigo": "AP0147",
+    "endereco": "Avenida Vinte e Seis de Março, 560",
+    "quantidade_fotos": 30,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "b91aaf1b-840d-42de-ab7e-efa3cf7feff5",
+    "codigo": "SA0003",
+    "endereco": "Avenida Getúlio Vargas, 915",
+    "quantidade_fotos": 35,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "b6560371-4cb0-44a1-a4a5-ad6d8441e36f",
+    "codigo": "CA0100",
+    "endereco": "Rua Masaji Takegawa, 0",
+    "quantidade_fotos": 29,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ad4b0080-8435-42b0-a7f8-de27e19f33c5",
+    "codigo": "SO0099",
+    "endereco": "Avenida Três Pontes, 83",
+    "quantidade_fotos": 52,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "35cc1bdf-55c1-4264-8036-8a5cfae98136",
+    "codigo": "CA0099",
+    "endereco": "Rua Marquês de Pombal, 219",
+    "quantidade_fotos": 27,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "9ec7eeee-41b7-4c44-984f-abed4690d523",
+    "codigo": "CA0098",
+    "endereco": "Avenida Locarno, 306",
+    "quantidade_fotos": 34,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "78fccbdf-4cba-4e90-9b5b-e95b4e38431d",
+    "codigo": "AP0138",
+    "endereco": "Avenida Aricanduva, 9110",
+    "quantidade_fotos": 18,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "40edf628-035b-4e54-a8a0-e5d7e68a602a",
+    "codigo": "AP0143",
+    "endereco": "Rua José de Oliveira Gomes, 361",
+    "quantidade_fotos": 13,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "1380f830-e6f9-4c3e-b36c-d82104d98fb3",
+    "codigo": "AP0141",
+    "endereco": "Estrada Takashi Kobat, 535",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "6524d027-71ed-42d0-88da-d399cb3d8286",
+    "codigo": "TE0022",
+    "endereco": "Estrada Municipal Anibal Maciel, 2500",
+    "quantidade_fotos": 15,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d4c9684e-04d4-425c-b72f-069354b9a785",
+    "codigo": "AP0140",
+    "endereco": "Rua Waldemar Aquilino de Freitas, 212",
+    "quantidade_fotos": 42,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d41ee785-f04e-4853-a58e-164f7cb9a06d",
+    "codigo": "CA0088",
+    "endereco": "Rua Desembargador Fausto Whitaker Machado Alvim, 398",
+    "quantidade_fotos": 42,
+    "status": "OK"
+  },
+  {
+    "id": "17390833-8af6-4e68-88c5-e2941b36e83f",
+    "codigo": "SO0123",
+    "endereco": "Rua Manoel de Freitas Garcia, 960",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "3dd4bc55-85fe-44f4-aa14-851d926766b0",
+    "codigo": "CA0096",
+    "endereco": "Rua União, 896",
+    "quantidade_fotos": 39,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "8952822d-dd8f-4e1a-be6b-826d87aec05e",
+    "codigo": "SO0120",
+    "endereco": "Rua Quinze de Novembro, 113",
+    "quantidade_fotos": 33,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "abdfab57-82c6-47ab-9827-77d5dc3e65c4",
+    "codigo": "CH0006",
+    "endereco": "Estrada do Mato Dentro, 1500",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "2af408d4-fe35-4395-8e39-0090fec92ebb",
+    "codigo": "SO0119",
+    "endereco": "Rua Angelina Ipolliti, 52",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "0f51e065-e935-4986-9a69-8917d97975c6",
+    "codigo": "CA0056",
+    "endereco": "Travessa Coari, 22",
+    "quantidade_fotos": 14,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "39936cdf-d4a2-470a-8e79-211c4b61e690",
+    "codigo": "AP0065",
+    "endereco": "Rua Piauí, 385",
+    "quantidade_fotos": 19,
+    "status": "OK"
+  },
+  {
+    "id": "9b79ecb7-6586-4b41-9013-ae852aec6dc9",
+    "codigo": "AP0099",
+    "endereco": "Avenida Doutor Benedicto Laporte Vieira da Motta, 201",
+    "quantidade_fotos": 84,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "95b34244-c71a-4fbc-85fa-6839ce5ef30e",
+    "codigo": "AP0100",
+    "endereco": "Avenida Doutor Benedicto Laporte Vieira da Motta, 201",
+    "quantidade_fotos": 82,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d3a2b67f-1da3-42ac-a120-f28d63b8af18",
+    "codigo": "ST0002",
+    "endereco": "Rua Capitão Mariano, 229",
+    "quantidade_fotos": 38,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "2419e2fe-700b-4d46-93c2-dc0163e9b9c3",
+    "codigo": "SO0107",
+    "endereco": "Rua Castanha, 94",
+    "quantidade_fotos": 16,
+    "status": "OK"
+  },
+  {
+    "id": "02092667-e2eb-493d-a8eb-fabd9ebe04ef",
+    "codigo": "SO0079",
+    "endereco": "Rua Pio Xii, 41",
+    "quantidade_fotos": 19,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "e2218430-f137-4c50-a984-c601a7246c0a",
+    "codigo": "SO0097",
+    "endereco": "Rua Marechal Floriano Peixoto, 441",
+    "quantidade_fotos": 38,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "b9fe3324-3a6e-4dfa-bfdd-57c519d684f5",
+    "codigo": "SO0066",
+    "endereco": "Rua Maria Janoni Novazzi, 1",
+    "quantidade_fotos": 17,
+    "status": "OK"
+  },
+  {
+    "id": "7988e136-d56b-497a-93cb-235935e4a80d",
+    "codigo": "SO0106",
+    "endereco": "Avenida Elias Zugaib, 356",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "17bc0a18-2cc3-435e-8edf-5f226909ea2b",
+    "codigo": "SO0111",
+    "endereco": "Estrada de Santa Mônica, 1083",
+    "quantidade_fotos": 35,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "fd327c5c-bc3a-4d2a-a300-4304099d6f60",
+    "codigo": "AP0125",
+    "endereco": "Rua Itaporanga, 230",
+    "quantidade_fotos": 33,
+    "status": "OK"
+  },
+  {
+    "id": "7ab6ee98-8c1c-4bd0-a8a4-d558e7e47e42",
+    "codigo": "AP0124",
+    "endereco": "Rua Itaporanga, 230",
+    "quantidade_fotos": 32,
+    "status": "OK"
+  },
+  {
+    "id": "a9fa8e3c-6627-46a1-8e07-07fbde19b028",
+    "codigo": "SO0110",
+    "endereco": "Rua Judith Guagliano Navarro, 107",
+    "quantidade_fotos": 37,
+    "status": "OK"
+  },
+  {
+    "id": "d6364cf5-d737-409d-b13c-06b535678355",
+    "codigo": "AP0127",
+    "endereco": "Avenida Francisco Rodrigues Filho, 1930",
+    "quantidade_fotos": 15,
+    "status": "OK"
+  },
+  {
+    "id": "afaaf7a8-8c8c-419d-b0db-57be54121a63",
+    "codigo": "SO0077",
+    "endereco": "Rua Olívia dos Santos, 132",
+    "quantidade_fotos": 3,
+    "status": "OK"
+  },
+  {
+    "id": "0da93de2-ccd5-40e0-80dd-95d08d2f58f7",
+    "codigo": "AP0131",
+    "endereco": "Rua Ângela Giustti Zampese, 0",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "6cb0213c-e002-4bd9-a76c-b4222b30c377",
+    "codigo": "TE0014",
+    "endereco": "Rua Sacadura Cabral, 210",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "371efea8-cc46-4fab-b5bb-eaaa7d133ea7",
+    "codigo": "TE0021",
+    "endereco": "Rua Nossa Senhora Aparecida, 71",
+    "quantidade_fotos": 6,
+    "status": "OK"
+  },
+  {
+    "id": "cd166984-7cf0-4363-8f90-6c3379c10267",
+    "codigo": "AP0129",
+    "endereco": "Avenida Nove de Julho, 1138",
+    "quantidade_fotos": 48,
+    "status": "OK"
+  },
+  {
+    "id": "8d2fcde5-d61a-4afa-ab14-41de10070bc4",
+    "codigo": "TE0019",
+    "endereco": "Rua Marechal Floriano Peixoto, 1",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "1c25f69a-7164-4c46-a898-6ca2ecc353d2",
+    "codigo": "TE0018",
+    "endereco": "Rua União, 760",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "380274c2-a2a7-4215-8185-e9632b4da932",
+    "codigo": "TE0020",
+    "endereco": "Rua Cândida de Miranda, 0",
+    "quantidade_fotos": 5,
+    "status": "OK"
+  },
+  {
+    "id": "17226ab9-d37b-4703-8773-b4ebb4e2adaa",
+    "codigo": "TE0017",
+    "endereco": "Rua União, 0",
+    "quantidade_fotos": 4,
+    "status": "OK"
+  },
+  {
+    "id": "0a51f84c-5db7-4a3d-9bf9-e7f2135c055e",
+    "codigo": "TE0016",
+    "endereco": "Rua Marechal Floriano Peixoto, 0",
+    "quantidade_fotos": 8,
+    "status": "OK"
+  },
+  {
+    "id": "65153c8d-0ff5-4abd-8a55-fea60deb86fb",
+    "codigo": "TE0015",
+    "endereco": "Avenida Deputado Castro de Carvalho, 0",
+    "quantidade_fotos": 7,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "c8c9abe3-2f16-40c0-8aa2-011894ea38e7",
+    "codigo": "CA0091",
+    "endereco": "Rua Assis Chateaubriand, 43",
+    "quantidade_fotos": 23,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "a625fef0-e6b5-4a58-bc85-bc0ac231970e",
+    "codigo": "CA0092",
+    "endereco": "Rua Ibirapuera, 31",
+    "quantidade_fotos": 39,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "4001f296-98e6-47f5-8abe-408001a448c8",
+    "codigo": "AP0048",
+    "endereco": "Rua João Antônio Cebriam, 73",
+    "quantidade_fotos": 27,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "fc4fb2df-66ec-4d9d-ac3f-93bfe7b6293f",
+    "codigo": "AR0001",
+    "endereco": "Rua Barão de Cocaes, 340",
+    "quantidade_fotos": 9,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "9159e61a-5eb4-4125-b2a1-4e8591482238",
+    "codigo": "SO0086",
+    "endereco": "Avenida Pantaleão Trandafilou Filho, 58",
+    "quantidade_fotos": 32,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "683d76a9-479a-440a-b98e-d64ec43f40b4",
+    "codigo": "CA0087",
+    "endereco": "Alameda Tenente José Bernardino, 76",
+    "quantidade_fotos": 25,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "15660117-f5ce-40c6-a341-1fcf19ac136f",
+    "codigo": "SO0058",
+    "endereco": "Rua Fernando de Noronha, 31",
+    "quantidade_fotos": 56,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "1fae1dfb-49a9-484f-8730-fa2469ae61dd",
+    "codigo": "CA0086",
+    "endereco": "Rua Eugênio Rossoni, 265",
+    "quantidade_fotos": 38,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "83693335-d177-4865-af2e-ef7204a5c7c4",
+    "codigo": "CA0084",
+    "endereco": "Rua José Garcia de Souza, 43",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5b5714c4-5134-4225-b0de-684df53661a5",
+    "codigo": "AR0002",
+    "endereco": "Rua Prudente de Moraes, 1327",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "524a9394-2c5c-40b3-9d03-469c60be9dbd",
+    "codigo": "SO0082",
+    "endereco": "Rua Bocaina, 93",
+    "quantidade_fotos": 34,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ec4ff24c-6a47-405c-bf4e-8d0a23396598",
+    "codigo": "CA0048",
+    "endereco": "Rua João Romero, 177",
+    "quantidade_fotos": 28,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "f24e5d52-cf2d-4eb7-b9af-f344679aaa20",
+    "codigo": "SO0092",
+    "endereco": "Rua Marechal Floriano Peixoto, 552",
+    "quantidade_fotos": 21,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "4069b5c3-b088-4abc-a751-6cfdab78bec5",
+    "codigo": "SO0083",
+    "endereco": "Rua Roque Heroles, 220",
+    "quantidade_fotos": 29,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "72795189-93a5-43a5-8ca3-4c7df3f7f731",
+    "codigo": "CH0004",
+    "endereco": "Rua Dezessete, 200",
+    "quantidade_fotos": 19,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "f4cf36cd-2ec8-40d3-bd98-9b2331326732",
+    "codigo": "CA0081",
+    "endereco": "Rua Presidente Bernardes, 75",
+    "quantidade_fotos": 20,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ff487270-9e2b-419b-9f83-76a0d5b8d981",
+    "codigo": "SL0007",
+    "endereco": "Rua Raphael da Anunciação Fontes, 872",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "6eb945a9-219c-4a7f-9220-82332167a2cd",
+    "codigo": "SL0006",
+    "endereco": "Avenida Antônio Marques Figueira, 257",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "59a2532e-39d5-417d-b13a-30a5279fb0d2",
+    "codigo": "CA0038",
+    "endereco": "Rua Camélia, 166",
+    "quantidade_fotos": 31,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "683f6c6b-55fe-444e-93fb-393e7d4c6cdf",
+    "codigo": "AP0104",
+    "endereco": "Rua Palhoça, 81",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "4403e172-b3df-4d94-a72a-822e322fd230",
+    "codigo": "SL0005",
+    "endereco": "Avenida Emancipação, 354",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "360e76b2-1e57-4ceb-975c-119cdb926df2",
+    "codigo": "SL0003",
+    "endereco": "Avenida Emancipação, 356",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "d25afa2e-a556-4dcd-b213-f3f4ee58ff9d",
+    "codigo": "SL0004",
+    "endereco": "Avenida Emancipação, 357",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "5723222e-8a19-4362-9512-4fb185549760",
+    "codigo": "CA0078",
+    "endereco": "Rua Lília, 15",
+    "quantidade_fotos": 10,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "f8afa34e-1107-4901-8d3f-2a0464d8d283",
+    "codigo": "SO0102",
+    "endereco": "Rua Farias Lemos, 115",
+    "quantidade_fotos": 33,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ff0454ff-fa1c-4e3c-a334-a1a7dcf10747",
+    "codigo": "CA0076",
+    "endereco": "Rua Honduras, 1253",
+    "quantidade_fotos": 13,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "95899001-5127-43ca-b168-b0086c18d2a5",
+    "codigo": "SI0001",
+    "endereco": "Rodovia Engenheiro Cândido do Rego Chaves, 0",
+    "quantidade_fotos": 36,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "4e4f8008-8561-453e-81e0-28569886ae58",
+    "codigo": "SO0096",
+    "endereco": "Rua Taquaritinga, 145",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "08920f09-30db-4c01-bcb4-7022cb0e4653",
+    "codigo": "CA0072",
+    "endereco": "Rua Mariana Rosina Anberje, 344",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5d32fc7e-3dd4-4c77-b624-9ca2bc56ad80",
+    "codigo": "AP0094",
+    "endereco": "Rua do Lavapés, 463",
+    "quantidade_fotos": 21,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "c8616a46-2bfd-46bf-acc5-a236e84df898",
+    "codigo": "AP0093",
+    "endereco": "Rua Cabo João Monteiro da Rocha, 371",
+    "quantidade_fotos": 17,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "2fa5996f-f2f0-45e1-b6ae-fcde13a0d375",
+    "codigo": "SO0090",
+    "endereco": "Rua Projetada Principal, 194",
+    "quantidade_fotos": 20,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5748e03f-5290-4843-b276-4d8c8119a5f8",
+    "codigo": "GD0002",
+    "endereco": "Rua Marabá, 141",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ae427b35-d59d-4298-bd7d-5d1238f8aecc",
+    "codigo": "SO0088",
+    "endereco": "Rua Diogenes Ribas Aguiar, 107",
+    "quantidade_fotos": 30,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "f8f6fdfa-bf07-4bf5-81e7-d6c5145e353a",
+    "codigo": "SO0089",
+    "endereco": "Rua João Pekny, 115",
+    "quantidade_fotos": 26,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "0ca515ad-a209-4004-9580-c819c2311f85",
+    "codigo": "CA0067",
+    "endereco": "Rua Gradaus, 131",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "be7b26db-c2d3-4e69-9638-d7e4d7a287dd",
+    "codigo": "CH0003",
+    "endereco": "Estrada Mogi-Taiacupeba, 1500",
+    "quantidade_fotos": 46,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d24143e1-ed1a-4797-8b83-7f4bfaa1d933",
+    "codigo": "CA0066",
+    "endereco": "Rua Padre Eustáquio, 107",
+    "quantidade_fotos": 17,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5a5ed236-8943-4e88-b224-f44811a184dc",
+    "codigo": "ST0001",
+    "endereco": "Avenida Cásper Líbero, 501",
+    "quantidade_fotos": 21,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ffaeb94c-9c22-4351-970b-9c69834caaf7",
+    "codigo": "AP0078",
+    "endereco": "Rua Ijaci, 125",
+    "quantidade_fotos": 32,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "9b2684bc-c780-44bf-80a6-7b47dc3fa9f5",
+    "codigo": "CH0002",
+    "endereco": "Rua Dez, 0",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "fb7af6df-e885-4e88-b296-dbcfd1d7f396",
+    "codigo": "SO0031",
+    "endereco": "Rua João Pekny, 0",
+    "quantidade_fotos": 47,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "5bbb95b8-2f8e-4f1f-8452-bb6da5d8367f",
+    "codigo": "CA0016",
+    "endereco": "Rua Barão de Cocaes, 0",
+    "quantidade_fotos": 10,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "0c0e9221-a333-4047-8f4f-08c35e3ee76a",
+    "codigo": "TE0011",
+    "endereco": "Rua Natalino dos Santos Gonçalves, 16",
+    "quantidade_fotos": 3,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "2e2b94d2-c820-4878-b5ab-11c975b553c4",
+    "codigo": "AP0086",
+    "endereco": "Rua Quixadá, 60",
+    "quantidade_fotos": 23,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d5f65c29-575f-4869-9ac8-6c2ba8c110a7",
+    "codigo": "SO0076",
+    "endereco": "Travessa Serra Negra, 86",
+    "quantidade_fotos": 20,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "cb011b07-562c-4229-aec7-a457aeb028f2",
+    "codigo": "SO0074",
+    "endereco": "Rua Sumaré, 89",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "e68931f1-721a-42dc-94fa-ef495f89e664",
+    "codigo": "GA0002",
+    "endereco": "Rua Rio Grande do Sul, 159",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "ad637641-0396-4585-af0d-1aa16a2bc98c",
+    "codigo": "AP0061",
+    "endereco": "Rua Guararema, 90",
+    "quantidade_fotos": 0,
+    "status": "Sem Fotos"
+  },
+  {
+    "id": "0220977f-00e2-4ade-80da-22d5fc24a842",
+    "codigo": "AD0002",
+    "endereco": "Rua Dário Carneiro, 0",
+    "quantidade_fotos": 38,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "aea9282f-7b31-4f84-9f1c-bffb969fde2e",
+    "codigo": "SO0063",
+    "endereco": "Rua Bauru, 70",
+    "quantidade_fotos": 28,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ec6f047b-0979-44e1-9e11-d46d4d95aaf1",
+    "codigo": "CA0028",
+    "endereco": "Rua Getúlio Moreira de Souza, 1192",
+    "quantidade_fotos": 13,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "c0c20cca-3531-456d-a901-9ee1b5aa6e07",
+    "codigo": "SO0013",
+    "endereco": "Avenida Nossa Senhora de Lourdes, 0",
+    "quantidade_fotos": 21,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "bf22c2f4-e283-4b5e-9d75-805ea80c4824",
+    "codigo": "AP0076",
+    "endereco": "Rua Oswaldo Teixeira, 163",
+    "quantidade_fotos": 29,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "b59ce457-c611-4b5e-8bfe-a2c5eea483a3",
+    "codigo": "CA0047",
+    "endereco": "Rua Brigadeiro Eduardo Gomes, 79",
+    "quantidade_fotos": 24,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "ef7f6b29-b43f-454f-9b51-c3700b600990",
+    "codigo": "SO0052",
+    "endereco": "Rua Barão do Rio Branco, 120",
+    "quantidade_fotos": 30,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "79b43ea0-840a-4683-9890-22168edcc9a0",
+    "codigo": "CH0001",
+    "endereco": "Avenida Conceição, 360",
+    "quantidade_fotos": 70,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "6ddb6987-613e-41f2-8242-996ef4a80fd8",
+    "codigo": "CA0049",
+    "endereco": "Rua Buíque, 50",
+    "quantidade_fotos": 30,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "d4404963-6f59-4e36-9ef6-e4f7cb78c783",
+    "codigo": "AP0060",
+    "endereco": "Rua Barão do Rio Branco, 161",
+    "quantidade_fotos": 22,
+    "status": "Erro de Mídia (URL Quebrada)"
+  },
+  {
+    "id": "83c67faf-9ecf-4059-9570-89fcabe536be",
+    "codigo": "SO0024",
+    "endereco": "Rua Urais, 6",
+    "quantidade_fotos": 16,
+    "status": "Erro de Mídia (URL Quebrada)"
+  }
+]
