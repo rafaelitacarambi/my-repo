@@ -20,7 +20,8 @@ import {
     MessageSquare,
     ChevronDown,
     ChevronUp,
-    Gavel
+    Gavel,
+    Search
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -89,6 +90,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {
             group: 'Imóveis',
             items: [
+                { label: 'Busca Rápida', icon: Search, path: '/admin/busca-rapida', visible: true },
                 { label: 'Gestão de Imóveis', icon: FileText, path: '/admin/imoveis', visible: true },
                 { label: 'Gestão de Chaves', icon: Key, path: '/admin/chaves', visible: isAdmin || userSectors.includes('Administrativo') },
             ]

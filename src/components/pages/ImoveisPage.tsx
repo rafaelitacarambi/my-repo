@@ -79,23 +79,31 @@ export default function ImoveisPage() {
       filtered = filtered.filter(
         (p) =>
           (p.resumoImovel || p.propertyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (p.address || p.logradouro || p.bairro || '').toLowerCase().includes(searchTerm.toLowerCase())
+          (p.city || p.cidade || p.enderecoRua || p.logradouro || p.bairro || p.enderecoBairro || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Hard filter: Only Active properties
-    filtered = filtered.filter(p => p.statusImovel === 'Ativo');
+    // Hard filter: Only Active properties for visitors
+    filtered = filtered.filter(p => p.statusImovel === 'Ativo' || p.statusImovel === 'Disponível');
 
     if (typeFilter !== 'all') {
-      filtered = filtered.filter((p) => p.propertyType === typeFilter);
+      filtered = filtered.filter((p) => p.propertyType === typeFilter || p.tipoImovel === typeFilter);
     }
 
     if (transactionFilter !== 'all') {
-      filtered = filtered.filter((p) => p.transactionType === transactionFilter);
+      filtered = filtered.filter((p) =>
+        (p.transactionType === transactionFilter) ||
+        (p.finalidade === transactionFilter) ||
+        (p.pretensao && p.pretensao.includes(transactionFilter))
+      );
     }
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter((p) => p.status === statusFilter);
+      // O public page form options are Disponível, Reservado, Vendido.
+      // mapped statusImovel are usually 'Ativo', 'Locado', 'Vendido', 'Suspenso'.
+      // Map the dropdown to the actual status strings
+      const targetStatus = statusFilter === 'Disponível' ? 'Ativo' : statusFilter;
+      filtered = filtered.filter((p) => p.statusImovel === targetStatus || p.status === statusFilter);
     }
 
     if (segmentoFilter) {
@@ -107,45 +115,39 @@ export default function ImoveisPage() {
 
     // Advanced filters (AND logic)
     if (priceMin) {
-      filtered = filtered.filter((p) => (p.price || 0) >= parseFloat(priceMin));
+      filtered = filtered.filter((p) => {
+        const mainPrice = p.precoVenda || p.precoLocacao || p.price || 0;
+        return mainPrice >= parseFloat(priceMin);
+      });
     }
 
     if (priceMax) {
-      filtered = filtered.filter((p) => (p.price || 0) <= parseFloat(priceMax));
+      filtered = filtered.filter((p) => {
+        const mainPrice = p.precoVenda || p.precoLocacao || p.price || 0;
+        return mainPrice <= parseFloat(priceMax);
+      });
     }
 
     if (bedroomsMin) {
-      filtered = filtered.filter((p) => (p.bedrooms || 0) >= parseFloat(bedroomsMin));
+      filtered = filtered.filter((p) => {
+        const beds = p.dormitorios || p.quartos || p.bedrooms || 0;
+        return beds >= parseFloat(bedroomsMin);
+      });
     }
 
     if (areaMin) {
-      filtered = filtered.filter((p) => (p.area || 0) >= parseFloat(areaMin));
+      filtered = filtered.filter((p) => {
+        const area = p.areaConstruida || p.areaUtil || p.areaTotal || p.area || 0;
+        return area >= parseFloat(areaMin);
+      });
     }
 
     // Amenities filter (AND logic - must have ALL selected amenities)
     if (amenitiesFilter.length > 0) {
       filtered = filtered.filter((p) => {
         return amenitiesFilter.every((amenity) => {
-          switch (amenity) {
-            case 'piscina':
-              return p.piscina;
-            case 'academia':
-              return p.academia;
-            case 'elevador':
-              return p.elevador;
-            case 'seguranca24h':
-              return p.seguranca24h;
-            case 'acessibilidade':
-              return p.acessibilidade;
-            case 'churrasqueira':
-              return p.churrasqueira;
-            case 'playground':
-              return p.playground;
-            case 'sacadaVaranda':
-              return p.sacadaVaranda;
-            default:
-              return true;
-          }
+          // Verify flattened mapped fields or legacy boolean fields
+          return p[amenity] === true;
         });
       });
     }
@@ -470,10 +472,10 @@ export default function ImoveisPage() {
                       <div className="p-6">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-paragraph text-xs text-dark-gray bg-border-gray px-2 py-1 rounded">
-                            {property.propertyType}
+                            {property.tipoImovel || property.propertyType}
                           </span>
                           <span className="font-paragraph text-xs text-dark-gray bg-border-gray px-2 py-1 rounded">
-                            {property.transactionType}
+                            {property.finalidade || property.transactionType || property.pretensao || 'Venda'}
                           </span>
                         </div>
                         <h3 className="font-heading text-xl text-primary-foreground mb-2 font-semibold line-clamp-1">

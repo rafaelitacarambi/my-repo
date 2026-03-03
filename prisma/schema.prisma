@@ -83,6 +83,28 @@ model Property {
   ownerId String?
   owner   Client? @relation("PropertyOwner", fields: [ownerId], references: [id])
 
+  // --- Campos Novos de Sincronização Estrutural ---
+  finalidade               String?
+  situacaoImovel           String?
+  nomeProprietario         String?
+  telefoneProprietario     String?
+  emailProprietario        String?
+  midiaOrigem              String?
+  tourVirtual              String?
+  comentariosInternos      String?
+  localChaves              String?
+
+  aceitaFinanciamento      Boolean?
+  aceitaFgts               Boolean?
+  imovelCondominio         Boolean?
+  investimentoOportunidade Boolean?
+
+  entradaMinimaEstimada    Float?
+  pacoteLocacao            Float?
+
+  amenities                Json? // Armazena marcadores como 'piscina', 'varanda', etc
+  // ------------------------------------------------
+
   contracts Contract[]
 
   createdAt DateTime @default(now())

@@ -9,6 +9,7 @@ import { Upload } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { BaseCrudService } from '@/integrations';
 import { Imveis } from '@/entities';
 import PropertyForm from '@/components/admin/properties/PropertyForm';
@@ -24,6 +25,8 @@ function AdminImoveisContent() {
   const [importJson, setImportJson] = useState('');
   const [editingProperty, setEditingProperty] = useState<Imveis | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [batchStatusLoading, setBatchStatusLoading] = useState(false);
 
   // Initialize tab based on URL param or default to 'ativos'
   const [activeTab, setActiveTab] = useState<'ativos' | 'inativos'>(
@@ -70,6 +73,41 @@ function AdminImoveisContent() {
 
     setPotentialDuplicates(finalDuplicates);
     setDuplicatesDialogOpen(true);
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedProperties(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedProperties.length === filteredProperties.length) {
+      setSelectedProperties([]);
+    } else {
+      setSelectedProperties(filteredProperties.map(p => p._id!));
+    }
+  };
+
+  const handleBatchStatusUpdate = async (newStatus: string) => {
+    if (!confirm(`Deseja alterar o status de ${selectedProperties.length} imóveis para ${newStatus}?`)) return;
+    setBatchStatusLoading(true);
+    try {
+      const res = await fetch('/api/v1/imoveis/batch', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedProperties, updateData: { statusImovel: newStatus } })
+      });
+      if (res.ok) {
+        alert('Status atualizado em massa com sucesso!');
+        setSelectedProperties([]);
+        loadProperties();
+      } else {
+        alert('Erro na atualização em massa.');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setBatchStatusLoading(false);
+    }
   };
 
   const filterStatus = searchParams.get('status');
@@ -849,6 +887,30 @@ function AdminImoveisContent() {
                 </div>
               )}
 
+              {selectedProperties.length > 0 && (
+                <div className="flex items-center gap-4 bg-primary/10 p-4 rounded-lg border border-primary/20 mb-6 flex-wrap">
+                  <span className="font-semibold text-primary">{selectedProperties.length} imóveis selecionados</span>
+                  <div className="flex-1" />
+                  <span className="text-sm font-medium">Alterar Status para:</span>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button size="sm" variant="outline" className="border-green-500 text-green-600 hover:bg-green-50" onClick={() => handleBatchStatusUpdate('Ativo')} disabled={batchStatusLoading}>Ativo</Button>
+                    <Button size="sm" variant="outline" className="border-yellow-500 text-yellow-600 hover:bg-yellow-50" onClick={() => handleBatchStatusUpdate('Suspenso')} disabled={batchStatusLoading}>Suspenso</Button>
+                    <Button size="sm" variant="outline" className="border-red-500 text-red-600 hover:bg-red-50" onClick={() => handleBatchStatusUpdate('Vendido')} disabled={batchStatusLoading}>Vendido</Button>
+                    <Button size="sm" variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50" onClick={() => handleBatchStatusUpdate('Locado')} disabled={batchStatusLoading}>Locado</Button>
+                  </div>
+                  <Button size="sm" variant="ghost" className="text-muted-foreground ml-2" onClick={() => setSelectedProperties([])}>Limpar Tudo</Button>
+                </div>
+              )}
+
+              <div className="flex gap-2 items-center mb-4">
+                <Checkbox
+                  checked={filteredProperties.length > 0 && selectedProperties.length === filteredProperties.length}
+                  onCheckedChange={handleSelectAll}
+                  id="select-all"
+                />
+                <label htmlFor="select-all" className="text-sm font-medium text-primary-foreground/80 cursor-pointer">Selecionar Todos da Página</label>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProperties.map((property) => (
                   <motion.div
@@ -859,7 +921,8 @@ function AdminImoveisContent() {
                   >
                     <div className="mb-4">
                       <div className="flex justify-between items-start mb-2">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
+                          <Checkbox checked={selectedProperties.includes(property._id!)} onCheckedChange={() => handleToggleSelect(property._id!)} />
                           <span className="bg-secondary/20 text-secondary text-xs px-2 py-1 rounded-full font-paragraph font-semibold">
                             {property.pretensao || property.transactionType}
                           </span>

@@ -18,6 +18,7 @@ import AreaRestritaPage from '@/components/pages/AreaRestritaPage';
 import PerfilPage from '@/components/pages/PerfilPage';
 import LeilaoPage from '@/components/pages/LeilaoPage';
 import AdminImoveisPage from '@/components/pages/admin/AdminImoveisPage';
+import AdminFastSearchPage from '@/components/pages/admin/AdminFastSearchPage';
 import AdminLeadsPage from '@/components/pages/admin/AdminLeadsPage';
 import AdminProcessosPage from '@/components/pages/admin/AdminProcessosPage';
 import AdminChavesPage from '@/components/pages/admin/AdminChavesPage';
@@ -116,6 +117,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedAdminRoute>
             <AdminImoveisPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/busca-rapida",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminFastSearchPage />
           </ProtectedAdminRoute>
         ),
       },
