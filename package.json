@@ -106,6 +106,7 @@
     "@wix/wix-vibe-plugins": "^0.0.8",
     "astro": "^5.12.3",
     "babel-plugin-transform-react-jsx-location": "^0.2.0",
+    "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

@@ -1,0 +1,3139 @@
+{
+  "missingInDb": [
+    {
+      "code": "23133649-TFNM",
+      "title": "Sobre Gran Reserva em Suzano - SP",
+      "url": "/empreendimento/gran-reserva-suzano/23133649-TFNM"
+    },
+    {
+      "code": "22868644-TFNM",
+      "title": "Sobre Vilas do Jatobás em Suzano - SP",
+      "url": "/empreendimento/vilas-do-jatobas-sobrados-suzano-3-quartos-119-a-122-m/22868644-TFNM"
+    },
+    {
+      "code": "22868812-TFNM",
+      "title": "Sobre Resort Urbano em Mogi das Cruzes - SP",
+      "url": "/empreendimento/resort-urbano-apartamentos-mogi-das-cruzes-2-a-3-quartos-46-a-108-m/22868812-TFNM"
+    },
+    {
+      "code": "19007961-TFNM",
+      "title": "Sobre Residencial São Pedro em Poá - SP",
+      "url": "/empreendimento/residencial-sao-pedro-apartamentos-poa-2-quartos-44-m/19007961-TFNM"
+    },
+    {
+      "code": "19065187-TFNM",
+      "title": "Sobre Residencial Pacuiba em São Paulo - SP",
+      "url": "/empreendimento/residencial-pacuiba-apartamentos-sao-paulo-2-quartos-34-a-44-m/19065187-TFNM"
+    },
+    {
+      "code": "19330802-TFNM",
+      "title": "Sobre Residencial Sou Viver Poá em Poá - SP",
+      "url": "/empreendimento/residencial-sou-viver-poa-apartamentos-poa-2-quartos-48-a-49-m/19330802-TFNM"
+    },
+    {
+      "code": "13533871-TFNM",
+      "title": "Sobre Condominio Joia em Poá - SP",
+      "url": "/empreendimento/condominio-joia-apartamentos-e-apartamentos-garden-poa-2-quartos-82-m/13533871-TFNM"
+    },
+    {
+      "code": "18732596-TFNM",
+      "title": "Sobre Parque Obelisco Condomínio Clube em Poá - SP",
+      "url": "/empreendimento/parque-obelisco-condominio-clube-apartamentos-poa-2-quartos-42-a-67-m/18732596-TFNM"
+    },
+    {
+      "code": "19648157-TFNM",
+      "title": "Sobre Vital 1343 em Poá - SP",
+      "url": "/empreendimento/vital-1343-apartamentos-poa-2-quartos-49-a-54-m/19648157-TFNM"
+    },
+    {
+      "code": "19050706-TFNM",
+      "title": "Sobre Parque Das Flores em Suzano - SP",
+      "url": "/empreendimento/parque-das-flores-apartamentos-suzano-2-a-3-quartos-65-a-73-m/19050706-TFNM"
+    },
+    {
+      "code": "CA0150-TFNM",
+      "title": "Sobre casa com 100 m² em Poá - SP",
+      "url": "/imovel/casa-poa-2-quartos-100-m/CA0150-TFNM"
+    },
+    {
+      "code": "SO0159-TFNM",
+      "title": "Sobre sobrado com 74 m² em Poá - SP",
+      "url": "/imovel/sobrado-poa-2-quartos-74-m/SO0159-TFNM"
+    },
+    {
+      "code": "SO0160-TFNM",
+      "title": "Sobre sobrado com 116 m² em Mogi das Cruzes - SP",
+      "url": "/imovel/sobrado-mogi-das-cruzes-2-quartos-116-m/SO0160-TFNM"
+    },
+    {
+      "code": "22742508-TFNM",
+      "title": "Sobre Real Villagio em Mogi das Cruzes - SP",
+      "url": "/empreendimento/real-villagio-sobrados-mogi-das-cruzes-2-a-3-quartos-99-a-99-m/22742508-TFNM"
+    },
+    {
+      "code": "22743096-TFNM",
+      "title": "Sobre Real Villagio em Mogi das Cruzes - SP",
+      "url": "/empreendimento/real-villagio-sobrados-mogi-das-cruzes-2-a-3-quartos-125-m/22743096-TFNM"
+    },
+    {
+      "code": "22743560-TFNM",
+      "title": "Sobre Real Villagio (3 Pavimentos Garagem) em Mogi das Cruzes - SP",
+      "url": "/empreendimento/real-villagio-3-pavimentos-garagem-sobrados-mogi-das-cruzes-2-a-3-quartos-125-m/22743560-TFNM"
+    }
+  ],
+  "extraInDb": [
+    {
+      "id": "81c7e879-afd7-4496-a51f-481f80fd2229",
+      "code": "AUTO287786",
+      "title": "Terreno à venda, 150 m² por R$ 120.000,00 - Jardim Ipanema - Ferraz de Vasconcelos/SP"
+    },
+    {
+      "id": "f8ef9d66-0e43-43c2-910a-f31db5df8271",
+      "code": "AUTO802987",
+      "title": "Chácara com 3 dormitórios à venda, 1500 m² por R$ 100.000 - Vila Antunes - Cajati/SP"
+    },
+    {
+      "id": "d7cf00fe-efec-46d9-b70d-8fcb53d39fd6",
+      "code": "AUTO75309",
+      "title": "Terreno, 126 m², à venda por R$ 140.000 - Jardim América - Poá/SP"
+    },
+    {
+      "id": "dff8826e-9817-4e52-9f2d-e4b3d61e301c",
+      "code": "AUTO508821",
+      "title": "Casa com 1 quarto, 143 m², à venda por R$ 150.000 - Vila Fátima - Suzano/SP"
+    },
+    {
+      "id": "57bf9b77-6967-450e-bf47-53362311161b",
+      "code": "AUTO472466",
+      "title": "Apartamento com 2 dormitórios à venda, 111 m² por R$ 150.000,00 - Vila Correa - Ferraz de Vasconcelos/SP"
+    },
+    {
+      "id": "3fe67172-b40a-4b4e-bf45-fd249a04adc7",
+      "code": "AUTO519044",
+      "title": "Sobrado com 2 quartos, 140 m², à venda por R$ 500.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "72d70a3c-be06-4b7b-b5c1-7d05eca38d0f",
+      "code": "AUTO94748",
+      "title": "Apartamento com 2 dormitórios à venda, 54 m² por R$ 170.000 - Vila Perracini - Poá/SP"
+    },
+    {
+      "id": "fab151e5-469b-485b-95ed-cca335f0532c",
+      "code": "AUTO569766",
+      "title": "Apartamento com 2 quartos, 45 m², aluguel por R$ 1.250/mês ou à venda por R$ 180.000 - Jardim América - Poá/SP"
+    },
+    {
+      "id": "3e825c93-1e97-41ed-85eb-515b23c3abf8",
+      "code": "AUTO406807",
+      "title": "Apartamento com 2 quartos, 46 m², à venda por R$ 200.000 - Jardim América - Poá/SP"
+    },
+    {
+      "id": "311a1523-e06b-4c8f-8cc0-88766db63442",
+      "code": "AUTO174180",
+      "title": "Terreno à venda, 156 m² por R$ 200.000,00 - Jardim Ivone - Poá/SP"
+    },
+    {
+      "id": "44a17e1b-4575-43d7-8c72-41aceba578a3",
+      "code": "AUTO95353",
+      "title": "Apartamento com 2 dormitórios à venda, 57 m² por R$ 210.000,00 - Jardim Aracaré - Itaquaquecetuba/SP"
+    },
+    {
+      "id": "e7722319-c974-4a12-b5fa-7d5365cf506d",
+      "code": "AUTO195428",
+      "title": "Apartamento com 1 dormitório à venda, 56 m² por R$ 210.000 - Praia da Maranduba - Ubatuba/SP"
+    },
+    {
+      "id": "70c31596-c2af-484b-b919-3642aabe2471",
+      "code": "AUTO182326",
+      "title": "Apartamento com 3 dormitórios à venda, 58 m² por R$ 210.000,00 - Vila Miranda - Itaquaquecetuba/SP"
+    },
+    {
+      "id": "b0ecf326-febd-4524-b1f3-fc8101f13add",
+      "code": "AUTO803654",
+      "title": "Apartamento com 2 quartos, 34 m², à venda por R$ 220.000 - Vila Cristina - Ferraz de Vasconcelos/SP"
+    },
+    {
+      "id": "ad635939-39b3-4af5-ae94-73d8e757a69e",
+      "code": "AUTO731801",
+      "title": "Apartamento garden com 2 quartos, 58 m², à venda por R$ 230.000 - Jardim Europa - Suzano/SP"
+    },
+    {
+      "id": "745679ab-97f5-479b-89cf-34cd25446475",
+      "code": "AUTO413408",
+      "title": "Apartamento com 2 dormitórios à venda, 41 m² por R$ 230.000 - Cidade Boa Vista - Suzano/SP"
+    },
+    {
+      "id": "915f36e6-6cef-430f-a262-1f7712a91d79",
+      "code": "AUTO507473",
+      "title": "Apartamento com 2 quartos, 56 m², à venda por R$ 240.000 - Vila Bruno - Itaquaquecetuba/SP"
+    },
+    {
+      "id": "b9a1f2a4-367f-4aec-810e-d50a19cc70ad",
+      "code": "AUTO625684",
+      "title": "Apartamento com 2 dormitórios à venda, 39 m² por R$ 240.000 - Jardim Europa - Suzano/SP"
+    },
+    {
+      "id": "6ca1664d-bd0c-43c8-8983-a3eb7663486b",
+      "code": "AUTO107974",
+      "title": "Sobrado com 2 quartos, 69 m², à venda por R$ 240.000 - Jardim Selma Helena - Poá/SP"
+    },
+    {
+      "id": "2dc35c08-ab39-493c-a68e-55af5dd160b3",
+      "code": "AUTO852573",
+      "title": "Apartamneto para venda em Suzano/SP"
+    },
+    {
+      "id": "0d0a3650-faf2-40f2-9854-4a144958cf69",
+      "code": "AUTO483914",
+      "title": "Studio com 1 dormitório à venda, 27 m² por R$ 245.000 - Luz - São Paulo/SP"
+    },
+    {
+      "id": "bdba955f-1438-4e9f-aef1-78e3286064e6",
+      "code": "AUTO791818",
+      "title": "Apartamento com 2 quartos, 54 m², à venda por R$ 249.000 - Vila Nova Cintra - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "35830ade-736d-424c-8307-1cf6ea1a3f0e",
+      "code": "AUTO578407",
+      "title": "Terreno, 2.100 m², à venda por R$ 250.000 - Pedra Branca - Igaratá/SP"
+    },
+    {
+      "id": "819c942b-cb60-47d3-98fa-eb2f03c67287",
+      "code": "AUTO90737",
+      "title": "Apartamento com 2 quartos, 44 m², à venda por R$ 250.000 - Parque Santa Rosa - Suzano/SP"
+    },
+    {
+      "id": "f5297293-38db-4d49-b859-58261782aa79",
+      "code": "AUTO703416",
+      "title": "Apartamento com 2 dormitórios, 53 m² - venda por R$ 275.000,00 ou aluguel por R$ 1.300,00/mês - Vila Varela - Poá/SP"
+    },
+    {
+      "id": "e627b1fe-19b9-40df-a735-8e261a130a2c",
+      "code": "CA0022",
+      "title": "Casa - Jardim Emília - Poá"
+    },
+    {
+      "id": "f920a359-d71f-47d3-b79d-dfe3b5950d3e",
+      "code": "AUTO125861",
+      "title": "Terreno à venda, 153 m² por R$ 250.000 - Villa Di Cesar - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "b070a42f-e038-46fe-9cdf-40855a0bac44",
+      "code": "AUTO483057",
+      "title": "Apartamento com 2 dormitórios à venda, 51 m² por R$ 250.000,00 - Parque Santa Rosa - Suzano/SP"
+    },
+    {
+      "id": "971f2169-5754-46e4-a2fb-c8305a0df5e6",
+      "code": "AUTO497569",
+      "title": "Apartamento com 2 quartos, 47 m², à venda por R$ 250.000 - Vila Urupês - Suzano/SP"
+    },
+    {
+      "id": "35c2e010-ec9c-43c5-b668-7cc72b5ff0d4",
+      "code": "AUTO669696",
+      "title": "Apartamento com 2 quartos, 54 m², à venda por R$ 255.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "37c4677e-a00f-4131-ba95-85bbe3c5d8ce",
+      "code": "AUTO964609",
+      "title": "Apartamento com 2 quartos, 47 m², à venda por R$ 259.900 - Cidade Kemel - Poá/SP"
+    },
+    {
+      "id": "02bd8e17-54bb-4b16-aba2-f51c954f4a5b",
+      "code": "AUTO446810",
+      "title": "Apartamento com 2 quartos, 54 m², à venda por R$ 260.000 - Vila Varela - Poá/SP"
+    },
+    {
+      "id": "6d6693a5-cc92-4a05-a474-376e5958b297",
+      "code": "SO0060",
+      "title": "Sobrado - Jardim América - Poá"
+    },
+    {
+      "id": "db5c02e7-26cf-4177-9ec4-542cfd05e265",
+      "code": "AUTO112900",
+      "title": "Apartamento com 2 dormitórios, 42 m² - venda por R$ 260.000,00 ou aluguel por R$ 1.398,00/mês - Parque Santa Rosa - Suzano/SP"
+    },
+    {
+      "id": "b5c83754-777d-4000-9792-4704d8029dc7",
+      "code": "AUTO848293",
+      "title": "Apartamento com 2 dormitórios à venda, 53 m² por R$ 270.000 - Vila das Nações - Ferraz de Vasconcelos/SP"
+    },
+    {
+      "id": "58e7c4d3-707c-4708-acc6-93f0559f01fd",
+      "code": "AUTO607054",
+      "title": "Apartamento com 2 dormitórios à venda, 56 m² por R$ 270.000,00 - Vila Bruno - Itaquaquecetuba/SP"
+    },
+    {
+      "id": "bca47a43-8805-4a67-8e1e-a08161f0447f",
+      "code": "AUTO149344",
+      "title": "Apartamento com 2 quartos, 54 m², à venda por R$ 270.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "8e13b709-7b02-4f3e-ad06-90b744885dcf",
+      "code": "AUTO649431",
+      "title": "Apartamento com 2 quartos, 44 m², à venda por R$ 275.000 - Conjunto Residencial Bela Vista - Poá/SP"
+    },
+    {
+      "id": "2dd4995e-652d-4f1d-8007-1c224c7bc1de",
+      "code": "AUTO877749",
+      "title": "Apartamento para venda em Ferraz de Vasconcelos"
+    },
+    {
+      "id": "ea9aaba5-d319-4939-acdd-09adbd80f889",
+      "code": "SO0064",
+      "title": "Sobrado - Jardim Santa Helena - Poá"
+    },
+    {
+      "id": "215250a8-8de6-44d5-be5b-2a6a5da8c595",
+      "code": "AUTO130796",
+      "title": "Casa com 3 dormitórios à venda, 78 m² por R$ 266.000,00 - Jardim São José - Suzano/SP"
+    },
+    {
+      "id": "cccfe754-9e61-425f-9988-997f2fdbd8e4",
+      "code": "AUTO985441",
+      "title": "Apartamento com 2 dormitórios à venda, 50 m² por R$ 280.000 - Vila Perracini - Poá/SP"
+    },
+    {
+      "id": "946a0757-ec89-4da7-aa4b-6b75e462b062",
+      "code": "AUTO423124",
+      "title": "Sobrado com 2 quartos, 58 m², à venda por R$ 280.000 - Jundiapeba - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "f95580eb-03f4-4a7c-acc5-41e2f190af8e",
+      "code": "AUTO558010",
+      "title": "Apartamento com 2 quartos, 52 m², à venda por R$ 290.000 - Água Vermelha - Poá/SP"
+    },
+    {
+      "id": "5c67b057-884d-4eec-8464-e020eaa931ba",
+      "code": "AUTO213540",
+      "title": "Apartamento com 2 dormitórios à venda, 45 m² por R$ 290.000 - Liberdade - São Paulo/SP"
+    },
+    {
+      "id": "d4c9dbb2-3dd6-40a9-8fbc-acef6daa7126",
+      "code": "AUTO915195",
+      "title": "Casa com 1 dormitório à venda, 125 m² por R$ 290.000,00 - Jardim Camargo Novo - São Paulo/SP"
+    },
+    {
+      "id": "a03cebf6-3a9f-4cc4-8d05-b9190dc3a01a",
+      "code": "AUTO564482",
+      "title": "Casa com 2 dormitórios à venda, 60 m² por R$ 310.000 - Jardim Mônica - Itaquaquecetuba/SP"
+    },
+    {
+      "id": "da22e29a-ba9e-4780-ab1d-830dd08ddf91",
+      "code": "AUTO277642",
+      "title": "Sobrado com 2 dormitórios à venda, 70 m² por R$ 290.000,00 - Vila Pomar - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "6a87ec2b-6ea2-4ab3-88a3-a8c6dae7c870",
+      "code": "AUTO26224",
+      "title": "Casa com 1 quarto, 133 m², à venda por R$ 290.000 - Jardim Camargo Novo - São Paulo/SP"
+    },
+    {
+      "id": "abc34e4f-c4a3-4938-a6cb-7ca3b6f784e7",
+      "code": "AUTO914107",
+      "title": "Apartamento com 2 quartos, 51 m², à venda por R$ 295.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "9993b552-7da5-4411-b208-8187e5a6a54e",
+      "code": "AUTO900124",
+      "title": "Apartamento com 2 quartos, 52 m², à venda por R$ 295.000 - Jardim Rodrigues Alves - Ferraz de Vasconcelos/SP"
+    },
+    {
+      "id": "6e93ab26-6ff7-4949-8583-a654fcc95845",
+      "code": "AUTO659075",
+      "title": "Apartamento com 2 quartos, 49 m², à venda por R$ 296.000 - Vila Acoreana - Poá/SP"
+    },
+    {
+      "id": "5f5c576e-8a34-4bc0-a0c1-e0a3dff277fe",
+      "code": "AUTO952054",
+      "title": "Apartamento em Ferraz"
+    },
+    {
+      "id": "1f8081a4-521b-4d2c-a761-b333785e9f35",
+      "code": "AUTO451218",
+      "title": "Casa com 2 dormitórios à venda, 62 m² por R$ 297.000,00 - Jardim Santa Inês - Suzano/SP"
+    },
+    {
+      "id": "3478a6fe-e9ea-43bd-b5e5-b3a69b9019ac",
+      "code": "AUTO298839",
+      "title": "Apartamento com 2 dormitórios à venda, 44 m² por R$ 298.000,00 - Conjunto Residencial Bela Vista - Poá/SP"
+    },
+    {
+      "id": "fe38cc44-3c8d-40ee-a4c4-bd1b0618fa63",
+      "code": "AUTO68365",
+      "title": "Apartamento com 2 quartos, 54 m², à venda por R$ 300.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "405fcac1-410e-4f80-8a63-39ecc94bdb1a",
+      "code": "AUTO917366",
+      "title": "Chácara com 2 quartos, 500 m², à venda por R$ 300.000 - Zona Rural - Paraty/RJ"
+    },
+    {
+      "id": "48e8ce76-4eb7-4ce1-b421-58d3c25c530c",
+      "code": "AUTO92752",
+      "title": "Apartamento com 3 quartos, 90 m², à venda por R$ 307.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "e5810875-311f-41e5-826a-6b49a8ad9311",
+      "code": "AUTO901607",
+      "title": "Casa Jardim Santa Luiza"
+    },
+    {
+      "id": "743cb1fe-58df-414d-9083-60d76ebc4251",
+      "code": "AUTO220722",
+      "title": "Sobrado com 2 quartos, 59 m², à venda por R$ 314.000 - Vila Perreli - Poá/SP"
+    },
+    {
+      "id": "3256beaf-b880-484d-8fdf-5e2d86111fb9",
+      "code": "AUTO557317",
+      "title": "Apartamento com 2 dormitórios à venda, 79 m² por R$ 320.000,00 - Vila Costa - Suzano/SP"
+    },
+    {
+      "id": "ddb8b6e2-fa2f-4d77-88aa-1fef1ccba3ea",
+      "code": "AUTO508330",
+      "title": "Casa com 2 quartos, 107 m², à venda por R$ 320.000 - Jardim Nova Poá - Poá/SP"
+    },
+    {
+      "id": "40932148-d399-49a3-bc17-0ce1c7d516a4",
+      "code": "AUTO3842",
+      "title": "Apartamento a Venda em Poá"
+    },
+    {
+      "id": "fe0eb2d5-d5cb-4462-a9bc-bf35871f2bbe",
+      "code": "AUTO474225",
+      "title": "Sobrado com 2 dormitórios à venda, 75 m² por R$ 320.000,00 - Jardim Santo Antônio - Poá/SP"
+    },
+    {
+      "id": "1fd33f54-abf8-4d47-9466-c261f06c344e",
+      "code": "AUTO669645",
+      "title": "Apartamento com 2 quartos, 47 m², à venda por R$ 320.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "2c1d891a-6e21-47b3-bcb9-729fb1e0fc11",
+      "code": "AUTO723814",
+      "title": "Apartamento com 3 quartos, 98 m², à venda por R$ 998.232 - Centro - Poá/SP"
+    },
+    {
+      "id": "77b45230-1ca7-4663-b39a-3cb6ee0622ac",
+      "code": "AUTO352723",
+      "title": "Apartamento com 2 quartos, 60 m², à venda por R$ 325.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "dffc2ca4-a6f2-4fd2-a9cd-c3a245b885bb",
+      "code": "AUTO218825",
+      "title": "Casa com 2 quartos, 63 m², à venda por R$ 330.000 - Jardim Santa Helena - Poá/SP"
+    },
+    {
+      "id": "6618b604-7a1c-495e-bc88-98d4d7bab114",
+      "code": "AUTO623705",
+      "title": "Sobrado à venda, 62 m² por R$ 340.000,00 - Jardim Débora - Poá/SP"
+    },
+    {
+      "id": "a180ad13-85f1-4f89-9622-4cfeeea02513",
+      "code": "AUTO641538",
+      "title": "Apartamento com 2 quartos, 65 m², à venda por R$ 340.000 - Caxangá - Suzano/SP"
+    },
+    {
+      "id": "4aec9ae6-376b-4c51-bac8-3627c17316ce",
+      "code": "AUTO595870",
+      "title": "Apartamento com 2 quartos, 48 m², aluguel por R$ 2.200/mês ou à venda por R$ 340.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "fb1dcfab-098d-4491-8448-a3923cbfd987",
+      "code": "AUTO453986",
+      "title": "Sobrado com 2 dormitórios à venda, 75 m² por R$ 349.000,00 - Vila Pomar - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "4689ddf6-7b0b-47f3-8904-d9496d88472a",
+      "code": "AUTO642277",
+      "title": "Casa à venda, 90 m² por R$ 480.000,00 - Parque Residencial Casa Branca - Suzano/SP"
+    },
+    {
+      "id": "28028b3f-57f3-4915-bae3-5ab90fc87501",
+      "code": "AUTO956002",
+      "title": "Sobrado com 2 quartos, 79 m², à venda por R$ 349.000 - Jardim Antônio Picosse - Poá/SP"
+    },
+    {
+      "id": "aebca2a0-9d4a-44db-997b-5b1532a861ef",
+      "code": "AUTO235338",
+      "title": "Sobrado com 2 quartos, 7.865 m², à venda por R$ 349.000 - Vila Melchizedec - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "ce25763f-55a9-46ed-8d4f-c9f0cbde308e",
+      "code": "AUTO213093",
+      "title": "Casa com 4 quartos, 59 m², à venda por R$ 350.000 - Jardim Luciana - Itaquaquecetuba/SP"
+    },
+    {
+      "id": "33fa5a0d-0c44-4396-863b-fb1d70f85ca1",
+      "code": "AUTO303076",
+      "title": "Chácara Suzano - Jardim Silvestre"
+    },
+    {
+      "id": "5b0ecd1a-22e8-45e3-8795-58ea904df147",
+      "code": "AUTO756975",
+      "title": "Apartamento com 3 quartos, 64 m², à venda por R$ 350.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "22749c15-2352-4ea7-bfe8-cfabf0d30e1e",
+      "code": "AUTO785742",
+      "title": "Chácara com 4 dormitórios à venda, 600 m² por R$ 350.000 - Jardim Chácara Méa - Suzano/SP"
+    },
+    {
+      "id": "695583a0-86ea-463f-b2d3-15b0c7283e50",
+      "code": "AUTO319246",
+      "title": "Apartamento Garden com 2 dormitórios à venda, 69 m² por R$ 350.000,00 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "08677b31-d6d9-4e75-ad74-050e51f62772",
+      "code": "AUTO467850",
+      "title": "Sobrado com 2 quartos, 64 m², à venda por R$ 350.000 - Calmon Viana - Poá/SP"
+    },
+    {
+      "id": "b090de5e-e602-4366-8398-dd8a1c58623e",
+      "code": "AUTO536390",
+      "title": "Apartamento com 2 dormitórios à venda, 39 m² por R$ 350.000 - Vila Invernada - São Paulo/SP"
+    },
+    {
+      "id": "4f80c661-13db-4432-9283-7f5588211d02",
+      "code": "AUTO25691",
+      "title": "Casa com 2 dormitórios à venda, 110 m² por R$ 330.000 - Jardim Santa Helena - Poá/SP"
+    },
+    {
+      "id": "96bfad21-b7b0-42d2-aeb4-6604aeedc708",
+      "code": "AUTO737323",
+      "title": "Terreno, 250 m², à venda por R$ 350.000 - Jardim Medina - Poá/SP"
+    },
+    {
+      "id": "dc653a90-f03a-4be4-8859-73ecbf1a6143",
+      "code": "AUTO379299",
+      "title": "Apartamento com 2 dormitórios à venda, 63 m² por R$ 350.000,00 - Chácara Bela Vista - Poá/SP"
+    },
+    {
+      "id": "e5ae13a6-d0cd-435b-8b23-58ef159d8509",
+      "code": "AUTO529581",
+      "title": "Apartamento com 2 quartos, 52 m², à venda por R$ 350.000 - Água Vermelha - Poá/SP"
+    },
+    {
+      "id": "3cf3d78e-2618-4640-8326-69aaa43d8be9",
+      "code": "AUTO281890",
+      "title": "Apartamento com 2 quartos, 46 m², à venda por R$ 359.000 - Vila Suissa - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "8f393d81-0226-4da9-bd71-15da059dcb5f",
+      "code": "AUTO80187",
+      "title": "Casa com 2 quartos, 64 m², à venda por R$ 360.000 - Parque Santa Rosa - Suzano/SP"
+    },
+    {
+      "id": "802228da-a92e-4d43-baee-52f7caa53021",
+      "code": "AUTO633270",
+      "title": "Studio, 35 m², à venda por R$ 360.000 - Centro - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "576c970c-b440-4877-a0b2-5a33b3dca4ff",
+      "code": "AUTO689378",
+      "title": "Casa com 4 quartos, 197 m², à venda por R$ 375.000 - Vila Sopreter - Poá/SP"
+    },
+    {
+      "id": "de2dd603-7b4f-4a53-aeb1-684f06c6d44e",
+      "code": "AUTO814011",
+      "title": "Casa com 2 quartos, 110 m², à venda por R$ 380.000 - Jardim Nova Poá - Poá/SP"
+    },
+    {
+      "id": "63dccc00-72a0-4128-9baa-da718ac8870f",
+      "code": "AUTO740384",
+      "title": "Sobrado com 3 quartos, 176 m², à venda por R$ 380.000 - Vila Santa Luiza - Poá/SP"
+    },
+    {
+      "id": "03aa3ed9-2b5f-4ac2-8dfb-0e7c61868fc9",
+      "code": "AUTO48562",
+      "title": "Terreno à venda, 686 m² por R$ 1.200.000,00 - Centro - Poá/SP"
+    },
+    {
+      "id": "da1f9c3c-46dc-48e3-bf09-a8e3d81c39e3",
+      "code": "AUTO321065",
+      "title": "Apartamento com 2 quartos, 74 m², à venda por R$ 380.000 - Jardim Nove de Julho - São Paulo/SP"
+    },
+    {
+      "id": "a37359b8-2587-4c31-b184-7472f0d1537f",
+      "code": "AUTO916940",
+      "title": "Casa com 2 dormitórios à venda, 217 m² por R$ 380.000,00 - Vila Cláudia - São Paulo/SP"
+    },
+    {
+      "id": "bf9cdf42-f516-421d-8432-8d35db94f685",
+      "code": "AUTO285694",
+      "title": "Sobrado a Venda em Poá"
+    },
+    {
+      "id": "f3bfc435-ab0d-40e2-bfd5-8344e3950591",
+      "code": "AUTO791123",
+      "title": "Sobrado com 2 dormitórios à venda, 68 m² por R$ 380.000 - Água Vermelha - Poá/SP"
+    },
+    {
+      "id": "1cc577af-1492-4693-ad22-35853a7bbea3",
+      "code": "AUTO471992",
+      "title": "Apartamento com 2 dormitórios à venda, 78 m² por R$ 360.000,00 - Vila Perreli - Poá/SP"
+    },
+    {
+      "id": "e26ff9e3-b538-41de-8d98-4c55cb2f6b0b",
+      "code": "AUTO266545",
+      "title": "Lindo Terreno em Poá"
+    },
+    {
+      "id": "627f6ca0-43df-469c-b8ec-82c0324096f5",
+      "code": "AUTO100192",
+      "title": "Casa com 3 dormitórios à venda, 114 m² por R$ 480.000,00 - Jardim América - Poá/SP"
+    },
+    {
+      "id": "f2329412-c90f-4828-97cc-e96cbad24d91",
+      "code": "AUTO981267",
+      "title": "Terreno, 1.263 m², à venda por R$ 380.000 - Rio Abaixo - Mairiporã/SP"
+    },
+    {
+      "id": "64bd38fc-4405-42fc-980b-f07e83a70ce2",
+      "code": "AUTO234735",
+      "title": "Casa com 3 quartos, 181 m², à venda por R$ 380.000 - Jardim Ivone - Poá/SP"
+    },
+    {
+      "id": "e93bbc55-438d-4219-bc0f-fd4137080fbf",
+      "code": "AUTO134201",
+      "title": "Casa com 1 quarto, 125 m², à venda por R$ 380.000 - Itaim Paulista - São Paulo/SP"
+    },
+    {
+      "id": "ea1b46b5-6b26-4a93-b0bb-41575daa538f",
+      "code": "AUTO699601",
+      "title": "Apartamento com 2 quartos, 139 m², à venda por R$ 387.000 - Jardim Casa Branca - Suzano/SP"
+    },
+    {
+      "id": "06830043-8ab5-4821-9331-5317d0f9f29f",
+      "code": "AUTO806599",
+      "title": "Casa com 2 quartos, 60 m², à venda por R$ 390.000 - Jardim América - Poá/SP"
+    },
+    {
+      "id": "6df9313a-a0ac-4dca-a1e9-c5861c427c5a",
+      "code": "AUTO155234",
+      "title": "Casa com 2 quartos, 64 m², à venda por R$ 390.000 - Jardim América - Poá/SP"
+    },
+    {
+      "id": "862cf21e-4deb-4d07-8b2d-4f8a59d6aa9f",
+      "code": "AUTO311809",
+      "title": "Casa com 3 quartos, 126 m², à venda por R$ 480.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "a14a5537-caa2-4f7a-9efe-61bd8e9a5588",
+      "code": "AUTO43445",
+      "title": "Apartamento com 3 quartos, 72 m², à venda por R$ 392.000 - Caxangá - Suzano/SP"
+    },
+    {
+      "id": "aa15aa08-6468-42a9-a5d3-e3c73c1541f0",
+      "code": "AUTO631883",
+      "title": "Sobrado para renda à venda no Itaim Paulista/SP"
+    },
+    {
+      "id": "be8b56ab-03d9-4027-a5bd-a42d93749020",
+      "code": "AUTO722784",
+      "title": "Casa Jardim Imperador Suzano"
+    },
+    {
+      "id": "099a9275-4c61-44d9-b834-f12c86abdee3",
+      "code": "AUTO815982",
+      "title": "Casa com 4 quartos, 100 m², à venda por R$ 400.000 - Cidade Kemel - São Paulo/SP"
+    },
+    {
+      "id": "35b6ee2e-c97a-4062-8dec-3df1d3d1373c",
+      "code": "AUTO223092",
+      "title": "Casa com 3 quartos, 148 m², à venda por R$ 400.000 - Parque Maria Helena - Suzano/SP"
+    },
+    {
+      "id": "3795b245-63e9-453a-b385-09cf2005cadf",
+      "code": "AUTO913864",
+      "title": "Casa com 2 quartos, 135 m², à venda por R$ 400.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "5198b095-7853-42e5-9d24-af1971c72827",
+      "code": "AUTO264274",
+      "title": "Casa com 3 quartos, 105 m², à venda por R$ 400.000 - Vila Pereta - Poá/SP"
+    },
+    {
+      "id": "2c02542c-788c-4bb1-8a9b-4c4476ec1855",
+      "code": "AUTO446178",
+      "title": "Casa com 2 quartos, 58 m², à venda por R$ 400.000 - Vila Santa Helena - Poá/SP"
+    },
+    {
+      "id": "db58374f-54e4-45e4-9c68-e8e95845afdc",
+      "code": "AUTO961970",
+      "title": "Casa com 3 quartos, 123 m², aluguel por R$ 2.300/mês ou à venda por R$ 400.000 - Vila Perreli - Poá/SP"
+    },
+    {
+      "id": "b9f7a4e8-ea3e-4247-ba0e-8c750991b33f",
+      "code": "AUTO866492",
+      "title": "Sobrado com 2 quartos, 61 m², à venda por R$ 415.000 - Parque Santa Rosa - Suzano/SP"
+    },
+    {
+      "id": "65f1ddaa-3d60-43fb-bbdf-e54ccec571a2",
+      "code": "AUTO922844",
+      "title": "Sobrado com 2 quartos, 72 m², à venda por R$ 427.844,25 - Jardim D Manoel - Poá/SP"
+    },
+    {
+      "id": "741e6571-ba27-4d91-9e05-6c87ad6cf3d7",
+      "code": "AUTO812224",
+      "title": "Sobrado com 3 dormitórios à venda, 113 m² por R$ 430.000,00 - Jardim Saúde - Suzano/SP"
+    },
+    {
+      "id": "9b058780-2f84-49b7-8357-48d23bd54df1",
+      "code": "AUTO352321",
+      "title": "Sobrado com 3 quartos, 250 m², à venda por R$ 430.000 - Jardim Nova Poá - Poá/SP"
+    },
+    {
+      "id": "802370da-4fd9-4621-ae83-e970421245e8",
+      "code": "AUTO889485",
+      "title": "Apartamento com 3 quartos, 106 m², aluguel por R$ 3.500/mês ou à venda por R$ 430.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "d56d43f8-1e73-4e79-8cce-a0d6dc9659b6",
+      "code": "AUTO565340",
+      "title": "Sobrado com 3 dormitórios à venda, 145 m² por R$ 435.000 - Loteamento Alvorada - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "3de0c2f9-040f-48f2-9e86-bb0c96e515b7",
+      "code": "AUTO920052",
+      "title": "Sobrado com 2 dormitórios à venda, 86 m² por R$ 439.000,00 - Jardim Santos Dumont III - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "5dcc52e8-db47-4913-a76e-f9562d20cb9a",
+      "code": "AUTO496706",
+      "title": "Sobrado com 2 dormitórios à venda, 76 m² por R$ 440.000,00 - Jardim Santa Helena - Poá/SP"
+    },
+    {
+      "id": "8699ec1e-1e19-4479-b333-2e95b359ee7a",
+      "code": "AUTO548988",
+      "title": "Casa com 2 quartos, 120 m², à venda por R$ 440.000 - Parque Suzano - Suzano/SP"
+    },
+    {
+      "id": "ace7cff4-214a-4950-a5e6-7384b80b8911",
+      "code": "AUTO93024",
+      "title": "Apartamento com 3 quartos, 64 m², à venda por R$ 440.000 - Meu Cantinho - Suzano/SP"
+    },
+    {
+      "id": "d540ece7-bbfc-49c6-a6f1-4a46351d9d9e",
+      "code": "AUTO685580",
+      "title": "Casa com 3 quartos, 118 m², à venda por R$ 440.000 - Jardim São José - Poá/SP"
+    },
+    {
+      "id": "8436a8d9-c3ae-475c-ae5f-dff7c9b0441e",
+      "code": "AUTO767681",
+      "title": "Apartamento com 3 quartos, 66 m², à venda por R$ 450.000 - Conjunto Residencial Irai - Suzano/SP"
+    },
+    {
+      "id": "1ec6c032-652a-4105-b284-91287b3ad774",
+      "code": "AUTO936019",
+      "title": "Sobrado com 2 quartos, 72 m², à venda por R$ 450.000 - Jardim Santa Helena - Poá/SP"
+    },
+    {
+      "id": "59bcb8e1-216c-4910-9e05-471191d5ff12",
+      "code": "AUTO323343",
+      "title": "Sobrado com 2 dormitórios à venda, 94 m² por R$ 450.000,00 - Centro - Poá/SP"
+    },
+    {
+      "id": "4046a8e2-a6db-4fad-8351-e9c7cdf931eb",
+      "code": "AUTO453266",
+      "title": "Terreno, 1 m², à venda por R$ 480.000 - Rio Abaixo - Mairiporã/SP"
+    },
+    {
+      "id": "1dfa3f37-760d-4733-9c12-efc18202cc28",
+      "code": "AUTO682108",
+      "title": "Casa para venda no Jd. Santa Helena/Poá"
+    },
+    {
+      "id": "4ec9ebda-9620-4453-9988-47de76ab9553",
+      "code": "AUTO730594",
+      "title": "Casa com 2 dormitórios à venda, 126 m² por R$ 490.000 - Vista Linda - Bertioga/SP"
+    },
+    {
+      "id": "3e8c6760-dad7-42f1-b5cd-2bf948c23c30",
+      "code": "AUTO387587",
+      "title": "Sobrado com 2 dormitórios à venda, 89 m² por R$ 495.000,00 - Parque Residencial Scaffid II - Itaquaquecetuba/SP"
+    },
+    {
+      "id": "2551939a-1e9f-4596-9827-742dff4ecaaf",
+      "code": "AUTO295621",
+      "title": "Sobrado com 3 quartos, 93 m², à venda por R$ 495.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "afbbea1e-a457-49bf-ac13-ebdef0bdb5e2",
+      "code": "AUTO93597",
+      "title": "Sobrado com 4 dormitórios à venda, 95 m² por R$ 499.000,00 - Jardim Santa Helena - Poá/SP"
+    },
+    {
+      "id": "98f067d8-81ce-415d-bda9-5b54e6751018",
+      "code": "AUTO822684",
+      "title": "Sobrado com 1 dormitório à venda, 139 m² por R$ 500.000,00 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "eacd1481-3de1-483a-9410-14ecfaa335a3",
+      "code": "AUTO635787",
+      "title": "Sobrado com 3 dormitórios à venda, 100 m² por R$ 510.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "8600e257-baa9-4d0d-a98e-de68d15ae1c8",
+      "code": "AUTO950576",
+      "title": "Terreno, 266 m², à venda por R$ 520.000 - Vila Costa - Suzano/SP"
+    },
+    {
+      "id": "f2621813-0945-4d1f-98d7-28acb3d4bcba",
+      "code": "AUTO201270",
+      "title": "Casa à venda, 122 m² por R$ 520.000,00 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "7d370491-3184-47aa-8d8f-ca612a55066e",
+      "code": "AUTO776629",
+      "title": "Casa com 3 quartos, 102 m², à venda por R$ 525.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "3ac68692-e961-4ec7-9857-6c0e193f03a9",
+      "code": "AUTO650887",
+      "title": "2 Casas com 4 dormitórios no total à venda, 250 m² por R$ 625.000 - Conjunto Alvorada - Poá/SP"
+    },
+    {
+      "id": "d24df048-81bf-4d0d-a5b1-57a7f690313e",
+      "code": "AUTO493768",
+      "title": "Casa com 3 dormitórios à venda, 145 m² por R$ 530.000,00 - Jardim Santa Helena - Poá/SP"
+    },
+    {
+      "id": "89eafa7b-97c2-4951-a27d-ac6cdc3b0568",
+      "code": "AUTO553788",
+      "title": "Apartamento com 2 dormitórios à venda, 79 m² por R$ 534.000,00 - Centro - Poá/SP"
+    },
+    {
+      "id": "0b52c6ba-ae38-4010-8de8-0d711d7bf091",
+      "code": "AUTO414977",
+      "title": "Apartamento com 2 quartos, 66 m², à venda por R$ 538.117,96 - Centro - Poá/SP"
+    },
+    {
+      "id": "57bd42e0-4f3e-4797-b302-00bf3b596d28",
+      "code": "AUTO850335",
+      "title": "Sobrado com 3 quartos, 100 m², à venda por R$ 550.000 - Cidade Kemel - Poá/SP"
+    },
+    {
+      "id": "c79b8164-aad5-4524-9066-5205f2266e11",
+      "code": "AUTO977461",
+      "title": "Casa com 3 dormitórios à venda, 161 m² por R$ 550.000,00 - Vila Varela - Poá/SP"
+    },
+    {
+      "id": "204e0864-2b0e-49c7-bc6c-9bc5a5ba992a",
+      "code": "AUTO437082",
+      "title": "Sobrado com 3 quartos, 150 m², à venda por R$ 550.000 - Jardim D Manoel - Poá/SP"
+    },
+    {
+      "id": "6a1dc64c-64fb-48ad-aff7-f107bc61d685",
+      "code": "AUTO352813",
+      "title": "Sobrado com 2 quartos, 76 m², à venda por R$ 550.000 - Jardim Santa Helena - Poá/SP"
+    },
+    {
+      "id": "aafdbe90-e587-4489-aedd-27592b12d4d8",
+      "code": "AUTO380866",
+      "title": "Sobrado com 3 quartos, 151 m², à venda por R$ 550.000 - Vila Amélia - Poá/SP"
+    },
+    {
+      "id": "8d396595-0ce7-4b7e-b84c-34e97d730dff",
+      "code": "AUTO658571",
+      "title": "Sobrado com 3 dormitórios à venda, 173 m² por R$ 550.000 - Vila Pereta - Poá/SP"
+    },
+    {
+      "id": "0eb0dace-9fa5-41ec-8461-fdabcfe39ee7",
+      "code": "AUTO214698",
+      "title": "Casa com 2 dormitórios à venda, 100 m² por R$ 550.000 - Vila Monteiro - Poá/SP"
+    },
+    {
+      "id": "f22a3384-0d88-41ea-8baa-c6de7648dc96",
+      "code": "AUTO830415",
+      "title": "Casa com 2 dormitórios à venda, 125 m² por R$ 550.000,00 - Jardim Medina - Poá/SP"
+    },
+    {
+      "id": "93c5336d-0332-4ccf-8d55-9bb29461147f",
+      "code": "AUTO425064",
+      "title": "Casa com 3 quartos, 183 m², à venda por R$ 550.000 - Jardim Anzai - Suzano/SP"
+    },
+    {
+      "id": "8598ff23-5035-4345-a5a1-5d61daef1c0a",
+      "code": "AUTO75482",
+      "title": "Sobrado com 3 dormitórios, 148 m² - venda por R$ 550.000,00 ou aluguel por R$ 3.300,00/mês - Vila Áurea - Poá/SP"
+    },
+    {
+      "id": "e6f4d906-0096-4068-a4bb-83db01c214ce",
+      "code": "AUTO916459",
+      "title": "Sobrado à venda, 169 m² por R$ 565.000,00 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "591e93ec-ed7f-447c-860d-5fe0ed68c51c",
+      "code": "AUTO218259",
+      "title": "Sobrado com 2 quartos, 105 m², à venda por R$ 569.000 - Jardim Camila - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "b8cedc3c-9fe4-4d03-80fa-452fbf568596",
+      "code": "AUTO823876",
+      "title": "Sobrado com 2 dormitórios à venda, 115 m² por R$ 580.000,00 - Jardim Tereza Palma - Poá/SP"
+    },
+    {
+      "id": "d7ea5365-d214-4aa4-96f4-4b6157a38469",
+      "code": "AUTO582791",
+      "title": "Sobrado com 3 quartos, 113 m², à venda por R$ 580.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "232435eb-de47-411f-b242-ba0d486eb5b4",
+      "code": "AUTO575571",
+      "title": "Sobrado com 2 quartos, 148 m², à venda por R$ 580.000 - Jardim Mariella - Caraguatatuba/SP"
+    },
+    {
+      "id": "0000ec9e-f03e-4cd2-9361-efd927fed7b9",
+      "code": "AUTO336415",
+      "title": "Sobrado com 3 quartos, 162 m², à venda por R$ 580.000 - Jardim Nova Poá - Poá/SP"
+    },
+    {
+      "id": "211c1ef7-03af-41bd-8f60-0ca8a093a871",
+      "code": "AUTO331387",
+      "title": "Casa com 2 quartos, 175 m², à venda por R$ 583.000 - Jardim das Flores - Suzano/SP"
+    },
+    {
+      "id": "232ec2a8-50de-4c41-a016-10cd9e0c8ea6",
+      "code": "AUTO300699",
+      "title": "Sobrado com 3 quartos, 100 m², à venda por R$ 599.000 - Calmon Viana - Poá/SP"
+    },
+    {
+      "id": "787c26ed-bf03-41a8-b178-b204554a5ec7",
+      "code": "AUTO303956",
+      "title": "Apartamento a Venda em Suzano"
+    },
+    {
+      "id": "3ed0908c-574b-423e-bfce-e5e6a02e259f",
+      "code": "AUTO104115",
+      "title": "Apartamento Duplex com 3 dormitórios à venda, 156 m² por R$ 595.000 - Vila Perreli - Poá/SP"
+    },
+    {
+      "id": "d8c6c255-d5c6-4d22-ade6-d07e787ccc8f",
+      "code": "AUTO64331",
+      "title": "Apartamento com 3 dormitórios à venda, 120 m² por R$ 600.000,00 - Centro - Suzano/SP"
+    },
+    {
+      "id": "68c529d2-6608-4acc-8bbc-fccb2194c23f",
+      "code": "AUTO786111",
+      "title": "Terreno, 360 m², à venda por R$ 640.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "24e25c76-2ab8-45d7-a24c-4fb05872931e",
+      "code": "AUTO931173",
+      "title": "Casa com 2 dormitórios à venda, 138 m² por R$ 650.000 - Vila Sopreter - Poá/SP"
+    },
+    {
+      "id": "7346d174-5fd0-4b14-a4eb-4e575189b7a1",
+      "code": "AUTO317321",
+      "title": "Casa com 2 quartos, 110 m², à venda por R$ 650.000 - Jardim Violeta - Poá/SP"
+    },
+    {
+      "id": "10d68514-a886-4669-9cbb-ac56e4ff0e2a",
+      "code": "AUTO292140",
+      "title": "Casa com 4 dormitórios à venda R$ 660.000 - Vista Linda - Bertioga/SP"
+    },
+    {
+      "id": "727d4cfd-d285-43e2-8d93-d83e973620d3",
+      "code": "AUTO111691",
+      "title": "Casa à venda, 233 m² por R$ 670.000,00 - Romanópolis - Ferraz de Vasconcelos/SP"
+    },
+    {
+      "id": "76af85ef-c58a-4fda-b8bd-bbd6aefc569f",
+      "code": "AUTO954379",
+      "title": "Apartamento com 3 quartos, 70 m², à venda por R$ 680.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "a190a29b-857c-46f0-b4cf-7b11e1769b2a",
+      "code": "AUTO514057",
+      "title": "Apartamento com 2 quartos, 68 m², à venda por R$ 687.324 - Centro - Poá/SP"
+    },
+    {
+      "id": "6485780e-ab75-429c-a40c-e5a7461f782c",
+      "code": "AUTO430515",
+      "title": "Sobrado com 3 dormitórios à venda, 134 m² por R$ 692.000 - Parque Santa Rosa - Suzano/SP"
+    },
+    {
+      "id": "07aa56b8-ed36-42b8-a8d4-88774cbd047b",
+      "code": "AUTO253831",
+      "title": "Sobrado com 3 quartos, 161 m², à venda por R$ 700.000 - Calmon Viana - Poá/SP"
+    },
+    {
+      "id": "16c87095-2357-45b9-ac98-d04fbcbf3333",
+      "code": "AUTO401868",
+      "title": "Terreno, 500 m², à venda por R$ 700.000 - Vila Amorim - Suzano/SP"
+    },
+    {
+      "id": "987ac939-5096-4c6a-82d2-541bbf29a08c",
+      "code": "AUTO165480",
+      "title": "Casa com 2 quartos, 226 m², à venda por R$ 700.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "f501160f-5836-4d32-beae-29f533e8fbf3",
+      "code": "AUTO685777",
+      "title": "Apartamento com 3 quartos, 80 m², à venda por R$ 737.924,30 - Centro - Poá/SP"
+    },
+    {
+      "id": "d22b01ab-5884-4e16-aada-0dd21c07c757",
+      "code": "AUTO758196",
+      "title": "Sobrado com 2 dormitórios à venda, 163 m² por R$ 750.000,00 - Jardim Ruth - Poá/SP"
+    },
+    {
+      "id": "299f47c8-9ecf-42e3-8b53-f9e9c702e929",
+      "code": "AUTO592645",
+      "title": "Sobrado com 2 quartos, 200 m², à venda por R$ 750.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "f801ec64-a16a-4c40-8806-24ce39a4dcf8",
+      "code": "AUTO169640",
+      "title": "Sobrado com 3 dormitórios à venda, 192 m² por R$ 750.000,00 - Jardim Medina - Poá/SP"
+    },
+    {
+      "id": "b7995c83-4169-4754-897a-84d6150bdd40",
+      "code": "AUTO729582",
+      "title": "Sobrado com 6 quartos, 294 m², à venda por R$ 790.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "0a74b9c5-2e2a-4220-9338-b4b2a8f2a709",
+      "code": "AUTO737247",
+      "title": "Casa com 2 quartos, 186 m², à venda por R$ 800.000 - Jardim Medina - Poá/SP"
+    },
+    {
+      "id": "58611c17-73c0-45d2-8bac-9cfdd4aee190",
+      "code": "AUTO383585",
+      "title": "Sobrado com 3 dormitórios à venda, 181 m² por R$ 850.000,00 - Jardim Itamarati - Poá/SP"
+    },
+    {
+      "id": "4125a40c-f97e-4f28-98aa-1d99febd1051",
+      "code": "AUTO448416",
+      "title": "Helbor Passeo Patteo Mogilar 96m²"
+    },
+    {
+      "id": "0a568105-b212-4497-aa6a-03b964b8141f",
+      "code": "AUTO470392",
+      "title": "Chácara com 3 dormitórios à venda, 4000 m² por R$ 850.000,00 - Parque do Heroísmo - Suzano/SP"
+    },
+    {
+      "id": "e3dd4348-79ea-4715-8e85-8a9ded821726",
+      "code": "AUTO397482",
+      "title": "Sobrado com 3 dormitórios à venda, 206 m² por R$ 850.000,00 - Centro - Poá/SP"
+    },
+    {
+      "id": "2800af4c-fd1c-4241-bc5c-d160c01a8f0a",
+      "code": "AUTO75058",
+      "title": "Casa com 2 quartos, 117 m², à venda por R$ 850.000 - Cidade Kemel - Poá/SP"
+    },
+    {
+      "id": "b09a7ec1-8f76-424f-8a8b-50b1d092fdb7",
+      "code": "AUTO537584",
+      "title": "Sobrado com 3 dormitórios à venda, 262 m² por R$ 850.000 - Vila Perracini - Poá/SP"
+    },
+    {
+      "id": "6488f844-6558-4bbe-b1f0-90c69e85e7f4",
+      "code": "AUTO336499",
+      "title": "Apartamento com 3 dormitórios à venda, 161 m² por R$ 890.000,00 - Vila Santa Maria - Poá/SP"
+    },
+    {
+      "id": "61d5a061-74fc-4096-a17c-0cddcbb69e82",
+      "code": "AUTO154127",
+      "title": "Sobrado com 3 dormitórios à venda, 125 m² por R$ 899.000,00 - Jardim Nathalie - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "bb9ae237-63b3-453f-b4d1-00fe8c9fb9cf",
+      "code": "AUTO907790",
+      "title": "Sobrado com 3 dormitórios à venda, 185 m² por R$ 900.000 - Vila Áurea - Poá/SP"
+    },
+    {
+      "id": "8f33d087-b313-4e5c-8e6e-8aa0fbd6d05c",
+      "code": "AUTO427733",
+      "title": "Casa com 4 quartos, 210 m², à venda por R$ 900.000 - Conjunto Residencial Bela Vista - Poá/SP"
+    },
+    {
+      "id": "b77245b1-0c8f-443d-8a52-eb16f406bebf",
+      "code": "AUTO56673",
+      "title": "Casa com 4 quartos, 260 m², à venda por R$ 900.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "20b06e32-60a9-421d-aff3-3c0e74f28a1c",
+      "code": "AUTO701090",
+      "title": "Helbor Passeo Patteo Mogilar 116m²"
+    },
+    {
+      "id": "d8baa115-048d-4cc6-918f-f126343cef17",
+      "code": "AUTO474882",
+      "title": "Terreno, 750 m², à venda por R$ 950.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "e9aa940b-88f2-4272-9a43-e0ca372a03f6",
+      "code": "AUTO26397",
+      "title": "Casa com 3 dormitórios à venda, 230 m² por R$ 980.000,00 - Jardim Áurea - Poá/SP"
+    },
+    {
+      "id": "2ad46fda-d50f-4079-90fd-19125a6de0fa",
+      "code": "AUTO117085",
+      "title": "Terreno, 1.000 m², à venda por R$ 980.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "e5fc9e84-fe49-4a0e-8f9a-9b6fa951c126",
+      "code": "AUTO860479",
+      "title": "Casa com 3 quartos, 237 m², à venda por R$ 980.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "bb0727ba-0308-4894-b03d-2d4fc062bfa0",
+      "code": "AUTO235089",
+      "title": "Apartamento com 3 quartos, 98 m², à venda por R$ 993.343 - Centro - Poá/SP"
+    },
+    {
+      "id": "96aa5cc1-1f3d-41ac-aed7-fe1e53472197",
+      "code": "AUTO783482",
+      "title": "Apartamento com 3 quartos, 102 m², à venda por R$ 1.000.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "696fbd6a-b09c-4980-8e97-e306dd6272c7",
+      "code": "AUTO799914",
+      "title": "Casa com 2 quartos, 250 m², à venda por R$ 1.100.000 - Jardim Medina - Poá/SP"
+    },
+    {
+      "id": "fc55c786-2fbd-4b2f-8197-02c3e903ebef",
+      "code": "AUTO897878",
+      "title": "Apartamento com 2 quartos, 77 m², à venda por R$ 1.100.000 - Jardim Bela Vista (Zona Norte) - São Paulo/SP"
+    },
+    {
+      "id": "8408c576-bed9-4e0a-ae0c-8a8f0ba37435",
+      "code": "AUTO31022",
+      "title": "Casa com 3 quartos, 300 m², à venda por R$ 1.100.000 - Jardim das Oliveiras - São Paulo/SP"
+    },
+    {
+      "id": "878ebc48-0d7d-4c6f-9d8b-9e7f1668e47a",
+      "code": "AUTO693592",
+      "title": "Casa com 3 quartos, 300 m², à venda por R$ 1.150.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "de1678f0-ff2c-4c15-8d5c-3d18524bb32a",
+      "code": "AUTO539059",
+      "title": "Área à venda, 266 m² por R$ 1.000.000,00 - Jardim Medina - Poá/SP"
+    },
+    {
+      "id": "f49e3075-0b90-457b-abf1-883fa3a5502e",
+      "code": "AUTO900214",
+      "title": "Linda Casa na Fonte Áurea"
+    },
+    {
+      "id": "58460286-ba87-4500-9625-b64ee7db88c8",
+      "code": "AUTO718366",
+      "title": "Casa com 3 quartos, 300 m², à venda por R$ 1.200.000 - Vila Andeyara - Ferraz de Vasconcelos/SP"
+    },
+    {
+      "id": "b2bb140b-1f2e-48c9-ac38-9b2089ba6dfa",
+      "code": "AUTO476613",
+      "title": "Terreno, 2.474 m², à venda por R$ 1.250.000 - Vila Pereta - Poá/SP"
+    },
+    {
+      "id": "1f6ef428-8b65-4318-8758-f1d23d5fbf39",
+      "code": "AUTO417062",
+      "title": "Casa à venda, 351 m² por R$ 1.300.000 - Calmon Viana - Poá/SP"
+    },
+    {
+      "id": "6d227091-1541-4d4c-8194-d88e83c27aa4",
+      "code": "AUTO572809",
+      "title": "Terreno, 1.241 m², à venda por R$ 1.300.000 - São Bento - Arujá/SP"
+    },
+    {
+      "id": "da9faada-c02a-48f1-9d17-fb970e0b7258",
+      "code": "AUTO764613",
+      "title": "Sala, 318 m², à venda por R$ 1.300.000 - Calmon Viana - Poá/SP"
+    },
+    {
+      "id": "a5b7fe88-2169-417f-ae3b-5712630d2302",
+      "code": "AUTO850880",
+      "title": "Terreno, 4.800 m², à venda por R$ 8.000.000 - Centro - Poá/SP"
+    },
+    {
+      "id": "c1270a53-7a83-4560-88ec-a4de4b47d334",
+      "code": "AUTO26137",
+      "title": "Casa com 4 quartos, 250 m², à venda por R$ 1.300.000 - Vila Áurea - Poá/SP"
+    },
+    {
+      "id": "cb0b064b-356d-4115-8080-888bcd2675d9",
+      "code": "AUTO373727",
+      "title": "Casa com 4 dormitórios à venda, 197 m² por R$ 1.300.000,00 - Jardim Medina - Poá/SP"
+    },
+    {
+      "id": "c4fe31df-26ce-493c-a353-67af1fc687a3",
+      "code": "AUTO580710",
+      "title": "Apartamento com 1 dormitório à venda, 50 m² por R$ 1.340.000,00 - Vila Madalena - São Paulo/SP"
+    },
+    {
+      "id": "299a7501-9418-427c-93e1-7a7bd561d227",
+      "code": "AUTO93214",
+      "title": "Casa com 3 dormitórios à venda, 317 m² por R$ 1.400.000,00 - Jardim Medina - Poá/SP"
+    },
+    {
+      "id": "b8ddab5e-5863-458d-b67c-744b29ac470f",
+      "code": "AUTO727548",
+      "title": "Sobrado com 5 dormitórios, 254 m² - venda por R$ 1.500.000,00 ou aluguel por R$ 8.000,00/mês - Centro - Poá/SP"
+    },
+    {
+      "id": "385135fa-0d35-4e88-901a-06431789282c",
+      "code": "AUTO720807",
+      "title": "Chácara com 5 quartos, 15.000 m², à venda por R$ 1.600.000 - Taiacupeba - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "15db4b2b-1152-4fa1-b716-51527989600d",
+      "code": "AUTO959012",
+      "title": "Casa com 3 quartos, 329 m², à venda por R$ 1.730.000 - Jardim Leonor Mendes de Barros - São Paulo/SP"
+    },
+    {
+      "id": "264cde5f-1529-4813-b121-7a38d1321d22",
+      "code": "AUTO102846",
+      "title": "Apartamento com 3 dormitórios à venda, 103 m² por R$ 1.800.000,00 - Vila Mogilar - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "f3df3f90-8de5-42f5-a2fa-9ea663084de2",
+      "code": "AUTO45182",
+      "title": "Galpão, 700 m² - venda por R$ 1.980.000,00 ou aluguel por R$ 14.900,00/mês - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "25c1d8e6-b73e-4d9f-afb2-ed420c6424cf",
+      "code": "AUTO741682",
+      "title": "Casa com 3 quartos, 249 m², à venda por R$ 1.990.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "620bc673-5ab2-42c1-9892-490187f58d8f",
+      "code": "AUTO189277",
+      "title": "Terreno, 2.262 m², à venda por R$ 2.262.000 - Vila São João - Poá/SP"
+    },
+    {
+      "id": "ee1a90cc-1f35-4b39-ac5a-b8b20e8ec4e3",
+      "code": "AUTO93744",
+      "title": "Casa com 4 quartos, 900 m², à venda por R$ 2.300.000 - Jardim Fonte Áurea - Poá/SP"
+    },
+    {
+      "id": "b2db4b40-e3ec-4105-8102-3ed828a8ec13",
+      "code": "PR0001",
+      "title": "Prédio - Jardim Bélgica - São Paulo"
+    },
+    {
+      "id": "7862be83-abe4-4c9a-84eb-c2e0cfc4e185",
+      "code": "AUTO35931",
+      "title": "Terreno, 2.987 m², à venda por R$ 2.400.000 - Vila Júlia - Poá/SP"
+    },
+    {
+      "id": "54c005b1-167b-41fd-af2b-e5f43ae3e3b4",
+      "code": "AUTO341160",
+      "title": "Terreno, 2.160 m², à venda por R$ 2.500.000 - Jardim América - Poá/SP"
+    },
+    {
+      "id": "d9904abb-80ea-4ee9-9e51-5e5d43f7d59e",
+      "code": "AUTO775410",
+      "title": "Galpão, 400 m², aluguel por R$ 15.000/mês ou à venda por R$ 2.500.000 - Jardim Antônio Picosse - Poá/SP"
+    },
+    {
+      "id": "84853af5-ad32-456c-b8b1-f73b69bcd3c7",
+      "code": "AUTO636569",
+      "title": "Sítio com 4 dormitórios à venda, 72000 m² por R$ 4.000.000,00 - Pindorama - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "8d4b8cfc-f0d3-477a-90d1-b745e2576c1b",
+      "code": "AUTO817902",
+      "title": "Sobrado com 4 dormitórios à venda, 313 m² por R$ 4.500.000,00 - Cidade Parquelandia - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "71c8a6e3-a8ac-4a2b-9923-5136d3e94a97",
+      "code": "AUTO635727",
+      "title": "Terreno, 4.733 m², à venda por R$ 4.500.000 - Jardim América - Poá/SP"
+    },
+    {
+      "id": "d7d1e27c-90dd-4ebf-a262-0961f03b2c25",
+      "code": "AUTO845384",
+      "title": "Apartamento alto padrão Duplex para venda no Jardins"
+    },
+    {
+      "id": "dfd34de3-89ec-4865-94d2-53c4282856b2",
+      "code": "AUTO203835",
+      "title": "Chácara com 4 dormitórios à venda, 88325 m² por R$ 9.000.000,00 - Vila Cintra - Mogi das Cruzes/SP"
+    },
+    {
+      "id": "0db5af07-f167-41f5-8847-5a29594af6f2",
+      "code": "AUTO395110",
+      "title": "Prédio, 2324 m² - venda por R$ 10.000.000,00 ou aluguel por R$ 73.778,37/mês - Jardim Bélgica - São Paulo/SP"
+    },
+    {
+      "id": "97912988-3019-4f9d-bd93-a6a1f53e362f",
+      "code": "CA0149",
+      "title": "Casa - Jardim das Oliveiras - São Paulo"
+    },
+    {
+      "id": "95544ed2-2fb3-455e-adeb-7634d441d720",
+      "code": "CA0143",
+      "title": "Casa - Itaim Paulista - São Paulo"
+    },
+    {
+      "id": "393cab93-5b09-49b9-bea2-b83e1592f1b3",
+      "code": "CA0144",
+      "title": "Casa - Jardim Camargo Novo - São Paulo"
+    },
+    {
+      "id": "1a23875b-055e-47d0-a8cf-8c810ed65817",
+      "code": "SL0014",
+      "title": "Salão - Centro - Ferraz de Vasconcelos"
+    },
+    {
+      "id": "c8da29e2-9b2c-423d-abbf-7d17b96ad85b",
+      "code": "CA0145",
+      "title": "Casa - Centro - Ferraz de Vasconcelos"
+    },
+    {
+      "id": "92fa2e21-483b-49e9-933c-cd9b525896c7",
+      "code": "CA0147",
+      "title": "Casa - Vila Andeyara - Ferraz de Vasconcelos"
+    },
+    {
+      "id": "d19c5a74-8499-4b9a-87b6-8d7130b6c788",
+      "code": "CA0141",
+      "title": "Casa - Vila Sopreter - Poá"
+    },
+    {
+      "id": "7d344c11-8543-4815-8dee-7879150827c0",
+      "code": "CA0142",
+      "title": "Casa - Jardim Camargo Novo - São Paulo"
+    },
+    {
+      "id": "c8c2365f-20a0-416b-aca4-ec345f43ee33",
+      "code": "AP0211",
+      "title": "Apartamento - Parque Santa Rosa - Suzano"
+    },
+    {
+      "id": "d5214979-a710-4eea-9a4f-9215736c3a05",
+      "code": "CA0121",
+      "title": "Casa - Jardim Santa Luiza - Poá"
+    },
+    {
+      "id": "acf5ad88-6b66-4075-8d7c-fe8ef05c9c16",
+      "code": "GA0006",
+      "title": "Galpão - Vila Lúcia - Poá"
+    },
+    {
+      "id": "b6cb6535-ac19-4397-830f-1e1984edafec",
+      "code": "CA0138",
+      "title": "Casa - Vila Santa Helena - Poá"
+    },
+    {
+      "id": "103a4174-b6a9-4b67-8845-83cfe8d55856",
+      "code": "AP0202",
+      "title": "Apartamento - Vila Bruno - Itaquaquecetuba"
+    },
+    {
+      "id": "72a007e9-ab0b-4d2b-bea1-05ada2b82262",
+      "code": "CA0137",
+      "title": "Casa - Jardim Rafael - Bertioga"
+    },
+    {
+      "id": "f5f556b6-491c-4015-9cba-4ffa408fa82c",
+      "code": "GA0009",
+      "title": "Galpão - Vila Varela - Poá"
+    },
+    {
+      "id": "a254109d-f497-4d22-9a5c-fd7f645c0f4a",
+      "code": "AD0004",
+      "title": "Apartamento Duplex - Jardim Paulista - São Paulo"
+    },
+    {
+      "id": "2f3eefce-4065-438a-9ec6-c643777dcefb",
+      "code": "AP0205",
+      "title": "Apartamento - Vila Madalena - São Paulo"
+    },
+    {
+      "id": "11bab1c9-b73c-48a4-9c4f-0e39da896d02",
+      "code": "TE0033",
+      "title": "Terreno - Vila Amorim - Suzano"
+    },
+    {
+      "id": "e0307db0-8077-4572-8b4f-aa6a58e18070",
+      "code": "SO0155",
+      "title": "Sobrado - Jardim Nélia - São Paulo"
+    },
+    {
+      "id": "f7821f7d-dc4c-49bd-85e5-7f3f2f395ae6",
+      "code": "SO0143",
+      "title": "Sobrado - Jardim Nova Poá - Poá"
+    },
+    {
+      "id": "01b98268-8704-4bda-9906-fdc623b9195d",
+      "code": "AP0119",
+      "title": "Apartamento - Vila Perreli - Poá"
+    },
+    {
+      "id": "b76d0c71-e986-46d1-9ec8-cb0dacdd3fad",
+      "code": "AP0176",
+      "title": "Apartamento - Vila Bruno - Itaquaquecetuba"
+    },
+    {
+      "id": "5a22e15e-b653-4972-98a6-10dd7fee5000",
+      "code": "AP0181",
+      "title": "Apartamento - Vila Mogilar - Mogi das Cruzes"
+    },
+    {
+      "id": "79baf57c-c58e-4434-bb4f-ed7f30301495",
+      "code": "CA0105",
+      "title": "Casa - Vila Áurea - Poá"
+    },
+    {
+      "id": "97a4b853-61e3-4c4d-a569-9003e3027591",
+      "code": "AP0106",
+      "title": "Apartamento - Vila Partenio - Mogi das Cruzes"
+    },
+    {
+      "id": "d2c2446e-480d-4be4-9392-a588b85d2412",
+      "code": "TE0025",
+      "title": "Terreno - Vila Monteiro - Poá"
+    },
+    {
+      "id": "1380f830-e6f9-4c3e-b36c-d82104d98fb3",
+      "code": "AP0141",
+      "title": "Apartamento - Jardim Europa - Suzano"
+    },
+    {
+      "id": "683f6c6b-55fe-444e-93fb-393e7d4c6cdf",
+      "code": "AP0104",
+      "title": "Apartamento - Vila Corberi - São Paulo"
+    },
+    {
+      "id": "ad637641-0396-4585-af0d-1aa16a2bc98c",
+      "code": "AP0061",
+      "title": "Apartamento - Calmon Viana - Poá"
+    },
+    {
+      "id": "bf22c2f4-e283-4b5e-9d75-805ea80c4824",
+      "code": "AP0076",
+      "title": "Apartamento - Vila Varela - Poá"
+    }
+  ],
+  "divergent": [
+    {
+      "id": "e50058b0-69d1-4944-910d-76fc3cb05ab5",
+      "code": "SA0002",
+      "diffs": [
+        "Rent Price: DB(1100) != Site(null)",
+        "Photos: DB(0) != Site(30)"
+      ]
+    },
+    {
+      "id": "d3083f0d-0528-403b-a607-b1c7958a45d6",
+      "code": "AP0115",
+      "diffs": [
+        "Rent Price: DB(1500) != Site(null)",
+        "Photos: DB(0) != Site(17)"
+      ]
+    },
+    {
+      "id": "968f2d98-b65c-4c9d-bdc5-33d8921f7a08",
+      "code": "SL0010",
+      "diffs": [
+        "Rent Price: DB(1600) != Site(null)",
+        "Photos: DB(0) != Site(6)"
+      ]
+    },
+    {
+      "id": "01aa9ba1-e147-4600-a6be-970042bc6b88",
+      "code": "AP0187",
+      "diffs": [
+        "Rent Price: DB(1650) != Site(null)",
+        "Photos: DB(0) != Site(21)"
+      ]
+    },
+    {
+      "id": "d08ab2fd-da58-4b7b-ae2c-80d49b3497bd",
+      "code": "AP0214",
+      "diffs": [
+        "Rent Price: DB(1800) != Site(null)",
+        "Photos: DB(0) != Site(22)"
+      ]
+    },
+    {
+      "id": "2ef2bef8-05de-4573-9a2d-2808e4a748c6",
+      "code": "AP0200",
+      "diffs": [
+        "Rent Price: DB(2000) != Site(null)",
+        "Photos: DB(0) != Site(13)"
+      ]
+    },
+    {
+      "id": "8d92e266-83d6-4cc0-908f-ba19e878fcf2",
+      "code": "AP0117",
+      "diffs": [
+        "Rent Price: DB(2000) != Site(null)",
+        "Photos: DB(0) != Site(19)"
+      ]
+    },
+    {
+      "id": "1e211bdf-8715-473d-a80b-8799e17e5d64",
+      "code": "AP0210",
+      "diffs": [
+        "Rent Price: DB(2140) != Site(null)",
+        "Photos: DB(0) != Site(34)"
+      ]
+    },
+    {
+      "id": "acbd242f-8257-48ed-be9f-570ba59933bf",
+      "code": "CA0140",
+      "diffs": [
+        "Rent Price: DB(2500) != Site(null)",
+        "Photos: DB(0) != Site(23)"
+      ]
+    },
+    {
+      "id": "708173bf-5c9d-4f02-bafa-b705bafe6a90",
+      "code": "AP0178",
+      "diffs": [
+        "Rent Price: DB(2800) != Site(null)",
+        "Photos: DB(0) != Site(14)"
+      ]
+    },
+    {
+      "id": "c7cb3939-cd05-4be0-b153-dd5701a5184f",
+      "code": "AP0179",
+      "diffs": [
+        "Rent Price: DB(3300) != Site(null)",
+        "Photos: DB(0) != Site(14)"
+      ]
+    },
+    {
+      "id": "740378dc-ca6b-4fad-b484-42117932a36c",
+      "code": "AP0192",
+      "diffs": [
+        "Rent Price: DB(3500) != Site(null)",
+        "Photos: DB(0) != Site(31)"
+      ]
+    },
+    {
+      "id": "c2d47eb6-10ee-4f7a-9a9a-97e4a528d2e4",
+      "code": "SL0012",
+      "diffs": [
+        "Rent Price: DB(4000) != Site(null)",
+        "Photos: DB(0) != Site(12)"
+      ]
+    },
+    {
+      "id": "c8a2c85b-0a8f-4b8b-9310-2813d56ed465",
+      "code": "SL0013",
+      "diffs": [
+        "Rent Price: DB(4000) != Site(null)",
+        "Photos: DB(0) != Site(15)"
+      ]
+    },
+    {
+      "id": "06ef9cb4-a79a-4fa1-b740-0ffd295f3dad",
+      "code": "SL0011",
+      "diffs": [
+        "Rent Price: DB(4500) != Site(null)",
+        "Photos: DB(0) != Site(8)"
+      ]
+    },
+    {
+      "id": "e68931f1-721a-42dc-94fa-ef495f89e664",
+      "code": "GA0002",
+      "diffs": [
+        "Rent Price: DB(6000) != Site(null)",
+        "Photos: DB(0) != Site(22)"
+      ]
+    },
+    {
+      "id": "ebb89754-1383-4a8e-bef1-f20ec2d5f911",
+      "code": "GA0004",
+      "diffs": [
+        "Rent Price: DB(6000) != Site(null)",
+        "Photos: DB(0) != Site(17)"
+      ]
+    },
+    {
+      "id": "5b5714c4-5134-4225-b0de-684df53661a5",
+      "code": "AR0002",
+      "diffs": [
+        "Rent Price: DB(6500) != Site(null)",
+        "Photos: DB(0) != Site(6)"
+      ]
+    },
+    {
+      "id": "ff487270-9e2b-419b-9f83-76a0d5b8d981",
+      "code": "SL0007",
+      "diffs": [
+        "Rent Price: DB(7500) != Site(null)",
+        "Photos: DB(0) != Site(7)"
+      ]
+    },
+    {
+      "id": "6eb945a9-219c-4a7f-9220-82332167a2cd",
+      "code": "SL0006",
+      "diffs": [
+        "Rent Price: DB(9000) != Site(null)",
+        "Photos: DB(0) != Site(21)"
+      ]
+    },
+    {
+      "id": "d25afa2e-a556-4dcd-b213-f3f4ee58ff9d",
+      "code": "SL0004",
+      "diffs": [
+        "Rent Price: DB(12000) != Site(null)",
+        "Photos: DB(0) != Site(2)"
+      ]
+    },
+    {
+      "id": "4403e172-b3df-4d94-a72a-822e322fd230",
+      "code": "SL0005",
+      "diffs": [
+        "Rent Price: DB(14000) != Site(null)",
+        "Photos: DB(0) != Site(5)"
+      ]
+    },
+    {
+      "id": "360e76b2-1e57-4ceb-975c-119cdb926df2",
+      "code": "SL0003",
+      "diffs": [
+        "Rent Price: DB(21000) != Site(null)",
+        "Photos: DB(0) != Site(15)"
+      ]
+    },
+    {
+      "id": "f8e76e2e-8b8b-43c4-a785-b7b1a9ec56b8",
+      "code": "GA0007",
+      "diffs": [
+        "Rent Price: DB(25000) != Site(null)",
+        "Photos: DB(0) != Site(6)"
+      ]
+    },
+    {
+      "id": "562862ef-60c7-4575-99f5-58c7af672040",
+      "code": "GA0005",
+      "diffs": [
+        "Rent Price: DB(90000) != Site(null)",
+        "Photos: DB(0) != Site(7)"
+      ]
+    },
+    {
+      "id": "715cc065-bf03-406a-a450-14551f6e2fc2",
+      "code": "TE0031",
+      "diffs": [
+        "Sell Price: DB(120000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0a8afacb-9446-4503-b6bb-f642243446e2",
+      "code": "CH0005",
+      "diffs": [
+        "Sell Price: DB(130000) != Site(null)"
+      ]
+    },
+    {
+      "id": "73e2687f-0968-4767-9bdb-68987a0071c7",
+      "code": "TE0027",
+      "diffs": [
+        "Sell Price: DB(140000) != Site(null)"
+      ]
+    },
+    {
+      "id": "72086ccd-2366-49e5-8e73-89d549b26a94",
+      "code": "CA0126",
+      "diffs": [
+        "Sell Price: DB(150000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4d39d552-3d8f-4e98-9ed1-c9b7967b993d",
+      "code": "AP0123",
+      "diffs": [
+        "Sell Price: DB(160000) != Site(null)",
+        "Rent Price: DB(1200) != Site(null)"
+      ]
+    },
+    {
+      "id": "ea1c81c1-b884-494f-837a-0d4f14991341",
+      "code": "AP0154",
+      "diffs": [
+        "Sell Price: DB(170000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4270a709-b76b-4c33-bf69-2ec2ad55e3d6",
+      "code": "AP0212",
+      "diffs": [
+        "Sell Price: DB(180000) != Site(null)",
+        "Rent Price: DB(1250) != Site(null)"
+      ]
+    },
+    {
+      "id": "20f6b2b1-65a6-47d0-94ac-45976b46dad8",
+      "code": "AP0174",
+      "diffs": [
+        "Sell Price: DB(200000) != Site(null)"
+      ]
+    },
+    {
+      "id": "88f296d9-9153-4c88-8ffa-94d6400fcefa",
+      "code": "TE0026",
+      "diffs": [
+        "Sell Price: DB(200000) != Site(null)"
+      ]
+    },
+    {
+      "id": "c8616a46-2bfd-46bf-acc5-a236e84df898",
+      "code": "AP0093",
+      "diffs": [
+        "Sell Price: DB(210000) != Site(null)"
+      ]
+    },
+    {
+      "id": "494b486b-ab52-48a7-a6a7-a75e13279ccb",
+      "code": "AP0152",
+      "diffs": [
+        "Sell Price: DB(210000) != Site(null)"
+      ]
+    },
+    {
+      "id": "39936cdf-d4a2-470a-8e79-211c4b61e690",
+      "code": "AP0065",
+      "diffs": [
+        "Sell Price: DB(210000) != Site(null)"
+      ]
+    },
+    {
+      "id": "85161887-5f1b-4902-b48b-22e43c764087",
+      "code": "AP0173",
+      "diffs": [
+        "Sell Price: DB(220000) != Site(null)"
+      ]
+    },
+    {
+      "id": "bb308627-8cba-47b4-bb5a-07d292bff061",
+      "code": "AP0188",
+      "diffs": [
+        "Sell Price: DB(230000) != Site(null)"
+      ]
+    },
+    {
+      "id": "72215674-c4fd-4fc7-92a4-3c81cca8c748",
+      "code": "GD0004",
+      "diffs": [
+        "Sell Price: DB(230000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ffaeb94c-9c22-4351-970b-9c69834caaf7",
+      "code": "AP0078",
+      "diffs": [
+        "Sell Price: DB(240000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6917cf95-4a56-42a9-b6c0-b0a1376fe2de",
+      "code": "AP0180",
+      "diffs": [
+        "Sell Price: DB(240000) != Site(null)"
+      ]
+    },
+    {
+      "id": "02092667-e2eb-493d-a8eb-fabd9ebe04ef",
+      "code": "SO0079",
+      "diffs": [
+        "Sell Price: DB(240000) != Site(null)"
+      ]
+    },
+    {
+      "id": "55bf09f6-3636-4342-b6a8-213ba4a3c2aa",
+      "code": "AP0203",
+      "diffs": [
+        "Sell Price: DB(240000) != Site(null)"
+      ]
+    },
+    {
+      "id": "5a5ed236-8943-4e88-b224-f44811a184dc",
+      "code": "ST0001",
+      "diffs": [
+        "Sell Price: DB(245000) != Site(null)"
+      ]
+    },
+    {
+      "id": "40ce527d-83ac-4a2e-82fe-a889e5063bb8",
+      "code": "AP0170",
+      "diffs": [
+        "Sell Price: DB(249000) != Site(null)"
+      ]
+    },
+    {
+      "id": "fab894fc-9e38-479d-93f7-e36948a54fff",
+      "code": "AP0197",
+      "diffs": [
+        "Sell Price: DB(250000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6524d027-71ed-42d0-88da-d399cb3d8286",
+      "code": "TE0022",
+      "diffs": [
+        "Sell Price: DB(250000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0da93de2-ccd5-40e0-80dd-95d08d2f58f7",
+      "code": "AP0131",
+      "diffs": [
+        "Sell Price: DB(250000) != Site(null)",
+        "Photos: DB(0) != Site(43)"
+      ]
+    },
+    {
+      "id": "949f334e-0d63-436c-bd1c-9aa1ee43d382",
+      "code": "AP0156",
+      "diffs": [
+        "Sell Price: DB(250000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0c0e9221-a333-4047-8f4f-08c35e3ee76a",
+      "code": "TE0011",
+      "diffs": [
+        "Sell Price: DB(250000) != Site(null)"
+      ]
+    },
+    {
+      "id": "e71d4a55-c1dc-44d9-8921-74c58730fca2",
+      "code": "AP0159",
+      "diffs": [
+        "Sell Price: DB(250000) != Site(null)"
+      ]
+    },
+    {
+      "id": "e658ad30-0252-47c8-a577-477d41b1147d",
+      "code": "AP0137",
+      "diffs": [
+        "Sell Price: DB(255000) != Site(null)"
+      ]
+    },
+    {
+      "id": "da6a8d8b-81fa-460c-8a30-301af14713a9",
+      "code": "AP0163",
+      "diffs": [
+        "Sell Price: DB(259900) != Site(null)"
+      ]
+    },
+    {
+      "id": "dab23d78-921e-4a27-8b2a-846c0adebcf5",
+      "code": "AP0164",
+      "diffs": [
+        "Sell Price: DB(270000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0827d151-eb9e-4309-8873-b20306fe4285",
+      "code": "AP0215",
+      "diffs": [
+        "Sell Price: DB(275000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ef3fcba1-d699-4d7c-8500-ddf856997ccb",
+      "code": "AP0201",
+      "diffs": [
+        "Sell Price: DB(275000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6c397a98-6b7a-4d61-a6a5-fa3a6b36821b",
+      "code": "AP0046",
+      "diffs": [
+        "Sell Price: DB(275000) != Site(null)",
+        "Rent Price: DB(1300) != Site(null)"
+      ]
+    },
+    {
+      "id": "9f9a92d7-4947-4487-80e1-f1909ba300cb",
+      "code": "CA0079",
+      "diffs": [
+        "Sell Price: DB(278000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d4c9684e-04d4-425c-b72f-069354b9a785",
+      "code": "AP0140",
+      "diffs": [
+        "Sell Price: DB(280000) != Site(null)"
+      ]
+    },
+    {
+      "id": "17390833-8af6-4e68-88c5-e2941b36e83f",
+      "code": "SO0123",
+      "diffs": [
+        "Sell Price: DB(280000) != Site(null)"
+      ]
+    },
+    {
+      "id": "7ab6ee98-8c1c-4bd0-a8a4-d558e7e47e42",
+      "code": "AP0124",
+      "diffs": [
+        "Sell Price: DB(270000) != Site(null)"
+      ]
+    },
+    {
+      "id": "5d32fc7e-3dd4-4c77-b624-9ca2bc56ad80",
+      "code": "AP0094",
+      "diffs": [
+        "Sell Price: DB(290000) != Site(null)"
+      ]
+    },
+    {
+      "id": "2419e2fe-700b-4d46-93c2-dc0163e9b9c3",
+      "code": "SO0107",
+      "diffs": [
+        "Sell Price: DB(290000) != Site(null)"
+      ]
+    },
+    {
+      "id": "319a3683-c109-46cf-8eb9-c04a76a92aab",
+      "code": "AP0209",
+      "diffs": [
+        "Sell Price: DB(290000) != Site(null)"
+      ]
+    },
+    {
+      "id": "47f59997-704d-4b11-9a9f-633d9814e900",
+      "code": "AP0166",
+      "diffs": [
+        "Sell Price: DB(295000) != Site(null)",
+        "Photos: DB(93) != Site(41)"
+      ]
+    },
+    {
+      "id": "c8346fb9-c033-44e2-b3fc-14585c1855b6",
+      "code": "AP0171",
+      "diffs": [
+        "Sell Price: DB(295000) != Site(null)"
+      ]
+    },
+    {
+      "id": "37e93a4d-d626-453f-bba1-83fe84f0547a",
+      "code": "AP0165",
+      "diffs": [
+        "Sell Price: DB(296000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ae48cd72-3e42-4c4a-bd4d-dc5e2728900b",
+      "code": "CA0113",
+      "diffs": [
+        "Sell Price: DB(297000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4c3c67d5-b596-4f7f-a197-9f21918f0fd7",
+      "code": "AP0169",
+      "diffs": [
+        "Sell Price: DB(298000) != Site(null)"
+      ]
+    },
+    {
+      "id": "fd327c5c-bc3a-4d2a-a300-4304099d6f60",
+      "code": "AP0125",
+      "diffs": [
+        "Sell Price: DB(300000) != Site(null)"
+      ]
+    },
+    {
+      "id": "abdfab57-82c6-47ab-9827-77d5dc3e65c4",
+      "code": "CH0006",
+      "diffs": [
+        "Sell Price: DB(300000) != Site(null)"
+      ]
+    },
+    {
+      "id": "b6b877ae-6d69-4fa8-9d0d-0122abc68dcc",
+      "code": "AP0147",
+      "diffs": [
+        "Sell Price: DB(307000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ff0454ff-fa1c-4e3c-a334-a1a7dcf10747",
+      "code": "CA0076",
+      "diffs": [
+        "Sell Price: DB(310000) != Site(null)"
+      ]
+    },
+    {
+      "id": "582e7810-bd3f-430c-8140-7a37a10c3adb",
+      "code": "SO0149",
+      "diffs": [
+        "Sell Price: DB(314000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d4404963-6f59-4e36-9ef6-e4f7cb78c783",
+      "code": "AP0060",
+      "diffs": [
+        "Sell Price: DB(320000) != Site(null)"
+      ]
+    },
+    {
+      "id": "314ed877-a63f-4c3e-8a4a-7ffc22489070",
+      "code": "CA0127",
+      "diffs": [
+        "Sell Price: DB(320000) != Site(null)"
+      ]
+    },
+    {
+      "id": "013984ba-03a0-41b0-8240-e81646e25e37",
+      "code": "AP0162",
+      "diffs": [
+        "Sell Price: DB(320000) != Site(null)"
+      ]
+    },
+    {
+      "id": "f7eb8307-9c9a-479b-9b6d-70cee65b6d52",
+      "code": "SO0094",
+      "diffs": [
+        "Sell Price: DB(320000) != Site(null)"
+      ]
+    },
+    {
+      "id": "eea34266-c6c2-435f-9b7e-97f5200f2680",
+      "code": "AP0172",
+      "diffs": [
+        "Sell Price: DB(320000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6532f957-5527-4d9c-953f-d9b30d1d2dcd",
+      "code": "AP0186",
+      "diffs": [
+        "Sell Price: DB(320000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d8227a88-9eb0-4a8d-bc09-820d61e03184",
+      "code": "AP0157",
+      "diffs": [
+        "Sell Price: DB(325000) != Site(null)",
+        "Photos: DB(35) != Site(24)"
+      ]
+    },
+    {
+      "id": "67b2d486-8d75-42dc-a3b5-927ab586cf6b",
+      "code": "CA0125",
+      "diffs": [
+        "Sell Price: DB(330000) != Site(null)"
+      ]
+    },
+    {
+      "id": "c0c20cca-3531-456d-a901-9ee1b5aa6e07",
+      "code": "SO0013",
+      "diffs": [
+        "Sell Price: DB(340000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6c3128bb-dd18-48e2-822f-7b39d98a8d1c",
+      "code": "AP0109",
+      "diffs": [
+        "Sell Price: DB(340000) != Site(null)",
+        "Photos: DB(74) != Site(36)"
+      ]
+    },
+    {
+      "id": "9d1ec507-8daf-4692-8941-af02ca08b991",
+      "code": "AP0184",
+      "diffs": [
+        "Sell Price: DB(340000) != Site(null)",
+        "Rent Price: DB(2200) != Site(null)"
+      ]
+    },
+    {
+      "id": "afaaf7a8-8c8c-419d-b0db-57be54121a63",
+      "code": "SO0077",
+      "diffs": [
+        "Sell Price: DB(349000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ad4b0080-8435-42b0-a7f8-de27e19f33c5",
+      "code": "SO0099",
+      "diffs": [
+        "Sell Price: DB(349000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ae9f8889-db07-437a-98ee-d1b43f5bed5a",
+      "code": "SO0133",
+      "diffs": [
+        "Sell Price: DB(349000) != Site(null)"
+      ]
+    },
+    {
+      "id": "9b2684bc-c780-44bf-80a6-7b47dc3fa9f5",
+      "code": "CH0002",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "c8c9abe3-2f16-40c0-8aa2-011894ea38e7",
+      "code": "CA0091",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "72795189-93a5-43a5-8ca3-4c7df3f7f731",
+      "code": "CH0004",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6944a428-ce12-48f4-a613-243f58c98675",
+      "code": "AP0207",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "5748e03f-5290-4843-b276-4d8c8119a5f8",
+      "code": "GD0002",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "2af408d4-fe35-4395-8e39-0090fec92ebb",
+      "code": "SO0119",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "2e2b94d2-c820-4878-b5ab-11c975b553c4",
+      "code": "AP0086",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "f1c2ec0b-ad2a-4875-8450-f6fba67a2924",
+      "code": "CA0110",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "9b12dbd2-3d55-40db-81dc-4255541bd16e",
+      "code": "TE0030",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4001f296-98e6-47f5-8abe-408001a448c8",
+      "code": "AP0048",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "c8ad5244-e02d-49d4-84a1-2b0be576b232",
+      "code": "AP0190",
+      "diffs": [
+        "Sell Price: DB(350000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d6364cf5-d737-409d-b13c-06b535678355",
+      "code": "AP0127",
+      "diffs": [
+        "Sell Price: DB(359000) != Site(null)"
+      ]
+    },
+    {
+      "id": "74905e97-097e-4f8d-ab38-24633c4a4eb6",
+      "code": "CA0123",
+      "diffs": [
+        "Sell Price: DB(360000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d3a2b67f-1da3-42ac-a120-f28d63b8af18",
+      "code": "ST0002",
+      "diffs": [
+        "Sell Price: DB(360000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d8fba6e9-5a28-4a0f-a23e-42130ec1f2a4",
+      "code": "CA0109",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "524a9394-2c5c-40b3-9d03-469c60be9dbd",
+      "code": "SO0082",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "78fccbdf-4cba-4e90-9b5b-e95b4e38431d",
+      "code": "AP0138",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "a9f37483-cedb-44ef-8db3-6c3d6e5cdbd4",
+      "code": "CA0106",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "8c964ac1-1db8-4b7f-986d-4731dd298eca",
+      "code": "SO0157",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "f8f6fdfa-bf07-4bf5-81e7-d6c5145e353a",
+      "code": "SO0089",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "12962db9-104e-4a72-8fe0-4d65484c9b26",
+      "code": "TE0028",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "abfaab5e-c729-4fd6-a559-1b4752ca7d38",
+      "code": "TE0034",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "63276fd5-96eb-4c47-9217-f7541ba931f1",
+      "code": "CA0124",
+      "diffs": [
+        "Sell Price: DB(380000) != Site(null)"
+      ]
+    },
+    {
+      "id": "735e5634-8a47-4a3a-a109-79e838616894",
+      "code": "AP0198",
+      "diffs": [
+        "Sell Price: DB(387000) != Site(null)"
+      ]
+    },
+    {
+      "id": "84a795d4-8d69-46fd-a46c-ae48c29d6bca",
+      "code": "CA0116",
+      "diffs": [
+        "Sell Price: DB(390000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d26b7748-ea97-419e-83ba-1061e50f3a62",
+      "code": "CA0107",
+      "diffs": [
+        "Sell Price: DB(390000) != Site(null)"
+      ]
+    },
+    {
+      "id": "8525640b-e7eb-420c-a889-ab26082d1a18",
+      "code": "AP0110",
+      "diffs": [
+        "Sell Price: DB(392000) != Site(null)",
+        "Photos: DB(59) != Site(21)"
+      ]
+    },
+    {
+      "id": "683d76a9-479a-440a-b98e-d64ec43f40b4",
+      "code": "CA0087",
+      "diffs": [
+        "Sell Price: DB(400000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d41ee785-f04e-4853-a58e-164f7cb9a06d",
+      "code": "CA0088",
+      "diffs": [
+        "Sell Price: DB(400000) != Site(null)"
+      ]
+    },
+    {
+      "id": "50a47de9-ff7a-4de6-8dce-87bb06603a54",
+      "code": "CA0131",
+      "diffs": [
+        "Sell Price: DB(400000) != Site(null)"
+      ]
+    },
+    {
+      "id": "2576db8a-0b6d-4277-beec-e9f6b671fb1c",
+      "code": "CA0128",
+      "diffs": [
+        "Sell Price: DB(400000) != Site(null)"
+      ]
+    },
+    {
+      "id": "220ee787-0285-435f-94b9-f7ce76613584",
+      "code": "CA0135",
+      "diffs": [
+        "Sell Price: DB(400000) != Site(null)"
+      ]
+    },
+    {
+      "id": "3607069e-6266-414f-9714-2a09804f337f",
+      "code": "CA0146",
+      "diffs": [
+        "Sell Price: DB(400000) != Site(null)",
+        "Rent Price: DB(2300) != Site(null)"
+      ]
+    },
+    {
+      "id": "17bc0a18-2cc3-435e-8edf-5f226909ea2b",
+      "code": "SO0111",
+      "diffs": [
+        "Sell Price: DB(415000) != Site(null)"
+      ]
+    },
+    {
+      "id": "966fa099-919a-4584-8da5-c608b3945c09",
+      "code": "SO0153",
+      "diffs": [
+        "Sell Price: DB(427844.25) != Site(null)",
+        "Photos: DB(22) != Site(36)"
+      ]
+    },
+    {
+      "id": "381a1516-980b-46bd-82a9-a301faf54161",
+      "code": "SO0136",
+      "diffs": [
+        "Sell Price: DB(430000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4069b5c3-b088-4abc-a751-6cfdab78bec5",
+      "code": "SO0083",
+      "diffs": [
+        "Sell Price: DB(430000) != Site(null)"
+      ]
+    },
+    {
+      "id": "09e69254-361f-4384-905d-e0b2b32c63df",
+      "code": "AP0153",
+      "diffs": [
+        "Sell Price: DB(430000) != Site(null)",
+        "Rent Price: DB(3500) != Site(null)"
+      ]
+    },
+    {
+      "id": "2fa5996f-f2f0-45e1-b6ae-fcde13a0d375",
+      "code": "SO0090",
+      "diffs": [
+        "Sell Price: DB(435000) != Site(null)"
+      ]
+    },
+    {
+      "id": "9159e61a-5eb4-4125-b2a1-4e8591482238",
+      "code": "SO0086",
+      "diffs": [
+        "Sell Price: DB(439000) != Site(null)"
+      ]
+    },
+    {
+      "id": "15660117-f5ce-40c6-a341-1fcf19ac136f",
+      "code": "SO0058",
+      "diffs": [
+        "Sell Price: DB(440000) != Site(null)"
+      ]
+    },
+    {
+      "id": "83693335-d177-4865-af2e-ef7204a5c7c4",
+      "code": "CA0084",
+      "diffs": [
+        "Sell Price: DB(440000) != Site(null)"
+      ]
+    },
+    {
+      "id": "3064104e-551e-4da7-8b34-10522d07f37a",
+      "code": "AP0206",
+      "diffs": [
+        "Sell Price: DB(440000) != Site(null)"
+      ]
+    },
+    {
+      "id": "1fae1dfb-49a9-484f-8730-fa2469ae61dd",
+      "code": "CA0086",
+      "diffs": [
+        "Sell Price: DB(440000) != Site(null)"
+      ]
+    },
+    {
+      "id": "50f73932-de3d-4250-80b7-558f84d552f5",
+      "code": "AP0160",
+      "diffs": [
+        "Sell Price: DB(450000) != Site(null)"
+      ]
+    },
+    {
+      "id": "1db35615-900b-46d1-ae57-25c9540769da",
+      "code": "SO0152",
+      "diffs": [
+        "Sell Price: DB(450000) != Site(null)"
+      ]
+    },
+    {
+      "id": "c9cae00f-b0fb-4237-949e-c06b2a021c95",
+      "code": "SO0070",
+      "diffs": [
+        "Sell Price: DB(450000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ec6f047b-0979-44e1-9e11-d46d4d95aaf1",
+      "code": "CA0028",
+      "diffs": [
+        "Sell Price: DB(480000) != Site(null)"
+      ]
+    },
+    {
+      "id": "3dd4bc55-85fe-44f4-aa14-851d926766b0",
+      "code": "CA0096",
+      "diffs": [
+        "Sell Price: DB(480000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ca065d6f-4676-4c99-a362-77d31a320eb8",
+      "code": "TE0035",
+      "diffs": [
+        "Sell Price: DB(480000) != Site(null)"
+      ]
+    },
+    {
+      "id": "8decec20-8238-4d8a-b78f-f12661bf7944",
+      "code": "CA0139",
+      "diffs": [
+        "Sell Price: DB(480000) != Site(null)",
+        "Photos: DB(0) != Site(22)"
+      ]
+    },
+    {
+      "id": "7c9cc89c-12e5-4044-b17b-96273f01abf4",
+      "code": "SO0154",
+      "diffs": [
+        "Sell Price: DB(480000) != Site(null)"
+      ]
+    },
+    {
+      "id": "08920f09-30db-4c01-bcb4-7022cb0e4653",
+      "code": "CA0072",
+      "diffs": [
+        "Sell Price: DB(490000) != Site(null)"
+      ]
+    },
+    {
+      "id": "f8afa34e-1107-4901-8d3f-2a0464d8d283",
+      "code": "SO0102",
+      "diffs": [
+        "Sell Price: DB(495000) != Site(null)",
+        "Photos: DB(32) != Site(33)"
+      ]
+    },
+    {
+      "id": "b9fe3324-3a6e-4dfa-bfdd-57c519d684f5",
+      "code": "SO0066",
+      "diffs": [
+        "Sell Price: DB(495000) != Site(null)"
+      ]
+    },
+    {
+      "id": "7988e136-d56b-497a-93cb-235935e4a80d",
+      "code": "SO0106",
+      "diffs": [
+        "Sell Price: DB(499000) != Site(null)"
+      ]
+    },
+    {
+      "id": "5d7370e6-87ee-443e-afa5-b850da2e2aaa",
+      "code": "SO0130",
+      "diffs": [
+        "Sell Price: DB(500000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6a1b1a59-6998-4ec9-92ef-db0ef2f5f8e2",
+      "code": "SO0128",
+      "diffs": [
+        "Sell Price: DB(500000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4e4f8008-8561-453e-81e0-28569886ae58",
+      "code": "SO0096",
+      "diffs": [
+        "Sell Price: DB(510000) != Site(null)"
+      ]
+    },
+    {
+      "id": "371efea8-cc46-4fab-b5bb-eaaa7d133ea7",
+      "code": "TE0021",
+      "diffs": [
+        "Sell Price: DB(520000) != Site(null)"
+      ]
+    },
+    {
+      "id": "b59ce457-c611-4b5e-8bfe-a2c5eea483a3",
+      "code": "CA0047",
+      "diffs": [
+        "Sell Price: DB(520000) != Site(null)"
+      ]
+    },
+    {
+      "id": "59a2532e-39d5-417d-b13a-30a5279fb0d2",
+      "code": "CA0038",
+      "diffs": [
+        "Sell Price: DB(525000) != Site(null)",
+        "Photos: DB(30) != Site(33)"
+      ]
+    },
+    {
+      "id": "8bed495d-30c7-44b6-a0a3-e5bbe5bd1847",
+      "code": "CA0080",
+      "diffs": [
+        "Sell Price: DB(525000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0ca515ad-a209-4004-9580-c819c2311f85",
+      "code": "CA0067",
+      "diffs": [
+        "Sell Price: DB(530000) != Site(null)"
+      ]
+    },
+    {
+      "id": "325708c5-8432-4ed3-9d71-a010e78e29d2",
+      "code": "AP0189",
+      "diffs": [
+        "Sell Price: DB(534000) != Site(null)"
+      ]
+    },
+    {
+      "id": "5ee37c09-e13b-47b1-a3aa-484f2f93502b",
+      "code": "AP0116",
+      "diffs": [
+        "Sell Price: DB(538117.96) != Site(null)"
+      ]
+    },
+    {
+      "id": "3c26a23f-b93d-4d8c-a03e-df74bf842fa1",
+      "code": "SO0142",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0f51e065-e935-4986-9a69-8917d97975c6",
+      "code": "CA0056",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "aea9282f-7b31-4f84-9f1c-bffb969fde2e",
+      "code": "SO0063",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "16291f87-9b49-4cdb-aae6-27fcd9223a00",
+      "code": "SO0144",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "cb011b07-562c-4229-aec7-a457aeb028f2",
+      "code": "SO0074",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "07d13b16-64a0-4b91-9397-49d834969558",
+      "code": "SO0127",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "67a70d87-b240-4e20-88e2-8dbd6c6dd2e3",
+      "code": "CA0115",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "5bbb95b8-2f8e-4f1f-8452-bb6da5d8367f",
+      "code": "CA0016",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "5af2bd3d-9dc3-4d89-9ede-fed8cf03f99d",
+      "code": "CA0148",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)"
+      ]
+    },
+    {
+      "id": "80eb41c1-52a5-42c7-877d-fc30748660f0",
+      "code": "SO0151",
+      "diffs": [
+        "Sell Price: DB(550000) != Site(null)",
+        "Rent Price: DB(3300) != Site(null)"
+      ]
+    },
+    {
+      "id": "ef7f6b29-b43f-454f-9b51-c3700b600990",
+      "code": "SO0052",
+      "diffs": [
+        "Sell Price: DB(565000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0f468579-bdff-49f9-83e0-2658017c1228",
+      "code": "SO0156",
+      "diffs": [
+        "Sell Price: DB(569000) != Site(null)"
+      ]
+    },
+    {
+      "id": "83c67faf-9ecf-4059-9570-89fcabe536be",
+      "code": "SO0024",
+      "diffs": [
+        "Sell Price: DB(580000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0a9d07af-bbd8-4804-9176-9a269e2b82d8",
+      "code": "SO0129",
+      "diffs": [
+        "Sell Price: DB(580000) != Site(null)"
+      ]
+    },
+    {
+      "id": "a9fa8e3c-6627-46a1-8e07-07fbde19b028",
+      "code": "SO0110",
+      "diffs": [
+        "Sell Price: DB(580000) != Site(null)"
+      ]
+    },
+    {
+      "id": "b7803aea-62b6-4496-829a-d18c678d269d",
+      "code": "SO0139",
+      "diffs": [
+        "Sell Price: DB(580000) != Site(null)"
+      ]
+    },
+    {
+      "id": "b6560371-4cb0-44a1-a4a5-ad6d8441e36f",
+      "code": "CA0100",
+      "diffs": [
+        "Sell Price: DB(583000) != Site(null)",
+        "Photos: DB(28) != Site(29)"
+      ]
+    },
+    {
+      "id": "bb153d29-a1bb-42e0-bce3-41447e421d88",
+      "code": "SO0148",
+      "diffs": [
+        "Sell Price: DB(599000) != Site(null)"
+      ]
+    },
+    {
+      "id": "91fd378e-7a17-4634-b05e-71761b044553",
+      "code": "AP0208",
+      "diffs": [
+        "Sell Price: DB(600000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0220977f-00e2-4ade-80da-22d5fc24a842",
+      "code": "AD0002",
+      "diffs": [
+        "Sell Price: DB(600000) != Site(null)"
+      ]
+    },
+    {
+      "id": "1a0a0cdd-68c2-456c-826e-74af0346e327",
+      "code": "AP0183",
+      "diffs": [
+        "Sell Price: DB(600000) != Site(null)"
+      ]
+    },
+    {
+      "id": "e3e1e555-1ab5-461f-8921-121400c89aae",
+      "code": "TE0013",
+      "diffs": [
+        "Sell Price: DB(640000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4340b0b1-ed97-4e61-963f-2ada40939fca",
+      "code": "CA0104",
+      "diffs": [
+        "Sell Price: DB(650000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4bda5be3-6028-4aca-8d13-ae294ec5b0e9",
+      "code": "CA0133",
+      "diffs": [
+        "Sell Price: DB(650000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6ddb6987-613e-41f2-8242-996ef4a80fd8",
+      "code": "CA0049",
+      "diffs": [
+        "Sell Price: DB(670000) != Site(null)"
+      ]
+    },
+    {
+      "id": "e38a9e5f-85e7-4017-bb2f-dd0de6c81537",
+      "code": "AP0199",
+      "diffs": [
+        "Sell Price: DB(680000) != Site(null)",
+        "Photos: DB(34) != Site(41)"
+      ]
+    },
+    {
+      "id": "2e340f46-3df9-40e3-8a73-6fb7bb198f5d",
+      "code": "AP0142",
+      "diffs": [
+        "Sell Price: DB(687324) != Site(null)"
+      ]
+    },
+    {
+      "id": "78bc1ef4-d1e5-4ec0-94ab-51ef53108640",
+      "code": "SO0121",
+      "diffs": [
+        "Sell Price: DB(692000) != Site(null)"
+      ]
+    },
+    {
+      "id": "8952822d-dd8f-4e1a-be6b-826d87aec05e",
+      "code": "SO0120",
+      "diffs": [
+        "Sell Price: DB(700000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d8463255-72c5-4198-8cbb-d50cb591a540",
+      "code": "CA0132",
+      "diffs": [
+        "Sell Price: DB(700000) != Site(null)"
+      ]
+    },
+    {
+      "id": "03cf1bdc-a28d-4071-9fd5-ac3241ed12a1",
+      "code": "AP0132",
+      "diffs": [
+        "Sell Price: DB(737924.3) != Site(null)"
+      ]
+    },
+    {
+      "id": "943feb25-0b05-4531-bb03-a4f2df09ee72",
+      "code": "SO0081",
+      "diffs": [
+        "Sell Price: DB(750000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ae7fcc7f-0cf5-42e7-b63f-ad97873333be",
+      "code": "SO0124",
+      "diffs": [
+        "Sell Price: DB(750000) != Site(null)"
+      ]
+    },
+    {
+      "id": "29bfbdd0-02e3-447d-ae8c-30bda1a56290",
+      "code": "SO0135",
+      "diffs": [
+        "Sell Price: DB(750000) != Site(null)"
+      ]
+    },
+    {
+      "id": "7fea1a1d-07cd-4a5b-97cd-0d8274cfc889",
+      "code": "SO0098",
+      "diffs": [
+        "Sell Price: DB(790000) != Site(null)"
+      ]
+    },
+    {
+      "id": "43784cd2-8dfa-4f68-b566-2653467e03f7",
+      "code": "CA0108",
+      "diffs": [
+        "Sell Price: DB(800000) != Site(null)"
+      ]
+    },
+    {
+      "id": "fb7af6df-e885-4e88-b296-dbcfd1d7f396",
+      "code": "SO0031",
+      "diffs": [
+        "Sell Price: DB(800000) != Site(null)"
+      ]
+    },
+    {
+      "id": "9b79ecb7-6586-4b41-9013-ae852aec6dc9",
+      "code": "AP0099",
+      "diffs": [
+        "Sell Price: DB(819000) != Site(null)"
+      ]
+    },
+    {
+      "id": "24e66070-81b1-42a0-bf32-3a3d1fe46b18",
+      "code": "CH0007",
+      "diffs": [
+        "Sell Price: DB(850000) != Site(null)"
+      ]
+    },
+    {
+      "id": "c90a779b-7130-4cdd-b2a1-7842715e9136",
+      "code": "CA0122",
+      "diffs": [
+        "Sell Price: DB(850000) != Site(null)"
+      ]
+    },
+    {
+      "id": "e2218430-f137-4c50-a984-c601a7246c0a",
+      "code": "SO0097",
+      "diffs": [
+        "Sell Price: DB(850000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d5f65c29-575f-4869-9ac8-6c2ba8c110a7",
+      "code": "SO0076",
+      "diffs": [
+        "Sell Price: DB(850000) != Site(null)"
+      ]
+    },
+    {
+      "id": "e881623f-beec-408a-84fa-34c0ed59e286",
+      "code": "AP0155",
+      "diffs": [
+        "Sell Price: DB(890000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ae427b35-d59d-4298-bd7d-5d1238f8aecc",
+      "code": "SO0088",
+      "diffs": [
+        "Sell Price: DB(899000) != Site(null)"
+      ]
+    },
+    {
+      "id": "fb719b4b-6fca-4194-9208-ea3a5ddc2cac",
+      "code": "SO0134",
+      "diffs": [
+        "Sell Price: DB(900000) != Site(null)"
+      ]
+    },
+    {
+      "id": "3fdb2183-17ad-408c-b60e-2d83dfa86599",
+      "code": "CA0130",
+      "diffs": [
+        "Sell Price: DB(900000) != Site(null)"
+      ]
+    },
+    {
+      "id": "a625fef0-e6b5-4a58-bc85-bc0ac231970e",
+      "code": "CA0092",
+      "diffs": [
+        "Sell Price: DB(900000) != Site(null)"
+      ]
+    },
+    {
+      "id": "95b34244-c71a-4fbc-85fa-6839ce5ef30e",
+      "code": "AP0100",
+      "diffs": [
+        "Sell Price: DB(903000) != Site(null)"
+      ]
+    },
+    {
+      "id": "380274c2-a2a7-4215-8185-e9632b4da932",
+      "code": "TE0020",
+      "diffs": [
+        "Sell Price: DB(950000) != Site(null)"
+      ]
+    },
+    {
+      "id": "f4830f17-a3d6-4871-a2b6-95c673deaa5f",
+      "code": "CA0103",
+      "diffs": [
+        "Sell Price: DB(980000) != Site(null)"
+      ]
+    },
+    {
+      "id": "d24143e1-ed1a-4797-8b83-7f4bfaa1d933",
+      "code": "CA0066",
+      "diffs": [
+        "Sell Price: DB(980000) != Site(null)"
+      ]
+    },
+    {
+      "id": "40edf628-035b-4e54-a8a0-e5d7e68a602a",
+      "code": "AP0143",
+      "diffs": [
+        "Sell Price: DB(993343) != Site(null)"
+      ]
+    },
+    {
+      "id": "851b6029-1f6f-4077-9bc8-a0d698a649c3",
+      "code": "AP0168",
+      "diffs": [
+        "Sell Price: DB(998232) != Site(null)"
+      ]
+    },
+    {
+      "id": "f37ff5d8-3308-4b4f-8c45-b6525e73d586",
+      "code": "AP0177",
+      "diffs": [
+        "Sell Price: DB(1000000) != Site(null)"
+      ]
+    },
+    {
+      "id": "35cc1bdf-55c1-4264-8036-8a5cfae98136",
+      "code": "CA0099",
+      "diffs": [
+        "Sell Price: DB(1100000) != Site(null)"
+      ]
+    },
+    {
+      "id": "cd166984-7cf0-4363-8f90-6c3379c10267",
+      "code": "AP0129",
+      "diffs": [
+        "Sell Price: DB(1100000) != Site(null)"
+      ]
+    },
+    {
+      "id": "12cc4791-80fd-4e23-b7cf-13331ce74333",
+      "code": "TE0007",
+      "diffs": [
+        "Sell Price: DB(980000) != Site(null)"
+      ]
+    },
+    {
+      "id": "23f860b1-b670-4fd3-aabf-156153605d4b",
+      "code": "CA0097",
+      "diffs": [
+        "Sell Price: DB(1150000) != Site(null)"
+      ]
+    },
+    {
+      "id": "fc4fb2df-66ec-4d9d-ac3f-93bfe7b6293f",
+      "code": "AR0001",
+      "diffs": [
+        "Sell Price: DB(1160000) != Site(null)"
+      ]
+    },
+    {
+      "id": "8d2fcde5-d61a-4afa-ab14-41de10070bc4",
+      "code": "TE0019",
+      "diffs": [
+        "Sell Price: DB(1200000) != Site(null)"
+      ]
+    },
+    {
+      "id": "cb368c9b-0fce-4a97-82ee-cd96658cf2e7",
+      "code": "CA0117",
+      "diffs": [
+        "Sell Price: DB(1200000) != Site(null)"
+      ]
+    },
+    {
+      "id": "f745ae64-23f4-4d57-a7f1-396a51675bd1",
+      "code": "CA0090",
+      "diffs": [
+        "Sell Price: DB(1200000) != Site(null)"
+      ]
+    },
+    {
+      "id": "3b0494df-6cb0-4c8c-a148-9b408cfbf1cb",
+      "code": "TE0024",
+      "diffs": [
+        "Sell Price: DB(1250000) != Site(null)"
+      ]
+    },
+    {
+      "id": "5723222e-8a19-4362-9512-4fb185549760",
+      "code": "CA0078",
+      "diffs": [
+        "Sell Price: DB(1300000) != Site(null)"
+      ]
+    },
+    {
+      "id": "1df995f7-b720-46a8-8bc0-a660d94710be",
+      "code": "TE0032",
+      "diffs": [
+        "Sell Price: DB(1300000) != Site(null)"
+      ]
+    },
+    {
+      "id": "b91aaf1b-840d-42de-ab7e-efa3cf7feff5",
+      "code": "SA0003",
+      "diffs": [
+        "Sell Price: DB(1300000) != Site(null)"
+      ]
+    },
+    {
+      "id": "c3a3d3ca-5c99-4bba-b252-43af052b33c3",
+      "code": "CA0134",
+      "diffs": [
+        "Sell Price: DB(1300000) != Site(null)"
+      ]
+    },
+    {
+      "id": "4ed67324-91de-4299-b110-2571797241b4",
+      "code": "CA0061",
+      "diffs": [
+        "Sell Price: DB(1300000) != Site(null)"
+      ]
+    },
+    {
+      "id": "ec4ff24c-6a47-405c-bf4e-8d0a23396598",
+      "code": "CA0048",
+      "diffs": [
+        "Sell Price: DB(1400000) != Site(null)"
+      ]
+    },
+    {
+      "id": "f24e5d52-cf2d-4eb7-b9af-f344679aaa20",
+      "code": "SO0092",
+      "diffs": [
+        "Sell Price: DB(1500000) != Site(null)",
+        "Rent Price: DB(8000) != Site(null)"
+      ]
+    },
+    {
+      "id": "be7b26db-c2d3-4e69-9638-d7e4d7a287dd",
+      "code": "CH0003",
+      "diffs": [
+        "Sell Price: DB(1600000) != Site(null)"
+      ]
+    },
+    {
+      "id": "9ec7eeee-41b7-4c44-984f-abed4690d523",
+      "code": "CA0098",
+      "diffs": [
+        "Sell Price: DB(1730000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0b68c424-97c3-4cea-9bb7-90449c56671b",
+      "code": "AP0182",
+      "diffs": [
+        "Sell Price: DB(1800000) != Site(null)"
+      ]
+    },
+    {
+      "id": "be3eb0c4-bc9c-40c2-8075-82430d91ac81",
+      "code": "GA0008",
+      "diffs": [
+        "Sell Price: DB(1900000) != Site(null)",
+        "Rent Price: DB(14900) != Site(null)"
+      ]
+    },
+    {
+      "id": "fc8b3899-9efd-4ce0-8f1b-d355420381a6",
+      "code": "CA0129",
+      "diffs": [
+        "Sell Price: DB(1990000) != Site(null)"
+      ]
+    },
+    {
+      "id": "65153c8d-0ff5-4abd-8a55-fea60deb86fb",
+      "code": "TE0015",
+      "diffs": [
+        "Sell Price: DB(2262000) != Site(null)"
+      ]
+    },
+    {
+      "id": "f4cf36cd-2ec8-40d3-bd98-9b2331326732",
+      "code": "CA0081",
+      "diffs": [
+        "Sell Price: DB(2300000) != Site(null)"
+      ]
+    },
+    {
+      "id": "6cb0213c-e002-4bd9-a76c-b4222b30c377",
+      "code": "TE0014",
+      "diffs": [
+        "Sell Price: DB(2400000) != Site(null)"
+      ]
+    },
+    {
+      "id": "17226ab9-d37b-4703-8773-b4ebb4e2adaa",
+      "code": "TE0017",
+      "diffs": [
+        "Sell Price: DB(2500000) != Site(null)"
+      ]
+    },
+    {
+      "id": "2eb571ed-39b9-4c20-8d4a-148175e7297d",
+      "code": "GA0001",
+      "diffs": [
+        "Sell Price: DB(2500000) != Site(null)",
+        "Rent Price: DB(15000) != Site(null)"
+      ]
+    },
+    {
+      "id": "95899001-5127-43ca-b168-b0086c18d2a5",
+      "code": "SI0001",
+      "diffs": [
+        "Sell Price: DB(4000000) != Site(null)"
+      ]
+    },
+    {
+      "id": "8f88f14c-7af2-47b8-b6d2-4766c866871a",
+      "code": "SO0137",
+      "diffs": [
+        "Sell Price: DB(4500000) != Site(null)"
+      ]
+    },
+    {
+      "id": "1c25f69a-7164-4c46-a898-6ca2ecc353d2",
+      "code": "TE0018",
+      "diffs": [
+        "Sell Price: DB(4500000) != Site(null)"
+      ]
+    },
+    {
+      "id": "0a51f84c-5db7-4a3d-9bf9-e7f2135c055e",
+      "code": "TE0016",
+      "diffs": [
+        "Sell Price: DB(8000000) != Site(null)"
+      ]
+    },
+    {
+      "id": "79b43ea0-840a-4683-9890-22168edcc9a0",
+      "code": "CH0001",
+      "diffs": [
+        "Sell Price: DB(9000000) != Site(null)"
+      ]
+    }
+  ]
+}

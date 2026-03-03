@@ -14,6 +14,7 @@ import { BaseCrudService } from '@/integrations';
 import { Imveis } from '@/entities';
 import PropertyForm from '@/components/admin/properties/PropertyForm';
 import * as XLSX from 'xlsx'; // Added Import
+import { toast } from 'sonner';
 
 function AdminImoveisContent() {
   const [properties, setProperties] = useState<Imveis[]>([]);
@@ -96,15 +97,17 @@ function AdminImoveisContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: selectedProperties, updateData: { statusImovel: newStatus } })
       });
+      const data = await res.json();
       if (res.ok) {
-        alert('Status atualizado em massa com sucesso!');
+        toast.success(`${data.count || selectedProperties.length} imóveis atualizados para ${newStatus} com sucesso!`);
         setSelectedProperties([]);
         loadProperties();
       } else {
-        alert('Erro na atualização em massa.');
+        toast.error(`Erro na atualização em massa: ${data.error || 'Erro desconhecido'}`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(`Erro inesperado: ${e.message}`);
     } finally {
       setBatchStatusLoading(false);
     }
