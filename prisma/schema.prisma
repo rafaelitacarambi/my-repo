@@ -17,6 +17,11 @@ model User {
   email   String  @unique
   role    String  @default("USER") // ADMIN, MANAGER, BROKER, etc.
   status  String  @default("ACTIVE") // ACTIVE, INACTIVE
+  setores String[] @default([])
+  unidadeRef String?
+  memberRef  String?
+  ativo      Boolean @default(true)
+  lastLogin  DateTime?
 
   auditLogs AuditLog[]
 
@@ -36,12 +41,55 @@ model Client {
   type     String  @default("LEAD") // LEAD, TENANT, OWNER, GUARANTOR
   address  String?
 
+  status   String? @default("Ativo")
+  papeis   String?
+  notes    String? @db.Text
+  gender   String?
+
   // Relacionamentos para Contratos e Imóveis
   ownedProperties   Property[] @relation("PropertyOwner")
   contractsAsTenant Contract[] @relation("ContractTenant")
+  leads            Lead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// -------------------------------------------------------------------------
+// 2.1 Leads de Contato (Interesses e Perfil)
+// -------------------------------------------------------------------------
+model Lead {
+  id                 String   @id @default(uuid())
+  clientRef          String
+  client             Client   @relation(fields: [clientRef], references: [id])
+  
+  fullName           String
+  email              String?
+  phoneNumber        String?
+  
+  interessePrincipal String   // Compra, Locação, etc.
+  tipoImovelDesejado String?
+  cidadeDesejada     String?
+  bairroDesejado     String?
+  faixaValorMin      Float?
+  faixaValorMax      Float?
+  potencialEntrada   Float?
+  rendaBruta         Float?
+  perfilCompra       String?
+  urgencia           String?
+  
+  leadStatus         String   @default("Novo")
+  statusFunil        String   @default("Novo")
+  leadSource         String   @default("Área Restrita")
+  
+  submissionDate     DateTime @default(now())
+  ultimaInteracao    DateTime @default(now())
+  
+  responsavelRef     String?  // ID do Corretor
+  unidadeRef         String?  // ID da Unidade
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 // -------------------------------------------------------------------------
@@ -52,6 +100,7 @@ model Property {
   code   String @unique // Ex: CA0149
   title  String // Ex: Casa em Suzano
   type   String // Ex: Casa, Apartamento, Terreno
+  finalidade String? // Ex: Residencial, Comercial
   status String @default("AVAILABLE") // AVAILABLE, RENTED, SOLD
 
   // Valores

@@ -83,6 +83,8 @@ export default function AdminUsuariosPage() {
   const handleSaveUser = async (userData: Partial<UsuriosdoSistema>) => {
     try {
       if (selectedUser) {
+        // For existing users, update both local and clerk (if we wanted to update clerk)
+        // Currently, we just update the local record as requested.
         await BaseCrudService.update('usuariossistema', {
           _id: selectedUser._id,
           ...userData
@@ -93,22 +95,59 @@ export default function AdminUsuariosPage() {
           description: 'Usuário atualizado com sucesso'
         });
       } else {
-        const newUser = await BaseCrudService.create('usuariossistema', {
-          _id: crypto.randomUUID(),
-          ...userData
+        // Create in Clerk first
+        if (!userData.emailLogin || !userData.password) {
+          throw new Error("Email e Senha são obrigatórios para novos usuários.");
+        }
+
+        const nameParts = (userData.name || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+        const response = await fetch('/api/admin/users/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: userData.emailLogin,
+            password: userData.password,
+            firstName,
+            lastName,
+            publicMetadata: {
+              role: userData.profile || 'Corretor'
+            }
+          })
         });
-        setUsers([...users, newUser as UsuriosdoSistema]);
+
+        const responseData = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(responseData.error || 'Erro ao criar usuário no Clerk de Autenticação');
+        }
+
+        const clerkUserId = responseData.clerkUserId;
+        const generatedId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : Math.random().toString(36).substring(2, 11);
+
+        // Then create locally
+        const newUser = await BaseCrudService.create('usuariossistema', {
+          _id: generatedId,
+          ...userData,
+          clerkId: clerkUserId
+        });
+
+        setUsers(prev => [...prev, newUser as UsuriosdoSistema]);
         toast({
           title: 'Sucesso',
-          description: 'Usuário cadastrado com sucesso'
+          description: 'Usuário cadastrado com credenciais de login geradas com sucesso'
         });
       }
       setIsModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar usuário:', error);
       toast({
-        title: 'Erro',
-        description: 'Não foi possível salvar o usuário',
+        title: 'Erro no Cadastro',
+        description: error.message || 'Não foi possível salvar o usuário e gerar o login.',
         variant: 'destructive'
       });
     }

@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
-import { mapForFrontend } from './index';
+import { mapForFrontend, mapForPrismaCreate } from './index';
 
 const resolveModel = (collectionId: string) => {
     switch (collectionId) {
@@ -36,8 +36,18 @@ export const PUT: APIRoute = async ({ params, request }) => {
 
     try {
         const body = await request.json();
+        let dataForPrisma = body;
+
+        if (collection === 'usuariossistema') {
+            dataForPrisma = mapForPrismaCreate(collection, body);
+            delete dataForPrisma.id; // Não atualiza o ID
+        } else if (collection === 'imoveis') {
+            dataForPrisma = mapForPrismaCreate(collection, body);
+            delete dataForPrisma.id;
+        }
+
         // @ts-ignore
-        const updated = await model.update({ where: { id: id as string }, data: body });
+        const updated = await model.update({ where: { id: id as string }, data: dataForPrisma });
         return new Response(JSON.stringify(updated), { status: 200 });
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });

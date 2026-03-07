@@ -45,7 +45,7 @@ export interface PaginatedResult<T> {
 /**
  * Mock implementation of @wix/data using IndexedDB (replacing LocalStorage)
  */
-const POSTGRES_COLLECTIONS = ['imoveis', 'clientes', 'leads', 'usuariossistema', 'contratos', 'cobrancas'];
+const POSTGRES_COLLECTIONS = ['imoveis', 'clientes', 'leads', 'usuariossistema', 'contratos', 'cobrancas', 'leadsdecontato'];
 const isPostgres = (collectionId: string) => POSTGRES_COLLECTIONS.includes(collectionId);
 
 /**
