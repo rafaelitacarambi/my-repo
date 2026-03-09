@@ -39,23 +39,13 @@ function AreaRestritaContent() {
     if (isAuthorized && userProfile) {
       const sectors = userProfile.setores || [];
 
-      // If user is Admin, they might want the Hub, but let's check if we should auto-redirect
-      // If they only have one sector, definitely redirect
-      if (sectors.length === 1) {
-        if (sectors.includes('Financiamento')) {
-          navigate('/admin/financiamento/dashboard');
-        } else if (sectors.includes('Venda, Compra e Locação')) {
-          navigate('/admin/vendas/dashboard');
-        }
+      // Priority redirect to Sales Dashboard as requested
+      if (sectors.includes('Venda, Compra e Locação') || userProfile.profile === 'Admin') {
+        navigate('/admin/vendas/dashboard');
       }
-      // If multiple sectors, we can prioritize one or stay in the hub.
-      // Given the user's request, let's prioritize Vendas if available.
-      else if (sectors.length > 1) {
-        if (sectors.includes('Venda, Compra e Locação')) {
-          navigate('/admin/negocios/kanban');
-        } else if (sectors.includes('Financiamento')) {
-          navigate('/admin/financiamento/dashboard');
-        }
+      // Fallback for other sectors
+      else if (sectors.length === 1 && sectors.includes('Financiamento')) {
+        navigate('/admin/financiamento/dashboard');
       }
     }
   }, [isAuthorized, userProfile, navigate]);

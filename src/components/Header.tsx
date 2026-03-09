@@ -23,7 +23,7 @@ export default function Header() {
       <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to={isAuthenticated ? "/area-restrita" : "/"} className="flex items-center gap-3 group">
+          <Link to={isAuthenticated ? "/admin/vendas/dashboard" : "/"} className="flex items-center gap-3 group">
             <Image
               src="https://static.wixstatic.com/media/9b23b4_8b5ff4d697054133a09457af0365ebeb~mv2.png"
               alt="R. Sales Imóveis Logo"
@@ -35,7 +35,7 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8">
             {isAdminRoute && isAuthenticated && (
-              <Link to="/area-restrita">
+              <Link to="/admin/vendas/dashboard">
                 <Button
                   variant="outline"
                   className="font-paragraph flex items-center gap-2"
@@ -92,7 +92,7 @@ export default function Header() {
             </Link>
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <Link to="/area-restrita">
+                <Link to="/admin/vendas/dashboard">
                   <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg">
                     Área Restrita
                   </Button>
@@ -126,7 +126,7 @@ export default function Header() {
                 </Button>
               </div>
             ) : (
-              <Link to="/area-restrita">
+              <Link to="/admin/vendas/dashboard">
                 <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg">
                   Área Restrita
                 </Button>
@@ -211,7 +211,7 @@ export default function Header() {
               </Link>
               {isAuthenticated ? (
                 <>
-                  <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/admin/vendas/dashboard" onClick={() => setMobileMenuOpen(false)}>
                     <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg w-full">
                       Área Restrita
                     </Button>
