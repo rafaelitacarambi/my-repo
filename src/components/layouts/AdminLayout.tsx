@@ -20,7 +20,8 @@ import {
     MessageSquare,
     ChevronDown,
     ChevronUp,
-    Gavel
+    Gavel,
+    Mail
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -102,6 +103,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {
             group: 'Configurações',
             items: [
+                { label: 'Histórico de Interações', icon: History, path: '/admin/historico', visible: true },
+                { label: 'Gestão Financeira', icon: DollarSign, path: '/admin/financeiro', visible: true },
+                { label: 'Caixa Saída (E-mails)', icon: Mail, path: '/admin/emails', visible: true },
                 { label: 'Usuários', icon: UserCog, path: '/admin/usuarios', visible: isAdmin },
                 { label: 'Perfil', icon: FileText, path: '/perfil', visible: true },
             ]
