@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { EmailService } from '../../../services/EmailService';
+import { EmailService } from '../../../../services/EmailService';
 
 export const POST: APIRoute = async ({ request }) => {
     try {

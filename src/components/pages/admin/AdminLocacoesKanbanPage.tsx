@@ -139,6 +139,7 @@ export default function AdminLocacoesKanbanPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [kanbanBackground, setKanbanBackground] = useState('bg-slate-50');
     const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+    const [showEmptyColumns, setShowEmptyColumns] = useState(true);
     const [isWizardOpen, setIsWizardOpen] = useState(false);
 
     const [clients, setClients] = useState<Clients[]>([]);
@@ -149,6 +150,9 @@ export default function AdminLocacoesKanbanPage() {
         loadData();
         const storedBg = localStorage.getItem('kanban-background-locacoes');
         if (storedBg) setKanbanBackground(storedBg);
+
+        const storedShowEmpty = localStorage.getItem('kanban-show-empty-locacoes');
+        if (storedShowEmpty !== null) setShowEmptyColumns(storedShowEmpty === 'true');
     }, []);
 
     const loadData = async () => {
@@ -166,27 +170,17 @@ export default function AdminLocacoesKanbanPage() {
             const { items: tasksList } = await BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento');
             const { items: partiesList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
             const { items: propertiesList } = await BaseCrudService.getAll<Imveis>('imoveis');
+            const { items: propertyLinks } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
 
-            // Deduplication Logic: One active process per client per service type (Locação/Aluguel)
-            const uniqueAtendimentos: ServiceRecords[] = [];
-            const seenClients = new Set<string>();
-
-            atendimentos
+            const filteredAtendimentos = atendimentos
                 .filter(a => ['Locação', 'Aluguel'].includes(a.serviceType || '') && !a.isArchived)
                 .sort((a, b) => {
                     const dateA = new Date(a._updatedDate || a._createdDate || 0).getTime();
                     const dateB = new Date(b._updatedDate || b._createdDate || 0).getTime();
                     return dateB - dateA;
-                })
-                .forEach(a => {
-                    const clientKey = a.clientePrincipalRef || a.contactPhone || a._id;
-                    if (!seenClients.has(clientKey)) {
-                        seenClients.add(clientKey);
-                        uniqueAtendimentos.push(a);
-                    }
                 });
 
-            const filteredCases = uniqueAtendimentos.map(a => {
+            const filteredCases = filteredAtendimentos.map(a => {
                 const client = clientsList.find(c => c._id === a.clientePrincipalRef);
                 const dataEntrada = a._updatedDate || a._createdDate || new Date();
                 const diasNaFase = Math.floor((new Date().getTime() - new Date(dataEntrada).getTime()) / (1000 * 60 * 60 * 24));
@@ -204,15 +198,24 @@ export default function AdminLocacoesKanbanPage() {
                 const participantServicesRefs = partiesList.filter(p => p.clientRef === clientId).map(p => p.serviceRecordRef);
                 const participationServices = atendimentos.filter(s => participantServicesRefs.includes(s._id) && s._id !== a._id && !s.isArchived);
 
-                const allRelatedServices = [...otherPrimaryServices, ...participationServices];
+                // Services related to the same property
+                const clientPropertyIds = propertyLinks.filter(p => p.atendimentoRef === a._id).map(p => p.imovelRef);
+                const propertyRelatedRefs = propertyLinks
+                    .filter(p => clientPropertyIds.includes(p.imovelRef) && p.atendimentoRef !== a._id)
+                    .map(p => p.atendimentoRef);
+                const propertyRelatedServices = atendimentos.filter(s => propertyRelatedRefs.includes(s._id) && !s.isArchived);
+
+                // Combine and unique by ID
+                const combinedServices = [...otherPrimaryServices, ...participationServices, ...propertyRelatedServices];
+                const uniqueRelated = Array.from(new Map(combinedServices.map(s => [s._id, s])).values());
 
                 const interlinks = {
-                    hasProperty: propertiesList.some(p => p.proprietarioId === clientId || p.emailProprietario === client?.emailPrincipal || p.telefoneProprietario === client?.phoneNumber),
-                    activeSales: allRelatedServices.filter(s => ['Venda', 'Compra'].includes(s.serviceType || '')).length,
-                    activeRentals: allRelatedServices.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
-                    activeFinancing: allRelatedServices.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
-                    activeAuctions: allRelatedServices.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
-                    relatedServices: allRelatedServices.map(s => ({
+                    hasProperty: clientPropertyIds.length > 0 || propertiesList.some(p => p.proprietarioId === clientId || p.emailProprietario === client?.emailPrincipal || p.telefoneProprietario === client?.phoneNumber),
+                    activeSales: uniqueRelated.filter(s => ['Venda', 'Compra', 'Leilão'].includes(s.serviceType || '')).length,
+                    activeRentals: uniqueRelated.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
+                    activeFinancing: uniqueRelated.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
+                    activeAuctions: uniqueRelated.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
+                    relatedServices: uniqueRelated.map(s => ({
                         _id: s._id,
                         serviceType: s.serviceType || '',
                         contactName: s.contactName || '',
@@ -409,7 +412,22 @@ export default function AdminLocacoesKanbanPage() {
                         <Button
                             variant="outline"
                             size="icon"
-                            className="rounded-full bg-white"
+                            className={`rounded-full shadow-sm hover:shadow-md transition-all ${!showEmptyColumns ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white text-slate-400'}`}
+                            onClick={() => {
+                                const nextValue = !showEmptyColumns;
+                                setShowEmptyColumns(nextValue);
+                                localStorage.setItem('kanban-show-empty-locacoes', String(nextValue));
+                                toast.info(nextValue ? 'Mostrando todas as colunas' : 'Ocultando colunas vazias');
+                            }}
+                            title={showEmptyColumns ? "Ocultar colunas vazias" : "Mostrar todas as colunas"}
+                        >
+                            {showEmptyColumns ? <LayoutGrid className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="rounded-full bg-white shadow-sm hover:shadow-md transition-all"
                             onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}
                         >
                             <Palette className="w-4 h-4" />
@@ -465,7 +483,11 @@ export default function AdminLocacoesKanbanPage() {
                     <div ref={scrollContainerRef} className="h-full overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing no-scrollbar scroll-smooth">
                         <DragDropContext onDragEnd={onDragEnd}>
                             <div className="flex h-full p-6 gap-6 min-w-max">
-                                {LOCACOES_COLUMNS.map((column) => (
+                                {LOCACOES_COLUMNS.filter(column => {
+                                    if (showEmptyColumns) return true;
+                                    const hasCards = cases.some(c => c.faseAtual === column.id);
+                                    return hasCards;
+                                }).map((column) => (
                                     <div key={column.id} className="w-80 flex flex-col h-full rounded-2xl bg-slate-100/40 backdrop-blur-sm border border-slate-200/50">
                                         <div className="p-4 flex items-center justify-between">
                                             <div className="flex items-center gap-2">

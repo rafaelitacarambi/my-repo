@@ -150,11 +150,11 @@ export const mapForPrismaCreate = (collection: string, item: any) => {
     if (collection === 'leadsdecontato') {
         return {
             id: item._id || crypto.randomUUID(),
-            clientRef: item.clientePrincipalRef || item.clientRef,
+            client: { connect: { id: item.clientePrincipalRef || item.clientRef || item.clientId } },
             fullName: item.fullName || 'Sem Nome',
             email: item.email || null,
             phoneNumber: item.phoneNumber || null,
-            interessePrincipal: item.interessePrincipal || '',
+            interessePrincipal: item.interessePrincipal || 'Não especificado',
             tipoImovelDesejado: item.tipoImovelDesejado || null,
             cidadeDesejada: item.cidadeDesejada || null,
             bairroDesejado: item.bairroDesejado || null,
@@ -167,8 +167,8 @@ export const mapForPrismaCreate = (collection: string, item: any) => {
             leadStatus: item.leadStatus || 'Novo',
             statusFunil: item.statusFunil || 'Novo',
             leadSource: item.leadSource || 'Área Restrita',
-            submissionDate: item.submissionDate ? new Date(item.submissionDate) : new Date(),
-            ultimaInteracao: item.ultimaInteracao ? new Date(item.ultimaInteracao) : new Date(),
+            submissionDate: item.submissionDate instanceof Date ? item.submissionDate : (item.submissionDate ? new Date(item.submissionDate) : new Date()),
+            ultimaInteracao: item.ultimaInteracao instanceof Date ? item.ultimaInteracao : (item.ultimaInteracao ? new Date(item.ultimaInteracao) : new Date()),
             responsavelRef: item.responsavelRef || null,
             unidadeRef: item.unidadeRef || null,
         };

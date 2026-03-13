@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { BaseCrudService } from '@/integrations';
-import { LeadsdeContato } from '@/entities';
+// LeadsdeContato import removed
 
 export default function ContatoPage() {
   const [formData, setFormData] = useState({
@@ -26,19 +26,12 @@ export default function ContatoPage() {
     setSubmitting(true);
 
     try {
-      const lead: LeadsdeContato = {
-        _id: crypto.randomUUID(),
-        fullName: formData.fullName,
-        email: formData.email,
-        phoneNumber: formData.phoneNumber,
-        message: formData.message,
-        propertyOfInterest: formData.propertyOfInterest,
-        leadSource: 'Website - Formulário de Contato',
-        leadStatus: 'Novo',
-        submissionDate: new Date().toISOString(),
-      };
-
-      await BaseCrudService.create('leadsdecontato', lead);
+      // Logic for creating leads removed as per user request
+      console.log('Contact form submitted:', formData);
+      
+      // In a real scenario, this could send an email or whatsapp notification
+      // For now, we just show the success message without creating a lead record
+      
       setSubmitted(true);
       setFormData({
         fullName: '',

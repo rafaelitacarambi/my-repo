@@ -168,26 +168,7 @@ function AreaRestritaContent() {
               </Link>
             </motion.div>
 
-            {/* Leads */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Link to="/admin/leads">
-                <div className="bg-primary-foreground/5 rounded-2xl p-8 border border-primary-foreground/10 hover:border-secondary/30 transition-all group h-full">
-                  <div className="w-14 h-14 bg-secondary rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Users className="w-7 h-7 text-secondary-foreground" />
-                  </div>
-                  <h3 className="font-heading text-2xl text-primary-foreground mb-3 font-semibold">
-                    Leads
-                  </h3>
-                  <p className="font-paragraph text-base text-primary-foreground/70 leading-relaxed">
-                    Visualize e gerencie leads de contato e distribua automaticamente
-                  </p>
-                </div>
-              </Link>
-            </motion.div>
+{/* Lead card removed */}
 
 
 

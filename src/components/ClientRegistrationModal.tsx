@@ -1,17 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+
 import { AlertCircle, Check, TrendingUp, Building2, Gavel, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { BaseCrudService } from '@/integrations';
-import { Clients, ServiceRecords } from '@/entities';
-import { LeadRegistrationModal } from '@/components/LeadRegistrationModal';
+import { Clients, ServiceRecords, Imveis, UsuriosdoSistema } from '@/entities';
+// LeadRegistrationModal import removed
 import { formatCPF, handleCPFInput, validateCPF } from '@/lib/input-masks';
 
 interface ClientRegistrationModalProps {
@@ -41,9 +37,12 @@ export function ClientRegistrationModal({
   const [error, setError] = useState<string | null>(null);
   const [duplicateWarning, setDuplicateWarning] = useState<{ client: Clients; services: ServiceRecords[] } | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [createLead, setCreateLead] = useState<'sim' | 'nao'>('nao');
+  // createLead removed
   const [createdClientId, setCreatedClientId] = useState<string | null>(null);
-  const [showLeadModal, setShowLeadModal] = useState(false);
+  // showLeadModal removed
+  const [properties, setProperties] = useState<Imveis[]>([]);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+  const [brokers, setBrokers] = useState<UsuriosdoSistema[]>([]);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -54,6 +53,8 @@ export function ClientRegistrationModal({
     address: '',
     notes: '',
     gender: 'Masculino' as 'Masculino' | 'Feminino' | 'Outro',
+    origemCliente: '',        // new: origin source
+    corretorOrigemId: '',     // new: broker id if origin is a broker
   });
 
   const isCPFInvalid = formData.cpfCnpj.length === 14 && !validateCPF(formData.cpfCnpj);
@@ -67,14 +68,16 @@ export function ClientRegistrationModal({
       address: '',
       notes: '',
       gender: 'Masculino',
+      origemCliente: '',
+      corretorOrigemId: '',
     });
     setSelectedRoles([]);
-    setCreateLead('nao');
+    // setCreateLead and setShowLeadModal calls removed
     setError(null);
     setDuplicateWarning(null);
     setStep('form');
     setCreatedClientId(null);
-    setShowLeadModal(false);
+    // setShowLeadModal removed
   };
 
   const handleClose = () => {
@@ -162,21 +165,14 @@ export function ClientRegistrationModal({
         address: formData.address,
         notes: formData.notes,
         status: 'Ativo',
-        papeis: selectedRoles.length > 0 ? selectedRoles.join(', ') : undefined, // Optional roles
+        papeis: selectedRoles.length > 0 ? selectedRoles.join(', ') : undefined,
+        canalOrigem: formData.origemCliente || undefined,
+        responsavelInternoId: formData.corretorOrigemId || undefined,
       });
 
       setCreatedClientId(clientId);
 
-      // Check if user wants to create a lead
-      if (createLead === 'sim') {
-        setStep('success');
-        // Open lead modal after a short delay
-        setTimeout(() => {
-          setShowLeadModal(true);
-        }, 500);
-      } else {
-        setStep('success');
-      }
+      setStep('success');
     } catch (err) {
       setError('Erro ao criar cliente');
       console.error(err);
@@ -185,6 +181,36 @@ export function ClientRegistrationModal({
     }
   };
 
+  const loadProperties = async () => {
+    try {
+      const { items } = await BaseCrudService.getAll<Imveis>('imoveis');
+      setProperties(items.sort((a, b) => (a.codImovel || '').localeCompare(b.codImovel || '')));
+    } catch (err) {
+      console.error('Error loading properties:', err);
+    }
+  };
+
+  const loadBrokers = async () => {
+    try {
+      const { items } = await BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema');
+      // Only show active brokers (corretores)
+      setBrokers(items.filter(u => u.ativo !== false));
+    } catch (err) {
+      console.error('Error loading brokers:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 'success') {
+      loadProperties();
+    }
+  }, [step]);
+
+  useEffect(() => {
+    // Load brokers when modal opens
+    if (true) { loadBrokers(); }
+  }, []);
+
   const handleSuccessClose = () => {
     if (createdClientId) {
       onSuccess?.(createdClientId);
@@ -192,27 +218,12 @@ export function ClientRegistrationModal({
     handleClose();
   };
 
-  const handleLeadSuccess = (leadId: string) => {
-    setShowLeadModal(false);
-    // Lead was created successfully
-  };
+  // handleLeadSuccess removed
 
   const handleGenerateService = async (serviceType: string) => {
     setLoading(true);
     try {
-      // Duplication check for Financing
-      const { items: existingServices } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
-      const duplicate = existingServices.find(s =>
-        s.clientePrincipalRef === createdClientId &&
-        s.serviceType === serviceType &&
-        !s.isArchived
-      );
-
-      if (duplicate) {
-        toast.error(`Este cliente já possui um processo de ${serviceType} ativo (Pasta: ${duplicate.pastaInterna}). Arquive o atual antes de criar um novo.`);
-        setLoading(false);
-        return;
-      }
+      // Duplication check removed as per user request to allow multiple cards of the same sector
 
       const getInitialStatus = (type: string): string => {
         if (type === 'Financiamento' || type === 'Crédito') return 'novos-clientes';
@@ -238,7 +249,18 @@ export function ClientRegistrationModal({
         newServiceRecord.faseFinanciamento = 'novos-clientes';
       }
 
-      await BaseCrudService.create('atendimentos', newServiceRecord);
+      const createdService = await BaseCrudService.create('atendimentos', newServiceRecord);
+
+      // Create property link if selected
+      if (selectedPropertyId) {
+        await BaseCrudService.create('atendimentoimoveis', {
+          _id: crypto.randomUUID(),
+          atendimentoRef: newServiceRecord._id,
+          imovelRef: selectedPropertyId,
+          role: 'Imóvel Principal',
+          dateAdded: new Date().toISOString()
+        });
+      }
 
       if (onSuccess && createdClientId) {
         onSuccess(createdClientId);
@@ -271,177 +293,255 @@ export function ClientRegistrationModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose} >
+    <>
+      <Dialog open={isOpen} onOpenChange={handleClose} >
       <DialogContent className="max-w-2xl bg-primary border-primary-foreground/20 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl text-secondary">
-            {step === 'form' && 'Cadastrar Novo Cliente'}
-            {step === 'roles' && 'Selecionar Papéis/Funções'}
-            {step === 'success' && 'Cliente Criado com Sucesso!'}
+            <span style={{ display: step === 'form' ? 'inline' : 'none' }}>Cadastrar Novo Cliente</span>
+            <span style={{ display: step === 'roles' ? 'inline' : 'none' }}>Selecionar Papéis/Funções</span>
+            <span style={{ display: step === 'success' ? 'inline' : 'none' }}>Cliente Criado com Sucesso!</span>
           </DialogTitle>
         </DialogHeader>
 
-        {/* Form Step */}
-        {step === 'form' && (
-          <form onSubmit={handleFormSubmit} className="space-y-4 mt-4">
-            {error && (
-              <Alert className="bg-destructive/10 border-destructive/30">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <AlertDescription className="text-destructive ml-2">
-                  {error}
-                </AlertDescription>
-              </Alert>
-            )}
+        <div className="mt-4">
+          {/* Form Step */}
+          <div style={{ display: step === 'form' ? 'block' : 'none' }}>
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <div 
+                style={{ display: error ? 'flex' : 'none' }}
+                className="bg-destructive/10 border border-destructive/30 p-3 rounded-md items-start gap-2"
+              >
+                <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+                <p className="text-destructive text-sm">
+                  {error || ''}
+                </p>
+              </div>
 
-            {duplicateWarning && (
-              <Alert className="bg-brandaccent/10 border-brandaccent/30">
-                <AlertCircle className="h-4 w-4 text-brandaccent" />
-                <AlertDescription className="text-foreground ml-2">
-                  <p className="font-semibold mb-2 text-destructive">Impossível continuar: Este cliente já possui cadastro!</p>
-                  <p className="font-medium">{duplicateWarning.client.clientName}</p>
-                  {duplicateWarning.client.cpfCnpj && <p className="text-sm">CPF/CNPJ: {duplicateWarning.client.cpfCnpj}</p>}
+              <div 
+                style={{ display: duplicateWarning ? 'flex' : 'none' }}
+                className="bg-brandaccent/10 border border-brandaccent/30 p-4 rounded-md items-start gap-2"
+              >
+                <AlertCircle className="h-4 w-4 text-brandaccent mt-0.5" />
+                <div className="text-foreground text-sm">
+                  <p className="font-semibold mb-2 text-brandaccent">Atenção: Este cliente já possui cadastro!</p>
+                  <p className="font-medium">{duplicateWarning?.client.clientName || ''}</p>
+                  <p style={{ display: duplicateWarning?.client.cpfCnpj ? 'block' : 'none' }} className="text-xs">
+                    CPF/CNPJ: {duplicateWarning?.client.cpfCnpj || ''}
+                  </p>
 
-                  {duplicateWarning.services.length > 0 ? (
+                  <div style={{ display: (duplicateWarning?.services.length || 0) > 0 ? 'block' : 'none' }}>
                     <div className="mt-3 p-3 bg-white/50 rounded-lg border border-brandaccent/20">
-                      <p className="font-semibold text-sm mb-2">Cartões já existentes para este cliente:</p>
+                      <p className="font-semibold text-xs mb-2">Cartões já existentes para este cliente:</p>
                       <ul className="space-y-1">
-                        {duplicateWarning.services.map(s => (
-                          <li key={s._id} className="text-xs flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                        {duplicateWarning?.services.map(s => (
+                          <li key={s._id} className="text-[10px] flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
                             <strong>{s.serviceType}</strong> - Pasta: {s.pastaInterna} ({s.status})
                           </li>
-                        ))}
+                        )) || []}
                       </ul>
-                      <p className="mt-3 text-[10px] text-slate-500 italic">Não é permitido criar um novo cadastro para o mesmo cliente/endereço.</p>
+                      <p className="mt-3 text-[10px] text-brandaccent italic">Você pode ver os detalhes acima ou clicar em "Vincular Novo Cartão" para prosseguir.</p>
                     </div>
-                  ) : (
-                    <p className="mt-2 text-sm italic">O cliente existe mas não possui cartões ativos no momento.</p>
-                  )}
+                  </div>
+                  <div style={{ display: (duplicateWarning?.services.length || 0) === 0 ? 'block' : 'none' }}>
+                    <p className="mt-2 text-xs italic">O cliente existe mas não possui cartões ativos no momento.</p>
+                  </div>
 
                   <div className="mt-4 flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs border-brandaccent/30 text-brandaccent hover:bg-brandaccent/10"
+                    <button
+                      type="button"
                       onClick={() => {
-                        navigate('/admin/clientes', { state: { highlightId: duplicateWarning.client._id } });
-                        handleClose();
+                        if (duplicateWarning) {
+                          navigate('/admin/clientes', { state: { highlightId: duplicateWarning.client._id } });
+                          handleClose();
+                        }
                       }}
+                      className="text-[10px] px-2 py-1 rounded border border-brandaccent/30 text-brandaccent hover:bg-brandaccent/10 transition-colors"
                     >
-                      Ver Cadastro Existente
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-slate-500"
+                      Ver Cadastro Completo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (duplicateWarning) {
+                          setCreatedClientId(duplicateWarning.client._id);
+                          setStep('success');
+                        }
+                      }}
+                      className="text-[10px] font-bold px-3 py-1 bg-secondary text-secondary-foreground rounded shadow-sm hover:shadow-md transition-all uppercase tracking-tighter"
+                    >
+                      Avançar e Vincular Novo Cartão
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setDuplicateWarning(null)}
+                      className="text-[10px] px-2 py-1 text-slate-500 hover:text-slate-700 transition-colors"
                     >
                       Corrigir Dados
-                    </Button>
+                    </button>
                   </div>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div>
-              <Label htmlFor="clientName" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                Nome do Cliente *
-              </Label>
-              <Input
-                id="clientName"
-                required
-                value={formData.clientName}
-                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                placeholder="Nome completo ou razão social"
-              />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="cpfCnpj" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                  CPF/CNPJ
-                </Label>
-                <Input
-                  id="cpfCnpj"
-                  value={formData.cpfCnpj}
-                  onChange={(e) => setFormData({ ...formData, cpfCnpj: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                  placeholder="000.000.000-00"
-                />
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="email" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="phoneNumber" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                  Telefone
-                </Label>
-                <Input
-                  id="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                  className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                  placeholder="(11) 99999-9999"
+                <label htmlFor="clientName" className="font-paragraph text-xs text-primary-foreground mb-2 block font-medium uppercase tracking-tight">
+                  Nome do Cliente *
+                </label>
+                <input
+                  id="clientName"
+                  required
+                  value={formData.clientName}
+                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                  className="w-full h-10 px-4 rounded-md bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground focus:outline-none focus:ring-1 focus:ring-secondary/50 transition-colors text-sm placeholder:text-primary-foreground/40"
+                  placeholder="Nome completo ou razão social"
                 />
               </div>
 
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="cpfCnpj" className="font-paragraph text-xs text-primary-foreground mb-2 block font-medium uppercase tracking-tight">
+                    CPF/CNPJ
+                  </label>
+                  <input
+                    id="cpfCnpj"
+                    value={formData.cpfCnpj}
+                    onChange={(e) => setFormData({ ...formData, cpfCnpj: e.target.value })}
+                    className="w-full h-10 px-4 rounded-md bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground focus:outline-none focus:ring-1 focus:ring-secondary/50 transition-colors text-sm placeholder:text-primary-foreground/40"
+                    placeholder="000.000.000-00"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="font-paragraph text-xs text-primary-foreground mb-2 block font-medium uppercase tracking-tight">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full h-10 px-4 rounded-md bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground focus:outline-none focus:ring-1 focus:ring-secondary/50 transition-colors text-sm placeholder:text-primary-foreground/40"
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="phoneNumber" className="font-paragraph text-xs text-primary-foreground mb-2 block font-medium uppercase tracking-tight">
+                    Telefone
+                  </label>
+                  <input
+                    id="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    className="w-full h-10 px-4 rounded-md bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground focus:outline-none focus:ring-1 focus:ring-secondary/50 transition-colors text-sm placeholder:text-primary-foreground/40"
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+
               <div>
-                <Label className="font-paragraph text-sm text-primary-foreground mb-2 block">
+                <label className="font-paragraph text-xs text-primary-foreground mb-2 block font-medium uppercase tracking-tight">
                   Gênero (Para Contratos)
-                </Label>
-                <RadioGroup
-                  value={formData.gender}
-                  onValueChange={(v: any) => setFormData({ ...formData, gender: v })}
-                  className="flex gap-3 h-12 items-center"
-                >
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem value="Masculino" id="masc" className="border-primary-foreground/20 text-primary-foreground" />
-                    <Label htmlFor="masc" className="text-xs text-primary-foreground font-medium">Masc</Label>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem value="Feminino" id="fem" className="border-primary-foreground/20 text-primary-foreground" />
-                    <Label htmlFor="fem" className="text-xs text-primary-foreground font-medium">Fem</Label>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <RadioGroupItem value="Outro" id="outro" className="border-primary-foreground/20 text-primary-foreground" />
-                    <Label htmlFor="outro" className="text-xs text-primary-foreground font-medium">Outro</Label>
-                  </div>
-                </RadioGroup>
+                </label>
+                <div className="flex gap-4 h-12 items-center bg-primary-foreground/5 px-3 rounded-md border border-primary-foreground/20">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-primary-foreground">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="Masculino"
+                      checked={formData.gender === 'Masculino'}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
+                      className="w-4 h-4 accent-secondary"
+                    />
+                    Masc
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-primary-foreground">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="Feminino"
+                      checked={formData.gender === 'Feminino'}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
+                      className="w-4 h-4 accent-secondary"
+                    />
+                    Fem
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-primary-foreground">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="Outro"
+                      checked={formData.gender === 'Outro'}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
+                      className="w-4 h-4 accent-secondary"
+                    />
+                    Outro
+                  </label>
+                </div>
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="address" className="font-paragraph text-sm text-primary-foreground mb-2 block">
-                Endereço
-              </Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground"
-                placeholder="Rua, número, bairro, cidade"
-              />
-            </div>
+              <div>
+                <label htmlFor="address" className="font-paragraph text-xs text-primary-foreground mb-2 block font-medium uppercase tracking-tight">
+                  Endereço
+                </label>
+                <input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full h-10 px-4 rounded-md bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground focus:outline-none focus:ring-1 focus:ring-secondary/50 transition-colors text-sm placeholder:text-primary-foreground/40"
+                  placeholder="Rua, número, bairro, cidade"
+                />
+              </div>
+
+              {/* Origem do Cliente */}
+              <div>
+                <label className="font-paragraph text-xs text-primary-foreground mb-2 block font-medium uppercase tracking-tight">
+                  Origem do Cliente
+                </label>
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {['Instagram', 'WhatsApp', 'Imobiliária', 'Corretor', 'Corretor R.Sales'].map((origem) => (
+                    <button
+                      key={origem}
+                      type="button"
+                      onClick={() => setFormData({
+                        ...formData,
+                        origemCliente: formData.origemCliente === origem ? '' : origem,
+                        corretorOrigemId: '',
+                      })}
+                      className={`text-xs py-1.5 px-2 rounded-md border transition-all font-medium ${
+                        formData.origemCliente === origem
+                          ? 'bg-secondary text-secondary-foreground border-secondary'
+                          : 'bg-primary-foreground/5 text-primary-foreground/70 border-primary-foreground/20 hover:border-secondary/40'
+                      }`}
+                    >
+                      {origem}
+                    </button>
+                  ))}
+                </div>
+                {/* Sub-selector: specific broker when "Corretor R.Sales" is selected */}
+                {formData.origemCliente === 'Corretor R.Sales' && brokers.length > 0 && (
+                  <select
+                    value={formData.corretorOrigemId}
+                    onChange={(e) => setFormData({ ...formData, corretorOrigemId: e.target.value })}
+                    className="w-full h-10 px-3 rounded-md bg-primary-foreground/10 border border-secondary/40 text-primary-foreground text-sm mt-1 focus:outline-none focus:ring-1 focus:ring-secondary/50"
+                  >
+                    <option value="">— Selecione o Corretor R.Sales —</option>
+                    {brokers.map(b => (
+                      <option key={b._id} value={b._id}>
+                        {b.name || b.emailLogin || b._id}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
             <div>
-              <Label htmlFor="notes" className="font-paragraph text-sm text-primary-foreground mb-2 block">
+              <label htmlFor="notes" className="font-paragraph text-xs text-primary-foreground mb-2 block font-medium uppercase tracking-tight">
                 Notas
-              </Label>
+              </label>
               <textarea
                 id="notes"
                 value={formData.notes}
@@ -452,226 +552,225 @@ export function ClientRegistrationModal({
               />
             </div>
 
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 rounded-lg"
-              >
-                {loading ? 'Verificando...' : 'Próximo'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
-              >
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {/* Roles Step */}
-        {step === 'roles' && (
-          <div className="space-y-4 mt-4">
-            <p className="font-paragraph text-sm text-primary-foreground/70">
-              Selecione os papéis/funções deste cliente (opcional). Os papéis servem apenas para classificação no CRM e não afetam nenhum fluxo.
-            </p>
-
-            <div className="space-y-3">
-              {ROLES.map((role) => (
-                <div
-                  key={role.id}
-                  className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10 hover:border-secondary/30 transition-all"
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 disabled:opacity-50 font-paragraph font-semibold h-12 rounded-lg transition-colors"
                 >
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id={role.id}
-                      checked={selectedRoles.includes(role.id)}
-                      onCheckedChange={() => handleRoleToggle(role.id)}
-                      className="border-primary-foreground/30 mt-1"
-                    />
-                    <div className="flex-1">
-                      <Label
-                        htmlFor={role.id}
-                        className="font-paragraph font-semibold text-primary-foreground cursor-pointer"
-                      >
-                        {role.label}
-                      </Label>
+                  <span style={{ display: loading ? 'none' : 'inline' }}>Próximo</span>
+                  <span style={{ display: loading ? 'inline' : 'none' }}>Verificando...</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 border border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Roles Step */}
+          <div style={{ display: step === 'roles' ? 'block' : 'none' }}>
+            <div className="space-y-4">
+              <p className="font-paragraph text-xs text-primary-foreground/70">
+                Selecione os papéis/funções deste cliente (opcional). Os papéis servem apenas para classificação no CRM e não afetam nenhum fluxo.
+              </p>
+
+              <div className="space-y-3">
+                {ROLES.map((role) => (
+                  <div
+                    key={role.id}
+                    className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10 hover:border-secondary/30 transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id={role.id}
+                        checked={selectedRoles.includes(role.id)}
+                        onChange={() => handleRoleToggle(role.id)}
+                        className="w-5 h-5 accent-secondary rounded border-primary-foreground/30 mt-1 cursor-pointer"
+                      />
+                      <div className="flex-1">
+                        <label
+                          htmlFor={role.id}
+                          className="font-paragraph font-bold text-sm text-primary-foreground cursor-pointer"
+                        >
+                          {role.label}
+                        </label>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Create Lead Option */}
-            <div className="bg-secondary/10 rounded-lg p-4 border border-secondary/30 mt-6">
-              <Label className="font-paragraph font-semibold text-primary-foreground mb-3 block">
-                Criar Lead para este cliente?
-              </Label>
-              <RadioGroup value={createLead} onValueChange={(value: 'sim' | 'nao') => setCreateLead(value)}>
-                <div className="flex items-center space-x-2 mb-2">
-                  <RadioGroupItem value="sim" id="lead-sim" />
-                  <Label htmlFor="lead-sim" className="font-paragraph text-sm text-primary-foreground cursor-pointer">
-                    Sim
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="nao" id="lead-nao" />
-                  <Label htmlFor="lead-nao" className="font-paragraph text-sm text-primary-foreground cursor-pointer">
-                    Não
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {error && (
-              <Alert className="bg-destructive/10 border-destructive/30">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <AlertDescription className="text-destructive ml-2">
-                  {error}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleCreateClient}
-                disabled={loading}
-                className="flex-1 bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 rounded-lg"
-              >
-                {loading ? 'Criando...' : selectedRoles.length > 0 ? `Criar Cliente (${selectedRoles.length} papel${selectedRoles.length !== 1 ? 'éis' : ''})` : 'Criar Cliente'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setStep('form')}
-                className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
-              >
-                Voltar
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Success Step */}
-        {step === 'success' && (
-          <div className="space-y-4 mt-4 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <Check className="w-8 h-8 text-green-600" />
-            </div>
-
-            <div>
-              <h3 className="font-heading text-xl text-primary-foreground font-semibold mb-2">
-                Cliente criado com sucesso!
-              </h3>
-              <p className="font-paragraph text-sm text-primary-foreground/70">
-                {formData.clientName}
-              </p>
-            </div>
-
-            {selectedRoles.length > 0 && (
-              <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
-                <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
-                  Papéis selecionados:
-                </p>
-                <ul className="space-y-1">
-                  {selectedRoles.map((roleId) => {
-                    const role = ROLES.find((r) => r.id === roleId);
-                    return (
-                      <li key={roleId} className="font-paragraph text-sm text-primary-foreground">
-                        ✓ {role?.label}
-                      </li>
-                    );
-                  })}
-                </ul>
+                ))}
               </div>
-            )}
 
-            {createLead === 'sim' && (
-              <div className="bg-secondary/10 rounded-lg p-4 border border-secondary/30">
-                <p className="font-paragraph text-sm text-primary-foreground">
-                  O formulário de Lead será aberto em seguida...
+              {/* Lead registration option removed */}
+
+              <div 
+                style={{ display: error ? 'flex' : 'none' }}
+                className="bg-destructive/10 border border-destructive/30 p-3 rounded-md items-start gap-2"
+              >
+                <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+                <p className="text-destructive text-sm">
+                  {error || ''}
                 </p>
               </div>
-            )}
 
-            <div className="pt-4 space-y-4">
-              <p className="font-paragraph text-sm text-primary-foreground/70 mb-4">
-                Deseja gerar um cartão/processo para este cliente agora?
-              </p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  onClick={() => handleGenerateService('Financiamento')}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCreateClient}
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-900/20"
+                  className="flex-1 bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 disabled:opacity-50 font-paragraph font-semibold h-12 rounded-lg transition-colors"
                 >
-                  <DollarSign className="w-5 h-5" />
-                  <span className="text-xs">Financiamento</span>
-                </Button>
-
-                <Button
-                  onClick={() => handleGenerateService('Venda')}
-                  disabled={loading}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-900/20"
+                  <span style={{ display: loading ? 'inline' : 'none' }}>Criando...</span>
+                  <span style={{ display: !loading ? 'inline' : 'none' }}>
+                    {selectedRoles.length > 0 ? `Criar Cliente (${selectedRoles.length} papel${selectedRoles.length !== 1 ? 'éis' : ''})` : 'Criar Cliente'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep('form')}
+                  className="flex-1 border border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg transition-colors"
                 >
-                  <TrendingUp className="w-5 h-5" />
-                  <span className="text-xs">Venda / Compra</span>
-                </Button>
-
-                <Button
-                  onClick={() => handleGenerateService('Locação')}
-                  disabled={loading}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-purple-900/20"
-                >
-                  <Building2 className="w-5 h-5" />
-                  <span className="text-xs">Locação</span>
-                </Button>
-
-                <Button
-                  onClick={() => handleGenerateService('Leilão')}
-                  disabled={loading}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-amber-900/20"
-                >
-                  <Gavel className="w-5 h-5" />
-                  <span className="text-xs">Leilão</span>
-                </Button>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <Button
-                  onClick={() => {
-                    navigate('/admin/clientes');
-                    if (onSuccess && createdClientId) onSuccess(createdClientId);
-                    handleClose();
-                  }}
-                  variant="outline"
-                  className="flex-1 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
-                >
-                  Ver Cliente
-                </Button>
-                <Button
-                  onClick={handleSuccessClose}
-                  variant="ghost"
-                  className="flex-1 text-primary-foreground hover:bg-primary-foreground/10 h-12 rounded-lg"
-                >
-                  Fechar
-                </Button>
+                  Voltar
+                </button>
               </div>
             </div>
           </div>
-        )}
+
+          {/* Success Step */}
+          <div style={{ display: step === 'success' ? 'block' : 'none' }}>
+            <div className="space-y-4 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Check className="w-8 h-8 text-green-600" />
+              </div>
+
+              <div>
+                <h3 className="font-heading text-xl text-primary-foreground font-semibold mb-2">
+                  Cliente criado com sucesso!
+                </h3>
+                <p className="font-paragraph text-sm text-primary-foreground/70">
+                  {formData.clientName}
+                </p>
+              </div>
+
+              {selectedRoles.length > 0 && (
+                <div className="bg-primary-foreground/5 rounded-lg p-4 border border-primary-foreground/10">
+                  <p className="font-paragraph text-xs text-primary-foreground/60 mb-2">
+                    Papéis selecionados:
+                  </p>
+                  <ul className="space-y-1">
+                    {selectedRoles.map((roleId) => {
+                      const role = ROLES.find((r) => r.id === roleId);
+                      return (
+                        <li key={roleId} className="font-paragraph text-sm text-primary-foreground">
+                          ✓ {role?.label}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {/* createLead === 'sim' notice removed */}
+
+              <div className="pt-4 space-y-4">
+                <p className="font-paragraph text-[10px] text-primary-foreground/70 mb-4 uppercase tracking-widest font-bold">
+                  Deseja vincular a um imóvel específico? (Opcional)
+                </p>
+
+                <div className="mb-6">
+                  <select
+                    value={selectedPropertyId}
+                    onChange={(e) => setSelectedPropertyId(e.target.value)}
+                    className="w-full h-10 px-3 bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground rounded-md focus:outline-none focus:ring-1 focus:ring-secondary/50 text-xs"
+                  >
+                    <option value="" className="bg-primary text-primary-foreground">Não vincular imóvel agora</option>
+                    {properties.map(p => (
+                      <option key={p._id} value={p._id} className="bg-primary text-primary-foreground">
+                        {p.codImovel} - {p.tipoImovel} - {p.bairro}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <p className="font-paragraph text-[10px] text-primary-foreground/70 mb-4 uppercase tracking-widest font-bold">
+                  Deseja gerar um cartão/processo agora?
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateService('Financiamento')}
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-900/20 transition-all"
+                  >
+                    <DollarSign className="w-5 h-5" />
+                    <span className="text-[10px] uppercase font-bold tracking-tight">Financiamento</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateService('Venda')}
+                    disabled={loading}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-900/20 transition-all"
+                  >
+                    <TrendingUp className="w-5 h-5" />
+                    <span className="text-[10px] uppercase font-bold tracking-tight">Venda / Compra</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateService('Locação')}
+                    disabled={loading}
+                    className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-purple-900/20 transition-all"
+                  >
+                    <Building2 className="w-5 h-5" />
+                    <span className="text-[10px] uppercase font-bold tracking-tight">Locação</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateService('Leilão')}
+                    disabled={loading}
+                    className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-paragraph font-bold h-14 rounded-xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-amber-900/20 transition-all"
+                  >
+                    <Gavel className="w-5 h-5" />
+                    <span className="text-[10px] uppercase font-bold tracking-tight">Leilão</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate('/admin/clientes');
+                      if (onSuccess && createdClientId) onSuccess(createdClientId);
+                      handleClose();
+                    }}
+                    className="flex-1 border border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 h-10 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    Ver Cliente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSuccessClose}
+                    className="flex-1 text-primary-foreground hover:bg-primary-foreground/10 h-10 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </DialogContent>
-
-      {/* Lead Registration Modal */}
-      <LeadRegistrationModal
-        isOpen={showLeadModal}
-        onOpenChange={setShowLeadModal}
-        clientId={createdClientId}
-        onSuccess={handleLeadSuccess}
-      />
     </Dialog >
-  );
+    
+    {/* LeadRegistrationModal removed */}
+  </>
+);
 }

@@ -259,6 +259,7 @@ export default function AdminFinancingKanbanPage() {
   const [filterAgencia, setFilterAgencia] = useState('');
   const [kanbanBackground, setKanbanBackground] = useState('bg-light-gray');
   const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+  const [showEmptyColumns, setShowEmptyColumns] = useState(true);
   const [currentUser, setCurrentUser] = useState<UsuriosdoSistema | null>(null);
 
 
@@ -606,6 +607,8 @@ export default function AdminFinancingKanbanPage() {
       if (storedBg) {
         setKanbanBackground(storedBg);
       }
+      const storedShowEmpty = localStorage.getItem('kanban-show-empty-financiamento');
+      if (storedShowEmpty !== null) setShowEmptyColumns(storedShowEmpty === 'true');
     } catch (error) {
       console.error('Error loading background:', error);
     }
@@ -666,27 +669,17 @@ export default function AdminFinancingKanbanPage() {
       const { items: atendimentos } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
       const { items: partiesList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
       const { items: propertiesList } = await BaseCrudService.getAll<Imveis>('imoveis');
+      const { items: propertyLinks } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
 
-      // Deduplication Logic: One active process per client per service type (Financiamento)
-      const uniqueAtendimentos: ServiceRecords[] = [];
-      const seenClients = new Set<string>();
-
-      atendimentos
+      const filteredAtendimentos = atendimentos
         .filter(a => ['Financiamento', 'Crédito'].includes(a.serviceType || '') && !a.isArchived)
         .sort((a, b) => {
           const dateA = new Date(a._updatedDate || a._createdDate || 0).getTime();
           const dateB = new Date(b._updatedDate || b._createdDate || 0).getTime();
           return dateB - dateA;
-        })
-        .forEach(a => {
-          const clientKey = a.clientePrincipalRef || a.contactPhone || a._id;
-          if (!seenClients.has(clientKey)) {
-            seenClients.add(clientKey);
-            uniqueAtendimentos.push(a);
-          }
         });
 
-      const financingCases = uniqueAtendimentos.map(a => {
+      const financingCases = filteredAtendimentos.map(a => {
         const client = clientsList.find(c => c._id === a.clientePrincipalRef);
 
         // Compute Interlinks
@@ -699,15 +692,24 @@ export default function AdminFinancingKanbanPage() {
         const participantServicesRefs = partiesList.filter(p => p.clientRef === clientId).map(p => p.serviceRecordRef);
         const participationServices = atendimentos.filter(s => participantServicesRefs.includes(s._id) && s._id !== a._id && !s.isArchived);
 
-        const allRelatedServices = [...otherPrimaryServices, ...participationServices];
+        // Services related to the same property
+        const clientPropertyIds = propertyLinks.filter(p => p.atendimentoRef === a._id).map(p => p.imovelRef);
+        const propertyRelatedRefs = propertyLinks
+          .filter(p => clientPropertyIds.includes(p.imovelRef) && p.atendimentoRef !== a._id)
+          .map(p => p.atendimentoRef);
+        const propertyRelatedServices = atendimentos.filter(s => propertyRelatedRefs.includes(s._id) && !s.isArchived);
+
+        // Combine and unique by ID
+        const combinedServices = [...otherPrimaryServices, ...participationServices, ...propertyRelatedServices];
+        const uniqueRelated = Array.from(new Map(combinedServices.map(s => [s._id, s])).values());
 
         const interlinks = {
-          hasProperty: propertiesList.some(p => p.proprietarioId === clientId || p.emailProprietario === client?.emailPrincipal || p.telefoneProprietario === client?.telefonePrincipal),
-          activeSales: allRelatedServices.filter(s => ['Venda', 'Compra'].includes(s.serviceType || '')).length,
-          activeRentals: allRelatedServices.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
-          activeFinancing: allRelatedServices.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
-          activeAuctions: allRelatedServices.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
-          relatedServices: allRelatedServices.map(s => ({
+          hasProperty: clientPropertyIds.length > 0 || propertiesList.some(p => p.proprietarioId === clientId || p.emailProprietario === client?.emailPrincipal || p.telefoneProprietario === client?.phoneNumber),
+          activeSales: uniqueRelated.filter(s => ['Venda', 'Compra', 'Leilão'].includes(s.serviceType || '')).length,
+          activeRentals: uniqueRelated.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
+          activeFinancing: uniqueRelated.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
+          activeAuctions: uniqueRelated.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
+          relatedServices: uniqueRelated.map(s => ({
             _id: s._id,
             serviceType: s.serviceType || '',
             contactName: s.contactName || '',
@@ -2794,7 +2796,21 @@ export default function AdminFinancingKanbanPage() {
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full bg-white"
+              className={`rounded-full shadow-sm hover:shadow-md transition-all ${!showEmptyColumns ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white text-slate-400'}`}
+              onClick={() => {
+                const nextValue = !showEmptyColumns;
+                setShowEmptyColumns(nextValue);
+                localStorage.setItem('kanban-show-empty-financiamento', String(nextValue));
+                toast.info(nextValue ? 'Mostrando todas as colunas' : 'Ocultando colunas vazias');
+              }}
+              title={showEmptyColumns ? "Ocultar colunas vazias" : "Mostrar todas as colunas"}
+            >
+              {showEmptyColumns ? <LayoutGrid className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full bg-white shadow-sm hover:shadow-md transition-all"
               onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}
             >
               <Palette className="w-4 h-4" />
@@ -2861,7 +2877,11 @@ export default function AdminFinancingKanbanPage() {
                 tabIndex={0}
               >
                 {/* ... keep existing code (FINANCING_COLUMNS.map) ... */}
-                {FINANCING_COLUMNS.map((column) => {
+                {FINANCING_COLUMNS.filter(column => {
+                  if (showEmptyColumns) return true;
+                  const columnCases = getCasesByColumn(column.id);
+                  return columnCases.length > 0;
+                }).map((column) => {
                   const columnCases = getCasesByColumn(column.id);
                   return (
                     <motion.div
@@ -2975,6 +2995,41 @@ export default function AdminFinancingKanbanPage() {
                                             {caseItem.diasNaFase} {caseItem.diasNaFase === 1 ? 'dia' : 'dias'}
                                           </span>
                                         </div>
+
+                                        {/* Interlinks (Cross-Board Visibility) */}
+                                        {(caseItem.interlinks?.hasProperty ||
+                                          caseItem.interlinks?.activeSales ||
+                                          caseItem.interlinks?.activeRentals ||
+                                          caseItem.interlinks?.activeFinancing ||
+                                          caseItem.interlinks?.activeAuctions) ? (
+                                          <div className="flex flex-wrap gap-1.5 mb-3 p-1.5 bg-slate-50 rounded-lg border border-slate-100">
+                                            {caseItem.interlinks.hasProperty && (
+                                              <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100" title="Possui Imóvel Cadastrado">
+                                                <Home className="w-3.5 h-3.5" />
+                                              </div>
+                                            )}
+                                            {(caseItem.interlinks.activeSales || 0) > 0 && (
+                                              <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100" title={`${caseItem.interlinks.activeSales} Outras Vendas/Compras`}>
+                                                <DollarSign className="w-3.5 h-3.5" />
+                                              </div>
+                                            )}
+                                            {(caseItem.interlinks.activeRentals || 0) > 0 && (
+                                              <div className="w-6 h-6 rounded bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100" title={`${caseItem.interlinks.activeRentals} Locações/Aluguéis`}>
+                                                <Key className="w-3.5 h-3.5" />
+                                              </div>
+                                            )}
+                                            {(caseItem.interlinks.activeFinancing || 0) > 0 && (
+                                              <div className="w-6 h-6 rounded bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100" title={`${caseItem.interlinks.activeFinancing} Outros Processos de Financiamento`}>
+                                                <Landmark className="w-3.5 h-3.5" />
+                                              </div>
+                                            )}
+                                            {(caseItem.interlinks.activeAuctions || 0) > 0 && (
+                                              <div className="w-6 h-6 rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100" title={`${caseItem.interlinks.activeAuctions} Processos de Leilão`}>
+                                                <Gavel className="w-3.5 h-3.5" />
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : null}
 
                                         {/* Bloqueio Icons */}
                                         <div className="flex flex-wrap gap-2 mb-2">

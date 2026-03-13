@@ -18,7 +18,7 @@ import AreaRestritaPage from '@/components/pages/AreaRestritaPage';
 import PerfilPage from '@/components/pages/PerfilPage';
 import LeilaoPage from '@/components/pages/LeilaoPage';
 import AdminImoveisPage from '@/components/pages/admin/AdminImoveisPage';
-import AdminLeadsPage from '@/components/pages/admin/AdminLeadsPage';
+// AdminLeadsPage import removed
 import AdminProcessosPage from '@/components/pages/admin/AdminProcessosPage';
 import AdminChavesPage from '@/components/pages/admin/AdminChavesPage';
 import AdminFinanceiroPage from '@/components/pages/admin/AdminFinanceiroPage';
@@ -119,14 +119,7 @@ const router = createBrowserRouter([
           </ProtectedAdminRoute>
         ),
       },
-      {
-        path: "admin/leads",
-        element: (
-          <ProtectedAdminRoute>
-            <AdminLeadsPage />
-          </ProtectedAdminRoute>
-        ),
-      },
+      // admin/leads route removed
 
 
       {

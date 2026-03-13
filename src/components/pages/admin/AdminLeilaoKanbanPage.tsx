@@ -147,16 +147,25 @@ export default function AdminLeilaoKanbanPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [kanbanBackground, setKanbanBackground] = useState('bg-slate-50');
     const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
+    const [showEmptyColumns, setShowEmptyColumns] = useState(true);
     type RelatedService = { _id: string; serviceType: string; contactName: string; pastaInterna: string; status: string };
     const [previewRelatedCard, setPreviewRelatedCard] = useState<RelatedService | null>(null);
 
     const [clients, setClients] = useState<Clients[]>([]);
     const [users, setUsers] = useState<UsuriosdoSistema[]>([]);
+    const [leilaoFormData, setLeilaoFormData] = useState<Record<string, string>>({});
+    const [isSavingLeilao, setIsSavingLeilao] = useState(false);
+    const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
+    const [isDraggingDoc, setIsDraggingDoc] = useState(false);
+    const docInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         loadData();
         const storedBg = localStorage.getItem('kanban-background-leilao');
         if (storedBg) setKanbanBackground(storedBg);
+
+        const storedShowEmpty = localStorage.getItem('kanban-show-empty-leilao');
+        if (storedShowEmpty !== null) setShowEmptyColumns(storedShowEmpty === 'true');
     }, []);
 
     const loadData = async () => {
@@ -173,27 +182,17 @@ export default function AdminLeilaoKanbanPage() {
             const { items: tasksList } = await BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento');
             const { items: partiesList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
             const { items: propertiesList } = await BaseCrudService.getAll<Imveis>('imoveis');
+            const { items: propertyLinks } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
 
-            // Deduplication Logic: One active process per client per service type (Leilão)
-            const uniqueAtendimentos: ServiceRecords[] = [];
-            const seenClients = new Set<string>();
-
-            atendimentos
+            const filteredAtendimentos = atendimentos
                 .filter(a => ['Leilão'].includes(a.serviceType || '') && !a.isArchived)
                 .sort((a, b) => {
                     const dateA = new Date(a._updatedDate || a._createdDate || 0).getTime();
                     const dateB = new Date(b._updatedDate || b._createdDate || 0).getTime();
                     return dateB - dateA;
-                })
-                .forEach(a => {
-                    const clientKey = a.clientePrincipalRef || a.contactPhone || a._id;
-                    if (!seenClients.has(clientKey)) {
-                        seenClients.add(clientKey);
-                        uniqueAtendimentos.push(a);
-                    }
                 });
 
-            const filteredCases = uniqueAtendimentos.map(a => {
+            const filteredCases = filteredAtendimentos.map(a => {
                 const client = clientsList.find(c => c._id === a.clientePrincipalRef);
                 const dataEntrada = a._updatedDate || a._createdDate || new Date();
                 const diasNaFase = Math.floor((new Date().getTime() - new Date(dataEntrada).getTime()) / (1000 * 60 * 60 * 24));
@@ -211,15 +210,24 @@ export default function AdminLeilaoKanbanPage() {
                 const participantServicesRefs = partiesList.filter(p => p.clientRef === clientId).map(p => p.serviceRecordRef);
                 const participationServices = atendimentos.filter(s => participantServicesRefs.includes(s._id) && s._id !== a._id && !s.isArchived);
 
-                const allRelatedServices = [...otherPrimaryServices, ...participationServices];
+                // Services related to the same property
+                const clientPropertyIds = propertyLinks.filter(p => p.atendimentoRef === a._id).map(p => p.imovelRef);
+                const propertyRelatedRefs = propertyLinks
+                    .filter(p => clientPropertyIds.includes(p.imovelRef) && p.atendimentoRef !== a._id)
+                    .map(p => p.atendimentoRef);
+                const propertyRelatedServices = atendimentos.filter(s => propertyRelatedRefs.includes(s._id) && !s.isArchived);
+
+                // Combine and unique by ID
+                const combinedServices = [...otherPrimaryServices, ...participationServices, ...propertyRelatedServices];
+                const uniqueRelated = Array.from(new Map(combinedServices.map(s => [s._id, s])).values());
 
                 const interlinks = {
-                    hasProperty: propertiesList.some(p => p.proprietarioId === clientId || p.emailProprietario === client?.emailPrincipal || p.telefoneProprietario === client?.phoneNumber),
-                    activeSales: allRelatedServices.filter(s => ['Venda', 'Compra'].includes(s.serviceType || '')).length,
-                    activeRentals: allRelatedServices.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
-                    activeFinancing: allRelatedServices.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
-                    activeAuctions: allRelatedServices.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
-                    relatedServices: allRelatedServices.map(s => ({
+                    hasProperty: clientPropertyIds.length > 0 || propertiesList.some(p => p.proprietarioId === clientId || p.emailProprietario === client?.emailPrincipal || p.telefoneProprietario === client?.phoneNumber),
+                    activeSales: uniqueRelated.filter(s => ['Venda', 'Compra', 'Leilão'].includes(s.serviceType || '')).length,
+                    activeRentals: uniqueRelated.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
+                    activeFinancing: uniqueRelated.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
+                    activeAuctions: uniqueRelated.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
+                    relatedServices: uniqueRelated.map(s => ({
                         _id: s._id,
                         serviceType: s.serviceType || '',
                         contactName: s.contactName || '',
@@ -374,7 +382,40 @@ export default function AdminLeilaoKanbanPage() {
 
     const handleOpenDetails = (caseItem: LeilaoCase) => {
         setSelectedCase(caseItem);
+        // Populate form from existing data stored in atendimento
+        setLeilaoFormData((caseItem as any).leilaoExtra || {});
+        setUploadedDocs((caseItem as any).documentosAnexos || []);
         setShowDetailsModal(true);
+    };
+
+    const handleSaveLeilaoData = async () => {
+        if (!selectedCase) return;
+        setIsSavingLeilao(true);
+        try {
+            await BaseCrudService.update('atendimentos', {
+                _id: selectedCase._id,
+                leilaoExtra: leilaoFormData,
+                documentosAnexos: uploadedDocs,
+            });
+            toast.success('Dados salvos com sucesso!');
+        } catch {
+            toast.error('Erro ao salvar dados.');
+        } finally {
+            setIsSavingLeilao(false);
+        }
+    };
+
+    const handleDocFileDrop = (files: FileList | null) => {
+        if (!files) return;
+        const newDocs = Array.from(files).map(f => ({
+            name: f.name,
+            url: URL.createObjectURL(f),
+            size: f.size,
+            type: f.type,
+            uploadedAt: new Date().toISOString(),
+        }));
+        setUploadedDocs(prev => [...prev, ...newDocs]);
+        toast.success(`${newDocs.length} documento(s) adicionado(s)`);
     };
 
     // Auto-open card from state
@@ -415,7 +456,22 @@ export default function AdminLeilaoKanbanPage() {
                         <Button
                             variant="outline"
                             size="icon"
-                            className="rounded-full bg-white"
+                            className={`rounded-full shadow-sm hover:shadow-md transition-all ${!showEmptyColumns ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-white text-slate-400'}`}
+                            onClick={() => {
+                                const nextValue = !showEmptyColumns;
+                                setShowEmptyColumns(nextValue);
+                                localStorage.setItem('kanban-show-empty-leilao', String(nextValue));
+                                toast.info(nextValue ? 'Mostrando todas as colunas' : 'Ocultando colunas vazias');
+                            }}
+                            title={showEmptyColumns ? "Ocultar colunas vazias" : "Mostrar todas as colunas"}
+                        >
+                            {showEmptyColumns ? <LayoutGrid className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="rounded-full bg-white shadow-sm hover:shadow-md transition-all"
                             onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}
                         >
                             <Palette className="w-4 h-4" />
@@ -471,7 +527,11 @@ export default function AdminLeilaoKanbanPage() {
                     <div ref={scrollContainerRef} className="h-full overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing no-scrollbar scroll-smooth">
                         <DragDropContext onDragEnd={onDragEnd}>
                             <div className="flex h-full p-6 gap-6 min-w-max">
-                                {LEILAO_COLUMNS.map((column) => (
+                                {LEILAO_COLUMNS.filter(column => {
+                                    if (showEmptyColumns) return true;
+                                    const hasCards = cases.some(c => c.faseAtual === column.id);
+                                    return hasCards;
+                                }).map((column) => (
                                     <div key={column.id} className="w-80 flex flex-col h-full rounded-2xl bg-slate-100/40 backdrop-blur-sm border border-slate-200/50">
                                         <div className="p-4 flex items-center justify-between">
                                             <div className="flex items-center gap-2">
@@ -739,64 +799,197 @@ export default function AdminLeilaoKanbanPage() {
                                         </TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="dados" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <Info className="w-4 h-4 text-amber-500" />
-                                                    Informações Básicas
-                                                </h3>
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Licitante Principal</Label>
-                                                        <p className="text-sm font-medium text-slate-900">{selectedCase?.contactName}</p>
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider">CPF/CNPJ</Label>
-                                                        <p className="text-sm font-medium text-slate-900">{selectedCase?.cpfProponentePrincipal || '—'}</p>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Telefone</Label>
-                                                            <p className="text-sm font-medium text-slate-900">{selectedCase?.contactPhone || '—'}</p>
+                                    <TabsContent value="dados" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        {/* Helper to render labeled input */}
+                                        {(() => {
+                                            const F = ({ label, field, type = 'text' }: { label: string; field: string; type?: string }) => (
+                                                <div>
+                                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1 block">{label}</Label>
+                                                    <Input
+                                                        type={type}
+                                                        value={leilaoFormData[field] || ''}
+                                                        onChange={e => setLeilaoFormData(p => ({ ...p, [field]: e.target.value }))}
+                                                        className="h-9 text-sm bg-slate-50 border-slate-200 rounded-lg"
+                                                    />
+                                                </div>
+                                            );
+                                            const S = ({ label, field, options }: { label: string; field: string; options: string[] }) => (
+                                                <div>
+                                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1 block">{label}</Label>
+                                                    <select
+                                                        value={leilaoFormData[field] || ''}
+                                                        onChange={e => setLeilaoFormData(p => ({ ...p, [field]: e.target.value }))}
+                                                        className="w-full h-9 text-sm bg-slate-50 border border-slate-200 rounded-lg px-2"
+                                                    >
+                                                        <option value="">—</option>
+                                                        {options.map(o => <option key={o} value={o}>{o}</option>)}
+                                                    </select>
+                                                </div>
+                                            );
+
+                                            return (
+                                                <div className="space-y-6">
+                                                    {/* 🟦 Identificação da Proposta */}
+                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
+                                                        <h3 className="text-sm font-bold text-amber-700 mb-4 flex items-center gap-2"><Hash className="w-4 h-4" /> Identificação da Proposta / Oportunidade</h3>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                            <F label="Nº da Proposta / ID" field="numeroProposta" />
+                                                            <S label="Modalidade da Oferta" field="modalidadeOferta" options={['Lance Viva Voz', 'Lance Online', 'Primeiro Licitante', 'Proposta Fechada']} />
+                                                            <S label="Status da Proposta" field="statusProposta" options={['Em aberto', 'Aprovada', 'Reprovada', 'Em análise', 'Arrematado', 'Cancelado']} />
+                                                            <F label="Data da Proposta" field="dataProposta" type="date" />
                                                         </div>
-                                                        <div>
-                                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Pasta</Label>
-                                                            <p className="text-sm font-medium text-slate-900">{selectedCase?.pastaInterna}</p>
+                                                    </Card>
+
+                                                    {/* 🟦 Dados do Cliente */}
+                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
+                                                        <h3 className="text-sm font-bold text-blue-700 mb-4 flex items-center gap-2"><Users className="w-4 h-4" /> Dados do Cliente</h3>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                            <div className="md:col-span-2"><F label="Nome Completo" field="clienteNome" /></div>
+                                                            <F label="CPF / CNPJ" field="clienteCpfCnpj" />
+                                                            <F label="Telefone" field="clienteTelefone" />
+                                                            <div className="md:col-span-2"><F label="E-mail" field="clienteEmail" /></div>
                                                         </div>
+                                                    </Card>
+
+                                                    {/* 🟦 Endereço do Imóvel */}
+                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
+                                                        <h3 className="text-sm font-bold text-emerald-700 mb-4 flex items-center gap-2"><Home className="w-4 h-4" /> Endereço do Imóvel</h3>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                            <div className="md:col-span-2"><F label="Logradouro" field="endLogradouro" /></div>
+                                                            <F label="Número" field="endNumero" />
+                                                            <F label="Complemento" field="endComplemento" />
+                                                            <F label="Bairro" field="endBairro" />
+                                                            <F label="Cidade" field="endCidade" />
+                                                            <F label="Estado" field="endEstado" />
+                                                            <div className="md:col-span-2"><F label="Endereço Completo" field="endCompleto" /></div>
+                                                        </div>
+                                                    </Card>
+
+                                                    {/* 🟦 Dados Financeiros da Proposta */}
+                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
+                                                        <h3 className="text-sm font-bold text-green-700 mb-4 flex items-center gap-2"><DollarSign className="w-4 h-4" /> Dados Financeiros da Proposta</h3>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                            <F label="Valor de Avaliação" field="finValorAvaliacao" />
+                                                            <F label="Valor da Proposta" field="finValorProposta" />
+                                                            <F label="Valor Recursos Próprios" field="finRecursosProprios" />
+                                                            <F label="Validade do Boleto" field="finValidadeBoleto" type="date" />
+                                                            <S label="Forma de Pagamento" field="finFormaPagamento" options={['À Vista', 'Financiamento CEF', 'Financiamento BB', 'Consórcio', 'FGTS', 'Parcelamento direto']} />
+                                                        </div>
+                                                    </Card>
+
+                                                    {/* 🟦 Dados Registrais do Imóvel */}
+                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
+                                                        <h3 className="text-sm font-bold text-violet-700 mb-4 flex items-center gap-2"><FileCheck className="w-4 h-4" /> Dados Registrais do Imóvel</h3>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                            <F label="Nº da Matrícula" field="regMatricula" />
+                                                            <div className="md:col-span-2"><F label="Cartório / Circunscrição" field="regCartorio" /></div>
+                                                            <F label="Inscrição Imobiliária" field="regInscricao" />
+                                                            <S label="Status da Averbação" field="regStatusAverbacao" options={['Pendente', 'Solicitada', 'Concluída', 'Com restrições']} />
+                                                        </div>
+                                                    </Card>
+
+                                                    {/* 🟦 Dados do Leiloeiro */}
+                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
+                                                        <h3 className="text-sm font-bold text-amber-700 mb-4 flex items-center gap-2"><Gavel className="w-4 h-4" /> Dados do Leiloeiro</h3>
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                            <F label="Nome do Leiloeiro" field="leiloeiroNome" />
+                                                            <F label="Telefone do Leiloeiro" field="leiloeiroTelefone" />
+                                                            <F label="E-mail do Leiloeiro" field="leiloeiroEmail" />
+                                                        </div>
+                                                    </Card>
+
+                                                    {/* 🟦 Dados da Intermediação */}
+                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
+                                                        <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Dados da Intermediação</h3>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <S label="Tipo de Serviço Prestado" field="intermediacaoTipo" options={['Intermediação', 'Assessoramento', 'Consultoria', 'Representação']} />
+                                                            <div>
+                                                                <Label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1 block">Observações</Label>
+                                                                <Textarea
+                                                                    value={leilaoFormData['intermediacaoObs'] || ''}
+                                                                    onChange={e => setLeilaoFormData(p => ({ ...p, intermediacaoObs: e.target.value }))}
+                                                                    className="min-h-[80px] bg-slate-50 border-slate-200 rounded-lg text-sm"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </Card>
+
+                                                    <div className="flex justify-end">
+                                                        <Button
+                                                            onClick={handleSaveLeilaoData}
+                                                            disabled={isSavingLeilao}
+                                                            className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-amber-200"
+                                                        >
+                                                            {isSavingLeilao ? 'Salvando...' : 'Salvar Dados'}
+                                                        </Button>
                                                     </div>
                                                 </div>
-                                            </Card>
+                                            );
+                                        })()}
+                                    </TabsContent>
 
-                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <DollarSign className="w-4 h-4 text-emerald-500" />
-                                                    Valores do Lote
-                                                </h3>
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Lance Automático / Valor</Label>
-                                                        <p className="text-lg font-bold text-slate-900">{formatCurrency(selectedCase?.bidValue || 0)}</p>
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Modalidade</Label>
-                                                        <Badge className="mt-1 bg-amber-100 text-amber-700 hover:bg-amber-200 border-none">{selectedCase?.serviceType}</Badge>
-                                                    </div>
-                                                </div>
-                                            </Card>
-
-                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <ClipboardList className="w-4 h-4 text-amber-500" />
-                                                    Notas do Processo
-                                                </h3>
-                                                <Textarea
-                                                    className="min-h-[120px] bg-slate-50 border-none rounded-xl text-sm italic"
-                                                    value={selectedCase?.notes || ''}
-                                                    readOnly
-                                                />
-                                            </Card>
+                                    {/* Documentos Tab - Drag & Drop */}
+                                    <TabsContent value="documentos" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div
+                                            onDragOver={e => { e.preventDefault(); setIsDraggingDoc(true); }}
+                                            onDragLeave={() => setIsDraggingDoc(false)}
+                                            onDrop={e => {
+                                                e.preventDefault();
+                                                setIsDraggingDoc(false);
+                                                handleDocFileDrop(e.dataTransfer.files);
+                                            }}
+                                            onClick={() => docInputRef.current?.click()}
+                                            className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all mb-6 ${
+                                                isDraggingDoc
+                                                    ? 'border-amber-400 bg-amber-50 scale-[1.01]'
+                                                    : 'border-slate-200 bg-slate-50 hover:border-amber-300 hover:bg-amber-50/50'
+                                            }`}
+                                        >
+                                            <Upload className="w-10 h-10 mx-auto mb-3 text-slate-400" />
+                                            <p className="text-sm font-semibold text-slate-600">Arraste documentos aqui ou clique para selecionar</p>
+                                            <p className="text-xs text-slate-400 mt-1">PDF, Word, Excel, imagens — qualquer formato aceito</p>
+                                            <input
+                                                ref={docInputRef}
+                                                type="file"
+                                                multiple
+                                                className="hidden"
+                                                onChange={e => handleDocFileDrop(e.target.files)}
+                                            />
                                         </div>
+
+                                        {uploadedDocs.length === 0 ? (
+                                            <p className="text-sm text-slate-400 text-center italic">Nenhum documento anexado ainda.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {uploadedDocs.map((doc, i) => (
+                                                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center">
+                                                                <File className="w-4 h-4 text-amber-600" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium text-slate-800">{doc.name}</p>
+                                                                <p className="text-[10px] text-slate-400">{(doc.size / 1024).toFixed(1)} KB • {new Date(doc.uploadedAt).toLocaleDateString('pt-BR')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-1">
+                                                            <a href={doc.url} download={doc.name} onClick={e => e.stopPropagation()}>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-amber-600">
+                                                                    <Download className="w-4 h-4" />
+                                                                </Button>
+                                                            </a>
+                                                            <Button
+                                                                variant="ghost" size="icon"
+                                                                className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                                                onClick={() => setUploadedDocs(prev => prev.filter((_, idx) => idx !== i))}
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </TabsContent>
 
                                     {/* Remaining tabs pattern same as Vendas */}

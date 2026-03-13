@@ -3,12 +3,13 @@ import { toast } from 'sonner';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Users, ArrowLeft, Mail, Phone, Plus, Trash2, Edit2, ChevronDown, ChevronUp, DollarSign, TrendingUp, Building2, Gavel, FilePlus, Search } from 'lucide-react';
+import { Users, ArrowLeft, Mail, Phone, Plus, Trash2, Edit2, ChevronDown, ChevronUp, DollarSign, TrendingUp, Building2, Gavel, FilePlus, Search, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Tabs kept for potential future use
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -136,14 +137,31 @@ function AdminClientesContent() {
     }
   };
 
+
   const handleDelete = async (id: string) => {
+    const processos = clienteProcessos[id] || [];
+    const cliente = clientes.find(c => c._id === id);
+
+    const confirmMsg = processos.length > 0
+      ? `Tem certeza que deseja excluir o cliente "${cliente?.clientName}"?\n\nIsso também excluirá ${processos.length} cartão(ões) vinculado(s) a este cliente. Esta ação não pode ser desfeita.`
+      : `Tem certeza que deseja excluir o cliente "${cliente?.clientName}"?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
     try {
+      // Delete all linked service cards first (cascade)
+      await Promise.all(
+        processos.map(p => BaseCrudService.delete('atendimentos', p._id))
+      );
+      // Then delete the client
       await BaseCrudService.delete('clientes', id);
-      loadClientes();
+      await loadClientes();
     } catch (error) {
       console.error('Error deleting cliente:', error);
+      alert('Erro ao excluir cliente. Tente novamente.');
     }
   };
+
 
   const handleEdit = (cliente: Clients) => {
     setEditingId(cliente._id);
@@ -161,18 +179,7 @@ function AdminClientesContent() {
 
   const handleGenerateService = async (cliente: Clients, serviceType: string) => {
     try {
-      // Duplication check for Financing
-      const { items: existingServices } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
-      const duplicate = existingServices.find(s =>
-        s.clientePrincipalRef === cliente._id &&
-        s.serviceType === serviceType &&
-        !s.isArchived
-      );
-
-      if (duplicate) {
-        toast.error(`Este cliente já possui um processo de ${serviceType} ativo (Pasta: ${duplicate.pastaInterna}). Arquive o atual antes de criar um novo.`);
-        return;
-      }
+      // Duplication check removed as per user request to allow multiple cards
 
       const getInitialStatus = (type: string): string => {
         if (type === 'Financiamento' || type === 'Crédito') return 'novos-clientes';
@@ -361,95 +368,116 @@ function AdminClientesContent() {
             />
           </div>
 
-          <Tabs defaultValue="lista" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="lista" className="font-paragraph">Lista de Clientes</TabsTrigger>
-              <TabsTrigger value="dados" className="font-paragraph">Dados e Processos</TabsTrigger>
-            </TabsList>
+          {/* Client List - No Tabs, expandable inline */}
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-primary-foreground/5 rounded-xl h-32 animate-pulse"></div>
+              ))}
+            </div>
+          ) : clientes.length === 0 ? (
+            <div className="text-center py-20">
+              <Users className="w-16 h-16 text-primary-foreground/30 mx-auto mb-4" />
+              <h3 className="font-heading text-2xl text-primary-foreground mb-2">
+                Nenhum cliente cadastrado
+              </h3>
+              <p className="font-paragraph text-base text-primary-foreground/60">
+                Comece adicionando um novo cliente
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {clientes
+                .filter(c => {
+                  if (!searchTerm) return true;
+                  const search = searchTerm.toLowerCase();
+                  return (
+                    c.clientName?.toLowerCase().includes(search) ||
+                    c.email?.toLowerCase().includes(search) ||
+                    c.phoneNumber?.toLowerCase().includes(search) ||
+                    c.cpfCnpj?.toLowerCase().includes(search)
+                  );
+                })
+                .map((cliente, index) => {
+                  const processos = clienteProcessos[cliente._id] || [];
+                  const isExpanded = expandedClientId === cliente._id;
 
-            {/* Tab: Lista de Clientes */}
-            <TabsContent value="lista">
-              {loading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-primary-foreground/5 rounded-xl h-32 animate-pulse"></div>
-                  ))}
-                </div>
-              ) : clientes.length === 0 ? (
-                <div className="text-center py-20">
-                  <Users className="w-16 h-16 text-primary-foreground/30 mx-auto mb-4" />
-                  <h3 className="font-heading text-2xl text-primary-foreground mb-2">
-                    Nenhum cliente cadastrado
-                  </h3>
-                  <p className="font-paragraph text-base text-primary-foreground/60">
-                    Comece adicionando um novo cliente
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {clientes
-                    .filter(c => {
-                      if (!searchTerm) return true;
-                      const search = searchTerm.toLowerCase();
-                      return (
-                        c.clientName?.toLowerCase().includes(search) ||
-                        c.email?.toLowerCase().includes(search) ||
-                        c.phoneNumber?.toLowerCase().includes(search) ||
-                        c.cpfCnpj?.toLowerCase().includes(search)
-                      );
-                    })
-                    .map((cliente, index) => (
-                      <motion.div
-                        key={cliente._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: index * 0.05 }}
-                        className="bg-primary-foreground/5 rounded-xl p-6 border border-primary-foreground/10 hover:border-secondary/30 transition-all"
-                      >
-                        <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
-                          <div className="flex-1 space-y-3">
-                            <h3 className="font-heading text-xl text-primary-foreground font-semibold">
+                  // Kanban route map per serviceType
+                  const kanbanRoute = (serviceType?: string) => {
+                    const map: Record<string, string> = {
+                      'Financiamento': '/admin/financiamento-kanban',
+                      'Crédito': '/admin/financiamento-kanban',
+                      'Venda': '/admin/negocios/kanban',
+                      'Compra': '/admin/negocios/kanban',
+                      'Locação': '/admin/locacoes/kanban',
+                      'Aluguel': '/admin/locacoes/kanban',
+                      'Leilão': '/admin/leilao/kanban',
+                    };
+                    return map[serviceType || ''] || '/admin/clientes';
+                  };
+
+                  const serviceColor = (serviceType?: string) => {
+                    if (serviceType === 'Financiamento' || serviceType === 'Crédito') return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+                    if (serviceType === 'Venda' || serviceType === 'Compra') return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+                    if (serviceType === 'Locação' || serviceType === 'Aluguel') return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+                    if (serviceType === 'Leilão') return 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+                    return 'bg-primary-foreground/10 text-primary-foreground/60 border-primary-foreground/20';
+                  };
+
+                  return (
+                    <motion.div
+                      key={cliente._id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.04 }}
+                      className="bg-primary-foreground/5 rounded-xl border border-primary-foreground/10 hover:border-secondary/20 transition-all overflow-hidden"
+                    >
+                      {/* Client Row */}
+                      <div className="flex flex-col lg:flex-row justify-between items-start gap-4 p-5">
+                        {/* Clickable name + info */}
+                        <button
+                          onClick={() => setExpandedClientId(isExpanded ? null : cliente._id)}
+                          className="flex-1 text-left group"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-heading text-lg text-primary-foreground font-semibold group-hover:text-secondary transition-colors">
                               {cliente.clientName}
                             </h3>
-                            <div className="space-y-2">
-                              {cliente.email && (
-                                <div className="flex items-center gap-2">
-                                  <Mail className="w-4 h-4 text-secondary flex-shrink-0" />
-                                  <a
-                                    href={`mailto:${cliente.email}`}
-                                    className="font-paragraph text-sm text-primary-foreground/70 hover:text-secondary transition-colors"
-                                  >
-                                    {cliente.email}
-                                  </a>
-                                </div>
-                              )}
-                              {cliente.phoneNumber && (
-                                <div className="flex items-center gap-2">
-                                  <Phone className="w-4 h-4 text-secondary flex-shrink-0" />
-                                  <a
-                                    href={`tel:${cliente.phoneNumber}`}
-                                    className="font-paragraph text-sm text-primary-foreground/70 hover:text-secondary transition-colors"
-                                  >
-                                    {cliente.phoneNumber}
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                            {cliente.address && (
-                              <p className="font-paragraph text-sm text-primary-foreground/60">
-                                📍 {cliente.address}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 pt-2">
-                              <span className="text-xs font-paragraph text-primary-foreground/50">Status:</span>
-                              <span className={`text-xs font-paragraph px-2 py-1 rounded-full ${cliente.status === 'Ativo' ? 'bg-green-100 text-green-800' :
-                                cliente.status === 'Inativo' ? 'bg-gray-100 text-gray-800' :
-                                  'bg-red-100 text-red-800'
-                                }`}>
-                                {cliente.status}
+                            {isExpanded
+                              ? <ChevronUp className="w-4 h-4 text-secondary" />
+                              : <ChevronDown className="w-4 h-4 text-primary-foreground/40 group-hover:text-secondary transition-colors" />
+                            }
+                            {processos.length > 0 && (
+                              <span className="text-[10px] font-bold bg-secondary/20 text-secondary border border-secondary/30 rounded-full px-2 py-0.5">
+                                {processos.length} cartão{processos.length !== 1 ? 'ões' : ''}
                               </span>
-                            </div>
+                            )}
                           </div>
+                          <div className="flex flex-wrap gap-3 mt-1">
+                            {cliente.email && (
+                              <span className="flex items-center gap-1 text-xs text-primary-foreground/50">
+                                <Mail className="w-3 h-3" /> {cliente.email}
+                              </span>
+                            )}
+                            {cliente.phoneNumber && (
+                              <span className="flex items-center gap-1 text-xs text-primary-foreground/50">
+                                <Phone className="w-3 h-3" /> {cliente.phoneNumber}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-paragraph ${
+                              cliente.status === 'Ativo' ? 'bg-green-100 text-green-800' :
+                              cliente.status === 'Inativo' ? 'bg-gray-100 text-gray-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {cliente.status}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button className="bg-secondary hover:bg-secondary/90 text-white font-bold" size="sm">
@@ -457,33 +485,21 @@ function AdminClientesContent() {
                                 Gerar Cartão
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-64 bg-primary border-primary-foreground/10 text-primary-foreground">
+                            <DropdownMenuContent align="end" className="w-56 bg-primary border-primary-foreground/10 text-primary-foreground">
                               {[
-                                { label: 'Financiamento', types: ['Financiamento', 'Crédito'], icon: <DollarSign className="w-4 h-4 text-blue-400" />, serviceType: 'Financiamento' },
-                                { label: 'Venda / Compra', types: ['Venda', 'Compra'], icon: <TrendingUp className="w-4 h-4 text-emerald-400" />, serviceType: 'Venda' },
-                                { label: 'Locação', types: ['Locação', 'Aluguel'], icon: <Building2 className="w-4 h-4 text-purple-400" />, serviceType: 'Locação' },
-                                { label: 'Leilão', types: ['Leilão'], icon: <Gavel className="w-4 h-4 text-amber-400" />, serviceType: 'Leilão' },
-                              ].map(({ label, types, icon, serviceType }) => {
-                                const existing = (clienteProcessos[cliente._id] || []).find(
-                                  p => types.includes(p.serviceType || '') && !p.isArchived
-                                );
-                                return (
-                                  <DropdownMenuItem
-                                    key={serviceType}
-                                    onClick={() => handleGenerateService(cliente, serviceType)}
-                                    className="gap-2 cursor-pointer hover:bg-primary-foreground/10 flex items-center justify-between"
-                                  >
-                                    <span className="flex items-center gap-2">
-                                      {icon} {label}
-                                    </span>
-                                    {existing && (
-                                      <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded px-1.5 py-0.5 flex items-center gap-1">
-                                        🔒 {existing.pastaInterna}
-                                      </span>
-                                    )}
-                                  </DropdownMenuItem>
-                                );
-                              })}
+                                { label: 'Financiamento', icon: <DollarSign className="w-4 h-4 text-blue-400" />, serviceType: 'Financiamento' },
+                                { label: 'Venda / Compra', icon: <TrendingUp className="w-4 h-4 text-emerald-400" />, serviceType: 'Venda' },
+                                { label: 'Locação', icon: <Building2 className="w-4 h-4 text-purple-400" />, serviceType: 'Locação' },
+                                { label: 'Leilão', icon: <Gavel className="w-4 h-4 text-amber-400" />, serviceType: 'Leilão' },
+                              ].map(({ label, icon, serviceType }) => (
+                                <DropdownMenuItem
+                                  key={serviceType}
+                                  onClick={() => handleGenerateService(cliente, serviceType)}
+                                  className="gap-2 cursor-pointer hover:bg-primary-foreground/10 flex items-center"
+                                >
+                                  {icon} {label}
+                                </DropdownMenuItem>
+                              ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <Button
@@ -503,216 +519,97 @@ function AdminClientesContent() {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </motion.div>
-                    ))}
-                </div>
-              )}
-            </TabsContent>
+                      </div>
 
-            {/* Tab: Dados e Processos */}
-            <TabsContent value="dados">
-              {loading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-primary-foreground/5 rounded-xl h-32 animate-pulse"></div>
-                  ))}
-                </div>
-              ) : clientes.length === 0 ? (
-                <div className="text-center py-20">
-                  <Users className="w-16 h-16 text-primary-foreground/30 mx-auto mb-4" />
-                  <h3 className="font-heading text-2xl text-primary-foreground mb-2">
-                    Nenhum cliente cadastrado
-                  </h3>
-                  <p className="font-paragraph text-base text-primary-foreground/60">
-                    Comece adicionando um novo cliente
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {clientes.map((cliente, index) => {
-                    const processos = clienteProcessos[cliente._id] || [];
-                    const isExpanded = expandedClientId === cliente._id;
-
-                    return (
-                      <motion.div
-                        key={cliente._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: index * 0.05 }}
-                        className="bg-primary-foreground/5 rounded-xl border border-primary-foreground/10 overflow-hidden"
-                      >
-                        {/* Cliente Header */}
-                        <button
-                          onClick={() => setExpandedClientId(isExpanded ? null : cliente._id)}
-                          className="w-full p-6 flex justify-between items-start hover:bg-primary-foreground/10 transition-colors text-left"
+                      {/* Expandable Processes Panel */}
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="border-t border-primary-foreground/10 bg-primary-foreground/[0.03] px-5 pb-5 pt-4"
                         >
-                          <div className="flex-1">
-                            <h3 className="font-heading text-xl text-primary-foreground font-semibold mb-2">
-                              {cliente.clientName}
-                            </h3>
-                            <div className="flex items-center gap-4">
-                              <span className="text-xs font-paragraph text-primary-foreground/50">
-                                {processos.length} processo(s)
-                              </span>
-                              <span className={`text-xs font-paragraph px-2 py-1 rounded-full ${cliente.status === 'Ativo' ? 'bg-green-100 text-green-800' :
-                                cliente.status === 'Inativo' ? 'bg-gray-100 text-gray-800' :
-                                  'bg-red-100 text-red-800'
-                                }`}>
-                                {cliente.status}
-                              </span>
-                            </div>
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="font-paragraph text-xs uppercase tracking-widest text-primary-foreground/50 font-bold">
+                              Cartões Vinculados
+                            </h4>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button className="bg-secondary hover:bg-secondary/90 text-white text-xs" size="sm">
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Novo Cartão
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44 bg-primary border-primary-foreground/10 text-primary-foreground">
+                                <DropdownMenuItem onClick={() => handleGenerateService(cliente, 'Financiamento')} className="gap-2 cursor-pointer hover:bg-primary-foreground/10 text-xs">
+                                  <DollarSign className="w-4 h-4 text-blue-400" /> Financiamento
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleGenerateService(cliente, 'Venda')} className="gap-2 cursor-pointer hover:bg-primary-foreground/10 text-xs">
+                                  <TrendingUp className="w-4 h-4 text-emerald-400" /> Venda / Compra
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleGenerateService(cliente, 'Locação')} className="gap-2 cursor-pointer hover:bg-primary-foreground/10 text-xs">
+                                  <Building2 className="w-4 h-4 text-purple-400" /> Locação
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleGenerateService(cliente, 'Leilão')} className="gap-2 cursor-pointer hover:bg-primary-foreground/10 text-xs">
+                                  <Gavel className="w-4 h-4 text-amber-400" /> Leilão
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                          {isExpanded ? (
-                            <ChevronUp className="w-5 h-5 text-secondary flex-shrink-0" />
+
+                          {processos.length === 0 ? (
+                            <p className="font-paragraph text-sm text-primary-foreground/40 italic py-2">
+                              Nenhum cartão vinculado a este cliente ainda.
+                            </p>
                           ) : (
-                            <ChevronDown className="w-5 h-5 text-secondary flex-shrink-0" />
-                          )}
-                        </button>
+                            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                              {processos.map(processo => (
+                                <div
+                                  key={processo._id}
+                                  className={`rounded-xl p-4 border ${serviceColor(processo.serviceType)} flex flex-col gap-3`}
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <p className="font-paragraph font-bold text-sm">{processo.pastaInterna || '—'}</p>
+                                      <p className="font-paragraph text-xs opacity-70 mt-0.5">{processo.serviceType}</p>
+                                    </div>
+                                    {processo.isArchived && (
+                                      <span className="text-[10px] bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded px-1.5 py-0.5">Arquivado</span>
+                                    )}
+                                  </div>
 
-                        {/* Expanded Content */}
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="border-t border-primary-foreground/10 p-6 space-y-6 bg-primary-foreground/2"
-                          >
-                            {/* Cliente Info */}
-                            <div>
-                              <h4 className="font-heading text-lg text-primary-foreground mb-4">Informações do Cliente</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {cliente.email && (
-                                  <div>
-                                    <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">Email</p>
-                                    <p className="font-paragraph text-sm text-primary-foreground">{cliente.email}</p>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <p className="opacity-50 mb-0.5">Fase</p>
+                                      <p>{processo.faseFinanciamento || processo.status || '—'}</p>
+                                    </div>
+                                    <div>
+                                      <p className="opacity-50 mb-0.5">Prioridade</p>
+                                      <p>{processo.priority || '—'}</p>
+                                    </div>
                                   </div>
-                                )}
-                                {cliente.phoneNumber && (
-                                  <div>
-                                    <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">Telefone</p>
-                                    <p className="font-paragraph text-sm text-primary-foreground">{cliente.phoneNumber}</p>
-                                  </div>
-                                )}
-                                {cliente.cpfCnpj && (
-                                  <div>
-                                    <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">CPF/CNPJ</p>
-                                    <p className="font-paragraph text-sm text-primary-foreground">{cliente.cpfCnpj}</p>
-                                  </div>
-                                )}
-                                {cliente.address && (
-                                  <div>
-                                    <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">Endereço</p>
-                                    <p className="font-paragraph text-sm text-primary-foreground">{cliente.address}</p>
-                                  </div>
-                                )}
-                                {cliente.notes && (
-                                  <div>
-                                    <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">Notas</p>
-                                    <p className="font-paragraph text-sm text-primary-foreground">{cliente.notes}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
 
-                            {/* Processos */}
-                            <div className="flex justify-between items-center mb-4">
-                              <h4 className="font-heading text-lg text-primary-foreground">Processos Vinculados</h4>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button className="bg-secondary hover:bg-secondary/90 text-white text-xs" size="sm">
-                                    <Plus className="w-4 h-4 mr-1" />
-                                    Novo Processo
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48 bg-primary border-primary-foreground/10 text-primary-foreground">
-                                  <DropdownMenuItem onClick={() => handleGenerateService(cliente, 'Financiamento')} className="gap-2 cursor-pointer hover:bg-primary-foreground/10 text-xs">
-                                    <DollarSign className="w-4 h-4" /> Financiamento
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleGenerateService(cliente, 'Venda')} className="gap-2 cursor-pointer hover:bg-primary-foreground/10 text-xs">
-                                    <TrendingUp className="w-4 h-4" /> Venda / Compra
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleGenerateService(cliente, 'Locação')} className="gap-2 cursor-pointer hover:bg-primary-foreground/10 text-xs">
-                                    <Building2 className="w-4 h-4" /> Locação
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleGenerateService(cliente, 'Leilão')} className="gap-2 cursor-pointer hover:bg-primary-foreground/10 text-xs">
-                                    <Gavel className="w-4 h-4" /> Leilão
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                            {processos.length === 0 ? (
-                              <p className="font-paragraph text-sm text-primary-foreground/60">Nenhum processo vinculado</p>
-                            ) : (
-                              <div className="space-y-3">
-                                {processos.map(processo => (
-                                  <div
-                                    key={processo._id}
-                                    className="bg-primary rounded-lg p-4 border border-primary-foreground/10"
+                                  {/* Go to Kanban Button */}
+                                  <button
+                                    onClick={() => navigate(kanbanRoute(processo.serviceType), {
+                                      state: { openCardId: processo._id }
+                                    })}
+                                    className="w-full flex items-center justify-center gap-2 text-xs font-bold py-2 px-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 transition-all"
                                   >
-                                    <div className="flex justify-between items-start gap-4 mb-3">
-                                      <div className="flex-1">
-                                        <p className="font-paragraph text-sm font-semibold text-primary-foreground">
-                                          Pasta: {processo.pastaInterna || '—'}
-                                        </p>
-                                        <p className="font-paragraph text-xs text-primary-foreground/60 mt-1">
-                                          Tipo: {processo.serviceType || '—'}
-                                        </p>
-                                      </div>
-                                      <Link to={`/admin/financiamento/${processo._id}`}>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="font-paragraph"
-                                        >
-                                          Ver Detalhes
-                                        </Button>
-                                      </Link>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                      <div>
-                                        <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">Fase</p>
-                                        <p className="font-paragraph text-xs text-primary-foreground">
-                                          {processo.faseFinanciamento || '—'}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">Subetapa</p>
-                                        <p className="font-paragraph text-xs text-primary-foreground">
-                                          {processo.status || '—'}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">Status Resultado</p>
-                                        <Badge className={`text-xs ${processo.statusResultadoFinanciamento === 'Aprovado' ? 'bg-green-100 text-green-800' :
-                                          processo.statusResultadoFinanciamento === 'Condicionado' ? 'bg-yellow-100 text-yellow-800' :
-                                            processo.statusResultadoFinanciamento === 'Reprovado' ? 'bg-red-100 text-red-800' :
-                                              processo.statusResultadoFinanciamento === 'Em andamento' ? 'bg-blue-100 text-blue-800' :
-                                                'bg-gray-100 text-gray-800'
-                                          }`}>
-                                          {processo.statusResultadoFinanciamento || 'Não definido'}
-                                        </Badge>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-paragraph text-primary-foreground/50 mb-1">Prioridade</p>
-                                        <p className="font-paragraph text-xs text-primary-foreground">
-                                          {processo.priority || '—'}
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </motion.div>
-                        )}
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                                    <ExternalLink className="w-3 h-3" />
+                                    Ir ao Kanban
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+            </div>
+          )}
         </div>
       </section>
 
@@ -729,7 +626,7 @@ function AdminClientesContent() {
 
 export default function AdminClientesPage() {
   return (
-    <MemberProtectedRoute messageToSignIn="Faça login para gerenciar clientes">
+    <MemberProtectedRoute>
       <AdminClientesContent />
     </MemberProtectedRoute>
   );

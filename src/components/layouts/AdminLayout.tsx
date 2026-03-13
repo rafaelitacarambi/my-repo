@@ -27,7 +27,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LeadRegistrationModal } from '@/components/LeadRegistrationModal';
+// LeadRegistrationModal removed
 import { ClientRegistrationModal } from '@/components/ClientRegistrationModal';
 import { useAuthValidation } from '@/hooks/use-auth-validation';
 import { useClerk } from '@clerk/clerk-react';
@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showCreateMainDialog, setShowCreateMainDialog] = useState(false);
-    const [showLeadModal, setShowLeadModal] = useState(false);
+// showLeadModal removed
     const [showClientModal, setShowClientModal] = useState(false);
 
     const userSectors = userProfile?.setores || [];
@@ -57,7 +57,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             group: 'Clientes',
             items: [
                 { label: 'Gestão de Clientes', icon: UserCheck, path: '/admin/clientes', visible: true },
-                { label: 'Gestão de Leads', icon: Users, path: '/admin/leads', visible: true },
             ]
         },
         {
@@ -226,7 +225,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
             <Footer />
 
-            <LeadRegistrationModal isOpen={showLeadModal} onOpenChange={setShowLeadModal} />
+{/* LeadRegistrationModal removed */}
             <ClientRegistrationModal isOpen={showClientModal} onOpenChange={setShowClientModal} />
         </div>
     );

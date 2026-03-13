@@ -149,7 +149,7 @@ export default function Header() {
           <nav className="lg:hidden py-6 border-t border-border-gray">
             <div className="flex flex-col gap-4">
               {isAdminRoute && isAuthenticated && (
-                <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/admin/vendas/dashboard" onClick={() => setMobileMenuOpen(false)}>
                   <Button
                     variant="outline"
                     className="w-full font-paragraph flex items-center gap-2"
@@ -229,7 +229,7 @@ export default function Header() {
                   </Button>
                 </>
               ) : (
-                <Link to="/area-restrita" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/admin/vendas/dashboard" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-paragraph font-semibold h-11 px-6 rounded-lg w-full">
                     Área Restrita
                   </Button>
