@@ -3,7 +3,7 @@ export interface ChecklistItem {
     id: string;
     text: string;
     isConditional?: boolean;
-    conditionType?: 'fgts' | 'empreendimento_caixa' | 'nao_empreendimento_caixa' | 'cartorio_rsales';
+    conditionType?: 'fgts' | 'empreendimento_caixa' | 'nao_empreendimento_caixa' | 'cartorio_rsales' | 'nao_cartorio_rsales';
 }
 
 export interface ChecklistAnswer {
@@ -105,6 +105,7 @@ export const STAGE_CHECKLISTS: Record<string, ChecklistItem[]> = {
         { id: 'taxa_prenotacao_paga', text: 'A taxa de prenotação foi paga?', isConditional: true, conditionType: 'cartorio_rsales' },
         { id: 'declaracoes_assinadas', text: 'As declarações foram assinadas?', isConditional: true, conditionType: 'cartorio_rsales' },
         { id: 'processo_protocolado', text: 'O processo foi protocolado no cartório?', isConditional: true, conditionType: 'cartorio_rsales' },
+        { id: 'recebemos_matricula_atualizada', text: 'Recebemos a matrícula atualizada?', isConditional: true, conditionType: 'nao_cartorio_rsales' },
         { id: 'registro_concluido', text: 'O registro foi concluído em cartório?', isConditional: true, conditionType: 'cartorio_rsales' }
     ],
     'garantia': [

@@ -62,6 +62,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from '@/components/layouts/AdminLayout';
@@ -270,6 +271,11 @@ export default function AdminFinancingKanbanPage() {
   const [quickActionCaseId, setQuickActionCaseId] = useState<string | null>(null);
   const [showCompletedPendings, setShowCompletedPendings] = useState(false);
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
+
+  // Document Upload States
+  const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
+  const [isDraggingDoc, setIsDraggingDoc] = useState(false);
+  const docInputRef = useRef<HTMLInputElement>(null);
 
 
   // Task creation modal in Tarefas tab
@@ -796,6 +802,10 @@ export default function AdminFinancingKanbanPage() {
         c.bloqueioFormularios = casePendings.some(p => p.categoria === 'Formulários');
         c.bloqueioRestricao = casePendings.some(p => p.categoria === 'Restrição');
         c.bloqueioFgts = casePendings.some(p => p.categoria === 'FGTS');
+
+        // Added summaries
+        (c as any).pendenciasResumo = casePendings.slice(0, 2).map(p => p.title || p.description || 'Pendência');
+        (c as any).tarefasResumo = tasksList.filter(t => t.atendimentoRef === c._id && t.status !== 'Concluída').slice(0, 2).map(t => t.titulo || t.description || 'Tarefa');
       });
 
       setCases(financingCases);
@@ -1118,6 +1128,7 @@ export default function AdminFinancingKanbanPage() {
     console.log('[DEBUG] Case data:', caseItem);
 
     setSelectedCase(caseItem);
+    setUploadedDocs((caseItem as any).documentosAnexos || []);
 
     // CRITICAL FIX: Reset selections to empty when opening modal
     setSelectedProponentId('');
@@ -1173,7 +1184,8 @@ export default function AdminFinancingKanbanPage() {
         bankName: caseFormData.bankName,
         bankAccountNumber: caseFormData.bankAccountNumber,
         financingContractNumber: caseFormData.financingContractNumber,
-        cpfProponentePrincipal: caseFormData.cpfProponentePrincipal
+        cpfProponentePrincipal: caseFormData.cpfProponentePrincipal,
+        documentosAnexos: uploadedDocs
       } as any);
 
       // Update local state with all form data
@@ -1204,6 +1216,41 @@ export default function AdminFinancingKanbanPage() {
     } catch (error) {
       console.error('Error saving details:', error);
       toast.error("Erro ao salvar os dados.");
+    }
+  };
+
+  const handleDocFileDrop = async (files: FileList | null) => {
+    if (!files || !selectedCase) return;
+
+    try {
+      const uploadPromises = Array.from(files).map(async (f) => {
+        const docId = crypto.randomUUID();
+        const newDoc = {
+          _id: docId,
+          documentName: f.name,
+          atendimentoRef: selectedCase._id,
+          uploadDate: new Date().toISOString(),
+          documentUrl: URL.createObjectURL(f),
+          documentStatus: 'Enviado',
+          description: 'Enviado via Drag & Drop'
+        };
+
+        await BaseCrudService.create('documentosfinanciamento', newDoc);
+        return {
+          name: f.name,
+          url: newDoc.documentUrl,
+          size: f.size,
+          type: f.type,
+          uploadedAt: newDoc.uploadDate,
+        };
+      });
+
+      const newDocs = await Promise.all(uploadPromises);
+      setUploadedDocs(prev => [...prev, ...newDocs]);
+      toast.success(`${newDocs.length} documento(s) salvo(s) com sucesso`);
+    } catch (error) {
+      console.error("Erro ao salvar documentos:", error);
+      toast.error("Erro ao salvar um ou mais documentos no banco de dados.");
     }
   };
 
@@ -1683,6 +1730,29 @@ export default function AdminFinancingKanbanPage() {
     } catch (e) {
       console.error("Error concluding process:", e);
       toast.error("Erro ao concluir processo");
+    }
+  };
+
+  const handleQuickStatusChange = async (newStatus: string) => {
+    if (!selectedCase) return;
+    
+    const previousStatus = selectedCase.faseAtual;
+    if (previousStatus === newStatus) return;
+
+    // Optimistic update locally
+    const updatedCases = cases.map(c => 
+        c._id === selectedCase._id ? { ...c, status: newStatus, faseAtual: newStatus } : c
+    );
+    setCases(updatedCases);
+    setSelectedCase({ ...selectedCase, status: newStatus, faseAtual: newStatus } as any);
+
+    try {
+        await BaseCrudService.update('atendimentos', { _id: selectedCase._id, status: newStatus, faseAtual: newStatus });
+        toast.success(`Fase alterada com sucesso!`);
+    } catch (error) {
+        console.error('Error changing status:', error);
+        toast.error('Erro ao mudar fase');
+        loadData(); // Revert on error
     }
   };
 
@@ -2983,8 +3053,38 @@ export default function AdminFinancingKanbanPage() {
                                         </div>
 
                                         {/* Status */}
-                                        <div className="text-xs text-foreground/60 mb-2">
+                                        <div className="text-xs text-foreground/60 mb-3">
                                           Status: <span className="font-medium text-foreground/80">{caseItem.statusResultadoFinanciamento || '—'}</span>
+                                        </div>
+
+                                        {/* Mini Indicators */}
+                                        <div className="flex flex-wrap gap-2 mb-3 border-t border-slate-50 pt-3">
+                                          {caseItem.pendenciasAbertas > 0 && (
+                                            <div className="w-full space-y-1">
+                                              <Badge variant="outline" className="bg-orange-50 border-orange-100 text-orange-600 text-[10px] gap-1 px-1.5 h-6">
+                                                <AlertTriangle className="w-3 h-3" />
+                                                {caseItem.pendenciasAbertas} Pend.
+                                              </Badge>
+                                              <div className="pl-1 space-y-0.5">
+                                                {(caseItem as any).pendenciasResumo?.map((p: string, i: number) => (
+                                                  <p key={i} className="text-[9px] text-orange-500 font-medium truncate">• {p}</p>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          {caseItem.tarefasAbertas > 0 && (
+                                            <div className="w-full space-y-1">
+                                              <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-600 text-[10px] gap-1 px-1.5 h-6">
+                                                <ListTodo className="w-3 h-3" />
+                                                {caseItem.tarefasAbertas} Tar.
+                                              </Badge>
+                                              <div className="pl-1 space-y-0.5">
+                                                {(caseItem as any).tarefasResumo?.map((t: string, i: number) => (
+                                                  <p key={i} className="text-[9px] text-blue-500 font-medium truncate">• {t}</p>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
 
 
@@ -3287,7 +3387,21 @@ export default function AdminFinancingKanbanPage() {
                     <DialogTitle className="font-heading text-2xl text-secondary">
                       Financiamento — {selectedCase?.proponentePrincipal}
                     </DialogTitle>
-                    <Badge variant="outline" className="flex-shrink-0">{FINANCING_COLUMNS.find(c => c.id === selectedCase?.faseAtual)?.name}</Badge>
+                    <Select 
+                        value={selectedCase?.faseAtual || selectedCase?.status || ''} 
+                        onValueChange={handleQuickStatusChange}
+                    >
+                        <SelectTrigger className="h-6 text-xs font-bold border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-full px-3 w-auto min-w-[140px] focus:ring-0">
+                            <SelectValue placeholder="Fase Atual" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {FINANCING_COLUMNS.map(col => (
+                                <SelectItem key={col.id} value={col.id} className="text-xs font-medium">
+                                    {col.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                   </div>
                   {/* Cross-board interlinks panel */}
                   {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
@@ -4509,7 +4623,7 @@ export default function AdminFinancingKanbanPage() {
                                                           </Badge>
                                                         )}
                                                       </div>
-                                                    </div>
+                                                  </div>
                                                   </div>
                                                   <Button
                                                     size="icon"
@@ -5131,6 +5245,70 @@ export default function AdminFinancingKanbanPage() {
                           </div>
                         ))}
                       </div>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-slate-200">
+                      <h3 className="font-heading text-lg mb-4 flex items-center gap-2"><File className="w-5 h-5 text-indigo-500"/> Documentos Adicionais</h3>
+                      <div
+                        onDragOver={e => { e.preventDefault(); setIsDraggingDoc(true); }}
+                        onDragLeave={() => setIsDraggingDoc(false)}
+                        onDrop={e => {
+                          e.preventDefault();
+                          setIsDraggingDoc(false);
+                          handleDocFileDrop(e.dataTransfer.files);
+                        }}
+                        onClick={() => docInputRef.current?.click()}
+                        className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all mb-6 ${
+                          isDraggingDoc
+                            ? 'border-indigo-400 bg-indigo-50 scale-[1.01]'
+                            : 'border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/50'
+                        }`}
+                      >
+                        <Upload className="w-10 h-10 mx-auto mb-3 text-slate-400" />
+                        <p className="text-sm font-semibold text-slate-600">Arraste documentos extras aqui ou clique para selecionar</p>
+                        <p className="text-xs text-slate-400 mt-1">PDF, Word, Excel, imagens — arquivos gerais do processo</p>
+                        <input
+                          ref={docInputRef}
+                          type="file"
+                          multiple
+                          className="hidden"
+                          onChange={e => handleDocFileDrop(e.target.files)}
+                        />
+                      </div>
+
+                      {uploadedDocs.length === 0 ? (
+                        <p className="text-sm text-slate-400 text-center italic">Nenhum documento adicional anexado ainda.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {uploadedDocs.map((doc, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                  <File className="w-4 h-4 text-indigo-600" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-slate-800">{doc.name}</p>
+                                  <p className="text-[10px] text-slate-400">{(doc.size / 1024).toFixed(1)} KB • {new Date(doc.uploadedAt).toLocaleDateString('pt-BR')}</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <a href={doc.url} download={doc.name} onClick={e => e.stopPropagation()}>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+                                    <Download className="w-4 h-4" />
+                                  </Button>
+                                </a>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                  onClick={() => setUploadedDocs(prev => prev.filter((_, idx) => idx !== i))}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
 

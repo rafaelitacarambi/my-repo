@@ -29,6 +29,10 @@ export function FinancingStageChecklist({ caseData, onUpdateAnswer, answers = {}
             const parentAnswer = getAnswer('cartorio-rsales', 'nos_faremos_cartorio');
             return parentAnswer.status === 'checked';
         }
+        if (item.conditionType === 'nao_cartorio_rsales') {
+            const parentAnswer = getAnswer('cartorio-rsales', 'nos_faremos_cartorio');
+            return parentAnswer.status === 'failed' || parentAnswer.status === 'irrelevant';
+        }
         return true;
     };
 

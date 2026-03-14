@@ -40,6 +40,7 @@ import {
     Download,
     File,
     LayoutGrid,
+    CheckCircle2,
     ListTodo,
     Palette,
     Settings,
@@ -63,6 +64,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { BaseCrudService } from '@/integrations';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis, ChecklistdosProponentes } from '@/entities';
@@ -145,7 +147,12 @@ export default function AdminLocacoesKanbanPage() {
     const [clients, setClients] = useState<Clients[]>([]);
     const [users, setUsers] = useState<UsuriosdoSistema[]>([]);
     const [atendimentosRaw, setAtendimentosRaw] = useState<ServiceRecords[]>([]);
-
+    
+    // Document Upload States
+    const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
+    const [isDraggingDoc, setIsDraggingDoc] = useState(false);
+    const [isSavingLocacao, setIsSavingLocacao] = useState(false);
+    const docInputRef = useRef<HTMLInputElement>(null);
     useEffect(() => {
         loadData();
         const storedBg = localStorage.getItem('kanban-background-locacoes');
@@ -239,6 +246,8 @@ export default function AdminLocacoesKanbanPage() {
                     diasNaFase,
                     pendenciasAbertas: casePendings.length,
                     tarefasAbertas: caseTasks.length,
+                    pendenciasResumo: casePendings.slice(0, 2).map(p => p.title || (p as any).description || 'Pendência'),
+                    tarefasResumo: caseTasks.slice(0, 2).map(t => t.titulo || (t as any).description || 'Tarefa'),
                     bloqueioDocumento: casePendings.some(p => p.categoria === 'Documento'),
                     bloqueioPagamento: casePendings.some(p => p.categoria === 'Financeiro'),
                     bloqueioCliente: casePendings.some(p => p.categoria === 'Cliente'),
@@ -371,7 +380,103 @@ export default function AdminLocacoesKanbanPage() {
 
     const handleOpenDetails = (caseItem: LocacoesCase) => {
         setSelectedCase(caseItem);
+        setUploadedDocs((caseItem as any).documentosAnexos || []);
         setShowDetailsModal(true);
+    };
+
+    const handleSaveLocacaoData = async () => {
+        if (!selectedCase) return;
+        setIsSavingLocacao(true);
+        try {
+            await BaseCrudService.update('atendimentos', {
+                _id: selectedCase._id,
+                documentosAnexos: uploadedDocs,
+            });
+            toast.success('Dados salvos com sucesso!');
+        } catch {
+            toast.error('Erro ao salvar dados.');
+        } finally {
+            setIsSavingLocacao(false);
+        }
+    };
+
+    const handleDocFileDrop = async (files: FileList | null) => {
+        if (!files || !selectedCase) return;
+
+        try {
+            const uploadPromises = Array.from(files).map(async (f) => {
+                const docId = crypto.randomUUID();
+                const newDoc = {
+                    _id: docId,
+                    documentName: f.name,
+                    atendimentoRef: selectedCase._id,
+                    uploadDate: new Date().toISOString(),
+                    documentUrl: URL.createObjectURL(f),
+                    documentStatus: 'Enviado',
+                    description: 'Enviado via Drag & Drop'
+                };
+
+                await BaseCrudService.create('documentosfinanciamento', newDoc);
+                return {
+                    name: f.name,
+                    url: newDoc.documentUrl,
+                    size: f.size,
+                    type: f.type,
+                    uploadedAt: newDoc.uploadDate,
+                };
+            });
+
+            const newDocs = await Promise.all(uploadPromises);
+            setUploadedDocs(prev => [...prev, ...newDocs]);
+            toast.success(`${newDocs.length} documento(s) salvo(s) com sucesso`);
+        } catch (error) {
+            console.error("Erro ao salvar documentos:", error);
+            toast.error("Erro ao salvar um ou mais documentos no banco de dados.");
+        }
+    };
+
+    const handleConcluirProcesso = async () => {
+        if (!selectedCase) return;
+        setIsSavingLocacao(true);
+        try {
+            await BaseCrudService.update('atendimentos', {
+                _id: selectedCase._id,
+                status: 'Concluídos',
+            });
+            toast.success('Processo concluído com sucesso!');
+            setShowDetailsModal(false);
+            loadData();
+        } catch {
+            toast.error('Erro ao concluir processo.');
+        } finally {
+            setIsSavingLocacao(false);
+        }
+    };
+
+    const handleQuickStatusChange = async (newStatus: string) => {
+        if (!selectedCase) return;
+        
+        const previousStatus = selectedCase.status;
+        if (previousStatus === newStatus) return;
+
+        setIsSavingLocacao(true);
+        // Optimistic update locally
+        const updatedCases = cases.map(c => 
+            c._id === selectedCase._id ? { ...c, status: newStatus, faseAtual: newStatus } : c
+        );
+        setCases(updatedCases);
+        setSelectedCase({ ...selectedCase, status: newStatus, faseAtual: newStatus } as any);
+
+        try {
+            await BaseCrudService.update('atendimentos', { _id: selectedCase._id, status: newStatus });
+            toast.success(`Fase alterada para ${newStatus}`);
+        } catch (error) {
+            console.error('Error changing status:', error);
+            toast.error('Erro ao mudar fase');
+            loadData(); // Revert on error
+        } finally {
+            setIsSavingLocacao(false);
+        }
     };
 
     // Auto-open card from state
@@ -560,18 +665,33 @@ export default function AdminLocacoesKanbanPage() {
                                                                                 </div>
                                                                             </div>
 
+                                                                            {/* Mini Indicators */}
                                                                             <div className="flex flex-wrap gap-2 mb-3">
                                                                                 {caseItem.pendenciasAbertas > 0 && (
-                                                                                    <Badge variant="outline" className="bg-orange-50 border-orange-100 text-orange-600 text-[10px] gap-1 px-1.5 h-6">
-                                                                                        <AlertCircle className="w-3 h-3" />
-                                                                                        {caseItem.pendenciasAbertas} Pend.
-                                                                                    </Badge>
+                                                                                    <div className="w-full space-y-1">
+                                                                                        <Badge variant="outline" className="bg-orange-50 border-orange-100 text-orange-600 text-[10px] gap-1 px-1.5 h-6">
+                                                                                            <AlertCircle className="w-3 h-3" />
+                                                                                            {caseItem.pendenciasAbertas} Pend.
+                                                                                        </Badge>
+                                                                                        <div className="pl-1 space-y-0.5">
+                                                                                            {(caseItem as any).pendenciasResumo?.map((p: string, i: number) => (
+                                                                                                <p key={i} className="text-[9px] text-orange-500 font-medium truncate">• {p}</p>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
                                                                                 )}
                                                                                 {caseItem.tarefasAbertas > 0 && (
-                                                                                    <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-600 text-[10px] gap-1 px-1.5 h-6">
-                                                                                        <CheckCircle className="w-3 h-3" />
-                                                                                        {caseItem.tarefasAbertas} Tar.
-                                                                                    </Badge>
+                                                                                    <div className="w-full space-y-1">
+                                                                                        <Badge variant="outline" className="bg-purple-50 border-purple-100 text-purple-600 text-[10px] gap-1 px-1.5 h-6">
+                                                                                            <CheckCircle className="w-3 h-3" />
+                                                                                            {caseItem.tarefasAbertas} Tar.
+                                                                                        </Badge>
+                                                                                        <div className="pl-1 space-y-0.5">
+                                                                                            {(caseItem as any).tarefasResumo?.map((t: string, i: number) => (
+                                                                                                <p key={i} className="text-[9px] text-purple-500 font-medium truncate">• {t}</p>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
                                                                                 )}
                                                                             </div>
 
@@ -649,82 +769,109 @@ export default function AdminLocacoesKanbanPage() {
 
                 <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
                     <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden rounded-3xl">
-                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-10">
-                            <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 rounded-full px-2 py-0 text-[10px] font-bold uppercase tracking-tight">
-                                            Ficha de {selectedCase?.serviceType}
-                                        </Badge>
-                                        <span className="text-slate-400 text-xs font-medium">Pasta: {selectedCase?.pastaInterna}</span>
-                                    </div>
-                                    <DialogTitle className="text-2xl font-bold text-slate-900">{selectedCase?.contactName}</DialogTitle>
-                                    {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-2 items-center">
-                                            <span className="text-xs text-gray-400 font-medium">Vínculos:</span>
-                                            {selectedCase.interlinks.relatedServices.map(rel => {
-                                                const routeMap: Record<string, string> = {
-                                                    'Venda': '/admin/negocios/kanban', 'Compra': '/admin/negocios/kanban',
-                                                    'Locação': '/admin/locacoes/kanban', 'Aluguel': '/admin/locacoes/kanban',
-                                                    'Financiamento': '/admin/financiamento-kanban', 'Crédito': '/admin/financiamento-kanban',
-                                                    'Leilão': '/admin/leilao/kanban'
-                                                };
-                                                const colorMap: Record<string, string> = {
-                                                    'Venda': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-                                                    'Compra': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-                                                    'Locação': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-                                                    'Aluguel': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-                                                    'Financiamento': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
-                                                    'Crédito': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
-                                                    'Leilão': 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
-                                                };
-                                                const iconMap: Record<string, string> = {
-                                                    'Venda': '💰', 'Compra': '💰',
-                                                    'Locação': '🔑', 'Aluguel': '🔑',
-                                                    'Financiamento': '🏦', 'Crédito': '🏦',
-                                                    'Leilão': '🔨'
-                                                };
-                                                const route = routeMap[rel.serviceType];
-                                                const color = colorMap[rel.serviceType] || 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
-                                                const icon = iconMap[rel.serviceType] || '📋';
-                                                if (!route) return null;
-                                                return (
-                                                    <button
-                                                        key={rel._id}
-                                                        title={`Visualizar: ${rel.serviceType} - ${rel.contactName}`}
-                                                        onClick={() => {
-                                                            if (route) {
-                                                                navigate(`${route}?openCard=${rel._id}`);
-                                                            }
-                                                        }}
-                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${color}`}
-                                                    >
-                                                        <span>{icon}</span>
-                                                        <span>{rel.serviceType}</span>
-                                                    </button>
-                                                );
-                                            })}
+                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-3 bg-blue-100 rounded-2xl">
+                                            <Users className="w-6 h-6 text-blue-600" />
                                         </div>
-                                    )}
+                                        <div>
+                                            <DialogTitle className="text-xl font-bold text-slate-800">
+                                                {selectedCase?.contactName}
+                                            </DialogTitle>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge className={`${LOCACOES_COLUMNS.find(c => c.id === selectedCase?.status)?.color} border-none px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider`}>
+                                                    {selectedCase?.status}
+                                                </Badge>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-slate-400 hover:text-slate-600">
+                                                            <Edit2 className="w-3 h-3" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="start" className="w-48 bg-white border-slate-200">
+                                                        {LOCACOES_COLUMNS.map(col => (
+                                                            <DropdownMenuItem
+                                                                key={col.id}
+                                                                onClick={() => handleQuickStatusChange(col.id)}
+                                                                className="text-xs hover:bg-slate-50 cursor-pointer"
+                                                            >
+                                                                {col.name}
+                                                            </DropdownMenuItem>
+                                                        ))}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                                <span className="text-[10px] text-slate-400">• {selectedCase?.pastaInterna}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3 flex-shrink-0">
-                                    {selectedCase?.contactPhone && (
-                                        <Button
-                                            variant="outline"
-                                            className="h-10 px-4 rounded-2xl bg-green-50 text-green-700 border-green-100 hover:bg-green-100 hover:text-green-800 transition-all font-semibold"
-                                            onClick={() => {
-                                                const phone = selectedCase.contactPhone?.replace(/\D/g, '');
-                                                window.open(`https://wa.me/55${phone}`, '_blank');
-                                            }}
-                                        >
-                                            <MessageSquare className="w-4 h-4 mr-2" />
-                                            WhatsApp
-                                        </Button>
-                                    )}
-                                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowDetailsModal(false)}>
-                                        <X className="w-5 h-5" />
+                                {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-2 items-center">
+                                        <span className="text-xs text-gray-400 font-medium">Vínculos:</span>
+                                        {selectedCase.interlinks.relatedServices.map(rel => {
+                                            const routeMap: Record<string, string> = {
+                                                'Venda': '/admin/negocios/kanban', 'Compra': '/admin/negocios/kanban',
+                                                'Locação': '/admin/locacoes/kanban', 'Aluguel': '/admin/locacoes/kanban',
+                                                'Financiamento': '/admin/financiamento-kanban', 'Crédito': '/admin/financiamento-kanban',
+                                                'Leilão': '/admin/leilao/kanban'
+                                            };
+                                            const colorMap: Record<string, string> = {
+                                                'Venda': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
+                                                'Compra': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
+                                                'Locação': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
+                                                'Aluguel': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
+                                                'Financiamento': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
+                                                'Crédito': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
+                                                'Leilão': 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
+                                            };
+                                            const iconMap: Record<string, string> = {
+                                                'Venda': '💰', 'Compra': '💰',
+                                                'Locação': '🔑', 'Aluguel': '🔑',
+                                                'Financiamento': '🏦', 'Crédito': '🏦',
+                                                'Leilão': '🔨'
+                                            };
+                                            const route = routeMap[rel.serviceType];
+                                            const color = colorMap[rel.serviceType] || 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
+                                            const icon = iconMap[rel.serviceType] || '📋';
+                                            if (!route) return null;
+                                            return (
+                                                <button
+                                                    key={rel._id}
+                                                    title={`Visualizar: ${rel.serviceType} - ${rel.contactName}`}
+                                                    onClick={() => {
+                                                        if (route) {
+                                                            navigate(`${route}?openCard=${rel._id}`);
+                                                        }
+                                                    }}
+                                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${color}`}
+                                                >
+                                                    <span>{icon}</span>
+                                                    <span>{rel.serviceType}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                                {selectedCase?.contactPhone && (
+                                    <Button
+                                        variant="outline"
+                                        className="h-10 px-4 rounded-2xl bg-green-50 text-green-700 border-green-100 hover:bg-green-100 hover:text-green-800 transition-all font-semibold"
+                                        onClick={() => {
+                                            const phone = selectedCase.contactPhone?.replace(/\D/g, '');
+                                            window.open(`https://wa.me/55${phone}`, '_blank');
+                                        }}
+                                    >
+                                        <MessageSquare className="w-4 h-4 mr-2" />
+                                        WhatsApp
                                     </Button>
-                                </div>
+                                )}
+                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowDetailsModal(false)}>
+                                    <X className="w-5 h-5" />
+                                </Button>
                             </div>
                         </DialogHeader>
 
@@ -826,7 +973,94 @@ export default function AdminLocacoesKanbanPage() {
                                         </div>
                                     </TabsContent>
 
-                                    {/* Remaining tabs pattern same as Vendas */}
+                                    <TabsContent value="documentos" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div
+                                            onDragOver={e => { e.preventDefault(); setIsDraggingDoc(true); }}
+                                            onDragLeave={() => setIsDraggingDoc(false)}
+                                            onDrop={e => {
+                                                e.preventDefault();
+                                                setIsDraggingDoc(false);
+                                                handleDocFileDrop(e.dataTransfer.files);
+                                            }}
+                                            onClick={() => docInputRef.current?.click()}
+                                            className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all mb-6 ${
+                                                isDraggingDoc
+                                                    ? 'border-emerald-400 bg-emerald-50 scale-[1.01]'
+                                                    : 'border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50/50'
+                                            }`}
+                                        >
+                                            <Upload className="w-10 h-10 mx-auto mb-3 text-slate-400" />
+                                            <p className="text-sm font-semibold text-slate-600">Arraste documentos aqui ou clique para selecionar</p>
+                                            <p className="text-xs text-slate-400 mt-1">PDF, Word, Excel, imagens — qualquer formato aceito</p>
+                                            <input
+                                                ref={docInputRef}
+                                                type="file"
+                                                multiple
+                                                className="hidden"
+                                                onChange={e => handleDocFileDrop(e.target.files)}
+                                            />
+                                        </div>
+
+                                        {uploadedDocs.length === 0 ? (
+                                            <p className="text-sm text-slate-400 text-center italic">Nenhum documento anexado ainda.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {uploadedDocs.map((doc, i) => (
+                                                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                                                <File className="w-4 h-4 text-emerald-600" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium text-slate-800">{doc.name}</p>
+                                                                <p className="text-[10px] text-slate-400">{(doc.size / 1024).toFixed(1)} KB • {new Date(doc.uploadedAt).toLocaleDateString('pt-BR')}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-1">
+                                                            <a href={doc.url} download={doc.name} onClick={e => e.stopPropagation()}>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-emerald-600">
+                                                                    <Download className="w-4 h-4" />
+                                                                </Button>
+                                                            </a>
+                                                            <Button
+                                                                variant="ghost" size="icon"
+                                                                className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                                                onClick={() => setUploadedDocs(prev => prev.filter((_, idx) => idx !== i))}
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </TabsContent>
+
+                                    <TabsContent value="historico">
+                                        <div className="space-y-6">
+                                            <div className="relative pl-8 border-l-2 border-slate-100 space-y-8">
+                                                <div className="relative">
+                                                    <div className="absolute -left-[37px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-white shadow-sm" />
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase">Hoje</p>
+                                                    <p className="text-sm font-bold text-slate-800">Processo criado no sistema</p>
+                                                    <p className="text-xs text-slate-500 mt-1">Status inicial definido como "{selectedCase?.status}"</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center">
+                                                <Button
+                                                    onClick={handleConcluirProcesso}
+                                                    disabled={isSavingLocacao || selectedCase?.status === 'Concluídos'}
+                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 px-8 rounded-xl font-bold shadow-lg shadow-emerald-200"
+                                                >
+                                                    <CheckCircle2 className="w-5 h-5" /> Concluir e Arquivar Processo
+                                                </Button>
+                                                <p className="text-center text-xs text-slate-500 mt-3">
+                                                    Ao concluir, o negócio será movido para a etapa de "Concluídos".
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
                                 </Tabs>
                             </div>
                         </ScrollArea>
@@ -837,8 +1071,8 @@ export default function AdminLocacoesKanbanPage() {
                             </Button>
                             <div className="flex gap-3">
                                 <Button variant="outline" className="rounded-xl px-6" onClick={() => setShowDetailsModal(false)}>Fechar</Button>
-                                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-emerald-200">
-                                    Salvar Alterações
+                                <Button disabled={isSavingLocacao} onClick={handleSaveLocacaoData} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-emerald-200">
+                                    {isSavingLocacao ? 'Salvando...' : 'Salvar Alterações'}
                                 </Button>
                             </div>
                         </div>

@@ -47,8 +47,10 @@ import {
     Phone,
     MessageSquare,
     Hash,
+    TrendingUp,
+    Key,
     Gavel,
-    Key
+    CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -62,6 +64,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { BaseCrudService } from '@/integrations';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis, ChecklistdosProponentes } from '@/entities';
@@ -102,6 +105,8 @@ interface LeilaoCase {
         activeAuctions: number;
         relatedServices: { _id: string; serviceType: string; contactName: string; pastaInterna: string; status: string }[];
     };
+    documentosAnexos?: { name: string; url: string; size: number; type: string; uploadedAt: string }[];
+    leilaoExtra?: Record<string, string>;
 }
 
 const LEILAO_COLUMNS = [
@@ -145,19 +150,19 @@ export default function AdminLeilaoKanbanPage() {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [modalTab, setModalTab] = useState('dados');
     const [searchTerm, setSearchTerm] = useState('');
-    const [kanbanBackground, setKanbanBackground] = useState('bg-slate-50');
+    const [kanbanBackground, setKanbanBackground] = useState<string>('bg-slate-50');
+    const [pasteArea, setPasteArea] = useState<string>('');
+    const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
+    const [isDraggingDoc, setIsDraggingDoc] = useState(false);
+    const docInputRef = useRef<HTMLInputElement>(null);
     const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
     const [showEmptyColumns, setShowEmptyColumns] = useState(true);
     type RelatedService = { _id: string; serviceType: string; contactName: string; pastaInterna: string; status: string };
-    const [previewRelatedCard, setPreviewRelatedCard] = useState<RelatedService | null>(null);
 
     const [clients, setClients] = useState<Clients[]>([]);
     const [users, setUsers] = useState<UsuriosdoSistema[]>([]);
     const [leilaoFormData, setLeilaoFormData] = useState<Record<string, string>>({});
     const [isSavingLeilao, setIsSavingLeilao] = useState(false);
-    const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
-    const [isDraggingDoc, setIsDraggingDoc] = useState(false);
-    const docInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         loadData();
@@ -200,30 +205,20 @@ export default function AdminLeilaoKanbanPage() {
                 const casePendings = pendingsList.filter(p => p.atendimentoRef === a._id && p.status !== 'Resolvida');
                 const caseTasks = tasksList.filter(t => t.atendimentoRef === a._id && t.status !== 'Concluída');
 
-                // Compute Interlinks
                 const clientId = a.clientePrincipalRef;
-
-                // Other services where this client is primary
                 const otherPrimaryServices = atendimentos.filter(s => s.clientePrincipalRef === clientId && s._id !== a._id && !s.isArchived);
-
-                // Services where this client is a participant
                 const participantServicesRefs = partiesList.filter(p => p.clientRef === clientId).map(p => p.serviceRecordRef);
                 const participationServices = atendimentos.filter(s => participantServicesRefs.includes(s._id) && s._id !== a._id && !s.isArchived);
-
-                // Services related to the same property
                 const clientPropertyIds = propertyLinks.filter(p => p.atendimentoRef === a._id).map(p => p.imovelRef);
-                const propertyRelatedRefs = propertyLinks
-                    .filter(p => clientPropertyIds.includes(p.imovelRef) && p.atendimentoRef !== a._id)
-                    .map(p => p.atendimentoRef);
+                const propertyRelatedRefs = propertyLinks.filter(p => clientPropertyIds.includes(p.imovelRef) && p.atendimentoRef !== a._id).map(p => p.atendimentoRef);
                 const propertyRelatedServices = atendimentos.filter(s => propertyRelatedRefs.includes(s._id) && !s.isArchived);
 
-                // Combine and unique by ID
                 const combinedServices = [...otherPrimaryServices, ...participationServices, ...propertyRelatedServices];
                 const uniqueRelated = Array.from(new Map(combinedServices.map(s => [s._id, s])).values());
 
                 const interlinks = {
                     hasProperty: clientPropertyIds.length > 0 || propertiesList.some(p => p.proprietarioId === clientId || p.emailProprietario === client?.emailPrincipal || p.telefoneProprietario === client?.phoneNumber),
-                    activeSales: uniqueRelated.filter(s => ['Venda', 'Compra', 'Leilão'].includes(s.serviceType || '')).length,
+                    activeSales: uniqueRelated.filter(s => ['Venda', 'Compra'].includes(s.serviceType || '')).length,
                     activeRentals: uniqueRelated.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
                     activeFinancing: uniqueRelated.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
                     activeAuctions: uniqueRelated.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
@@ -243,8 +238,8 @@ export default function AdminLeilaoKanbanPage() {
                     contactName: a.contactName || client?.clientName || 'Sem nome',
                     cpfProponentePrincipal: client?.cpfCnpj || '',
                     pastaInterna: a.pastaInterna || a._id.substring(0, 8).toUpperCase(),
-                    status: a.status || 'Novos clientes',
-                    faseAtual: a.status || 'Novos clientes',
+                    status: (a.status === 'Novos' || !a.status) ? 'Novos clientes' : a.status,
+                    faseAtual: (a.status === 'Novos' || !a.status) ? 'Novos clientes' : a.status,
                     serviceType: a.serviceType || 'Leilão',
                     contactPhone: a.contactPhone || client?.phoneNumber || '',
                     contactEmail: a.contactEmail || client?.email || '',
@@ -256,7 +251,9 @@ export default function AdminLeilaoKanbanPage() {
                     propertyValue: (a as any).propertyValue || 0,
                     bidValue: (a as any).bidValue || (a as any).propertyValue || 0,
                     notes: a.notes || '',
-                    interlinks
+                    interlinks,
+                    documentosAnexos: (a as any).documentosAnexos || [],
+                    leilaoExtra: (a as any).leilaoExtra || {}
                 };
             });
 
@@ -268,87 +265,6 @@ export default function AdminLeilaoKanbanPage() {
             setLoading(false);
         }
     };
-
-    // Scroll Acceleration Logic
-    useEffect(() => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-
-        const updateScrollbar = () => {
-            if (!scrollbarRef.current || !scrollbarThumbRef.current) return;
-            const scrollWidth = container.scrollWidth;
-            const clientWidth = container.clientWidth;
-            const scrollLeft = container.scrollLeft;
-            if (scrollWidth <= clientWidth) {
-                scrollbarRef.current.style.display = 'none';
-                return;
-            }
-            scrollbarRef.current.style.display = 'block';
-            const thumbWidth = (clientWidth / scrollWidth) * clientWidth;
-            scrollbarThumbRef.current.style.width = `${thumbWidth}px`;
-            const maxScroll = scrollWidth - clientWidth;
-            const scrollPercentage = maxScroll > 0 ? scrollLeft / maxScroll : 0;
-            const maxThumbPosition = clientWidth - thumbWidth;
-            scrollbarThumbRef.current.style.transform = `translateX(${scrollPercentage * maxThumbPosition}px)`;
-        };
-
-        container.addEventListener('scroll', updateScrollbar);
-        window.addEventListener('resize', updateScrollbar);
-        updateScrollbar();
-        setTimeout(updateScrollbar, 500);
-        return () => {
-            container.removeEventListener('scroll', updateScrollbar);
-            window.addEventListener('resize', updateScrollbar);
-        };
-    }, [cases]);
-
-    useEffect(() => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        let isMouseDown = false;
-        let startX = 0;
-        let scrollLeft = 0;
-        const handleMouseDown = (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
-            if (target.closest('button') || target.closest('[data-rbd-draggable-id]') || target.closest('input')) return;
-            isMouseDown = true;
-            startX = e.pageX - container.offsetLeft;
-            scrollLeft = container.scrollLeft;
-            container.style.cursor = 'grabbing';
-        };
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isMouseDown) return;
-            e.preventDefault();
-            const x = e.pageX - container.offsetLeft;
-            const walk = (x - startX) * 3;
-            container.scrollLeft = scrollLeft - walk;
-        };
-        const stopScrolling = () => {
-            isMouseDown = false;
-            container.style.cursor = 'grab';
-        };
-        container.addEventListener('mousedown', handleMouseDown);
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', stopScrolling);
-        return () => {
-            container.removeEventListener('mousedown', handleMouseDown);
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', stopScrolling);
-        };
-    }, []);
-
-    useEffect(() => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        const handleWheel = (e: WheelEvent) => {
-            if (e.deltaY !== 0) {
-                e.preventDefault();
-                container.scrollLeft += e.deltaY * 2;
-            }
-        };
-        container.addEventListener('wheel', handleWheel, { passive: false });
-        return () => container.removeEventListener('wheel', handleWheel);
-    }, []);
 
     const onDragEnd = async (result: DropResult) => {
         const { destination, source, draggableId } = result;
@@ -374,17 +290,10 @@ export default function AdminLeilaoKanbanPage() {
         }
     };
 
-    const handleChangeBackground = (bg: string) => {
-        setKanbanBackground(bg);
-        localStorage.setItem('kanban-background-leilao', bg);
-        setShowBackgroundPicker(false);
-    };
-
     const handleOpenDetails = (caseItem: LeilaoCase) => {
         setSelectedCase(caseItem);
-        // Populate form from existing data stored in atendimento
-        setLeilaoFormData((caseItem as any).leilaoExtra || {});
-        setUploadedDocs((caseItem as any).documentosAnexos || []);
+        setLeilaoFormData(caseItem.leilaoExtra || {});
+        setUploadedDocs(caseItem.documentosAnexos || []);
         setShowDetailsModal(true);
     };
 
@@ -405,32 +314,90 @@ export default function AdminLeilaoKanbanPage() {
         }
     };
 
-    const handleDocFileDrop = (files: FileList | null) => {
-        if (!files) return;
-        const newDocs = Array.from(files).map(f => ({
-            name: f.name,
-            url: URL.createObjectURL(f),
-            size: f.size,
-            type: f.type,
-            uploadedAt: new Date().toISOString(),
-        }));
-        setUploadedDocs(prev => [...prev, ...newDocs]);
-        toast.success(`${newDocs.length} documento(s) adicionado(s)`);
+    const handleConcluirProcesso = async () => {
+        if (!selectedCase) return;
+        setIsSavingLeilao(true);
+        try {
+            await BaseCrudService.update('atendimentos', {
+                _id: selectedCase._id,
+                status: 'Concluídos',
+                isArchived: true,
+                archivedDate: new Date().toISOString()
+            });
+            toast.success('Processo concluído e arquivado!');
+            setShowDetailsModal(false);
+            loadData();
+        } catch {
+            toast.error('Erro ao concluir processo.');
+        } finally {
+            setIsSavingLeilao(false);
+        }
     };
 
-    // Auto-open card from state
-    useEffect(() => {
-        const openCardId = searchParams.get('openCard') || location.state?.openCardId;
-        if (!loading && cases.length > 0 && openCardId) {
-            const cardId = openCardId;
-            const cardToOpen = cases.find((c: any) => c._id === cardId);
-            if (cardToOpen) {
-                handleOpenDetails(cardToOpen);
-                // Clear state to avoid reopening on refresh
-                window.history.replaceState({ ...location.state, openCardId: undefined }, document.title);
-            }
+    const handleAutoFill = () => {
+        if (!pasteArea.trim()) return;
+        const newData: any = { ...leilaoFormData };
+        const cpfRegex = /(\d{3}\.\d{3}\.\d{3}-\d{2})|(\d{11})/;
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+        const phoneRegex = /(\(?\d{2}\)?\s?9?\d{4}-?\d{4})/;
+        const moneyRegex = /(?:R\$|R\$\s)?(\d{1,3}(?:\.\d{3})*(?:,\d{2}))/;
+
+        const cpfMatch = pasteArea.match(cpfRegex);
+        if (cpfMatch) newData.clienteCpfCnpj = cpfMatch[0];
+        const emailMatch = pasteArea.match(emailRegex);
+        if (emailMatch) newData.clienteEmail = emailMatch[0];
+        const phoneMatch = pasteArea.match(phoneRegex);
+        if (phoneMatch) newData.clienteTelefone = phoneMatch[0];
+
+        const moneyMatches = Array.from(pasteArea.matchAll(new RegExp(moneyRegex, 'g'))).map(m => m[1]);
+        if (moneyMatches.length > 0) {
+            const sorted = moneyMatches.sort((a, b) => {
+                const va = parseFloat(a.replace(/\./g, '').replace(',', '.'));
+                const vb = parseFloat(b.replace(/\./g, '').replace(',', '.'));
+                return vb - va;
+            });
+            newData.finValorAvaliacao = sorted[0];
+            if (sorted[1]) newData.finValorProposta = sorted[1];
         }
-    }, [cases, loading, location.state]);
+
+        setLeilaoFormData(newData);
+        setPasteArea('');
+        toast.info("Dados extraídos com sucesso!");
+    };
+
+    const handleDocFileDrop = async (files: FileList | null) => {
+        if (!files || !selectedCase) return;
+        try {
+            const newDocs = Array.from(files).map(f => ({
+                name: f.name,
+                url: URL.createObjectURL(f),
+                size: f.size,
+                type: f.type,
+                uploadedAt: new Date().toISOString(),
+            }));
+            setUploadedDocs(prev => [...prev, ...newDocs]);
+            toast.success(`${newDocs.length} documento(s) anexado(s)`);
+        } catch (error) {
+            toast.error("Erro ao processar documentos.");
+        }
+    };
+
+    const handleQuickStatusChange = async (newStatus: string) => {
+        if (!selectedCase) return;
+        if (selectedCase.status === newStatus) return;
+        setIsSavingLeilao(true);
+        try {
+            await BaseCrudService.update('atendimentos', { _id: selectedCase._id, status: newStatus });
+            setCases(prev => prev.map(c => c._id === selectedCase._id ? { ...c, status: newStatus, faseAtual: newStatus } : c));
+            setSelectedCase(prev => prev ? { ...prev, status: newStatus, faseAtual: newStatus } : null);
+            toast.success(`Fase alterada para ${newStatus}`);
+        } catch (error) {
+            toast.error('Erro ao mudar fase');
+            loadData();
+        } finally {
+            setIsSavingLeilao(false);
+        }
+    };
 
     return (
         <AdminLayout>
@@ -450,68 +417,42 @@ export default function AdminLeilaoKanbanPage() {
                                 placeholder="Buscar por cliente, pasta..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 h-10 rounded-full border-slate-200 bg-white"
+                                className="pl-10 h-10 rounded-full border-slate-200 bg-white shadow-sm"
                             />
                         </div>
                         <Button
                             variant="outline"
                             size="icon"
-                            className={`rounded-full shadow-sm hover:shadow-md transition-all ${!showEmptyColumns ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-white text-slate-400'}`}
+                            className={`rounded-full shadow-sm transition-all ${!showEmptyColumns ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-white text-slate-400'}`}
                             onClick={() => {
                                 const nextValue = !showEmptyColumns;
                                 setShowEmptyColumns(nextValue);
                                 localStorage.setItem('kanban-show-empty-leilao', String(nextValue));
-                                toast.info(nextValue ? 'Mostrando todas as colunas' : 'Ocultando colunas vazias');
                             }}
-                            title={showEmptyColumns ? "Ocultar colunas vazias" : "Mostrar todas as colunas"}
                         >
                             {showEmptyColumns ? <LayoutGrid className="w-4 h-4" /> : <Filter className="w-4 h-4" />}
                         </Button>
-
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-full bg-white shadow-sm hover:shadow-md transition-all"
-                            onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}
-                        >
+                        <Button variant="outline" size="icon" className="rounded-full bg-white shadow-sm" onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}>
                             <Palette className="w-4 h-4" />
                         </Button>
-                        <Button className="h-10 rounded-full bg-amber-600 hover:bg-amber-700 text-white gap-2 px-6">
-                            <Plus className="w-4 h-4" />
-                            Novo Processo
+                        <Button className="h-10 rounded-full bg-amber-600 hover:bg-amber-700 text-white gap-2 px-6 shadow-md">
+                            <Plus className="w-4 h-4" /> Novo Processo
                         </Button>
                     </div>
                 </div>
 
                 <AnimatePresence>
                     {showBackgroundPicker && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="absolute right-24 top-20 bg-white shadow-2xl rounded-2xl p-4 z-50 border border-slate-200 w-64"
-                        >
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-24 top-20 bg-white shadow-2xl rounded-2xl p-4 z-50 border border-slate-200 w-64">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-slate-800 text-sm">Personalizar fundo</h3>
-                                <Button variant="ghost" size="icon" onClick={() => setShowBackgroundPicker(false)}>
-                                    <X className="w-4 h-4" />
-                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => setShowBackgroundPicker(false)}><X className="w-4 h-4" /></Button>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 {BACKGROUND_OPTIONS.map((bg) => (
-                                    <button
-                                        key={bg.id}
-                                        onClick={() => handleChangeBackground(bg.value)}
-                                        className={`group relative h-16 rounded-xl overflow-hidden border-2 transition-all ${kanbanBackground === bg.value ? 'border-amber-500 scale-95' : 'border-slate-100 hover:border-slate-200'}`}
-                                    >
-                                        {bg.id.startsWith('image') ? (
-                                            <img src={bg.preview} className="absolute inset-0 w-full h-full object-cover" alt={bg.name} />
-                                        ) : (
-                                            <div className="absolute inset-0 w-full h-full" style={{ background: bg.preview }} />
-                                        )}
-                                        <div className="absolute inset-x-0 bottom-0 bg-black/40 py-1 text-[8px] text-white font-medium text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {bg.name}
-                                        </div>
+                                    <button key={bg.id} onClick={() => { setKanbanBackground(bg.value); localStorage.setItem('kanban-background-leilao', bg.value); setShowBackgroundPicker(false); }} className={`group relative h-16 rounded-xl overflow-hidden border-2 transition-all ${kanbanBackground === bg.value ? 'border-amber-500 scale-95' : 'border-slate-100 hover:border-slate-200'}`}>
+                                        <div className="absolute inset-x-0 bottom-0 bg-black/40 py-1 text-[8px] text-white font-medium text-center">{bg.name}</div>
+                                        <div className="absolute inset-0 w-full h-full" style={{ background: bg.preview }} />
                                     </button>
                                 ))}
                             </div>
@@ -519,19 +460,11 @@ export default function AdminLeilaoKanbanPage() {
                     )}
                 </AnimatePresence>
 
-                <div className="flex-1 relative overflow-hidden group/board">
-                    <div ref={scrollbarRef} className="absolute bottom-4 left-6 right-6 h-2 bg-slate-900/10 rounded-full z-30 opacity-0 group-hover/board:opacity-100 transition-opacity">
-                        <div ref={scrollbarThumbRef} className="h-full bg-slate-900/40 rounded-full cursor-grab active:cursor-grabbing hover:bg-slate-900/60 transition-colors" />
-                    </div>
-
-                    <div ref={scrollContainerRef} className="h-full overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing no-scrollbar scroll-smooth">
+                <div className="flex-1 relative overflow-hidden">
+                    <div ref={scrollContainerRef} className="h-full overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing no-scrollbar">
                         <DragDropContext onDragEnd={onDragEnd}>
                             <div className="flex h-full p-6 gap-6 min-w-max">
-                                {LEILAO_COLUMNS.filter(column => {
-                                    if (showEmptyColumns) return true;
-                                    const hasCards = cases.some(c => c.faseAtual === column.id);
-                                    return hasCards;
-                                }).map((column) => (
+                                {LEILAO_COLUMNS.filter(column => showEmptyColumns || cases.some(c => c.faseAtual === column.id)).map((column) => (
                                     <div key={column.id} className="w-80 flex flex-col h-full rounded-2xl bg-slate-100/40 backdrop-blur-sm border border-slate-200/50">
                                         <div className="p-4 flex items-center justify-between">
                                             <div className="flex items-center gap-2">
@@ -541,144 +474,39 @@ export default function AdminLeilaoKanbanPage() {
                                                     {cases.filter(c => c.faseAtual === column.id).length}
                                                 </Badge>
                                             </div>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600 rounded-lg">
-                                                <Plus className="w-4 h-4" />
-                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-amber-600 transition-colors"><Plus className="w-4 h-4" /></Button>
                                         </div>
-
                                         <Droppable droppableId={column.id}>
                                             {(provided, snapshot) => (
-                                                <div
-                                                    {...provided.droppableProps}
-                                                    ref={provided.innerRef}
-                                                    className={`flex-1 px-3 pb-4 overflow-y-auto no-scrollbar transition-colors ${snapshot.isDraggingOver ? 'bg-amber-50/30' : ''}`}
-                                                >
+                                                <div {...provided.droppableProps} ref={provided.innerRef} className={`flex-1 px-3 pb-4 overflow-y-auto no-scrollbar transition-colors ${snapshot.isDraggingOver ? 'bg-amber-100/20' : ''}`}>
                                                     <div className="flex flex-col gap-3">
-                                                        {cases
-                                                            .filter(c => c.faseAtual === column.id)
-                                                            .filter(c =>
-                                                                c.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                                c.pastaInterna?.toLowerCase().includes(searchTerm.toLowerCase())
-                                                            )
-                                                            .map((caseItem, index) => (
-                                                                <Draggable key={caseItem._id} draggableId={caseItem._id} index={index}>
-                                                                    {(provided, snapshot) => (
-                                                                        <Card
-                                                                            ref={provided.innerRef}
-                                                                            {...provided.draggableProps}
-                                                                            {...provided.dragHandleProps}
-                                                                            onClick={() => handleOpenDetails(caseItem)}
-                                                                            className={`group relative p-4 bg-white border-slate-200 hover:border-amber-300 hover:shadow-xl transition-all cursor-pointer rounded-2xl ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-amber-500 scale-105 rotate-2' : ''}`}
-                                                                        >
-                                                                            <div className="mb-3">
-                                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                                                                                    <span className="flex items-center gap-1">
-                                                                                        <Hash className="w-3 h-3" />
-                                                                                        {caseItem.pastaInterna}
-                                                                                    </span>
-                                                                                    <span className={`px-2 py-0.5 rounded-full text-white ${caseItem.diasNaFase > 10 ? 'bg-orange-500' : 'bg-amber-500'}`}>
-                                                                                        {caseItem.diasNaFase} {caseItem.diasNaFase === 1 ? 'dia' : 'dias'}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <h4 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-amber-600 transition-colors">
-                                                                                    {caseItem.contactName}
-                                                                                </h4>
-                                                                                <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
-                                                                                    <span className="flex items-center gap-1">
-                                                                                        <Phone className="w-3 h-3" />
-                                                                                        {caseItem.contactPhone || 'S/ Telefone'}
-                                                                                    </span>
-                                                                                    {caseItem.contactPhone && (
-                                                                                        <a
-                                                                                            href={`https://wa.me/55${caseItem.contactPhone.replace(/\D/g, '')}`}
-                                                                                            target="_blank"
-                                                                                            rel="noopener noreferrer"
-                                                                                            onClick={(e) => e.stopPropagation()}
-                                                                                            className="p-1 px-1.5 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-all flex items-center gap-1 border border-green-100/50"
-                                                                                            title="WhatsApp"
-                                                                                        >
-                                                                                            <MessageSquare className="w-3 h-3" />
-                                                                                            <span>WhatsApp</span>
-                                                                                        </a>
-                                                                                    )}
-                                                                                </div>
+                                                        {cases.filter(c => c.faseAtual === column.id).filter(c => c.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) || c.pastaInterna?.toLowerCase().includes(searchTerm.toLowerCase())).map((caseItem, index) => (
+                                                            <Draggable key={caseItem._id} draggableId={caseItem._id} index={index}>
+                                                                {(provided, snapshot) => (
+                                                                    <Card ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} onClick={() => handleOpenDetails(caseItem)} className={`group relative p-4 bg-white border-slate-200 hover:border-amber-300 hover:shadow-xl transition-all cursor-pointer rounded-2xl ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-amber-500 scale-105 rotate-2' : ''}`}>
+                                                                        <div className="mb-3">
+                                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
+                                                                                <span className="flex items-center gap-1"><Hash className="w-3 h-3" />{caseItem.pastaInterna}</span>
+                                                                                <span className={`px-2 py-0.5 rounded-full text-white font-bold ${caseItem.diasNaFase > 15 ? 'bg-red-500' : caseItem.diasNaFase > 7 ? 'bg-orange-500' : 'bg-emerald-500'}`}>{caseItem.diasNaFase} d</span>
                                                                             </div>
-
-                                                                            <div className="flex flex-wrap gap-2 mb-3">
-                                                                                {caseItem.pendenciasAbertas > 0 && (
-                                                                                    <Badge variant="outline" className="bg-orange-50 border-orange-100 text-orange-600 text-[10px] gap-1 px-1.5 h-6">
-                                                                                        <AlertCircle className="w-3 h-3" />
-                                                                                        {caseItem.pendenciasAbertas} Pend.
-                                                                                    </Badge>
-                                                                                )}
-                                                                                {caseItem.tarefasAbertas > 0 && (
-                                                                                    <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-600 text-[10px] gap-1 px-1.5 h-6">
-                                                                                        <CheckCircle className="w-3 h-3" />
-                                                                                        {caseItem.tarefasAbertas} Tar.
-                                                                                    </Badge>
-                                                                                )}
+                                                                            <h4 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-amber-600 transition-colors">{caseItem.contactName}</h4>
+                                                                            <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
+                                                                                <Phone className="w-3 h-3 text-slate-400" />
+                                                                                <span>{caseItem.contactPhone || 'S/ Tel'}</span>
                                                                             </div>
-
-                                                                            {/* Interlinks (Cross-Board Visibility) */}
-                                                                            {(caseItem.interlinks?.hasProperty ||
-                                                                                caseItem.interlinks?.activeSales ||
-                                                                                caseItem.interlinks?.activeRentals ||
-                                                                                caseItem.interlinks?.activeFinancing ||
-                                                                                caseItem.interlinks?.activeAuctions) ? (
-                                                                                <div className="flex flex-wrap gap-1.5 mb-3 p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                                                                                    {caseItem.interlinks.hasProperty && (
-                                                                                        <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100" title="Possui Imóvel Cadastrado">
-                                                                                            <Home className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeSales || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100" title={`${caseItem.interlinks.activeSales} Outras Vendas/Compras`}>
-                                                                                            <DollarSign className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeRentals || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100" title={`${caseItem.interlinks.activeRentals} Locações/Aluguéis`}>
-                                                                                            <Key className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeFinancing || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100" title={`${caseItem.interlinks.activeFinancing} Processos de Financiamento`}>
-                                                                                            <Landmark className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeAuctions || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100" title={`${caseItem.interlinks.activeAuctions} Processos de Leilão`}>
-                                                                                            <Gavel className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                            ) : null}
-
-                                                                            <div className="flex gap-1.5">
-                                                                                {caseItem.bloqueioDocumento && (
-                                                                                    <div className="w-6 h-6 rounded bg-red-100 flex items-center justify-center text-red-600" title="Documentação Pendente">
-                                                                                        <FileText className="w-3.5 h-3.5" />
-                                                                                    </div>
-                                                                                )}
-                                                                                {caseItem.bloqueioLicitacao && (
-                                                                                    <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center text-amber-600" title="Pendente Licitação">
-                                                                                        <Gavel className="w-3.5 h-3.5" />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-
-                                                                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-3">
-                                                                                <Badge variant="secondary" className="bg-slate-50 text-slate-500 text-[10px] font-normal px-2">
-                                                                                    {caseItem.serviceType}
-                                                                                </Badge>
-                                                                                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                                                                                </Button>
-                                                                            </div>
-                                                                        </Card>
-                                                                    )}
-                                                                </Draggable>
-                                                            ))}
+                                                                        </div>
+                                                                        <div className="flex flex-wrap gap-2 mb-3">
+                                                                            {caseItem.pendenciasAbertas > 0 && <Badge variant="outline" className="bg-red-50 border-red-100 text-red-600 text-[10px] gap-1 px-1.5 h-6"><AlertCircle className="w-3 h-3" />{caseItem.pendenciasAbertas}</Badge>}
+                                                                            {caseItem.tarefasAbertas > 0 && <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-600 text-[10px] gap-1 px-1.5 h-6"><CheckCircle className="w-3 h-3" />{caseItem.tarefasAbertas}</Badge>}
+                                                                        </div>
+                                                                        <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-3">
+                                                                            <Badge variant="secondary" className="bg-slate-50 text-slate-500 text-[10px] font-normal px-2 uppercase tracking-tight">{caseItem.serviceType}</Badge>
+                                                                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-all"><ChevronRight className="w-4 h-4 text-slate-400" /></Button>
+                                                                        </div>
+                                                                    </Card>
+                                                                )}
+                                                            </Draggable>
+                                                        ))}
                                                         {provided.placeholder}
                                                     </div>
                                                 </div>
@@ -692,322 +520,225 @@ export default function AdminLeilaoKanbanPage() {
                 </div>
 
                 <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-                    <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden rounded-3xl">
-                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-10">
-                            <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Badge variant="secondary" className="bg-amber-100 text-amber-700 rounded-full px-2 py-0 text-[10px] font-bold uppercase tracking-tight">
-                                            Ficha de {selectedCase?.serviceType}
-                                        </Badge>
-                                        <span className="text-slate-400 text-xs font-medium">Pasta: {selectedCase?.pastaInterna}</span>
-                                    </div>
-                                    <DialogTitle className="text-2xl font-bold text-slate-900">{selectedCase?.contactName}</DialogTitle>
-                                    {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-2 items-center">
-                                            <span className="text-xs text-gray-400 font-medium">Vínculos:</span>
-                                            {selectedCase.interlinks.relatedServices.map(rel => {
-                                                const routeMap: Record<string, string> = {
-                                                    'Venda': '/admin/negocios/kanban', 'Compra': '/admin/negocios/kanban',
-                                                    'Locação': '/admin/locacoes/kanban', 'Aluguel': '/admin/locacoes/kanban',
-                                                    'Financiamento': '/admin/financiamento-kanban', 'Crédito': '/admin/financiamento-kanban',
-                                                    'Leilão': '/admin/leilao/kanban'
-                                                };
-                                                const colorMap: Record<string, string> = {
-                                                    'Venda': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-                                                    'Compra': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-                                                    'Locação': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-                                                    'Aluguel': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-                                                    'Financiamento': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
-                                                    'Crédito': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
-                                                    'Leilão': 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
-                                                };
-                                                const iconMap: Record<string, string> = {
-                                                    'Venda': '💰', 'Compra': '💰',
-                                                    'Locação': '🔑', 'Aluguel': '🔑',
-                                                    'Financiamento': '🏦', 'Crédito': '🏦',
-                                                    'Leilão': '🔨'
-                                                };
-                                                const route = routeMap[rel.serviceType];
-                                                const color = colorMap[rel.serviceType] || 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
-                                                const icon = iconMap[rel.serviceType] || '📋';
-                                                if (!route) return null;
-                                                return (
-                                                    <button
-                                                        key={rel._id}
-                                                        title={`Visualizar: ${rel.serviceType} - ${rel.contactName}`}
-                                                        onClick={() => {
-                                                            if (route) {
-                                                                navigate(`${route}?openCard=${rel._id}`);
-                                                            }
-                                                        }}
-                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${color}`}
-                                                    >
-                                                        <span>{icon}</span>
-                                                        <span>{rel.serviceType}</span>
-                                                    </button>
-                                                );
-                                            })}
+                    <DialogContent className="max-w-6xl h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-[32px]">
+                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-4 bg-amber-100 rounded-[24px] shadow-sm"><Gavel className="w-7 h-7 text-amber-600" /></div>
+                                        <div>
+                                            <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{selectedCase?.contactName}</DialogTitle>
+                                            <div className="flex items-center gap-3 mt-1.5">
+                                                <Badge className={`${LEILAO_COLUMNS.find(c => c.id === selectedCase?.status)?.color} border-none px-3 py-1 text-[11px] uppercase font-black tracking-widest rounded-full shadow-sm`}>{selectedCase?.status}</Badge>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-full transition-all"><Edit2 className="w-3.5 h-3.5" /></Button></DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="start" className="w-56 p-2 rounded-2xl bg-white/90 backdrop-blur-xl border-slate-200 shadow-2xl">
+                                                        {LEILAO_COLUMNS.map(col => (<DropdownMenuItem key={col.id} onClick={() => handleQuickStatusChange(col.id)} className="text-xs font-semibold p-3 rounded-xl hover:bg-amber-50 hover:text-amber-700 cursor-pointer transition-all">{col.name}</DropdownMenuItem>))}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                                <span className="text-[11px] font-bold text-slate-400 tracking-wider">• {selectedCase?.pastaInterna}</span>
+                                            </div>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3 flex-shrink-0">
-                                    {selectedCase?.contactPhone && (
-                                        <Button
-                                            variant="outline"
-                                            className="h-10 px-4 rounded-2xl bg-green-50 text-green-700 border-green-100 hover:bg-green-100 hover:text-green-800 transition-all font-semibold"
-                                            onClick={() => {
-                                                const phone = selectedCase.contactPhone?.replace(/\D/g, '');
-                                                window.open(`https://wa.me/55${phone}`, '_blank');
-                                            }}
-                                        >
-                                            <MessageSquare className="w-4 h-4 mr-2" />
-                                            WhatsApp
-                                        </Button>
-                                    )}
-                                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowDetailsModal(false)}>
-                                        <X className="w-5 h-5" />
+                                {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-4 items-center">
+                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mr-1">Vínculos:</span>
+                                        {selectedCase.interlinks.relatedServices.map(rel => (
+                                            <button key={rel._id} onClick={() => navigate(`${rel.serviceType.includes('Venda') ? '/admin/negocios/kanban' : rel.serviceType.includes('Loca') ? '/admin/locacoes/kanban' : '/admin/financiamento-kanban'}?openCard=${rel._id}`)} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 text-[10px] font-bold bg-white text-slate-600 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-all shadow-sm">{rel.serviceType}</button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3 ml-6 flex-shrink-0">
+                                {selectedCase?.contactPhone && (
+                                    <Button variant="outline" className="h-11 px-6 rounded-2xl bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 hover:text-emerald-800 transition-all font-bold shadow-sm" onClick={() => window.open(`https://wa.me/55${selectedCase.contactPhone?.replace(/\D/g, '')}`, '_blank')}>
+                                        <MessageSquare className="w-4 h-4 mr-2" /> WhatsApp
                                     </Button>
-                                </div>
+                                )}
+                                <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-slate-100 transition-all" onClick={() => setShowDetailsModal(false)}><X className="w-6 h-6 text-slate-400" /></Button>
                             </div>
                         </DialogHeader>
 
                         <ScrollArea className="h-[calc(90vh-100px)]">
                             <div className="p-8">
                                 <Tabs value={modalTab} onValueChange={setModalTab}>
-                                    <TabsList className="grid grid-cols-7 mb-8 bg-slate-100/50 p-1 rounded-2xl h-12">
-                                        <TabsTrigger value="dados" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <FileText className="w-4 h-4" /> Dados
-                                        </TabsTrigger>
-                                        <TabsTrigger value="proponentes" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <Users className="w-4 h-4" /> Partes
-                                        </TabsTrigger>
-                                        <TabsTrigger value="pendencias" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <AlertCircle className="w-4 h-4" /> Pendências
-                                        </TabsTrigger>
-                                        <TabsTrigger value="tarefas" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <CheckCircle className="w-4 h-4" /> Tarefas
-                                        </TabsTrigger>
-                                        <TabsTrigger value="documentos" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <Upload className="w-4 h-4" /> Documentos
-                                        </TabsTrigger>
-                                        <TabsTrigger value="imoveis" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <Home className="w-4 h-4" /> Imóvel
-                                        </TabsTrigger>
-                                        <TabsTrigger value="historico" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <History className="w-4 h-4" /> Histórico
-                                        </TabsTrigger>
+                                    <TabsList className="grid grid-cols-7 mb-10 bg-slate-100/50 p-1.5 rounded-[24px] h-14 shadow-inner">
+                                        <TabsTrigger value="dados" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><FileText className="w-4 h-4" /> Dados</TabsTrigger>
+                                        <TabsTrigger value="proponentes" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><Users className="w-4 h-4" /> Partes</TabsTrigger>
+                                        <TabsTrigger value="pendencias" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><AlertCircle className="w-4 h-4" /> Pendências</TabsTrigger>
+                                        <TabsTrigger value="tarefas" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><CheckCircle className="w-4 h-4" /> Tarefas</TabsTrigger>
+                                        <TabsTrigger value="documentos" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><Upload className="w-4 h-4" /> Arquivos</TabsTrigger>
+                                        <TabsTrigger value="imoveis" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><Home className="w-4 h-4" /> Imóvel</TabsTrigger>
+                                        <TabsTrigger value="historico" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><History className="w-4 h-4" /> Linha do Tempo</TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="dados" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        {/* Helper to render labeled input */}
-                                        {(() => {
-                                            const F = ({ label, field, type = 'text' }: { label: string; field: string; type?: string }) => (
-                                                <div>
-                                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1 block">{label}</Label>
-                                                    <Input
-                                                        type={type}
-                                                        value={leilaoFormData[field] || ''}
-                                                        onChange={e => setLeilaoFormData(p => ({ ...p, [field]: e.target.value }))}
-                                                        className="h-9 text-sm bg-slate-50 border-slate-200 rounded-lg"
-                                                    />
-                                                </div>
-                                            );
-                                            const S = ({ label, field, options }: { label: string; field: string; options: string[] }) => (
-                                                <div>
-                                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1 block">{label}</Label>
-                                                    <select
-                                                        value={leilaoFormData[field] || ''}
-                                                        onChange={e => setLeilaoFormData(p => ({ ...p, [field]: e.target.value }))}
-                                                        className="w-full h-9 text-sm bg-slate-50 border border-slate-200 rounded-lg px-2"
-                                                    >
-                                                        <option value="">—</option>
-                                                        {options.map(o => <option key={o} value={o}>{o}</option>)}
-                                                    </select>
-                                                </div>
-                                            );
-
-                                            return (
-                                                <div className="space-y-6">
-                                                    {/* 🟦 Identificação da Proposta */}
-                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
-                                                        <h3 className="text-sm font-bold text-amber-700 mb-4 flex items-center gap-2"><Hash className="w-4 h-4" /> Identificação da Proposta / Oportunidade</h3>
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                            <F label="Nº da Proposta / ID" field="numeroProposta" />
-                                                            <S label="Modalidade da Oferta" field="modalidadeOferta" options={['Lance Viva Voz', 'Lance Online', 'Primeiro Licitante', 'Proposta Fechada']} />
-                                                            <S label="Status da Proposta" field="statusProposta" options={['Em aberto', 'Aprovada', 'Reprovada', 'Em análise', 'Arrematado', 'Cancelado']} />
-                                                            <F label="Data da Proposta" field="dataProposta" type="date" />
-                                                        </div>
-                                                    </Card>
-
-                                                    {/* 🟦 Dados do Cliente */}
-                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
-                                                        <h3 className="text-sm font-bold text-blue-700 mb-4 flex items-center gap-2"><Users className="w-4 h-4" /> Dados do Cliente</h3>
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                            <div className="md:col-span-2"><F label="Nome Completo" field="clienteNome" /></div>
-                                                            <F label="CPF / CNPJ" field="clienteCpfCnpj" />
-                                                            <F label="Telefone" field="clienteTelefone" />
-                                                            <div className="md:col-span-2"><F label="E-mail" field="clienteEmail" /></div>
-                                                        </div>
-                                                    </Card>
-
-                                                    {/* 🟦 Endereço do Imóvel */}
-                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
-                                                        <h3 className="text-sm font-bold text-emerald-700 mb-4 flex items-center gap-2"><Home className="w-4 h-4" /> Endereço do Imóvel</h3>
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                            <div className="md:col-span-2"><F label="Logradouro" field="endLogradouro" /></div>
-                                                            <F label="Número" field="endNumero" />
-                                                            <F label="Complemento" field="endComplemento" />
-                                                            <F label="Bairro" field="endBairro" />
-                                                            <F label="Cidade" field="endCidade" />
-                                                            <F label="Estado" field="endEstado" />
-                                                            <div className="md:col-span-2"><F label="Endereço Completo" field="endCompleto" /></div>
-                                                        </div>
-                                                    </Card>
-
-                                                    {/* 🟦 Dados Financeiros da Proposta */}
-                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
-                                                        <h3 className="text-sm font-bold text-green-700 mb-4 flex items-center gap-2"><DollarSign className="w-4 h-4" /> Dados Financeiros da Proposta</h3>
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                            <F label="Valor de Avaliação" field="finValorAvaliacao" />
-                                                            <F label="Valor da Proposta" field="finValorProposta" />
-                                                            <F label="Valor Recursos Próprios" field="finRecursosProprios" />
-                                                            <F label="Validade do Boleto" field="finValidadeBoleto" type="date" />
-                                                            <S label="Forma de Pagamento" field="finFormaPagamento" options={['À Vista', 'Financiamento CEF', 'Financiamento BB', 'Consórcio', 'FGTS', 'Parcelamento direto']} />
-                                                        </div>
-                                                    </Card>
-
-                                                    {/* 🟦 Dados Registrais do Imóvel */}
-                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
-                                                        <h3 className="text-sm font-bold text-violet-700 mb-4 flex items-center gap-2"><FileCheck className="w-4 h-4" /> Dados Registrais do Imóvel</h3>
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                            <F label="Nº da Matrícula" field="regMatricula" />
-                                                            <div className="md:col-span-2"><F label="Cartório / Circunscrição" field="regCartorio" /></div>
-                                                            <F label="Inscrição Imobiliária" field="regInscricao" />
-                                                            <S label="Status da Averbação" field="regStatusAverbacao" options={['Pendente', 'Solicitada', 'Concluída', 'Com restrições']} />
-                                                        </div>
-                                                    </Card>
-
-                                                    {/* 🟦 Dados do Leiloeiro */}
-                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
-                                                        <h3 className="text-sm font-bold text-amber-700 mb-4 flex items-center gap-2"><Gavel className="w-4 h-4" /> Dados do Leiloeiro</h3>
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                            <F label="Nome do Leiloeiro" field="leiloeiroNome" />
-                                                            <F label="Telefone do Leiloeiro" field="leiloeiroTelefone" />
-                                                            <F label="E-mail do Leiloeiro" field="leiloeiroEmail" />
-                                                        </div>
-                                                    </Card>
-
-                                                    {/* 🟦 Dados da Intermediação */}
-                                                    <Card className="p-5 border-slate-100 shadow-sm rounded-2xl">
-                                                        <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Dados da Intermediação</h3>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            <S label="Tipo de Serviço Prestado" field="intermediacaoTipo" options={['Intermediação', 'Assessoramento', 'Consultoria', 'Representação']} />
-                                                            <div>
-                                                                <Label className="text-[10px] text-slate-400 uppercase tracking-wider mb-1 block">Observações</Label>
-                                                                <Textarea
-                                                                    value={leilaoFormData['intermediacaoObs'] || ''}
-                                                                    onChange={e => setLeilaoFormData(p => ({ ...p, intermediacaoObs: e.target.value }))}
-                                                                    className="min-h-[80px] bg-slate-50 border-slate-200 rounded-lg text-sm"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </Card>
-
-                                                    <div className="flex justify-end">
-                                                        <Button
-                                                            onClick={handleSaveLeilaoData}
-                                                            disabled={isSavingLeilao}
-                                                            className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-amber-200"
-                                                        >
-                                                            {isSavingLeilao ? 'Salvando...' : 'Salvar Dados'}
-                                                        </Button>
+                                    <TabsContent value="dados" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-400">
+                                        <div className="space-y-8">
+                                            <Card className="p-6 border-amber-200 bg-amber-50/20 rounded-[32px] border-dashed border-2 shadow-sm">
+                                                <div className="flex items-center justify-between mb-5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2.5 bg-amber-100 rounded-xl text-amber-600"><Wrench className="w-4 h-4" /></div>
+                                                        <h3 className="text-sm font-black text-amber-900 uppercase tracking-widest">Assistente de Importação Inteligente</h3>
                                                     </div>
+                                                    <Button onClick={handleAutoFill} className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl gap-2 font-bold transition-all px-5">Extrair e Preencher</Button>
                                                 </div>
-                                            );
-                                        })()}
+                                                <Textarea placeholder="Cole dados brutos do e-mail, portal ou edital aqui..." value={pasteArea} onChange={e => setPasteArea(e.target.value)} className="min-h-[140px] bg-white/80 border-amber-200 rounded-2xl text-sm italic shadow-inner focus:ring-amber-500" />
+                                            </Card>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                <Card className="p-6 border-slate-100 rounded-[28px] shadow-sm hover:shadow-md transition-all">
+                                                    <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2.5"><UserCheck className="w-4 h-4 text-blue-500" /> Identificação do Cliente</h3>
+                                                    <div className="space-y-5">
+                                                        <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Nome do Proponente</Label><Input value={leilaoFormData.clienteNome || ''} onChange={e => setLeilaoFormData({...leilaoFormData, clienteNome: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">CPF / CNPJ</Label><Input value={leilaoFormData.clienteCpfCnpj || ''} onChange={e => setLeilaoFormData({...leilaoFormData, clienteCpfCnpj: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
+                                                            <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Contato</Label><Input value={leilaoFormData.clienteTelefone || ''} onChange={e => setLeilaoFormData({...leilaoFormData, clienteTelefone: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
+                                                        </div>
+                                                        <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">E-mail Principal</Label><Input value={leilaoFormData.clienteEmail || ''} onChange={e => setLeilaoFormData({...leilaoFormData, clienteEmail: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
+                                                    </div>
+                                                </Card>
+
+                                                <Card className="p-6 border-slate-100 rounded-[28px] shadow-sm hover:shadow-md transition-all">
+                                                    <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2.5"><DollarSign className="w-4 h-4 text-emerald-500" /> Condições Financeiras</h3>
+                                                    <div className="space-y-5">
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Valor de Avaliação</Label><Input value={leilaoFormData.finValorAvaliacao || ''} onChange={e => setLeilaoFormData({...leilaoFormData, finValorAvaliacao: e.target.value})} className="h-11 rounded-xl bg-emerald-50/50 border-none font-black text-emerald-700" /></div>
+                                                            <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Valor do Lance</Label><Input value={leilaoFormData.finValorProposta || ''} onChange={e => setLeilaoFormData({...leilaoFormData, finValorProposta: e.target.value})} className="h-11 rounded-xl bg-amber-50/50 border-none font-black text-amber-700" /></div>
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Forma de Pagamento</Label>
+                                                            <Select value={leilaoFormData.finFormaPagamento || ''} onValueChange={v => setLeilaoFormData({...leilaoFormData, finFormaPagamento: v})}>
+                                                                <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none font-bold"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                                <SelectContent className="rounded-2xl shadow-2xl p-2 border-slate-100">
+                                                                    <SelectItem value="À Vista" className="rounded-xl">À Vista</SelectItem>
+                                                                    <SelectItem value="Financiamento" className="rounded-xl">Financiamento</SelectItem>
+                                                                    <SelectItem value="Parcelado" className="rounded-xl">Parcelado Direto</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                        <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Observações de Pagamento</Label><Input value={leilaoFormData.finObsPagamento || ''} onChange={e => setLeilaoFormData({...leilaoFormData, finObsPagamento: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
+                                                    </div>
+                                                </Card>
+
+                                                <Card className="p-6 border-slate-100 rounded-[28px] shadow-sm hover:shadow-md transition-all">
+                                                    <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2.5"><LayoutGrid className="w-4 h-4 text-indigo-500" /> Detalhes do Imóvel</h3>
+                                                    <div className="space-y-5">
+                                                        <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Número do Item / Lote</Label><Input value={leilaoFormData.imoveLote || ''} onChange={e => setLeilaoFormData({...leilaoFormData, imoveLote: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-black" /></div>
+                                                        <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Localidade</Label><Input value={leilaoFormData.imovelLocal || ''} onChange={e => setLeilaoFormData({...leilaoFormData, imovelLocal: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
+                                                        <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Referência Edital</Label><Input value={leilaoFormData.leilaoEdital || ''} onChange={e => setLeilaoFormData({...leilaoFormData, leilaoEdital: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
+                                                    </div>
+                                                </Card>
+                                            </div>
+
+                                            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-50">
+                                                <Button variant="ghost" className="rounded-2xl px-6 text-slate-400 font-bold hover:bg-slate-50">Limpar Campos</Button>
+                                                <Button onClick={handleSaveLeilaoData} disabled={isSavingLeilao} className="bg-amber-600 hover:bg-amber-700 text-white rounded-[18px] px-10 font-black shadow-lg shadow-amber-200 h-12 uppercase tracking-widest text-xs transition-all">
+                                                    {isSavingLeilao ? 'Processando...' : 'Salvar Todas as Alterações'}
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </TabsContent>
 
-                                    {/* Documentos Tab - Drag & Drop */}
-                                    <TabsContent value="documentos" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <TabsContent value="documentos" className="animate-in fade-in slide-in-from-bottom-2 duration-400">
                                         <div
                                             onDragOver={e => { e.preventDefault(); setIsDraggingDoc(true); }}
                                             onDragLeave={() => setIsDraggingDoc(false)}
-                                            onDrop={e => {
-                                                e.preventDefault();
-                                                setIsDraggingDoc(false);
-                                                handleDocFileDrop(e.dataTransfer.files);
-                                            }}
+                                            onDrop={e => { e.preventDefault(); setIsDraggingDoc(false); handleDocFileDrop(e.dataTransfer.files); }}
                                             onClick={() => docInputRef.current?.click()}
-                                            className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all mb-6 ${
-                                                isDraggingDoc
-                                                    ? 'border-amber-400 bg-amber-50 scale-[1.01]'
-                                                    : 'border-slate-200 bg-slate-50 hover:border-amber-300 hover:bg-amber-50/50'
-                                            }`}
+                                            className={`border-4 border-dashed rounded-[40px] p-20 text-center cursor-pointer transition-all mb-10 ${isDraggingDoc ? 'border-amber-400 bg-amber-50 scale-105 shadow-2xl' : 'border-slate-100 bg-slate-50/50 hover:border-amber-300 hover:bg-amber-50/30'}`}
                                         >
-                                            <Upload className="w-10 h-10 mx-auto mb-3 text-slate-400" />
-                                            <p className="text-sm font-semibold text-slate-600">Arraste documentos aqui ou clique para selecionar</p>
-                                            <p className="text-xs text-slate-400 mt-1">PDF, Word, Excel, imagens — qualquer formato aceito</p>
-                                            <input
-                                                ref={docInputRef}
-                                                type="file"
-                                                multiple
-                                                className="hidden"
-                                                onChange={e => handleDocFileDrop(e.target.files)}
-                                            />
+                                            <div className="w-20 h-20 bg-white rounded-[32px] shadow-xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-all"><Upload className="w-10 h-10 text-amber-500" /></div>
+                                            <p className="text-lg font-black text-slate-800 tracking-tight">Deposite documentos aqui</p>
+                                            <p className="text-sm text-slate-400 mt-2 font-medium">Arquivos suportados: PDF, JPG, PNG, DOCX (Máx 20MB)</p>
+                                            <input ref={docInputRef} type="file" multiple className="hidden" onChange={e => handleDocFileDrop(e.target.files)} />
                                         </div>
 
-                                        {uploadedDocs.length === 0 ? (
-                                            <p className="text-sm text-slate-400 text-center italic">Nenhum documento anexado ainda.</p>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {uploadedDocs.map((doc, i) => (
-                                                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center">
-                                                                <File className="w-4 h-4 text-amber-600" />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {uploadedDocs.length === 0 ? (
+                                                <div className="col-span-full py-20 text-center bg-slate-50/50 rounded-[40px] border border-slate-100 border-dashed">
+                                                    <FileCheck className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                                    <p className="text-slate-400 font-bold italic">Nenhum documento anexado ao processo.</p>
+                                                </div>
+                                            ) : (
+                                                uploadedDocs.map((doc, i) => (
+                                                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} key={i} className="group p-5 bg-white rounded-[28px] border border-slate-100 shadow-sm hover:shadow-xl hover:border-amber-200 transition-all flex flex-col justify-between">
+                                                        <div className="flex items-start justify-between mb-4">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600"><File className="w-6 h-6" /></div>
+                                                                <div className="max-w-[140px]">
+                                                                    <p className="text-sm font-black text-slate-800 truncate mb-0.5">{doc.name}</p>
+                                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{ (doc.size / 1024).toFixed(0) } KB • { new Date(doc.uploadedAt).toLocaleDateString('pt-BR') }</p>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <p className="text-sm font-medium text-slate-800">{doc.name}</p>
-                                                                <p className="text-[10px] text-slate-400">{(doc.size / 1024).toFixed(1)} KB • {new Date(doc.uploadedAt).toLocaleDateString('pt-BR')}</p>
-                                                            </div>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 opacity-0 group-hover:opacity-100 transition-all"><Settings className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                                                                <DropdownMenuContent className="p-2 rounded-xl border-slate-100 shadow-2xl">
+                                                                    <DropdownMenuItem className="p-3 rounded-lg text-xs font-bold gap-3"><Eye className="w-4 h-4" /> Visualizar</DropdownMenuItem>
+                                                                    <DropdownMenuItem className="p-3 rounded-lg text-xs font-bold text-red-500 gap-3" onClick={() => setUploadedDocs(prev => prev.filter((_, idx) => idx !== i))}><Trash2 className="w-4 h-4" /> Excluir</DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         </div>
-                                                        <div className="flex gap-1">
-                                                            <a href={doc.url} download={doc.name} onClick={e => e.stopPropagation()}>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-amber-600">
-                                                                    <Download className="w-4 h-4" />
-                                                                </Button>
-                                                            </a>
-                                                            <Button
-                                                                variant="ghost" size="icon"
-                                                                className="h-8 w-8 text-slate-400 hover:text-red-500"
-                                                                onClick={() => setUploadedDocs(prev => prev.filter((_, idx) => idx !== i))}
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
+                                                        <div className="flex gap-2">
+                                                            <a href={doc.url} download={doc.name} className="flex-1"><Button variant="outline" className="w-full h-10 rounded-[14px] text-xs font-black gap-2 border-slate-100 hover:bg-slate-50 transition-all"><Download className="w-3.5 h-3.5" /> DOWNLOAD</Button></a>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                                    </motion.div>
+                                                ))
+                                            )}
+                                        </div>
                                     </TabsContent>
 
-                                    {/* Remaining tabs pattern same as Vendas */}
+                                    <TabsContent value="historico" className="animate-in fade-in slide-in-from-bottom-2 duration-400">
+                                        <div className="max-w-3xl mx-auto space-y-12">
+                                            <div className="relative pl-12 border-l-4 border-slate-100 space-y-12 pb-10">
+                                                <div className="relative">
+                                                    <div className="absolute -left-[58px] top-0 w-8 h-8 rounded-full bg-white border-4 border-amber-500 shadow-xl flex items-center justify-center text-amber-500 font-black text-[10px] z-10">01</div>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                                                        <Clock className="w-3 h-3" /> Hoje, às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                    <h4 className="text-base font-black text-slate-800 tracking-tight">Processo imortalizado no ecossistema</h4>
+                                                    <div className="mt-3 p-5 bg-slate-50 rounded-[24px] border border-slate-100 shadow-inner">
+                                                        <p className="text-sm text-slate-500 leading-relaxed">Registro inicial efetuado com status <span className="font-black text-slate-900">"{selectedCase?.status}"</span>. Todas as ramificações de inteligência de negócio foram ativadas para este contrato.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-10 border-t border-slate-100 flex flex-col items-center">
+                                                <div className="p-10 bg-emerald-50/50 rounded-[48px] border-4 border-emerald-100 border-dashed text-center max-w-sm">
+                                                    <div className="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-200"><CheckCircle2 className="w-10 h-10" /></div>
+                                                    <h3 className="text-xl font-black text-emerald-900 tracking-tight mb-3">Conclusão de Ciclo</h3>
+                                                    <p className="text-xs text-emerald-700 font-medium mb-8 leading-relaxed">Ao arrematar, o processo será transposto para a categoria de conclusos, liberando recursos operacionais.</p>
+                                                    <Button onClick={handleConcluirProcesso} disabled={isSavingLeilao || selectedCase?.status === 'Concluídos'} className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white gap-3 rounded-[24px] font-black shadow-2xl shadow-emerald-200 uppercase tracking-widest text-xs transition-all ring-offset-2 hover:ring-2 ring-emerald-500">
+                                                        {isSavingLeilao ? 'Processando...' : 'Finalizar e Arquivar'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="proponentes" className="py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
+                                        <Users className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
+                                        <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Controle de Coproponentes</h3>
+                                        <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">Módulo de gestão de sócios e intervenientes garantidores está sendo otimizado pela engenharia.</p>
+                                    </TabsContent>
+                                    <TabsContent value="pendencias" className="py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
+                                        <AlertTriangle className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
+                                        <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Painel de Impedimentos</h3>
+                                        <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">O rastreador de pendências críticas será integrado na próxima iteração de build.</p>
+                                    </TabsContent>
+                                    <TabsContent value="tarefas" className="py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
+                                        <CheckSquare className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
+                                        <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Workflow de Micro-tarefas</h3>
+                                        <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">A gestão granular de steps operacionais está em fase alfa de calibração.</p>
+                                    </TabsContent>
+                                    <TabsContent value="imoveis" className="py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
+                                        <Home className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
+                                        <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Vinculação Patrimonial</h3>
+                                        <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">Módulo de interlink direto com o inventário imobiliário em fase de sincronização.</p>
+                                    </TabsContent>
                                 </Tabs>
                             </div>
                         </ScrollArea>
-
-                        <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-                            <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 gap-2 rounded-xl">
-                                <Trash2 className="w-4 h-4" /> Cancelar Lote
-                            </Button>
-                            <div className="flex gap-3">
-                                <Button variant="outline" className="rounded-xl px-6" onClick={() => setShowDetailsModal(false)}>Fechar</Button>
-                                <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-amber-200">
-                                    Salvar Alterações
-                                </Button>
-                            </div>
-                        </div>
                     </DialogContent>
                 </Dialog>
             </div>

@@ -183,6 +183,7 @@ function AdminClientesContent() {
 
       const getInitialStatus = (type: string): string => {
         if (type === 'Financiamento' || type === 'Crédito') return 'novos-clientes';
+        if (type === 'Leilão') return 'Novos clientes';
         return 'Novos';
       };
 
