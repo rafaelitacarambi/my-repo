@@ -172,6 +172,7 @@ export default function AdminLocacoesKanbanPage() {
 
     // Popup Modal States
     const [showNewClientModal, setShowNewClientModal] = useState(false);
+    const [showVincularParteModal, setShowVincularParteModal] = useState(false);
     const [activeModalTrigger, setActiveModalTrigger] = useState<'dados' | 'partes'>('dados');
     const [newClientFormData, setNewClientFormData] = useState<Partial<Clients>>({
         clientName: '',
@@ -191,6 +192,7 @@ export default function AdminLocacoesKanbanPage() {
 
     // Property Modal States
     const [showNewImovelModal, setShowNewImovelModal] = useState(false);
+    const [showVincularImovelModal, setShowVincularImovelModal] = useState(false);
     const [editingImovelId, setEditingImovelId] = useState<string | null>(null);
 
     // Edit Parte Modal State
@@ -868,6 +870,7 @@ export default function AdminLocacoesKanbanPage() {
 
             await BaseCrudService.create('atendimentoimoveis', newLink);
             toast.success('Imóvel vinculado com sucesso!');
+            setShowVincularImovelModal(false);
             setSelectedImovelId('');
             await loadData();
         } catch (error) {
@@ -1354,12 +1357,14 @@ export default function AdminLocacoesKanbanPage() {
                                                     <Home className="w-4 h-4 text-emerald-500" />
                                                     Imóvel da Locação
                                                 </span>
-                                                <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold rounded-lg px-2 py-0.5">
-                                                    {atendimentoImoveis.filter(ai => ai.atendimentoRef === selectedCase?._id).length} vinculado
-                                                </Badge>
+                                                <div className="flex items-center gap-3">
+                                                    <button type="button" onClick={() => setShowVincularImovelModal(true)} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1">
+                                                        <Plus className="w-3.5 h-3.5" /> Vincular Imóvel
+                                                    </button>
+                                                </div>
                                             </h3>
                                             
-                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            <div className="w-full">
                                                 {/* Left card (Property detail or placeholder) */}
                                                 <div className="lg:col-span-2">
                                                     {atendimentoImoveis.filter(ai => ai.atendimentoRef === selectedCase?._id).length > 0 ? (
@@ -1433,105 +1438,7 @@ export default function AdminLocacoesKanbanPage() {
                                                     )}
                                                 </div>
                                                 
-                                                {/* Right: Inline Vincular Imóvel */}
-                                                <div className="lg:col-span-1 flex flex-col gap-3 p-5 bg-slate-50/40 border border-slate-100 rounded-2xl shadow-sm">
-                                                    <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-                                                        <Building2 className="w-3.5 h-3.5 text-emerald-500" />
-                                                        Vincular Imóvel
-                                                    </p>
 
-                                                    {selectedImovelId ? (
-                                                        <div className="flex items-center justify-between p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl">
-                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 flex-shrink-0">
-                                                                    <Building2 className="w-3.5 h-3.5" />
-                                                                </div>
-                                                                <div className="min-w-0">
-                                                                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider block truncate">
-                                                                        {imoveis.find(i => i._id === selectedImovelId)?.codImovel || imoveis.find(i => i._id === selectedImovelId)?.codigoReference || 'SEM CÓDIGO'}
-                                                                    </span>
-                                                                    <span className="text-[10px] text-slate-500 truncate block">
-                                                                        {imoveis.find(i => i._id === selectedImovelId)?.tipoImovel} • {imoveis.find(i => i._id === selectedImovelId)?.bairro || 'Sem Bairro'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg flex-shrink-0" onClick={() => { setSelectedImovelId(''); setImovelSearchQuery(''); }}>
-                                                                <X className="w-3.5 h-3.5" />
-                                                            </Button>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="relative">
-                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                                <Search className="h-3.5 w-3.5 text-slate-400" />
-                                                            </div>
-                                                            <Input
-                                                                type="text"
-                                                                placeholder="Código, endereço, proprietário..."
-                                                                className="pl-9 h-10 bg-white border-slate-200 rounded-xl text-xs w-full focus-visible:ring-emerald-500"
-                                                                value={imovelSearchQuery}
-                                                                onChange={(e) => { setImovelSearchQuery(e.target.value); setIsImovelDropdownOpen(true); }}
-                                                                onFocus={() => setIsImovelDropdownOpen(true)}
-                                                                onBlur={() => setTimeout(() => setIsImovelDropdownOpen(false), 200)}
-                                                            />
-                                                            {isImovelDropdownOpen && (
-                                                                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-56 overflow-y-auto p-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                                    {imoveis
-                                                                        .filter(i => {
-                                                                            if (!imovelSearchQuery.trim()) return true;
-                                                                            const q = imovelSearchQuery.toLowerCase().trim();
-                                                                            return (i.codImovel || '').toLowerCase().includes(q) ||
-                                                                                   (i.codigoReference || '').toLowerCase().includes(q) ||
-                                                                                   (i.enderecoRua || '').toLowerCase().includes(q) ||
-                                                                                   (i.logradouro || '').toLowerCase().includes(q) ||
-                                                                                   (i.bairro || '').toLowerCase().includes(q) ||
-                                                                                   (i.cidade || '').toLowerCase().includes(q) ||
-                                                                                   (i.nomeProprietario || '').toLowerCase().includes(q) ||
-                                                                                   (imovelSearchQuery.replace(/\D/g, '') !== '' && (i.telefoneProprietario || '').replace(/\D/g, '').includes(imovelSearchQuery.replace(/\D/g, '')));
-                                                                        })
-                                                                        .map(i => (
-                                                                            <button
-                                                                                key={i._id}
-                                                                                type="button"
-                                                                                className="w-full flex flex-col items-start text-left p-2.5 rounded-lg hover:bg-slate-50 transition-colors"
-                                                                                onClick={() => { setSelectedImovelId(i._id); setIsImovelDropdownOpen(false); }}
-                                                                            >
-                                                                                <div className="flex items-center justify-between w-full">
-                                                                                    <span className="text-xs font-bold text-slate-800">{i.codImovel || i.codigoReference || 'SEM CÓD'} - {i.tipoImovel}</span>
-                                                                                    {i.precoLocacao && <span className="text-xs font-bold text-emerald-600">{formatCurrency(i.precoLocacao)}</span>}
-                                                                                </div>
-                                                                                <span className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">📍 {i.logradouro || i.enderecoRua || 'Sem rua'}, {i.numero || 'S/N'} - {i.bairro}</span>
-                                                                                {i.nomeProprietario && <span className="text-[10px] text-slate-400 mt-0.5">👤 {i.nomeProprietario}</span>}
-                                                                            </button>
-                                                                        ))}
-                                                                    {imoveis.filter(i => {
-                                                                        if (!imovelSearchQuery.trim()) return true;
-                                                                        const q = imovelSearchQuery.toLowerCase().trim();
-                                                                        return (i.codImovel || '').toLowerCase().includes(q) || (i.logradouro || '').toLowerCase().includes(q) || (i.nomeProprietario || '').toLowerCase().includes(q);
-                                                                    }).length === 0 && (
-                                                                        <div className="text-center py-3 text-xs text-slate-400">Nenhum imóvel encontrado.</div>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    <Button
-                                                        onClick={handleLinkImovel}
-                                                        className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center"
-                                                    >
-                                                        <Plus className="w-3.5 h-3.5 mr-1.5" />
-                                                        Vincular Imóvel
-                                                    </Button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleOpenNewImovelModal}
-                                                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center justify-center gap-1"
-                                                    >
-                                                        <Plus className="w-3 h-3" />
-                                                        Cadastrar Novo Imóvel
-                                                    </button>
-                                                </div>
                                             </div>
                                         </div>
 
@@ -1557,9 +1464,7 @@ export default function AdminLocacoesKanbanPage() {
                                                             />
                                                         </div>
                                                         <div>
-                                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Tipo de Contrato</Label>
-                                                            <div className="flex items-center justify-between mt-1 h-11">
-                                                                <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100 rounded-lg px-2.5 py-1 text-xs font-bold">{selectedCase?.serviceType}</Badge>
+                                                            <div className="flex items-center justify-end h-full">
                                                                 <Button
                                                                     size="sm"
                                                                     variant="outline"
@@ -1618,7 +1523,7 @@ export default function AdminLocacoesKanbanPage() {
                                                         </h3>
                                                         <button
                                                             type="button"
-                                                            onClick={() => setModalTab('proponentes')}
+                                                            onClick={() => setShowVincularParteModal(true)}
                                                             className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1"
                                                         >
                                                             <Plus className="w-3.5 h-3.5" />
@@ -1737,196 +1642,7 @@ export default function AdminLocacoesKanbanPage() {
                                             </div>
                                     </TabsContent>
 
-                                    <TabsContent value="proponentes" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                            {/* Adicionar Participante Form */}
-                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl lg:col-span-1 h-fit">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <Plus className="w-4 h-4 text-indigo-500" />
-                                                    Vincular Nova Parte
-                                                </h3>
-                                                
-                                                <div className="space-y-4">
-                                                    <div className="relative">
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Buscar Cliente</Label>
-                                                        <div className="relative">
-                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                                <Search className="h-4 w-4 text-slate-400" />
-                                                            </div>
-                                                            <Input
-                                                                type="text"
-                                                                placeholder="Nome ou CPF/CNPJ..."
-                                                                className="pl-10 h-11 bg-slate-50 border-none rounded-xl text-sm w-full"
-                                                                value={partClientSearchQuery}
-                                                                onChange={(e) => {
-                                                                    setPartClientSearchQuery(e.target.value);
-                                                                    setIsPartDropdownOpen(true);
-                                                                }}
-                                                                onFocus={() => setIsPartDropdownOpen(true)}
-                                                                onBlur={() => setTimeout(() => setIsPartDropdownOpen(false), 200)}
-                                                            />
-                                                            {isPartDropdownOpen && (
-                                                                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-60 overflow-y-auto p-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                                    {clients
-                                                                        .filter(c => {
-                                                                            const q = partClientSearchQuery.toLowerCase();
-                                                                            return (c.clientName || '').toLowerCase().includes(q) || 
-                                                                                   (c.cpfCnpj || '').replace(/\D/g, '').includes(q.replace(/\D/g, ''));
-                                                                        })
-                                                                        .slice(0, 5)
-                                                                        .map((c) => (
-                                                                            <button
-                                                                                key={c._id}
-                                                                                type="button"
-                                                                                className="w-full flex flex-col items-start text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                                                                                onClick={async () => {
-                                                                                    if (!selectedCase) return;
-                                                                                    // Quick add!
-                                                                                    setIsSavingLocacao(true);
-                                                                                    try {
-                                                                                        const existsPart = atendimentoPartes.some(p => p.serviceRecordRef === selectedCase._id && p.clientRef === c._id && p.roleInService === selectedPartRole);
-                                                                                        if (existsPart) {
-                                                                                            toast.error('Este cliente já está vinculado com esta função.');
-                                                                                            return;
-                                                                                        }
-                                                                                        const partyId = crypto.randomUUID();
-                                                                                        await BaseCrudService.create('atendimentopartes', {
-                                                                                            _id: partyId,
-                                                                                            serviceRecordRef: selectedCase._id,
-                                                                                            clientRef: c._id,
-                                                                                            roleInService: selectedPartRole,
-                                                                                            participationPercentage: 100,
-                                                                                            notes: 'Adicionado via Kanban'
-                                                                                        });
-                                                                                        toast.success('Parte vinculada com sucesso!');
-                                                                                        setPartClientSearchQuery('');
-                                                                                        await loadData();
-                                                                                    } catch (err) {
-                                                                                        toast.error('Erro ao vincular parte.');
-                                                                                    } finally {
-                                                                                        setIsSavingLocacao(false);
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                <span className="text-sm font-bold text-slate-800">{c.clientName}</span>
-                                                                                <span className="text-xs text-slate-500 mt-0.5">
-                                                                                    CPF/CNPJ: {c.cpfCnpj ? formatCPF(c.cpfCnpj) : '—'}
-                                                                                </span>
-                                                                            </button>
-                                                                        ))}
-                                                                    <div className="border-t border-slate-50 mt-1 pt-1">
-                                                                        <button
-                                                                            type="button"
-                                                                            className="w-full flex items-center justify-center gap-2 p-2.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50/50 rounded-lg transition-colors"
-                                                                            onClick={() => {
-                                                                                setActiveModalTrigger('partes');
-                                                                                setShowNewClientModal(true);
-                                                                                setIsPartDropdownOpen(false);
-                                                                            }}
-                                                                        >
-                                                                            <Plus className="w-4 h-4" />
-                                                                            Cadastrar Novo Cliente
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Papel / Função</Label>
-                                                        <Select value={selectedPartRole} onValueChange={setSelectedPartRole}>
-                                                            <SelectTrigger className="h-11 bg-slate-50 border-none rounded-xl">
-                                                                <SelectValue placeholder="Selecione o papel..." />
-                                                            </SelectTrigger>
-                                                            <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
-                                                                <SelectItem value="Locatário" className="rounded-lg">Locatário (Inquilino)</SelectItem>
-                                                                <SelectItem value="Locador" className="rounded-lg">Locador (Proprietário)</SelectItem>
-                                                                <SelectItem value="Fiador" className="rounded-lg">Fiador</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-
-                                                    <p className="text-xs text-slate-400 italic">
-                                                        Dica: Digite o nome no campo acima e selecione o cliente para vinculá-lo instantaneamente ao contrato com a função desejada.
-                                                    </p>
-                                                </div>
-                                            </Card>
-
-                                            {/* List of current parties */}
-                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl lg:col-span-2">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-6 flex items-center gap-2">
-                                                    <Users className="w-4 h-4 text-emerald-500" />
-                                                    Partes Vinculadas ao Contrato ({atendimentoPartes.filter(p => p.serviceRecordRef === selectedCase?._id).length})
-                                                </h3>
-
-                                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                                                    {atendimentoPartes.filter(p => p.serviceRecordRef === selectedCase?._id).length === 0 ? (
-                                                        <div className="text-center py-12 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                                                            <Users className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-                                                            <p className="text-sm font-bold text-slate-500">Nenhuma parte vinculada ainda</p>
-                                                            <p className="text-xs text-slate-400 mt-1">Busque um cliente cadastrado ou clique em '+ Novo Cadastro' para começar.</p>
-                                                        </div>
-                                                    ) : (
-                                                        atendimentoPartes
-                                                            .filter(p => p.serviceRecordRef === selectedCase?._id)
-                                                            .map((part) => {
-                                                                const client = clients.find(c => c._id === part.clientRef);
-                                                                return (
-                                                                    <div key={part._id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:shadow-md hover:bg-white">
-                                                                        <div className="flex items-center gap-4 min-w-0">
-                                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
-                                                                                part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700' :
-                                                                                part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700' :
-                                                                                'bg-amber-100 text-amber-700'
-                                                                            }`}>
-                                                                                {part.roleInService === 'Locatário' ? 'LT' : part.roleInService === 'Locador' ? 'LD' : 'FD'}
-                                                                            </div>
-                                                                            <div className="min-w-0">
-                                                                                <div className="flex items-center gap-2 flex-wrap">
-                                                                                    <span className="text-sm font-bold text-slate-800 truncate">{client?.clientName || 'Cliente desconhecido'}</span>
-                                                                                    <Badge className={`text-[10px] font-bold border-none px-2 py-0.5 rounded-full flex-shrink-0 ${
-                                                                                        part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
-                                                                                        part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
-                                                                                        'bg-amber-100 text-amber-700 hover:bg-amber-100'
-                                                                                    }`}>
-                                                                                        {part.roleInService || 'Locatário'}
-                                                                                    </Badge>
-                                                                                </div>
-                                                                                <p className="text-xs text-slate-500 mt-1 truncate">
-                                                                                    CPF/CNPJ: {client?.cpfCnpj ? formatCPF(client.cpfCnpj) : '—'} • E-mail: {client?.email || '—'}
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl flex-shrink-0"
-                                                                            onClick={async () => {
-                                                                                if (confirm('Tem certeza que deseja remover esta parte deste processo?')) {
-                                                                                    setIsSavingLocacao(true);
-                                                                                    try {
-                                                                                        await BaseCrudService.delete('atendimentopartes', part._id);
-                                                                                        toast.success('Parte desvinculada com sucesso!');
-                                                                                        await loadData();
-                                                                                    } catch (err) {
-                                                                                        toast.error('Erro ao remover parte.');
-                                                                                    } finally {
-                                                                                        setIsSavingLocacao(false);
-                                                                                    }
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4" />
-                                                                        </Button>
-                                                                    </div>
-                                                                );
-                                                            })
-                                                    )}
-                                                </div>
-                                            </Card>
-                                        </div>
-                                    </TabsContent>
+                                    
 
                                     <TabsContent value="documentos" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div
@@ -2416,6 +2132,124 @@ export default function AdminLocacoesKanbanPage() {
                 </Dialog>
 
 
+                {/* Modal de Vincular Parte */}
+                <Dialog open={showVincularParteModal} onOpenChange={setShowVincularParteModal}>
+                    <DialogContent className="max-w-[420px] p-6 bg-white border-slate-100 rounded-3xl shadow-xl outline-none border-0">
+                        <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                                    <Plus className="w-4 h-4 text-indigo-500" />
+                                                    Vincular Nova Parte
+                                                </h3>
+                                                
+                                                <div className="space-y-4">
+                                                    <div className="relative">
+                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Buscar Cliente</Label>
+                                                        <div className="relative">
+                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                                <Search className="h-4 w-4 text-slate-400" />
+                                                            </div>
+                                                            <Input
+                                                                type="text"
+                                                                placeholder="Nome ou CPF/CNPJ..."
+                                                                className="pl-10 h-11 bg-slate-50 border-none rounded-xl text-sm w-full"
+                                                                value={partClientSearchQuery}
+                                                                onChange={(e) => {
+                                                                    setPartClientSearchQuery(e.target.value);
+                                                                    setIsPartDropdownOpen(true);
+                                                                }}
+                                                                onFocus={() => setIsPartDropdownOpen(true)}
+                                                                onBlur={() => setTimeout(() => setIsPartDropdownOpen(false), 200)}
+                                                            />
+                                                            {isPartDropdownOpen && (
+                                                                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-60 overflow-y-auto p-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                    {clients
+                                                                        .filter(c => {
+                                                                            const q = partClientSearchQuery.toLowerCase();
+                                                                            return (c.clientName || '').toLowerCase().includes(q) || 
+                                                                                   (c.cpfCnpj || '').replace(/\D/g, '').includes(q.replace(/\D/g, ''));
+                                                                        })
+                                                                        .slice(0, 5)
+                                                                        .map((c) => (
+                                                                            <button
+                                                                                key={c._id}
+                                                                                type="button"
+                                                                                className="w-full flex flex-col items-start text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                                                                                onClick={async () => {
+                                                                                    if (!selectedCase) return;
+                                                                                    // Quick add!
+                                                                                    setIsSavingLocacao(true);
+                                                                                    try {
+                                                                                        const existsPart = atendimentoPartes.some(p => p.serviceRecordRef === selectedCase._id && p.clientRef === c._id && p.roleInService === selectedPartRole);
+                                                                                        if (existsPart) {
+                                                                                            toast.error('Este cliente já está vinculado com esta função.');
+                                                                                            return;
+                                                                                        }
+                                                                                        const partyId = crypto.randomUUID();
+                                                                                        await BaseCrudService.create('atendimentopartes', {
+                                                                                            _id: partyId,
+                                                                                            serviceRecordRef: selectedCase._id,
+                                                                                            clientRef: c._id,
+                                                                                            roleInService: selectedPartRole,
+                                                                                            participationPercentage: 100,
+                                                                                            notes: 'Adicionado via Kanban'
+                                                                                        });
+                                                                                        toast.success('Parte vinculada com sucesso!');
+                                                                                        setShowVincularParteModal(false);
+                                                                                        setPartClientSearchQuery('');
+                                                                                        await loadData();
+                                                                                    } catch (err) {
+                                                                                        toast.error('Erro ao vincular parte.');
+                                                                                    } finally {
+                                                                                        setIsSavingLocacao(false);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <span className="text-sm font-bold text-slate-800">{c.clientName}</span>
+                                                                                <span className="text-xs text-slate-500 mt-0.5">
+                                                                                    CPF/CNPJ: {c.cpfCnpj ? formatCPF(c.cpfCnpj) : '—'}
+                                                                                </span>
+                                                                            </button>
+                                                                        ))}
+                                                                    <div className="border-t border-slate-50 mt-1 pt-1">
+                                                                        <button
+                                                                            type="button"
+                                                                            className="w-full flex items-center justify-center gap-2 p-2.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50/50 rounded-lg transition-colors"
+                                                                            onClick={() => {
+                                                                                setActiveModalTrigger('partes');
+                                                                                setShowNewClientModal(true);
+                                                                                setShowVincularParteModal(false);
+                                                                                setIsPartDropdownOpen(false);
+                                                                            }}
+                                                                        >
+                                                                            <Plus className="w-4 h-4" />
+                                                                            Cadastrar Novo Cliente
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Papel / Função</Label>
+                                                        <Select value={selectedPartRole} onValueChange={setSelectedPartRole}>
+                                                            <SelectTrigger className="h-11 bg-slate-50 border-none rounded-xl">
+                                                                <SelectValue placeholder="Selecione o papel..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                                                <SelectItem value="Locatário" className="rounded-lg">Locatário (Inquilino)</SelectItem>
+                                                                <SelectItem value="Locador" className="rounded-lg">Locador (Proprietário)</SelectItem>
+                                                                <SelectItem value="Fiador" className="rounded-lg">Fiador</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    <p className="text-xs text-slate-400 italic">
+                                                        Dica: Digite o nome no campo acima e selecione o cliente para vinculá-lo instantaneamente ao contrato com a função desejada.
+                                                    </p>
+                                                </div>
+                    </DialogContent>
+                </Dialog>
+
                 <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
                     <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] p-0 gap-0 overflow-hidden rounded-3xl flex flex-col bg-white border border-slate-100 shadow-2xl">
                         <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-center flex-shrink-0">
@@ -2627,6 +2461,108 @@ export default function AdminLocacoesKanbanPage() {
                                 )}
                             </Button>
                         </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Modal de Vincular Imóvel */}
+                <Dialog open={showVincularImovelModal} onOpenChange={setShowVincularImovelModal}>
+                    <DialogContent className="max-w-[420px] p-6 bg-white border-slate-100 rounded-3xl shadow-xl outline-none border-0">
+                        <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                                        <Building2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                        Vincular Imóvel
+                                                    </p>
+
+                                                    {selectedImovelId ? (
+                                                        <div className="flex items-center justify-between p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 flex-shrink-0">
+                                                                    <Building2 className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider block truncate">
+                                                                        {imoveis.find(i => i._id === selectedImovelId)?.codImovel || imoveis.find(i => i._id === selectedImovelId)?.codigoReference || 'SEM CÓDIGO'}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-slate-500 truncate block">
+                                                                        {imoveis.find(i => i._id === selectedImovelId)?.tipoImovel} • {imoveis.find(i => i._id === selectedImovelId)?.bairro || 'Sem Bairro'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg flex-shrink-0" onClick={() => { setSelectedImovelId(''); setImovelSearchQuery(''); }}>
+                                                                <X className="w-3.5 h-3.5" />
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="relative">
+                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                                <Search className="h-3.5 w-3.5 text-slate-400" />
+                                                            </div>
+                                                            <Input
+                                                                type="text"
+                                                                placeholder="Código, endereço, proprietário..."
+                                                                className="pl-9 h-10 bg-white border-slate-200 rounded-xl text-xs w-full focus-visible:ring-emerald-500"
+                                                                value={imovelSearchQuery}
+                                                                onChange={(e) => { setImovelSearchQuery(e.target.value); setIsImovelDropdownOpen(true); }}
+                                                                onFocus={() => setIsImovelDropdownOpen(true)}
+                                                                onBlur={() => setTimeout(() => setIsImovelDropdownOpen(false), 200)}
+                                                            />
+                                                            {isImovelDropdownOpen && (
+                                                                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-56 overflow-y-auto p-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                    {imoveis
+                                                                        .filter(i => {
+                                                                            if (!imovelSearchQuery.trim()) return true;
+                                                                            const q = imovelSearchQuery.toLowerCase().trim();
+                                                                            return (i.codImovel || '').toLowerCase().includes(q) ||
+                                                                                   (i.codigoReference || '').toLowerCase().includes(q) ||
+                                                                                   (i.enderecoRua || '').toLowerCase().includes(q) ||
+                                                                                   (i.logradouro || '').toLowerCase().includes(q) ||
+                                                                                   (i.bairro || '').toLowerCase().includes(q) ||
+                                                                                   (i.cidade || '').toLowerCase().includes(q) ||
+                                                                                   (i.nomeProprietario || '').toLowerCase().includes(q) ||
+                                                                                   (imovelSearchQuery.replace(/\D/g, '') !== '' && (i.telefoneProprietario || '').replace(/\D/g, '').includes(imovelSearchQuery.replace(/\D/g, '')));
+                                                                        })
+                                                                        .map(i => (
+                                                                            <button
+                                                                                key={i._id}
+                                                                                type="button"
+                                                                                className="w-full flex flex-col items-start text-left p-2.5 rounded-lg hover:bg-slate-50 transition-colors"
+                                                                                onClick={() => { setSelectedImovelId(i._id); setIsImovelDropdownOpen(false); }}
+                                                                            >
+                                                                                <div className="flex items-center justify-between w-full">
+                                                                                    <span className="text-xs font-bold text-slate-800">{i.codImovel || i.codigoReference || 'SEM CÓD'} - {i.tipoImovel}</span>
+                                                                                    {i.precoLocacao && <span className="text-xs font-bold text-emerald-600">{formatCurrency(i.precoLocacao)}</span>}
+                                                                                </div>
+                                                                                <span className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">📍 {i.logradouro || i.enderecoRua || 'Sem rua'}, {i.numero || 'S/N'} - {i.bairro}</span>
+                                                                                {i.nomeProprietario && <span className="text-[10px] text-slate-400 mt-0.5">👤 {i.nomeProprietario}</span>}
+                                                                            </button>
+                                                                        ))}
+                                                                    {imoveis.filter(i => {
+                                                                        if (!imovelSearchQuery.trim()) return true;
+                                                                        const q = imovelSearchQuery.toLowerCase().trim();
+                                                                        return (i.codImovel || '').toLowerCase().includes(q) || (i.logradouro || '').toLowerCase().includes(q) || (i.nomeProprietario || '').toLowerCase().includes(q);
+                                                                    }).length === 0 && (
+                                                                        <div className="text-center py-3 text-xs text-slate-400">Nenhum imóvel encontrado.</div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <Button
+                                                        onClick={handleLinkImovel}
+                                                        className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+                                                        Vincular Imóvel
+                                                    </Button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { handleOpenNewImovelModal(); setShowVincularImovelModal(false); }}
+                                                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center justify-center gap-1"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                        Cadastrar Novo Imóvel
+                                                    </button>
                     </DialogContent>
                 </Dialog>
 

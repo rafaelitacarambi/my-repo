@@ -208,6 +208,8 @@ export class ContractEngine {
             PASTA_INTERNA: atendimento?.pastaInterna || '',
             CIDADE_ASSINATURA: 'Poá', // Default for this client
             DATA_ASSINATURA: new Date().toLocaleDateString('pt-BR'),
+            DATA_VISTORIA: extraData?.DATA_VISTORIA ? new Date(extraData.DATA_VISTORIA + 'T12:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+            DATA_ENTREGA_CHAVES: extraData?.DATA_ENTREGA_CHAVES ? new Date(extraData.DATA_ENTREGA_CHAVES + 'T12:00:00').toLocaleDateString('pt-BR') : '',
             DATA_HOJE: new Date().toLocaleDateString('pt-BR'),
             DIA_HOJE: new Date().getDate(),
             MES_HOJE_EXTENSO: new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date()),
@@ -266,17 +268,73 @@ export class ContractEngine {
             CAUCAO_CONTA: extraData?.CAUCAO_CONTA || '',
 
             // Testemunhas
-            TESTEMUNHA1_NOME: extraData?.TESTEMUNHA1_NOME || '________________________________',
-            TESTEMUNHA1_RG: extraData?.TESTEMUNHA1_RG || '',
-            TESTEMUNHA2_NOME: extraData?.TESTEMUNHA2_NOME || '________________________________',
-            TESTEMUNHA2_RG: extraData?.TESTEMUNHA2_RG || '',
+            TESTEMUNHA_1_NOME: extraData?.TESTEMUNHA_1_NOME || '',
+            TESTEMUNHA_1_CPF: extraData?.TESTEMUNHA_1_CPF || '',
+            TESTEMUNHA_2_NOME: extraData?.TESTEMUNHA_2_NOME || '',
+            TESTEMUNHA_2_CPF: extraData?.TESTEMUNHA_2_CPF || '',
+
+            LAUDO_FOTOS_HTML: (() => {
+                if (!extraData?.LAUDO_FOTOS || extraData.LAUDO_FOTOS.length === 0) return '';
+                let html = '<div style="margin-top: 40px;">';
+                html += '<h3 style="font-size: 14px; color: #000; font-weight: bold; margin-bottom: 10px;">Relação de Fotos</h3>';
+                html += '<p style="font-size: 12px; margin-bottom: 20px;">Abaixo segue uma relação de fotos que ilustram o estado atual do imóvel, dos ambientes mencionados e de outros itens que foram deixados no imóvel, servindo como referência para a vistoria inicial.</p>';
+                
+                const fotos = extraData.LAUDO_FOTOS;
+                
+                for (let chunkStart = 0; chunkStart < fotos.length; chunkStart += 4) {
+                    const chunk = fotos.slice(chunkStart, chunkStart + 4);
+                    
+                    html += '<div style="page-break-inside: avoid; margin-bottom: 20px;">';
+                    html += '<table style="width: 100%; border-collapse: separate; border-spacing: 15px 15px; table-layout: fixed;">';
+                    for (let i = 0; i < chunk.length; i += 2) {
+                        html += '<tr>';
+                        html += `<td style="width: 50%; padding: 5px; border: 1px solid #ddd; text-align: center; vertical-align: middle;"><img src="${chunk[i]}" style="width: 100%; height: auto; max-height: 250px; object-fit: contain;" /></td>`;
+                        if (i + 1 < chunk.length) {
+                            html += `<td style="width: 50%; padding: 5px; border: 1px solid #ddd; text-align: center; vertical-align: middle;"><img src="${chunk[i+1]}" style="width: 100%; height: auto; max-height: 250px; object-fit: contain;" /></td>`;
+                        } else {
+                            html += '<td style="width: 50%;"></td>';
+                        }
+                        html += '</tr>';
+                    }
+                    html += '</table></div>';
+                    
+                    if (chunkStart + 4 < fotos.length) {
+                        html += '<div style="page-break-after: always;"></div>';
+                    }
+                }
+                html += '</div>';
+                return html;
+            })(),
 
             // Variáveis Booleanas de Exclusão (Evitar múltiplas garantias no DOC)
             GARANTIA_CAUCAO: extraData?.GARANTIA === 'Caucao',
-            GARANTIA_FIANCA: extraData?.GARANTIA === 'Fianca',
-            GARANTIA_SEGURO: extraData?.GARANTIA === 'Seguro',
+            GARANTIA_FIADOR: extraData?.GARANTIA === 'Fiador',
+            GARANTIA_SEGURO_FIANCA: extraData?.GARANTIA === 'SeguroFianca',
             GARANTIA_NENHUMA: extraData?.GARANTIA === 'SemGarantia',
-            PRAZO_IGUAL_SUPERIOR_30: parseInt(extraData?.PRAZO_MESES || '0') >= 30
+            PRAZO_IGUAL_SUPERIOR_30: parseInt(extraData?.PRAZO_MESES || '0') >= 30,
+
+            // Seguros e Financiamento
+            SEGURO_FIANCA_NOME: extraData?.SEGURO_FIANCA_NOME || '',
+            SEGURO_FIANCA_CNPJ: extraData?.SEGURO_FIANCA_CNPJ || '',
+            SEGURO_FIANCA_APOLICE: extraData?.SEGURO_FIANCA_APOLICE || '',
+            MODALIDADE_VENDA_FINANCIADA: extraData?.MODALIDADE_VENDA === 'Financiada',
+            MODALIDADE_VENDA_AVISTA: extraData?.MODALIDADE_VENDA === 'AVista',
+            FINANCIAMENTO_BANCO: extraData?.FINANCIAMENTO_BANCO || '',
+            FINANCIAMENTO_VALOR: formatBRL(extraData?.FINANCIAMENTO_VALOR || 0),
+            FINANCIAMENTO_VALOR_EXTENSO: extraData?.FINANCIAMENTO_VALOR ? NumberToWords.convertCurrency(parseFloat(extraData.FINANCIAMENTO_VALOR)) : '',
+            PRAZO_APROVACAO_DIAS: extraData?.PRAZO_APROVACAO_DIAS || '',
+            ITBI_RESPONSABILIDADE: extraData?.ITBI_RESPONSABILIDADE || '',
+            PRAZO_LAVRATURA_DIAS: extraData?.PRAZO_LAVRATURA_DIAS || '',
+            TAXA_OCUPACAO_MENSAL: formatBRL(extraData?.TAXA_OCUPACAO_MENSAL || 0),
+            DATA_LIMITE_CHAVES: extraData?.DATA_LIMITE_CHAVES || '',
+            
+            // Vistorias e Inventário
+            ESTADO_CONSERVACAO: extraData?.ESTADO_CONSERVACAO || '',
+            LEITURA_AGUA: extraData?.LEITURA_AGUA || '',
+            LEITURA_LUZ: extraData?.LEITURA_LUZ || '',
+            MULTA_RESCISORIA_VALOR: formatBRL(extraData?.MULTA_RESCISORIA_VALOR || 0),
+            OBSERVACOES_CHAVES: extraData?.OBSERVACOES_CHAVES || '',
+            INVENTARIO_MOVEIS: extraData?.INVENTARIO_MOVEIS ? extraData.INVENTARIO_MOVEIS.replace(/\n/g, '<br/>') : ''
         };
 
         // Helper para qualificação detalhada com overrides
@@ -497,18 +555,100 @@ export class ContractEngine {
         }
 
         // Mapear LISTAS e LABELS Dinâmicos
+        const getName = (id: string) => {
+            const client = clientes.find(c => c._id === id || c.id === id);
+            const o = extraData?.PARTICIPANT_DETAILS?.[id] || {};
+            return o.name || client?.clientName || client?.name || '';
+        };
+
         const locadorIds = extraData?.LOCADORES_IDS || [];
         data.LOCADORES_LABEL = getGroupRoleLabel(locadorIds, 'Locador');
         data.LOCADORES_LISTA = locadorIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
+        data.LOCADORES_NOMES = locadorIds.map((id: string) => getName(id)).filter(Boolean).join(', ');
 
         data.LOCATARIOS_LABEL = getGroupRoleLabel(locatarioIds, 'Locatário');
         data.LOCATARIOS_LISTA = locatarioIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
+        data.LOCATARIOS_NOMES = locatarioIds.map((id: string) => getName(id)).filter(Boolean).join(', ');
 
         data.VENDEDORES_LABEL = getGroupRoleLabel(vendedorIds, 'Vendedor');
         data.VENDEDORES_LISTA = vendedorIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
+        data.VENDEDORES_NOMES = vendedorIds.map((id: string) => getName(id)).filter(Boolean).join(', ');
 
         data.COMPRADORES_LABEL = getGroupRoleLabel(compradorIds, 'Comprador');
         data.COMPRADORES_LISTA = compradorIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
+        data.COMPRADORES_NOMES = compradorIds.map((id: string) => getName(id)).filter(Boolean).join(', ');
+        // -- GRAMMAR LOGIC --
+        const locLabel = data.LOCATARIOS_LABEL || 'LOCATÁRIO(A)';
+        const locIsPlural = locLabel.endsWith('S');
+        const locIsFeminine = locLabel.includes('A');
+        
+        const dataEntrega = data.DATA_ENTREGA_CHAVES || '[PENDENTE]';
+
+        if (locIsPlural) {
+            data.TEXTO_COMPROMISSO_DEVOLUCAO = locIsFeminine 
+                ? "As locatárias se comprometem a cobrir quaisquer prejuízos resultantes de perdas ou danos identificados no momento da devolução do imóvel. Além disso, comprometem-se a devolver o imóvel em condições iguais ou superiores às que foram encontradas na data de início da locação, conforme detalhado neste termo de vistoria."
+                : "Os locatários se comprometem a cobrir quaisquer prejuízos resultantes de perdas ou danos identificados no momento da devolução do imóvel. Além disso, comprometem-se a devolver o imóvel em condições iguais ou superiores às que foram encontradas na data de início da locação, conforme detalhado neste termo de vistoria.";
+            
+            data.TEXTO_RESPONSABILIDADE_CHAVES = locIsFeminine
+                ? "As locatárias assumem total responsabilidade pela conservação e segurança do imóvel, incluindo mobiliário e utensílios."
+                : "Os locatários assumem total responsabilidade pela conservação e segurança do imóvel, incluindo mobiliário e utensílios.";
+                
+            data.TEXTO_RESPONSABILIDADE_CHAVES_DATA = locIsFeminine
+                ? `Na data de ${dataEntrega}, as chaves do imóvel foram entregues às locatárias, que assumem total responsabilidade pela conservação e segurança do imóvel.`
+                : `Na data de ${dataEntrega}, as chaves do imóvel foram entregues aos locatários, que assumem total responsabilidade pela conservação e segurança do imóvel.`;
+        } else {
+            data.TEXTO_COMPROMISSO_DEVOLUCAO = locIsFeminine
+                ? "A locatária se compromete a cobrir quaisquer prejuízos resultantes de perdas ou danos identificados no momento da devolução do imóvel. Além disso, compromete-se a devolver o imóvel em condições iguais ou superiores às que foram encontradas na data de início da locação, conforme detalhado neste termo de vistoria."
+                : "O locatário se compromete a cobrir quaisquer prejuízos resultantes de perdas ou danos identificados no momento da devolução do imóvel. Além disso, compromete-se a devolver o imóvel em condições iguais ou superiores às que foram encontradas na data de início da locação, conforme detalhado neste termo de vistoria.";
+                
+            data.TEXTO_RESPONSABILIDADE_CHAVES = locIsFeminine
+                ? "A locatária assume total responsabilidade pela conservação e segurança do imóvel, incluindo mobiliário e utensílios."
+                : "O locatário assume total responsabilidade pela conservação e segurança do imóvel, incluindo mobiliário e utensílios.";
+                
+            data.TEXTO_RESPONSABILIDADE_CHAVES_DATA = locIsFeminine
+                ? `Na data de ${dataEntrega}, as chaves do imóvel foram entregues à locatária, que assume total responsabilidade pela conservação e segurança do imóvel.`
+                : `Na data de ${dataEntrega}, as chaves do imóvel foram entregues ao locatário, que assume total responsabilidade pela conservação e segurança do imóvel.`;
+        }
+
+        // -- SIGNATURES --
+        const parties = [];
+        locadorIds.forEach(id => parties.push({ role: (data.LOCADORES_LABEL || 'LOCADOR(A)').toUpperCase(), name: getName(id) }));
+        locatarioIds.forEach(id => parties.push({ role: (data.LOCATARIOS_LABEL || 'LOCATÁRIO(A)').toUpperCase(), name: getName(id) }));
+        if (extraData?.TESTEMUNHA_1_NOME) parties.push({ role: 'TESTEMUNHA 1', name: extraData.TESTEMUNHA_1_NOME });
+        if (extraData?.TESTEMUNHA_2_NOME) parties.push({ role: 'TESTEMUNHA 2', name: extraData.TESTEMUNHA_2_NOME });
+
+        let sigHtml = '<div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">';
+        sigHtml += '<p><strong>ASSINATURAS:</strong></p>';
+        sigHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 30px;">';
+        
+        for (let i = 0; i < parties.length; i += 2) {
+            sigHtml += '<tr>';
+            // First column
+            sigHtml += `<td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
+                    <p style="margin-bottom: 40px; font-size: 13px;"><strong>${parties[i].role}:</strong></p>
+                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px; font-size: 13px;">
+                        <strong>${parties[i].name}</strong>
+                    </div>
+                </td>`;
+            
+            sigHtml += '<td style="width: 4%;">&nbsp;</td>';
+            
+            // Second column
+            if (i + 1 < parties.length) {
+                sigHtml += `<td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
+                        <p style="margin-bottom: 40px; font-size: 13px;"><strong>${parties[i+1].role}:</strong></p>
+                        <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px; font-size: 13px;">
+                            <strong>${parties[i+1].name}</strong>
+                        </div>
+                    </td>`;
+            } else {
+                sigHtml += '<td style="width: 48%;"></td>';
+            }
+            sigHtml += '</tr>';
+        }
+        sigHtml += '</table></div>';
+        
+        data.ASSINATURAS_HTML = sigHtml;
 
         return data;
     }
@@ -533,7 +673,7 @@ export class ContractEngine {
                     </div>
                 </div>
                 
-                <div style="font-size: 14px; text-align: justify;">
+                <div style="font-size: 14px; text-align: left;">
                     ${body}
                 </div>
 

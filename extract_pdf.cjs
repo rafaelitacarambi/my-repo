@@ -1,7 +1,7 @@
 const { PDFParse } = require('pdf-parse');
 const fs = require('fs');
 
-const filePath = 'C:\\Users\\gabri\\Desktop\\Sistema R.Sales Google\\Assinado_Contrato_Locacao_Marcia_Manoel_Tatiane_Novo.pdf';
+const filePath = process.argv[2] || 'C:\\Users\\gabri\\Desktop\\Sistema R.Sales Google\\Assinado_Contrato_Locacao_Marcia_Manoel_Tatiane_Novo.pdf';
 
 (async () => {
     try {

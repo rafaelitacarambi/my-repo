@@ -14,7 +14,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 <h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">SEM GARANTIA LOCATÍCIA</h3>
 [[ENDIF]]
 
-<div style="margin-top: 20px; font-size: 14px; text-align: justify; line-height: 1.6;">
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
     <p><strong>CONSIDERAÇÕES INICIAIS:</strong></p>
     
     <p><strong>{{LOCADORES_LABEL}}:</strong> {{LOCADORES_LISTA}}</p>
@@ -30,10 +30,10 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>VALOR DA LOCAÇÃO:</strong> O valor mensal da locação é de R$ {{VALOR_ALUGUEL}} ({{VALOR_ALUGUEL_EXTENSO}}).</p>
     <p>Além do aluguel, os LOCATÁRIOS serão responsáveis pelo pagamento do IPTU e da taxa de condomínio, atualmente fixados em:</p>
-    <ul style="list-style-type: disc; margin-left: 20px; margin-bottom: 15px;">
-        <li>Condomínio (custas ordinárias): R$ {{CONDOMINIO_VALOR}}</li>
-        <li>IPTU: R$ {{IPTU_VALOR}}</li>
-    </ul>
+    <p style="margin-left: 20px; margin-bottom: 15px;">
+        • Condomínio (custas ordinárias): R$ {{CONDOMINIO_VALOR}}<br/>
+        • IPTU: R$ {{IPTU_VALOR}}
+    </p>
     <p>Os valores acima serão cobrados juntamente com o aluguel, em boleto único mensal, emitido pela administradora.</p>
     <p><em>Parágrafo único:</em> Os LOCATÁRIOS serão responsáveis exclusivamente pelas despesas condominiais ordinárias, conforme legislação vigente, incluindo, mas não se limitando a despesas de manutenção, conservação e administração do condomínio. Quaisquer despesas extraordinárias, tais como obras estruturais, melhorias, fundo de reserva, benfeitorias que aumentem o padrão do condomínio ou outras previstas no art. 22 da Lei 8.245/91, serão de responsabilidade do(a) LOCADOR(a). Eventuais ajustes nos valores do condomínio ordinário e/ou IPTU serão automaticamente repassados aos LOCATÁRIOS, passando a integrar o boleto mensal a partir da data de sua vigência.</p>
 
@@ -112,7 +112,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>DÉCIMA SEXTA - DA CONTRATAÇÃO DIGITAL:</strong> Os CONTRATANTES declaram e concordam que o presente instrumento, incluindo todas as páginas de assinatura e eventuais anexos, poderão ser todos formados por meio digital com o qual expressamente declaram concordar, representam a integralidade dos termos entre elas acordados, substituindo quaisquer outros acordos anteriores formalizados por qualquer outro meio, verbal ou escrito, físico ou digital, nos termos dos art. 107, 219 e 220 do Código Civil. Adicionalmente, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2, e do art. 2º, I da MP 983/2020, as PARTES expressamente concordam em utilizar e reconhecem como válida qualquer forma de comprovação de anuência aos termos ora acordados em formato eletrônico.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
         <p><strong>ASSINATURAS E TESTEMUNHAS:</strong></p>
         <p>Por estarem assim justas e contratadas, as partes assinam o presente instrumento por meio eletrônico e digital.</p>
         
@@ -128,7 +128,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
                 <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
                     <p style="margin-bottom: 40px;"><strong>LOCATÁRIO(S):</strong></p>
                     <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCATARIOS_LABEL}}</strong>
+                        <strong>{{LOCATARIOS_NOMES}}</strong>
                     </div>
                 </td>
             </tr>
@@ -172,7 +172,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 <h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">SEM GARANTIA LOCATÍCIA</h3>
 [[ENDIF]]
 
-<div style="margin-top: 20px; font-size: 14px; text-align: justify; line-height: 1.6;">
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
     <p><strong>CONSIDERAÇÕES INICIAIS:</strong></p>
     
     <p><strong>{{LOCADORES_LABEL}}:</strong> {{LOCADORES_LISTA}}</p>
@@ -236,7 +236,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>NONA - DA CONTRATAÇÃO DIGITAL:</strong> As partes declaram-se cientes e de pleno acordo com a validade jurídica das assinaturas eletrônicas apostas neste instrumento.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
         <p><strong>ASSINATURAS E TESTEMUNHAS:</strong></p>
         <p>Por estarem justos e contratados, assinam eletronicamente o presente instrumento.</p>
         
@@ -252,7 +252,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
                 <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
                     <p style="margin-bottom: 40px;"><strong>LOCATÁRIO(S):</strong></p>
                     <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCATARIOS_LABEL}}</strong>
+                        <strong>{{LOCATARIOS_NOMES}}</strong>
                     </div>
                 </td>
             </tr>
@@ -285,7 +285,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 <h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">INSTRUMENTO PARTICULAR DE PROMESSA DE COMPRA E VENDA DE IMÓVEL</h2>
 <h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">COM CLÁUSULA DE IRREVOGABILIDADE E IRRETRATABILIDADE</h3>
 
-<div style="margin-top: 20px; font-size: 14px; text-align: justify; line-height: 1.6;">
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
     <p><strong>DAS PARTES CONTRATANTES:</strong></p>
     
     <p><strong>{{VENDEDORES_LABEL}} (PROMITENTE VENDEDOR):</strong> {{VENDEDORES_LISTA}}</p>
@@ -318,7 +318,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA NONA - DO FORO E DA ASSINATURA DIGITAL:</strong> As partes elegem o foro da comarca de [[IF OPCIONAIS.FORO_SAO_PAULO]]São Paulo-SP[[ELSE]]Poá-SP[[ENDIF]] para dirimir eventuais litígios judiciais. E, por estarem acordadas, assinam eletronicamente o presente instrumento na presença das testemunhas abaixo.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
         <p><strong>ASSINATURAS E TESTEMUNHAS:</strong></p>
         
         <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
@@ -326,14 +326,14 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
                 <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
                     <p style="margin-bottom: 40px;"><strong>PROMITENTE VENDEDOR:</strong></p>
                     <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{VENDEDORES_LABEL}}</strong>
+                        <strong>{{VENDEDORES_NOMES}}</strong>
                     </div>
                 </td>
                 <td style="width: 4%;">&nbsp;</td>
                 <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
                     <p style="margin-bottom: 40px;"><strong>PROMITENTE COMPRADOR:</strong></p>
                     <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{COMPRADORES_LABEL}}</strong>
+                        <strong>{{COMPRADORES_NOMES}}</strong>
                     </div>
                 </td>
             </tr>
@@ -366,7 +366,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 <h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">TERMO DE VISTORIA E ENTREGA DEFINITIVA DE CHAVES</h2>
 <h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">ANEXO INTEGRANTE DO CONTRATO DE LOCAÇÃO</h3>
 
-<div style="margin-top: 20px; font-size: 14px; text-align: justify; line-height: 1.6;">
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
     <p><strong>DA QUALIFICAÇÃO DO ATO:</strong></p>
     
     <p><strong>IMOVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
@@ -383,7 +383,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA QUARTA - DO FORO:</strong> Elegem o foro deste contrato nos mesmos termos do contrato de locação principal.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
         <p><strong>ASSINATURAS:</strong></p>
         
         <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
@@ -398,7 +398,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
                 <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
                     <p style="margin-bottom: 40px;"><strong>LOCATÁRIO(S):</strong></p>
                     <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCATARIOS_LABEL}}</strong>
+                        <strong>{{LOCATARIOS_NOMES}}</strong>
                     </div>
                 </td>
             </tr>
@@ -414,7 +414,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 <h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">AUTORIZAÇÃO PARA INTERMEDIAÇÃO E COMERCIALIZAÇÃO DE IMÓVEIS</h2>
 <h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">DIRETRIZES DE EXCLUSIVIDADE E LGPD</h3>
 
-<div style="margin-top: 20px; font-size: 14px; text-align: justify; line-height: 1.6;">
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
     <p><strong>DO PROPRIETÁRIO CONCEDENTE:</strong></p>
     <p><strong>PROPRIETÁRIO(S):</strong> {{LOCADORES_LISTA}}</p>
     <p><strong>ADMINISTRADORA AUTORIZADA:</strong> R.SALES IMÓVEIS, devidamente credenciada perante o CRECI-SP.</p>
@@ -427,7 +427,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA QUARTA - DO TRATAMENTO DE DADOS (LGPD):</strong> O PROPRIETÁRIO autoriza expressamente a captação de fotografias, vídeos e dados do imóvel para fins de marketing nos portais e mídias sociais.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
         <p><strong>ASSINATURAS:</strong></p>
         
         <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
@@ -435,7 +435,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
                 <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
                     <p style="margin-bottom: 40px;"><strong>PROPRIETÁRIO(S):</strong></p>
                     <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCADORA_NOME}}</strong>
+                        <strong>{{LOCADORES_NOMES}}</strong>
                     </div>
                 </td>
                 <td style="width: 4%;">&nbsp;</td>
@@ -453,5 +453,57 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
         {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
     </p>
 </div>
-    `
+    `,
+    'VistoriaEntrada': `
+<h2 style="text-align: center; color: #000; font-size: 18px; margin-bottom: 20px;">Termo de Vistoria de Imóvel Locado</h2>
+
+<div style="font-size: 14px; text-align: left; line-height: 1.6;">
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
+    
+    <p style="margin-top: 20px;"><strong>LOCADOR(A):</strong> {{LOCADORES_LISTA}}</p>
+    
+    <p style="margin-top: 20px;"><strong>LOCATÁRIO(A):</strong> {{LOCATARIOS_LISTA}}</p>
+    
+    <p style="margin-top: 20px;"><strong>QUALIFICAÇÃO DO IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
+    
+    [[IF ESTADO_CONSERVACAO]]
+    <p style="margin-top: 30px;"><strong>CONDIÇÕES DO IMÓVEL NA ENTREGA:</strong></p>
+    <div style="padding-left: 20px;">
+        <p>{{ESTADO_CONSERVACAO}}</p>
+    </div>
+
+    <p style="margin-top: 30px;"><strong>Observação:</strong> Todas as condições acima descritas encontram-se registradas em laudo fotográfico anexo, que passa a integrar o presente termo de vistoria.</p>
+    <p>Este documento é parte integrante do Contrato de Locação acordado entre as partes.</p>
+    [[ENDIF]]
+    {{LAUDO_FOTOS_HTML}}
+    
+    [[IF DATA_ENTREGA_CHAVES]]
+    <p style="margin-top: 20px;">{{TEXTO_RESPONSABILIDADE_CHAVES_DATA}}</p>
+    [[ELSE]]
+    <p style="margin-top: 20px;">{{TEXTO_RESPONSABILIDADE_CHAVES}}</p>
+    [[ENDIF]]
+    <p>{{TEXTO_COMPROMISSO_DEVOLUCAO}}</p>
+    <p>Assim as partes nomeiam o foro da Comarca de Poá (SP) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital, juntamente com as testemunhas que também assinam.</p>
+
+    {{ASSINATURAS_HTML}}
+</div>`,
+
+    'VistoriaSaida': `
+<h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">TERMO DE VISTORIA FINAL E ENTREGA DE CHAVES</h2>
+<h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">RESCISÃO CONTRATUAL E SAÍDA DO IMÓVEL</h3>
+
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
+    <p><strong>DA QUALIFICAÇÃO DO ATO:</strong></p>
+    <p><strong>IMOVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
+    <p><strong>LOCADOR(A):</strong> {{LOCADORES_LISTA}}</p>
+    <p><strong>LOCATÁRIO(A):</strong> {{LOCATARIOS_LISTA}}</p>
+    
+    <p style="margin-top: 20px;">O presente Termo de Vistoria de Saída tem por finalidade registrar a entrega das chaves e a restituição do imóvel ao LOCADOR(A).</p>
+    
+    <p>As partes reconhecem e declaram que foi realizada a vistoria final do imóvel, apurando-se seu estado de conservação em comparação com a vistoria de entrada.</p>
+    
+    <p>O imóvel foi restituído no mesmo estado de conservação em que foi recebido, exceto eventuais ressalvas descritas no laudo anexo.</p>
+
+    {{ASSINATURAS_HTML}}
+</div>`
 };

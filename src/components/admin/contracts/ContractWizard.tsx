@@ -61,6 +61,8 @@ const STEPS = [
     { id: 4, title: 'Assinatura', icon: PenTool },
 ];
 
+const isLocacao = (t: string | undefined) => t?.startsWith('Loc') || t?.startsWith('Vis') || t === 'EntregaChaves' || t === 'AutorizacaoDivulgacao';
+
 export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: ContractWizardProps) {
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -128,7 +130,32 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             VISTORIA_DETALHADA: true,
             EXCLUSIVIDADE: false,
             FORO_SAO_PAULO: true,
+            SEGURO_INCENDIO: true,
+            LGPD: true,
+            TRANSFERENCIA_CONTAS: true,
         },
+        // Seguros e Financiamento
+        SEGURO_FIANCA_NOME: '',
+        SEGURO_FIANCA_CNPJ: '',
+        SEGURO_FIANCA_APOLICE: '',
+        MODALIDADE_VENDA: 'Financiada',
+        FINANCIAMENTO_BANCO: 'Caixa Econômica Federal',
+        FINANCIAMENTO_VALOR: 0,
+        PRAZO_APROVACAO_DIAS: '90',
+        ITBI_RESPONSABILIDADE: 'Comprador',
+        PRAZO_LAVRATURA_DIAS: '30',
+        TAXA_OCUPACAO_MENSAL: 0,
+        DATA_LIMITE_CHAVES: '',
+        // Vistorias e Rescisão
+        DATA_VISTORIA: '',
+        DATA_ENTREGA_CHAVES: '',
+        ESTADO_CONSERVACAO: '',
+        LEITURA_AGUA: '',
+        LEITURA_LUZ: '',
+        MULTA_RESCISORIA_VALOR: 0,
+        OBSERVACOES_CHAVES: '',
+        INVENTARIO_MOVEIS: '',
+        LAUDO_FOTOS: [],
         // Testemunhas
         TESTEMUNHA1_NOME: '',
         TESTEMUNHA1_RG: '',
@@ -241,10 +268,10 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 freshParties.forEach((p: any) => {
                     if (p.clientRef) {
                         if (p.roleInService === 'Locador' || p.roleInService === 'Vendedor') {
-                            if (type?.startsWith('Loc')) locadores.push(p.clientRef);
+                            if (isLocacao(type)) locadores.push(p.clientRef);
                             else vendedores.push(p.clientRef);
                         } else if (p.roleInService === 'Locatário' || p.roleInService === 'Proponente' || p.roleInService === 'Comprador') {
-                            if (type?.startsWith('Loc')) locatarios.push(p.clientRef);
+                            if (isLocacao(type)) locatarios.push(p.clientRef);
                             else compradores.push(p.clientRef);
                         }
                     }
@@ -252,7 +279,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
 
                 // Fallback for primary client if empty
                 if (locatarios.length === 0 && compradores.length === 0 && freshCase.clientePrincipalRef) {
-                    if (type?.startsWith('Loc')) locatarios.push(freshCase.clientePrincipalRef);
+                    if (isLocacao(type)) locatarios.push(freshCase.clientePrincipalRef);
                     else compradores.push(freshCase.clientePrincipalRef);
                 }
 
@@ -387,10 +414,10 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                     parties.forEach(p => {
                         if (p.clientRef) {
                             if (p.roleInService === 'Vendedor') {
-                                if (selectedType.startsWith('Loc')) locadores.push(p.clientRef);
+                                if (isLocacao(selectedType)) locadores.push(p.clientRef);
                                 else vendedores.push(p.clientRef);
                             } else if (p.roleInService === 'Proponente' || p.roleInService === 'Comprador') {
-                                if (selectedType.startsWith('Loc')) locatarios.push(p.clientRef);
+                                if (isLocacao(selectedType)) locatarios.push(p.clientRef);
                                 else compradores.push(p.clientRef);
                             }
                         }
@@ -398,7 +425,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
 
                     // Se não encontrou via parties mas tem cliente principal, usa ele
                     if (locatarios.length === 0 && compradores.length === 0 && atendimento.clientePrincipalRef) {
-                        if (selectedType.startsWith('Loc')) locatarios.push(atendimento.clientePrincipalRef);
+                        if (isLocacao(selectedType)) locatarios.push(atendimento.clientePrincipalRef);
                         else compradores.push(atendimento.clientePrincipalRef);
                     }
 
@@ -436,8 +463,8 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             const caseParties = currentParties.filter(p => p.serviceRecordRef === atendimento._id);
 
             // Coleta participantes do formData
-            const group1Ids = selectedType.startsWith('Loc') ? formData.LOCADORES_IDS : formData.VENDEDORES_IDS;
-            const group2Ids = selectedType.startsWith('Loc') ? formData.LOCATARIOS_IDS : formData.COMPRADORES_IDS;
+            const group1Ids = isLocacao(selectedType) ? formData.LOCADORES_IDS : formData.VENDEDORES_IDS;
+            const group2Ids = isLocacao(selectedType) ? formData.LOCATARIOS_IDS : formData.COMPRADORES_IDS;
             const relatedIds = formData.PARTES_RELACIONADAS || [];
 
             const participants = [
@@ -581,7 +608,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 const errors: string[] = [];
                 
                 // 1. Partes validation
-                if (['LocacaoResidencial', 'LocacaoComercial'].includes(selectedType)) {
+                if (isLocacao(selectedType)) {
                     if (!formData.LOCADORES_IDS || formData.LOCADORES_IDS.length === 0) {
                         errors.push('Vinculação de Locador (Proprietário)');
                     }
@@ -605,7 +632,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 }
 
                 // 3. Financeiro validation
-                if (selectedType.startsWith('Locacao')) {
+                if (isLocacao(selectedType)) {
                     if (!formData.VALOR_ALUGUEL || formData.VALOR_ALUGUEL <= 0) {
                         errors.push('Valor do Aluguel (preencher no acordo financeiro do cartão)');
                     }
@@ -615,6 +642,12 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 } else if (selectedType === 'CompraEVenda') {
                     if (!formData.VALOR_TOTAL || formData.VALOR_TOTAL <= 0) {
                         errors.push('Valor Total da Transação');
+                    }
+                }
+
+                if (['VistoriaEntrada', 'VistoriaSaida'].includes(selectedType)) {
+                    if (!formData.DATA_VISTORIA) {
+                        errors.push('Data da Vistoria (Preencher neste formulário de Opções Específicas)');
                     }
                 }
 
@@ -703,8 +736,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 page.style.background = 'white';
                 page.style.position = 'relative';
                 page.style.overflow = 'hidden';
-                page.style.display = 'flex';
-                page.style.flexDirection = 'column';
+                page.style.display = 'block';
                 page.style.fontFamily = 'Arial, sans-serif';
                 page.style.color = '#333';
             };
@@ -727,7 +759,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 const el = node as HTMLElement;
                 const tagName = el.tagName.toLowerCase();
                 
-                const isLeafBlock = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'ul', 'ol', 'blockquote', 'address'].includes(tagName);
+                const isFlex = el.style?.display === 'flex';
+                const isKeepTogether = el.classList?.contains('keep-together');
+                const isLeafBlock = isFlex || isKeepTogether || ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'ul', 'ol', 'blockquote', 'address'].includes(tagName);
                 
                 const childrenArr = Array.from(el.childNodes);
                 const hasBlockChildren = childrenArr.some(child => {
@@ -749,6 +783,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                         parentClone.style.marginBottom = '0px';
                         parentClone.style.paddingTop = '0px';
                         parentClone.style.paddingBottom = '0px';
+                        parentClone.style.border = 'none';
+                        parentClone.style.borderTop = 'none';
+                        parentClone.style.borderBottom = 'none';
                         
                         parentClone.appendChild(flatChild);
                         result.push(parentClone);
@@ -825,7 +862,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 header.style.color = '#94a3b8';
                 header.style.fontWeight = 'bold';
                 header.style.textTransform = 'uppercase';
-                header.innerHTML = `<span>R.Sales Imóveis</span><span>Contrato de ${selectedType === 'CompraEVenda' ? 'Compra e Venda' : 'Locação'}</span>`;
+                header.innerHTML = `<span>R.Sales Imóveis</span><span>Contrato de ${isLocacao(selectedType) ? 'Locação' : 'Compra e Venda'}</span>`;
                 pageContainer.appendChild(header);
 
                 const footer = document.createElement('div');
@@ -947,12 +984,12 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
 
             // 4. Criar Registros de Assinatura para as partes
             // Registrar Assinaturas para todos os participantes
-            const group1Ids = selectedType.startsWith('Loc') ? formData.LOCADORES_IDS : formData.VENDEDORES_IDS;
-            const group2Ids = selectedType.startsWith('Loc') ? formData.LOCATARIOS_IDS : formData.COMPRADORES_IDS;
+            const group1Ids = isLocacao(selectedType) ? formData.LOCADORES_IDS : formData.VENDEDORES_IDS;
+            const group2Ids = isLocacao(selectedType) ? formData.LOCATARIOS_IDS : formData.COMPRADORES_IDS;
 
             const allParticipants = [
-                ...(group1Ids || []).map((id: string) => ({ id, role: selectedType.startsWith('Loc') ? 'Locador' : 'Vendedor' })),
-                ...(group2Ids || []).map((id: string) => ({ id, role: selectedType.startsWith('Loc') ? 'Locatário' : 'Comprador' }))
+                ...(group1Ids || []).map((id: string) => ({ id, role: isLocacao(selectedType) ? 'Locador' : 'Vendedor' })),
+                ...(group2Ids || []).map((id: string) => ({ id, role: isLocacao(selectedType) ? 'Locatário' : 'Comprador' }))
             ].filter(p => p.id);
 
             await Promise.all(allParticipants.map(participant =>
@@ -1066,7 +1103,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             });
 
             // 2. Salvar no PostgreSQL (Prisma)
-            const cat = selectedType.startsWith('Loc') ? 'LOCACAO' : selectedType === 'CompraEVenda' ? 'VENDA' : 'OUTROS';
+            const cat = isLocacao(selectedType) ? 'LOCACAO' : selectedType === 'CompraEVenda' ? 'VENDA' : 'OUTROS';
             const prismaRes = await fetch('/api/v1/contract-templates', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1125,19 +1162,21 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         } else {
             let template = selectedTemplate ? templates.find(t => t._id === selectedTemplate) : availableTemplatesForType[0];
             
-            if (!template && availableTemplatesForType.length > 0) {
-                template = availableTemplatesForType[0];
-            }
-
-            if (!template) {
-                console.warn(`[ContractWizard] Nenhum template específico encontrado para ${selectedType}. Tentando fallback...`);
-                template = templates.find(t => t.ativo || t.isActive);
-            }
-
             if (template) {
-                console.log(`[ContractWizard] Template selecionado: ${template.templateName || template.nome} (${template._id})`);
+                console.log(`[ContractWizard] Template selecionado do DB: ${template.templateName || template.nome} (${template._id})`);
                 templateNameUsed = template.templateName || template.nome;
                 templateRaw = template?.conteudoHtml || template?.templateBody || template?.templateContent;
+            } else if (DEFAULT_TEMPLATES[selectedType]) {
+                console.log(`[ContractWizard] Auto-fallback para template padrão oficial de ${selectedType} acionado`);
+                templateRaw = DEFAULT_TEMPLATES[selectedType];
+                templateNameUsed = 'MODELO OFICIAL (AUTO-FALLBACK)';
+            } else {
+                console.warn(`[ContractWizard] Nenhum template encontrado. Tentando fallback genérico do banco...`);
+                template = templates.find(t => t.ativo || t.isActive);
+                if (template) {
+                    templateNameUsed = template.templateName || template.nome;
+                    templateRaw = template?.conteudoHtml || template?.templateBody || template?.templateContent;
+                }
             }
         }
 
@@ -1168,6 +1207,23 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         }
     }, [formData, currentStep, isOpen]);
 
+    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files) return;
+        const files = Array.from(e.target.files);
+        
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const base64 = ev.target?.result as string;
+                setFormData((prev: any) => ({
+                    ...prev,
+                    LAUDO_FOTOS: [...(prev.LAUDO_FOTOS || []), base64]
+                }));
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
     const renderStepContent = () => {
         if (loading) return (
             <div className="flex flex-col items-center justify-center p-20 gap-4">
@@ -1191,10 +1247,16 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                 { id: 'CompraEVenda', name: 'Compra e Venda', icon: DollarSign, color: 'bg-amber-500', desc: 'Promessa de compra e venda de imóveis.' },
                                 { id: 'EntregaChaves', name: 'Entrega de Chaves', icon: Key, color: 'bg-purple-500', desc: 'Termo de entrega e vistoria final.' },
                                 { id: 'AutorizacaoDivulgacao', name: 'Autorização de Divulgação', icon: Globe, color: 'bg-pink-500', desc: 'Autorização do proprietário para marketing.' },
+                                { id: 'VistoriaEntrada', name: 'Vistoria de Entrada', icon: FileCheck, color: 'bg-teal-500', desc: 'Termo de vistoria inicial do imóvel.' },
+                                { id: 'VistoriaSaida', name: 'Vistoria de Saída', icon: LogOut, color: 'bg-rose-500', desc: 'Termo de vistoria de rescisão/saída.' },
                             ].map(item => (
                                 <div
                                     key={item.id}
-                                    onClick={() => setSelectedType(item.id)}
+                                    onClick={() => {
+                                        setSelectedType(item.id);
+                                        setSelectedTemplate('');
+                                        setUseDefaultTemplateOverride(true);
+                                    }}
                                     className={`p-8 rounded-[32px] border-4 cursor-pointer transition-all flex flex-col gap-4 group relative overflow-hidden ${selectedType === item.id
                                         ? 'border-secondary bg-secondary/5'
                                         : 'border-slate-50 hover:border-slate-100 bg-white shadow-sm'
@@ -1223,152 +1285,219 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 return (
                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 text-center">
                         <div className="space-y-2">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Customizações Legais</h3>
-                            <p className="text-slate-500">Selecione cláusulas que serão inseridas automaticamente no corpo do texto.</p>
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Customizações do Documento</h3>
+                            <p className="text-slate-500">Preencha os dados e selecione as cláusulas para este tipo de negócio.</p>
                         </div>
                         <div className="space-y-12">
-                            {/* Condições Contratuais */}
-                            <div className="space-y-4 text-left">
-                                <Label className="text-secondary font-black uppercase tracking-widest text-xs">Condições Contratuais</Label>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                        <Label className="font-bold text-slate-700 text-sm">Prazo (Meses)</Label>
-                                        <Input type="number" placeholder="Ex: 30" value={formData.PRAZO_MESES} onChange={(e) => setFormData({ ...formData, PRAZO_MESES: e.target.value })} className="bg-white border-none rounded-xl" />
-                                    </div>
-                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                        <Label className="font-bold text-slate-700 text-sm">Dia de Vencimento</Label>
-                                        <Input type="number" placeholder="Ex: 10" value={formData.DIA_PAGAMENTO} onChange={(e) => setFormData({ ...formData, DIA_PAGAMENTO: e.target.value })} className="bg-white border-none rounded-xl" />
-                                    </div>
-                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                        <Label className="font-bold text-slate-700 text-sm">Índice de Reajuste</Label>
-                                        <Select value={formData.REAJUSTE_INDICE} onValueChange={(val) => setFormData({ ...formData, REAJUSTE_INDICE: val })}>
-                                            <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                            <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
-                                                <SelectItem value="IPCA">IPCA (IBGE)</SelectItem>
-                                                <SelectItem value="IGPM">IGP-M (FGV)</SelectItem>
-                                                <SelectItem value="IPC-Fipe">IPC (Fipe)</SelectItem>
-                                                <SelectItem value="Sem Reajuste">Sem Reajuste</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                        <Label className="font-bold text-slate-700 text-sm">Multa Rescisória (Aluguéis)</Label>
-                                        <Input type="number" placeholder="Ex: 3" value={formData.MULTA_RESCISAO_ALUGUEIS} onChange={(e) => setFormData({ ...formData, MULTA_RESCISAO_ALUGUEIS: e.target.value })} className="bg-white border-none rounded-xl" />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                        <Label className="font-bold text-slate-700 text-sm">Garantia Locatícia</Label>
-                                        <Select value={formData.GARANTIA} onValueChange={(val) => setFormData({ ...formData, GARANTIA: val })}>
-                                            <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione a garantia..." /></SelectTrigger>
-                                            <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
-                                                <SelectItem value="Caucao">Caução (Depósito)</SelectItem>
-                                                <SelectItem value="Fiador">Fiador</SelectItem>
-                                                <SelectItem value="SeguroFianca">Seguro Fiança</SelectItem>
-                                                <SelectItem value="SemGarantia">Sem Garantia</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    {formData.GARANTIA === 'Caucao' && (
+                            
+                            {/* --- FORMULÁRIO DE LOCAÇÃO --- */}
+                            {(selectedType === 'LocacaoResidencial' || selectedType === 'LocacaoComercial') && (
+                                <div className="space-y-4 text-left">
+                                    <Label className="text-secondary font-black uppercase tracking-widest text-xs">Condições de Locação</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                            <Label className="font-bold text-slate-700 text-sm">Valor do Caução</Label>
-                                            <Input type="text" placeholder="R$ 0,00" value={formData.CAUCAO_VALOR ? formatCurrency(formData.CAUCAO_VALOR) : ''} onChange={(e) => setFormData({ ...formData, CAUCAO_VALOR: parseCurrency(e.target.value) })} className="bg-white border-none rounded-xl font-bold" />
+                                            <Label className="font-bold text-slate-700 text-sm">Prazo (Meses)</Label>
+                                            <Input type="number" value={formData.PRAZO_MESES} onChange={(e) => setFormData({ ...formData, PRAZO_MESES: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                        <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                            <Label className="font-bold text-slate-700 text-sm">Vencimento (Dia)</Label>
+                                            <Input type="number" value={formData.DIA_PAGAMENTO} onChange={(e) => setFormData({ ...formData, DIA_PAGAMENTO: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                        <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                            <Label className="font-bold text-slate-700 text-sm">Índice</Label>
+                                            <Select value={formData.REAJUSTE_INDICE} onValueChange={(val) => setFormData({ ...formData, REAJUSTE_INDICE: val })}>
+                                                <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                <SelectContent className="bg-white border border-slate-100 rounded-xl">
+                                                    <SelectItem value="IPCA">IPCA</SelectItem>
+                                                    <SelectItem value="IGPM">IGP-M</SelectItem>
+                                                    <SelectItem value="IPC-Fipe">IPC (Fipe)</SelectItem>
+                                                    <SelectItem value="Sem Reajuste">Sem Reajuste</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                            <Label className="font-bold text-slate-700 text-sm">Multa (Aluguéis)</Label>
+                                            <Input type="number" value={formData.MULTA_RESCISAO_ALUGUEIS} onChange={(e) => setFormData({ ...formData, MULTA_RESCISAO_ALUGUEIS: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                        <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                            <Label className="font-bold text-slate-700 text-sm">Garantia Locatícia</Label>
+                                            <Select value={formData.GARANTIA} onValueChange={(val) => setFormData({ ...formData, GARANTIA: val })}>
+                                                <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                <SelectContent className="bg-white border border-slate-100 rounded-xl">
+                                                    <SelectItem value="Caucao">Caução (Depósito)</SelectItem>
+                                                    <SelectItem value="SeguroFianca">Seguro Fiança</SelectItem>
+                                                    <SelectItem value="Fiador">Fiador</SelectItem>
+                                                    <SelectItem value="SemGarantia">Sem Garantia</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        {formData.GARANTIA === 'Caucao' && (
+                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                <Label className="font-bold text-slate-700 text-sm">Valor do Caução</Label>
+                                                <Input type="text" value={formData.CAUCAO_VALOR ? formatCurrency(formData.CAUCAO_VALOR) : ''} onChange={(e) => setFormData({ ...formData, CAUCAO_VALOR: parseCurrency(e.target.value) })} className="bg-white border-none rounded-xl font-bold" />
+                                            </div>
+                                        )}
+                                        {formData.GARANTIA === 'SeguroFianca' && (
+                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                <Label className="font-bold text-slate-700 text-sm">Nome da Seguradora (Ex: Loft)</Label>
+                                                <Input type="text" value={formData.SEGURO_FIANCA_NOME} onChange={(e) => setFormData({ ...formData, SEGURO_FIANCA_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Campos Extras Garantia */}
+                                    {formData.GARANTIA === 'Caucao' && (
+                                        <div className="p-5 bg-slate-50/50 rounded-3xl border border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div className="col-span-2"><Label className="text-xs text-slate-500 font-bold block mb-1">Titular da Conta</Label><Input value={formData.CAUCAO_TITULAR} onChange={(e) => setFormData({ ...formData, CAUCAO_TITULAR: e.target.value })} className="bg-white border-none rounded-xl" /></div>
+                                            <div className="col-span-2"><Label className="text-xs text-slate-500 font-bold block mb-1">CPF do Titular</Label><Input value={formData.CAUCAO_CPF} onChange={(e) => setFormData({ ...formData, CAUCAO_CPF: e.target.value })} className="bg-white border-none rounded-xl" /></div>
+                                            <div><Label className="text-xs text-slate-500 font-bold block mb-1">Banco</Label><Input value={formData.CAUCAO_BANCO} onChange={(e) => setFormData({ ...formData, CAUCAO_BANCO: e.target.value })} className="bg-white border-none rounded-xl" /></div>
+                                            <div><Label className="text-xs text-slate-500 font-bold block mb-1">Agência</Label><Input value={formData.CAUCAO_AGENCIA} onChange={(e) => setFormData({ ...formData, CAUCAO_AGENCIA: e.target.value })} className="bg-white border-none rounded-xl" /></div>
+                                            <div className="col-span-2"><Label className="text-xs text-slate-500 font-bold block mb-1">Conta Corrente</Label><Input value={formData.CAUCAO_CONTA} onChange={(e) => setFormData({ ...formData, CAUCAO_CONTA: e.target.value })} className="bg-white border-none rounded-xl" /></div>
+                                        </div>
+                                    )}
+                                    {formData.GARANTIA === 'SeguroFianca' && (
+                                        <div className="p-5 bg-slate-50/50 rounded-3xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div><Label className="text-xs text-slate-500 font-bold block mb-1">CNPJ da Seguradora</Label><Input value={formData.SEGURO_FIANCA_CNPJ} onChange={(e) => setFormData({ ...formData, SEGURO_FIANCA_CNPJ: e.target.value })} className="bg-white border-none rounded-xl" /></div>
+                                            <div><Label className="text-xs text-slate-500 font-bold block mb-1">Nº Apólice / Condições</Label><Input value={formData.SEGURO_FIANCA_APOLICE} onChange={(e) => setFormData({ ...formData, SEGURO_FIANCA_APOLICE: e.target.value })} className="bg-white border-none rounded-xl" /></div>
                                         </div>
                                     )}
                                 </div>
-                                {formData.GARANTIA === 'Caucao' && (
-                                    <div className="p-5 bg-slate-50/50 rounded-3xl border border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in duration-300">
-                                        <div className="col-span-2">
-                                            <Label className="text-xs text-slate-500 font-bold block mb-1">Titular da Conta</Label>
-                                            <Input placeholder="Nome do Titular" value={formData.CAUCAO_TITULAR} onChange={(e) => setFormData({ ...formData, CAUCAO_TITULAR: e.target.value })} className="bg-white border-none rounded-xl" />
+                            )}
+
+                            {/* --- FORMULÁRIO DE COMPRA E VENDA --- */}
+                            {selectedType === 'CompraEVenda' && (
+                                <div className="space-y-4 text-left">
+                                    <Label className="text-secondary font-black uppercase tracking-widest text-xs">Dados da Venda</Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                            <Label className="font-bold text-slate-700 text-sm">Modalidade</Label>
+                                            <Select value={formData.MODALIDADE_VENDA} onValueChange={(val) => setFormData({ ...formData, MODALIDADE_VENDA: val })}>
+                                                <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                <SelectContent className="bg-white border border-slate-100 rounded-xl">
+                                                    <SelectItem value="AVista">Pagamento À Vista</SelectItem>
+                                                    <SelectItem value="Financiada">Venda Financiada (Bancário)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                        <div className="col-span-2">
-                                            <Label className="text-xs text-slate-500 font-bold block mb-1">CPF do Titular</Label>
-                                            <Input placeholder="CPF do Titular" value={formData.CAUCAO_CPF} onChange={(e) => setFormData({ ...formData, CAUCAO_CPF: e.target.value })} className="bg-white border-none rounded-xl" />
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs text-slate-500 font-bold block mb-1">Banco</Label>
-                                            <Input placeholder="Banco" value={formData.CAUCAO_BANCO} onChange={(e) => setFormData({ ...formData, CAUCAO_BANCO: e.target.value })} className="bg-white border-none rounded-xl" />
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs text-slate-500 font-bold block mb-1">Agência</Label>
-                                            <Input placeholder="Agência" value={formData.CAUCAO_AGENCIA} onChange={(e) => setFormData({ ...formData, CAUCAO_AGENCIA: e.target.value })} className="bg-white border-none rounded-xl" />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <Label className="text-xs text-slate-500 font-bold block mb-1">Conta Corrente</Label>
-                                            <Input placeholder="Conta Corrente" value={formData.CAUCAO_CONTA} onChange={(e) => setFormData({ ...formData, CAUCAO_CONTA: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                            <Label className="font-bold text-slate-700 text-sm">Valor de Entrada (R$)</Label>
+                                            <Input type="text" value={formData.VALOR_ENTRADA ? formatCurrency(formData.VALOR_ENTRADA) : ''} onChange={(e) => setFormData({ ...formData, VALOR_ENTRADA: parseCurrency(e.target.value) })} className="bg-white border-none rounded-xl font-bold" />
                                         </div>
                                     </div>
-                                )}
-                            </div>
+                                    
+                                    {formData.MODALIDADE_VENDA === 'Financiada' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                <Label className="font-bold text-slate-700 text-sm">Banco Financiador</Label>
+                                                <Input value={formData.FINANCIAMENTO_BANCO} onChange={(e) => setFormData({ ...formData, FINANCIAMENTO_BANCO: e.target.value })} className="bg-white border-none rounded-xl" />
+                                            </div>
+                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                <Label className="font-bold text-slate-700 text-sm">Valor Financiado</Label>
+                                                <Input type="text" value={formData.FINANCIAMENTO_VALOR ? formatCurrency(formData.FINANCIAMENTO_VALOR) : ''} onChange={(e) => setFormData({ ...formData, FINANCIAMENTO_VALOR: parseCurrency(e.target.value) })} className="bg-white border-none rounded-xl font-bold text-amber-600" />
+                                            </div>
+                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                <Label className="font-bold text-slate-700 text-sm">Prazo Aprovação (Dias)</Label>
+                                                <Input type="number" value={formData.PRAZO_APROVACAO_DIAS} onChange={(e) => setFormData({ ...formData, PRAZO_APROVACAO_DIAS: e.target.value })} className="bg-white border-none rounded-xl" />
+                                            </div>
+                                        </div>
+                                    )}
 
-                            <div className="space-y-4">
+                                    <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                                        <Label className="font-bold text-slate-700 text-sm">Inventário "Porteira Fechada" (Móveis Planejados/Itens)</Label>
+                                        <p className="text-xs text-slate-500">Liste os móveis por ambiente que ficarão no imóvel. Eles serão inclusos no contrato.</p>
+                                        <textarea
+                                            placeholder="Ex: SALA: 1 Sofá retrátil, 1 Rack. COZINHA: Armários planejados..."
+                                            value={formData.INVENTARIO_MOVEIS}
+                                            onChange={(e) => setFormData({ ...formData, INVENTARIO_MOVEIS: e.target.value })}
+                                            className="w-full h-32 p-4 bg-white border border-slate-200 rounded-xl focus:ring-secondary outline-none text-sm resize-none"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- FORMULÁRIO DE VISTORIAS E CHAVES --- */}
+                            {(selectedType === 'VistoriaEntrada' || selectedType === 'VistoriaSaida' || selectedType === 'EntregaChaves') && (
+                                <div className="space-y-4 text-left">
+                                    <Label className="text-secondary font-black uppercase tracking-widest text-xs">Dados do Laudo de Vistoria</Label>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                                            <Label className="font-bold text-slate-700 text-sm">Data da Vistoria <span className="text-red-500">*</span></Label>
+                                            <Input type="date" value={formData.DATA_VISTORIA} onChange={(e) => setFormData({ ...formData, DATA_VISTORIA: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                        <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                                            <Label className="font-bold text-slate-700 text-sm">Data de Entrega das Chaves</Label>
+                                            <Input type="date" value={formData.DATA_ENTREGA_CHAVES} onChange={(e) => setFormData({ ...formData, DATA_ENTREGA_CHAVES: e.target.value })} className="bg-white border-none rounded-xl" />
+                                            <p className="text-xs text-slate-500">Se vazio, o texto será adaptado sem data.</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                                        <Label className="font-bold text-slate-700 text-sm">Anotações / Estado de Conservação</Label>
+                                        <textarea
+                                            placeholder="Ex: Pintura com marcas de uso na sala. Pia do banheiro solta..."
+                                            value={formData.ESTADO_CONSERVACAO}
+                                            onChange={(e) => setFormData({ ...formData, ESTADO_CONSERVACAO: e.target.value })}
+                                            className="w-full h-24 p-4 bg-white border border-slate-200 rounded-xl focus:ring-secondary outline-none text-sm resize-none"
+                                        />
+                                    </div>
+                                    <div className="p-5 bg-slate-50 rounded-3xl border border-dashed border-slate-300 space-y-4 flex flex-col items-center justify-center">
+                                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-2">
+                                            <Upload className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-center">
+                                            <Label className="font-bold text-slate-700 text-sm block cursor-pointer">
+                                                Anexar Fotos para o Laudo
+                                                <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                                            </Label>
+                                            <p className="text-xs text-slate-500 mt-1">As fotos anexadas serão geradas como apêndice no final do PDF.</p>
+                                        </div>
+                                        {formData.LAUDO_FOTOS && formData.LAUDO_FOTOS.length > 0 && (
+                                            <div className="flex gap-2 mt-4 flex-wrap justify-center">
+                                                {formData.LAUDO_FOTOS.map((foto: string, idx: number) => (
+                                                    <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+                                                        <img src={foto} className="w-full h-full object-cover" alt="Laudo" />
+                                                        <button 
+                                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"
+                                                            onClick={() => {
+                                                                const novas = [...formData.LAUDO_FOTOS];
+                                                                novas.splice(idx, 1);
+                                                                setFormData({...formData, LAUDO_FOTOS: novas});
+                                                            }}
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+
+
+                            {/* --- TESTEMUNHAS --- */}
+                            <div className="space-y-4 text-left">
                                 <Label className="text-secondary font-black uppercase tracking-widest text-xs">Testemunhas do Contrato</Label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
                                     <div className="p-6 bg-slate-50 rounded-3xl space-y-4 border border-slate-100">
                                         <Label className="font-bold text-slate-700">Testemunha 1 (Nome)</Label>
-                                        <Input
-                                            placeholder="Nome completo"
-                                            value={formData.TESTEMUNHA1_NOME}
-                                            onChange={(e) => setFormData({ ...formData, TESTEMUNHA1_NOME: e.target.value })}
-                                            className="bg-white border-none rounded-xl"
-                                        />
+                                        <Input value={formData.TESTEMUNHA1_NOME} onChange={(e) => setFormData({ ...formData, TESTEMUNHA1_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
                                         <Label className="font-bold text-slate-700">RG / CPF</Label>
-                                        <Input
-                                            placeholder="Documento"
-                                            value={formData.TESTEMUNHA1_RG}
-                                            onChange={(e) => setFormData({ ...formData, TESTEMUNHA1_RG: e.target.value })}
-                                            className="bg-white border-none rounded-xl"
-                                        />
+                                        <Input value={formData.TESTEMUNHA1_RG} onChange={(e) => setFormData({ ...formData, TESTEMUNHA1_RG: e.target.value })} className="bg-white border-none rounded-xl" />
                                     </div>
                                     <div className="p-6 bg-slate-50 rounded-3xl space-y-4 border border-slate-100">
                                         <Label className="font-bold text-slate-700">Testemunha 2 (Nome)</Label>
-                                        <Input
-                                            placeholder="Nome completo"
-                                            value={formData.TESTEMUNHA2_NOME}
-                                            onChange={(e) => setFormData({ ...formData, TESTEMUNHA2_NOME: e.target.value })}
-                                            className="bg-white border-none rounded-xl"
-                                        />
+                                        <Input value={formData.TESTEMUNHA2_NOME} onChange={(e) => setFormData({ ...formData, TESTEMUNHA2_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
                                         <Label className="font-bold text-slate-700">RG / CPF</Label>
-                                        <Input
-                                            placeholder="Documento"
-                                            value={formData.TESTEMUNHA2_RG}
-                                            onChange={(e) => setFormData({ ...formData, TESTEMUNHA2_RG: e.target.value })}
-                                            className="bg-white border-none rounded-xl"
-                                        />
+                                        <Input value={formData.TESTEMUNHA2_RG} onChange={(e) => setFormData({ ...formData, TESTEMUNHA2_RG: e.target.value })} className="bg-white border-none rounded-xl" />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <Label className="text-secondary font-black uppercase tracking-widest text-xs">Cláusulas Acessórias</Label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {[
-                                        { id: 'SUBLOCACAO', label: 'Proibir Sublocação', icon: ShieldCheck },
-                                        { id: 'PINTURA_NOVA', label: 'Entrega com Pintura Nova (Suvinil)', icon: Hammer },
-                                        { id: 'VISTORIA_DETALHADA', label: 'Laudo de Vistoria com Fotos anexo', icon: FileCheck },
-                                        { id: 'EXCLUSIVIDADE', label: 'Cláusula de Exclusividade', icon: ShieldCheck },
-                                        { id: 'FORO_SAO_PAULO', label: 'Eleição de Foro: São Paulo/SP', icon: Globe },
-                                    ].map(clause => (
-                                        <div
-                                            key={clause.id}
-                                            className={`p-6 rounded-[24px] border-2 transition-all flex items-center gap-4 justify-between ${formData.OPCIONAIS[clause.id] ? 'border-secondary bg-secondary/5' : 'border-slate-100 bg-white'
-                                                }`}
-                                        >
-                                            <div className="flex-1 text-left">
-                                                <p className="text-sm font-bold text-slate-900">{clause.label}</p>
-                                            </div>
-                                            <Switch
-                                                checked={formData.OPCIONAIS[clause.id]}
-                                                onCheckedChange={(checked) => setFormData((p: any) => ({
-                                                    ...p,
-                                                    OPCIONAIS: { ...p.OPCIONAIS, [clause.id]: checked }
-                                                }))}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </div>
                     </div>
                 );
