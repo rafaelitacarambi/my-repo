@@ -2,17 +2,16 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function checkConnection() {
+async function main() {
     try {
-        await prisma.$connect();
-        console.log('Successfully connected to the PostgreSQL database!');
-        const propertyCount = await prisma.property.count();
-        console.log(`Number of properties currently in POSTGRESQL: ${propertyCount}`);
-    } catch (err) {
-        console.error('Database connection failed:', err);
+        console.log("Tentando buscar templates...");
+        const templates = await prisma.contractTemplate.findMany();
+        console.log("Templates encontrados:", templates.length);
+    } catch (error) {
+        console.error("Erro do Prisma:", error);
     } finally {
         await prisma.$disconnect();
     }
 }
 
-checkConnection();
+main();

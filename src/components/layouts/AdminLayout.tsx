@@ -111,7 +111,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         }
     ];
 
-    const [expandedGroups, setExpandedGroups] = useState<string[]>(['Clientes', 'Vendas', 'Locações', 'Financiamento', 'Leilão', 'Imóveis', 'Configurações']);
+    const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
     const toggleGroup = (groupName: string) => {
         setExpandedGroups(prev =>

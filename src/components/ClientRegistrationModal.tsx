@@ -87,22 +87,110 @@ export function ClientRegistrationModal({
 
   const checkDuplicateClient = async (): Promise<{ client: Clients; services: ServiceRecords[] } | null> => {
     try {
-      const { items: allClients } = await BaseCrudService.getAll<Clients>('clientes');
-      const duplicate = allClients.find(
-        (c) =>
-          (formData.cpfCnpj && c.cpfCnpj === formData.cpfCnpj) ||
-          (formData.phoneNumber && c.phoneNumber === formData.phoneNumber) ||
-          (formData.email && c.email === formData.email) ||
-          (formData.address && c.address?.toLowerCase() === formData.address?.toLowerCase())
-      );
+      let duplicateClient: Clients | null = null;
 
-      if (duplicate) {
-        const { items: allServices } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
-        const clientServices = allServices.filter(s => s.clientePrincipalRef === duplicate._id && !s.isArchived);
-        return { client: duplicate, services: clientServices };
+      // 1. Search by CPF/CNPJ with formatting fallbacks
+      if (formData.cpfCnpj) {
+        const rawDoc = formData.cpfCnpj.trim();
+        const sanitizedDoc = rawDoc.replace(/\D/g, '');
+        
+        // Exact input search
+        let { items } = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+          filterField: 'document', 
+          filterValue: rawDoc 
+        });
+        
+        if (items.length > 0) {
+          duplicateClient = items[0];
+        }
+
+        // Sanitized search
+        if (!duplicateClient && sanitizedDoc && sanitizedDoc !== rawDoc) {
+          const res = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+            filterField: 'document', 
+            filterValue: sanitizedDoc 
+          });
+          if (res.items.length > 0) duplicateClient = res.items[0];
+        }
+
+        // Formatted CPF search
+        if (!duplicateClient && sanitizedDoc.length === 11) {
+          const formattedCpf = sanitizedDoc.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+          const res = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+            filterField: 'document', 
+            filterValue: formattedCpf 
+          });
+          if (res.items.length > 0) duplicateClient = res.items[0];
+        }
+
+        // Formatted CNPJ search
+        if (!duplicateClient && sanitizedDoc.length === 14) {
+          const formattedCnpj = sanitizedDoc.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+          const res = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+            filterField: 'document', 
+            filterValue: formattedCnpj 
+          });
+          if (res.items.length > 0) duplicateClient = res.items[0];
+        }
       }
+
+      // 2. Search by Email with lowercase fallback
+      if (!duplicateClient && formData.email) {
+        const cleanEmail = formData.email.trim().toLowerCase();
+        let { items } = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+          filterField: 'email', 
+          filterValue: cleanEmail 
+        });
+        if (items.length > 0) {
+          duplicateClient = items[0];
+        } else if (cleanEmail !== formData.email.trim()) {
+          const res = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+            filterField: 'email', 
+            filterValue: formData.email.trim() 
+          });
+          if (res.items.length > 0) duplicateClient = res.items[0];
+        }
+      }
+
+      // 3. Search by Phone Number via database query
+      if (!duplicateClient && formData.phoneNumber) {
+        const rawPhone = formData.phoneNumber.trim();
+        const sanitizedPhone = rawPhone.replace(/\D/g, '');
+
+        let { items } = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+          filterField: 'phone', 
+          filterValue: rawPhone 
+        });
+
+        if (items.length > 0) {
+          duplicateClient = items[0];
+        } else if (sanitizedPhone && sanitizedPhone !== rawPhone) {
+          const res = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+            filterField: 'phone', 
+            filterValue: sanitizedPhone 
+          });
+          if (res.items.length > 0) duplicateClient = res.items[0];
+        }
+      }
+
+      // 4. Local fallback for address matching
+      if (!duplicateClient && formData.address) {
+        const { items: allClients } = await BaseCrudService.getAll<Clients>('clientes');
+        const match = allClients.find(
+          (c) => formData.address && c.address?.toLowerCase().trim() === formData.address?.toLowerCase().trim()
+        );
+        if (match) duplicateClient = match;
+      }
+
+      if (duplicateClient) {
+        const { items: allServices } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
+        const clientServices = allServices.filter(s => s.clientePrincipalRef === duplicateClient!._id && !s.isArchived);
+        return { client: duplicateClient, services: clientServices };
+      }
+
       return null;
-    } catch {
+    } catch (e) {
+      console.error('Error in checkDuplicateClient:', e);
       return null;
     }
   };
@@ -173,9 +261,61 @@ export function ClientRegistrationModal({
       setCreatedClientId(clientId);
 
       setStep('success');
-    } catch (err) {
-      setError('Erro ao criar cliente');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Erro ao criar cliente:', err);
+      const isUniqueViolation = err.message?.includes('P2002') || err.message?.includes('unique') || err.message?.includes('violates') || err.message?.includes('conflict') || err.message?.includes('Duplicado') || err.message?.includes('já existe');
+      
+      if (isUniqueViolation) {
+        try {
+          toast.info("Este cliente já está cadastrado. Carregando dados para vinculação...");
+          let existingClient: Clients | null = null;
+          
+          if (formData.cpfCnpj) {
+            const rawDoc = formData.cpfCnpj.trim();
+            const sanitizedDoc = rawDoc.replace(/\D/g, '');
+            const { items } = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+              filterField: 'document', 
+              filterValue: rawDoc 
+            });
+            if (items.length > 0) {
+              existingClient = items[0];
+            } else if (sanitizedDoc) {
+              const res = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+                filterField: 'document', 
+                filterValue: sanitizedDoc 
+              });
+              if (res.items.length > 0) existingClient = res.items[0];
+            }
+          }
+          
+          if (!existingClient && formData.email) {
+            const { items } = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+              filterField: 'email', 
+              filterValue: formData.email.trim().toLowerCase() 
+            });
+            if (items.length > 0) existingClient = items[0];
+          }
+
+          if (existingClient) {
+            const { items: allServices } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
+            const clientServices = allServices.filter(s => s.clientePrincipalRef === existingClient!._id && !s.isArchived);
+            
+            setDuplicateWarning({ client: existingClient, services: clientServices });
+            setStep('form');
+            return;
+          }
+        } catch (searchErr) {
+          console.error("Erro ao buscar duplicado após detecção de erro P2002:", searchErr);
+        }
+      }
+
+      let msg = 'Erro ao criar cliente';
+      if (err.message?.includes('P2002')) {
+        msg = 'Já existe um cliente com este CPF/CNPJ ou e-mail cadastrado no sistema.';
+      } else if (err.message) {
+        msg = `Erro: ${err.message}`;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

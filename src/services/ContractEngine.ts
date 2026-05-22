@@ -54,12 +54,156 @@ export class ContractEngine {
             return match;
         });
 
+        // 3. Pós-processamento inteligente de gênero e número para corrigir templates com termos estáticos/hardcoded
+        content = this.replaceRoleInText(content, data.LOCADORA_LABEL || data.LOCADORES_LABEL, 'LOCADOR', 'LOCADORES', 'LOCADORA', 'LOCADORAS');
+        content = this.replaceRoleInText(content, data.LOCATARIOS_LABEL || data.LOCATARIO_LABEL, 'LOCATÁRIO', 'LOCATÁRIOS', 'LOCATÁRIA', 'LOCATÁRIAS');
+        content = this.replaceRoleInText(content, data.VENDEDORES_LABEL || data.VENDEDOR_LABEL, 'VENDEDOR', 'VENDEDORES', 'VENDEDORA', 'VENDEDORAS');
+        content = this.replaceRoleInText(content, data.COMPRADORES_LABEL || data.COMPRADOR_LABEL, 'COMPRADOR', 'COMPRADORES', 'COMPRADORA', 'COMPRADORAS');
+
         return content;
     }
 
+    /**
+     * Helper avançado para pós-processamento gramatical de papéis e preposições (à, da, pela, o, a, etc.)
+     */
+    static replaceRoleInText(
+        content: string, 
+        label: string, 
+        ms: string, // "LOCADOR"
+        mp: string, // "LOCADORES"
+        fs: string, // "LOCADORA"
+        fp: string  // "LOCADORAS"
+    ): string {
+        if (!label) return content;
+
+        // Determinar qual é o label de destino com base no resolvido pelo motor
+        let target = '';
+        if (label.includes(mp)) target = mp;
+        else if (label.includes(fp)) target = fp;
+        else if (label.includes(fs)) target = fs;
+        else if (label.includes(ms)) target = ms;
+        else return content;
+
+        const isPlural = target === mp || target === fp;
+        const isFeminine = target === fs || target === fp;
+
+        const pre = '(?<![a-zA-Z0-9À-ÿ_])';
+        const post = '(?![a-zA-Z0-9À-ÿ_])';
+
+        // Helper interno que cuida de preposições contraídas e artigos no singular
+        const replaceHelper = (txt: string) => {
+            if (isPlural && !isFeminine) {
+                return txt
+                    .replace(new RegExp(`${pre}(A|O)\\s+(${fs}|${ms})${post}`, 'g'), `OS ${mp}`)
+                    .replace(new RegExp(`${pre}(a|o)\\s+(${fs}|${ms})${post}`, 'g'), `os ${mp}`)
+                    .replace(new RegExp(`${pre}(À|AO)\\s+(${fs}|${ms})${post}`, 'g'), `AOS ${mp}`)
+                    .replace(new RegExp(`${pre}(à|ao)\\s+(${fs}|${ms})${post}`, 'g'), `aos ${mp}`)
+                    .replace(new RegExp(`${pre}(DA|DO)\\s+(${fs}|${ms})${post}`, 'g'), `DOS ${mp}`)
+                    .replace(new RegExp(`${pre}(da|do)\\s+(${fs}|${ms})${post}`, 'g'), `dos ${mp}`)
+                    .replace(new RegExp(`${pre}(PELA|PELO)\\s+(${fs}|${ms})${post}`, 'g'), `PELOS ${mp}`)
+                    .replace(new RegExp(`${pre}(pela|pelo)\\s+(${fs}|${ms})${post}`, 'g'), `pelos ${mp}`)
+                    .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), mp)
+                    .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), mp.toLowerCase());
+            }
+            if (isPlural && isFeminine) {
+                return txt
+                    .replace(new RegExp(`${pre}(A|O)\\s+(${fs}|${ms})${post}`, 'g'), `AS ${fp}`)
+                    .replace(new RegExp(`${pre}(a|o)\\s+(${fs}|${ms})${post}`, 'g'), `as ${fp}`)
+                    .replace(new RegExp(`${pre}(À|AO)\\s+(${fs}|${ms})${post}`, 'g'), `ÀS ${fp}`)
+                    .replace(new RegExp(`${pre}(à|ao)\\s+(${fs}|${ms})${post}`, 'g'), `às ${fp}`)
+                    .replace(new RegExp(`${pre}(DA|DO)\\s+(${fs}|${ms})${post}`, 'g'), `DAS ${fp}`)
+                    .replace(new RegExp(`${pre}(da|do)\\s+(${fs}|${ms})${post}`, 'g'), `das ${fp}`)
+                    .replace(new RegExp(`${pre}(PELA|PELO)\\s+(${fs}|${ms})${post}`, 'g'), `PELAS ${fp}`)
+                    .replace(new RegExp(`${pre}(pela|pelo)\\s+(${fs}|${ms})${post}`, 'g'), `pelas ${fp}`)
+                    .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), fp)
+                    .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), fp.toLowerCase());
+            }
+            if (!isPlural && !isFeminine) {
+                return txt
+                    .replace(new RegExp(`${pre}(A|O)\\s+(${fs}|${ms})${post}`, 'g'), `O ${ms}`)
+                    .replace(new RegExp(`${pre}(a|o)\\s+(${fs}|${ms})${post}`, 'g'), `o ${ms}`)
+                    .replace(new RegExp(`${pre}(À|AO)\\s+(${fs}|${ms})${post}`, 'g'), `AO ${ms}`)
+                    .replace(new RegExp(`${pre}(à|ao)\\s+(${fs}|${ms})${post}`, 'g'), `ao ${ms}`)
+                    .replace(new RegExp(`${pre}(DA|DO)\\s+(${fs}|${ms})${post}`, 'g'), `DO ${ms}`)
+                    .replace(new RegExp(`${pre}(da|do)\\s+(${fs}|${ms})${post}`, 'g'), `do ${ms}`)
+                    .replace(new RegExp(`${pre}(PELA|PELO)\\s+(${fs}|${ms})${post}`, 'g'), `PELO ${ms}`)
+                    .replace(new RegExp(`${pre}(pela|pelo)\\s+(${fs}|${ms})${post}`, 'g'), `pelo ${ms}`)
+                    .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), ms)
+                    .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), ms.toLowerCase());
+            }
+            if (!isPlural && isFeminine) {
+                return txt
+                    .replace(new RegExp(`${pre}(A|O)\\s+(${fs}|${ms})${post}`, 'g'), `A ${fs}`)
+                    .replace(new RegExp(`${pre}(a|o)\\s+(${fs}|${ms})${post}`, 'g'), `a ${fs}`)
+                    .replace(new RegExp(`${pre}(À|AO)\\s+(${fs}|${ms})${post}`, 'g'), `À ${fs}`)
+                    .replace(new RegExp(`${pre}(à|ao)\\s+(${fs}|${ms})${post}`, 'g'), `à ${fs}`)
+                    .replace(new RegExp(`${pre}(DA|DO)\\s+(${fs}|${ms})${post}`, 'g'), `DA ${fs}`)
+                    .replace(new RegExp(`${pre}(da|do)\\s+(${fs}|${ms})${post}`, 'g'), `da ${fs}`)
+                    .replace(new RegExp(`${pre}(PELA|PELO)\\s+(${fs}|${ms})${post}`, 'g'), `PELA ${fs}`)
+                    .replace(new RegExp(`${pre}(pela|pelo)\\s+(${fs}|${ms})${post}`, 'g'), `pela ${fs}`)
+                    .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), fs)
+                    .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), fs.toLowerCase());
+            }
+            return txt;
+        };
+
+        let processed = content;
+        
+        // 1. Mapear ocorrências plurais do template para o destino resolvido (Ex: "OS LOCATÁRIOS" -> "O LOCATÁRIO" ou "AS LOCATÁRIAS")
+        processed = processed
+            .replace(new RegExp(`${pre}OS\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `AS ${fp}` : `OS ${mp}`) : (isFeminine ? `A ${fs}` : `O ${ms}`))
+            .replace(new RegExp(`${pre}Os\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `AS ${fp}` : `OS ${mp}`) : (isFeminine ? `A ${fs}` : `O ${ms}`))
+            .replace(new RegExp(`${pre}os\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `as ${fp}` : `os ${mp}`) : (isFeminine ? `a ${fs}` : `o ${ms}`))
+            .replace(new RegExp(`${pre}AOS\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `ÀS ${fp}` : `AOS ${mp}`) : (isFeminine ? `À ${fs}` : `AO ${ms}`))
+            .replace(new RegExp(`${pre}aos\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `às ${fp}` : `aos ${mp}`) : (isFeminine ? `à ${fs}` : `ao ${ms}`))
+            .replace(new RegExp(`${pre}DOS\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `DAS ${fp}` : `DOS ${mp}`) : (isFeminine ? `DA ${fs}` : `DO ${ms}`))
+            .replace(new RegExp(`${pre}dos\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `das ${fp}` : `dos ${mp}`) : (isFeminine ? `da ${fs}` : `do ${ms}`))
+            .replace(new RegExp(`${pre}PELOS\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `PELAS ${fp}` : `PELOS ${mp}`) : (isFeminine ? `PELA ${fs}` : `PELO ${ms}`))
+            .replace(new RegExp(`${pre}pelos\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `pelas ${fp}` : `pelos ${mp}`) : (isFeminine ? `pela ${fs}` : `pelo ${ms}`))
+            .replace(new RegExp(`${pre}${mp}${post}`, 'g'), isPlural ? (isFeminine ? fp : mp) : (isFeminine ? fs : ms))
+            .replace(new RegExp(`${pre}${mp.toLowerCase()}${post}`, 'g'), isPlural ? (isFeminine ? fp.toLowerCase() : mp.toLowerCase()) : (isFeminine ? fs.toLowerCase() : ms.toLowerCase()));
+
+        // 2. Mapear ocorrências singulares do template (Ex: "A LOCADORA" -> "O LOCADOR" ou "OS LOCADORES")
+        processed = replaceHelper(processed);
+
+        return processed;
+    }
+
     static mapEntitiesToData(atendimento: any, clientes: any[], imovel: any, extraData: any): ContractData {
+        console.log(`[ContractEngine] Mapeando entidades para Atendimento: ${atendimento?._id}`);
+        console.log(`[ContractEngine] Payload extraData (formData):`, {
+            locadores: extraData?.LOCADORES_IDS?.length,
+            locatarios: extraData?.LOCATARIOS_IDS?.length,
+            vendedores: extraData?.VENDEDORES_IDS?.length,
+            compradores: extraData?.COMPRADORES_IDS?.length,
+            valorAluguel: extraData?.VALOR_ALUGUEL,
+            garantia: extraData?.GARANTIA
+        });
+
+        // Helper para formatação de moeda brasileira BRL
+        const formatBRL = (value: any): string => {
+            if (value === undefined || value === null || value === '') return '0,00';
+            const num = typeof value === 'string' ? parseFloat(value) : value;
+            if (isNaN(num)) return '0,00';
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(num);
+        };
+
+        // Helper para formatação de CPF
+        const formatCPF = (val: string): string => {
+            if (!val) return '';
+            const cleaned = val.replace(/\D/g, '');
+            if (cleaned.length !== 11) return val;
+            return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
+        };
+
         const data: ContractData = {
-            // Atendimento & Global
+            // Primeiro carregamos os dados brutos do formulário (que podem conter lixo de rascunhos antigos)
+            ...extraData,
+
+            // Atendimento & Global (Dados mestre que devem sobrepor o formulário)
             ATENDIMENTO_ID: atendimento?._id || '',
             PASTA_INTERNA: atendimento?.pastaInterna || '',
             CIDADE_ASSINATURA: 'Poá', // Default for this client
@@ -70,30 +214,48 @@ export class ContractEngine {
             ANO_HOJE: new Date().getFullYear(),
             LOGO_RSALES: 'https://static.wixstatic.com/media/9b23b4_8b5ff4d697054133a09457af0365ebeb~mv2.png',
 
-            // Imóvel
-            IMOVEL_TIPO: imovel?.tipoImovel || 'Apartamento',
-            IMOVEL_NUMERO: imovel?.numero || '',
-            IMOVEL_TORRE: (imovel as any)?.torre || '',
-            IMOVEL_CONDOMINIO_NOME: imovel?.nomeCondominio || '',
-            IMOVEL_ENDERECO_COMPLETO: imovel ? `${imovel.logradouro}, ${imovel.numero}${imovel.complemento ? ' - ' + imovel.complemento : ''}, ${imovel.bairro}, ${imovel.cidade}-${imovel.uf}` : '',
-            IMOVEL_CEP: imovel?.cep || '',
-            IMOVEL_VAGAS_GARAGEM: imovel?.vagas || 0,
-            MATRICULA: (imovel as any)?.matricula || '',
+            // Imóvel (priorizando os dados editados no wizard/extraData)
+            IMOVEL_TIPO: extraData?.IMOVEL_TIPO || imovel?.tipoImovel || 'Apartamento',
+            IMOVEL_NUMERO: extraData?.IMOVEL_NUMERO || imovel?.numero || '',
+            IMOVEL_TORRE: extraData?.IMOVEL_TORRE || (imovel as any)?.torre || '',
+            IMOVEL_CONDOMINIO_NOME: extraData?.IMOVEL_CONDOMINIO_NOME || imovel?.nomeCondominio || '',
+            IMOVEL_ENDERECO_COMPLETO: extraData?.IMOVEL_ENDERECO_COMPLETO || 
+                (extraData?.IMOVEL_LOGRADOURO || imovel ? 
+                    `${extraData?.IMOVEL_LOGRADOURO || imovel?.logradouro || ''}, ${extraData?.IMOVEL_NUMERO || imovel?.numero || ''}${extraData?.IMOVEL_COMPLEMENTO || imovel?.complemento ? ' - ' + (extraData?.IMOVEL_COMPLEMENTO || imovel?.complemento) : ''}, ${extraData?.IMOVEL_BAIRRO || imovel?.bairro || ''}, ${extraData?.IMOVEL_CIDADE || imovel?.cidade || ''}-${extraData?.IMOVEL_ESTADO || imovel?.estado || imovel?.uf || ''}` 
+                    : ''),
+            IMOVEL_CEP: extraData?.IMOVEL_CEP || imovel?.cep || '',
+            IMOVEL_VAGAS_GARAGEM: extraData?.IMOVEL_VAGAS_GARAGEM !== undefined ? extraData.IMOVEL_VAGAS_GARAGEM : (imovel?.vagas || 0),
+            MATRICULA: extraData?.MATRICULA || (imovel as any)?.matricula || '',
 
             // Condições
             FINALIDADE: imovel?.finalidade || 'Residencial',
             PRAZO_MESES: extraData?.PRAZO_MESES || '30',
+            PRAZO_MESES_EXTENSO: extraData?.PRAZO_MESES ? NumberToWords.convertCurrency(parseFloat(extraData.PRAZO_MESES)).replace('reais', '').trim() : 'trinta',
             DATA_INICIO_PREVISTA: extraData?.DATA_INICIO_PREVISTA || '',
             DATA_ENTREGA_CHAVES_OBS: extraData?.DATA_ENTREGA_CHAVES_OBS || '',
-            VALOR_ALUGUEL: extraData?.VALOR_ALUGUEL || 0,
+            
+            // Valores formatados com extenso
+            VALOR_ALUGUEL: formatBRL(extraData?.VALOR_ALUGUEL || 0),
             VALOR_ALUGUEL_EXTENSO: extraData?.VALOR_ALUGUEL ? NumberToWords.convertCurrency(parseFloat(extraData.VALOR_ALUGUEL)) : '',
             DATA_VENCIMENTO: extraData?.DATA_VENCIMENTO || '10',
-            CONDOMINIO_VALOR: imovel?.valorCondominio || 0,
-            IPTU_VALOR: imovel?.valorIPTU || 0,
+            
+            CONDOMINIO_VALOR: formatBRL(extraData?.VALOR_CONDOMINIO !== undefined ? extraData.VALOR_CONDOMINIO : (imovel?.valorCondominio || 0)),
+            CONDOMINIO_VALOR_EXTENSO: (extraData?.VALOR_CONDOMINIO || imovel?.valorCondominio) ? NumberToWords.convertCurrency(parseFloat(extraData?.VALOR_CONDOMINIO || imovel?.valorCondominio)) : '',
+            
+            IPTU_VALOR: formatBRL(extraData?.VALOR_IPTU !== undefined ? extraData.VALOR_IPTU : (imovel?.valorIPTU || 0)),
+            IPTU_VALOR_EXTENSO: (extraData?.VALOR_IPTU || imovel?.valorIPTU) ? NumberToWords.convertCurrency(parseFloat(extraData?.VALOR_IPTU || imovel?.valorIPTU)) : '',
+            
             REAJUSTE_INDICE: extraData?.REAJUSTE_INDICE || 'IGP-M (FGV)',
             MULTA_RESCISAO_ALUGUEIS: extraData?.MULTA_RESCISAO_ALUGUEIS || '3',
-            CAUCAO_VALOR: extraData?.CAUCAO_VALOR || 0,
+            
+            CAUCAO_VALOR: formatBRL(extraData?.CAUCAO_VALOR || 0),
             CAUCAO_VALOR_EXTENSO: extraData?.CAUCAO_VALOR ? NumberToWords.convertCurrency(parseFloat(extraData.CAUCAO_VALOR)) : '',
+
+            VALOR_TOTAL: formatBRL(extraData?.VALOR_TOTAL || 0),
+            VALOR_TOTAL_EXTENSO: extraData?.VALOR_TOTAL ? NumberToWords.convertCurrency(parseFloat(extraData.VALOR_TOTAL)) : '',
+
+            VALOR_ENTRADA: formatBRL(extraData?.VALOR_ENTRADA || 0),
+            VALOR_ENTRADA_EXTENSO: extraData?.VALOR_ENTRADA ? NumberToWords.convertCurrency(parseFloat(extraData.VALOR_ENTRADA)) : '',
 
             // Dados Caução
             CAUCAO_BANCO: extraData?.CAUCAO_BANCO || '',
@@ -109,9 +271,6 @@ export class ContractEngine {
             TESTEMUNHA2_NOME: extraData?.TESTEMUNHA2_NOME || '________________________________',
             TESTEMUNHA2_RG: extraData?.TESTEMUNHA2_RG || '',
 
-            // Legacy support
-            ...extraData,
-
             // Variáveis Booleanas de Exclusão (Evitar múltiplas garantias no DOC)
             GARANTIA_CAUCAO: extraData?.GARANTIA === 'Caucao',
             GARANTIA_FIANCA: extraData?.GARANTIA === 'Fianca',
@@ -122,11 +281,11 @@ export class ContractEngine {
 
         // Helper para qualificação detalhada com overrides
         const getQualification = (clientId: string) => {
-            const client = clientes.find(c => c._id === clientId);
+            const client = clientes.find(c => c._id === clientId || c.id === clientId);
             if (!client && !extraData?.PARTICIPANT_DETAILS?.[clientId]) return '';
 
             const o = extraData?.PARTICIPANT_DETAILS?.[clientId] || {};
-            const name = o.name || client?.clientName || '';
+            const name = o.name || client?.clientName || client?.name || '';
             const gender = o.gender || (client as any)?.gender || 'Masculino';
 
             const isFem = gender === 'Feminino';
@@ -135,9 +294,9 @@ export class ContractEngine {
             const maritalStatus = o.maritalStatus || (client as any)?.maritalStatus || (isFem ? 'estado civil n/d' : 'estado civil n/d');
             const profession = o.profession || (client as any)?.profession || 'profissão n/d';
             const rg = o.rg || (client as any)?.rg || '';
-            const cpf = o.cpf || client?.cpfCnpj || '';
-            const address = o.address || client?.address || '';
-            const email = o.email || client?.emailPrincipal || '';
+            const cpf = o.cpf || client?.cpfCnpj || client?.document || '';
+            const address = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
+            const email = o.email || client?.emailPrincipal || client?.email || '';
 
             // Qualificação de gênero nas palavras
             const portador = isFem ? 'portadora' : 'portador';
@@ -149,10 +308,10 @@ export class ContractEngine {
 
             // Interligação de Cônjuge
             if (o.spouseId && o.spouseId !== 'no_spouse') {
-                const spouse = clientes.find(c => c._id === o.spouseId);
+                const spouse = clientes.find(c => c._id === o.spouseId || c.id === o.spouseId);
                 const so = extraData?.PARTICIPANT_DETAILS?.[o.spouseId] || {};
-                const sName = so.name || spouse?.clientName || '';
-                const sCpf = so.cpf || spouse?.cpfCnpj || '';
+                const sName = so.name || spouse?.clientName || spouse?.name || '';
+                const sCpf = so.cpf || spouse?.cpfCnpj || spouse?.document || '';
                 const connector = isFem ? 'casada com' : 'casado com';
                 text += `, ${connector} ${sName}, inscrito(a) no CPF sob o nº ${sCpf}`;
             }
@@ -160,18 +319,69 @@ export class ContractEngine {
             return text;
         };
 
+        // Helper para labels individuais que detecta cônjuge e altera para plural
+        const getIndividualLabel = (firstId: string, roleBase: string) => {
+            const client = clientes.find(c => c._id === firstId || c.id === firstId);
+            const o = extraData?.PARTICIPANT_DETAILS?.[firstId] || {};
+            const spouseId = o.spouseId || (client as any)?.spouseRef;
+            const hasSpouse = spouseId && spouseId !== 'no_spouse';
+            const isFem = (o.gender || (client as any)?.gender) === 'Feminino';
+
+            const mapSingular: any = {
+                'Locador': { m: 'O LOCADOR', f: 'A LOCADORA' },
+                'Locatário': { m: 'O LOCATÁRIO', f: 'A LOCATÁRIA' },
+                'Vendedor': { m: 'O VENDEDOR', f: 'A VENDEDORA' },
+                'Comprador': { m: 'O COMPRADOR', f: 'A COMPRADORA' },
+            };
+            const mapPlural: any = {
+                'Locador': { mp: 'OS LOCADORES', fp: 'AS LOCADORAS' },
+                'Locatário': { mp: 'OS LOCATÁRIOS', fp: 'AS LOCATÁRIAS' },
+                'Vendedor': { mp: 'OS VENDEDORES', fp: 'AS VENDEDORAS' },
+                'Comprador': { mp: 'OS COMPRADORES', fp: 'AS COMPRADORAS' },
+            };
+
+            const sing = mapSingular[roleBase] || { m: roleBase, f: roleBase };
+            const plur = mapPlural[roleBase] || { mp: roleBase, fp: roleBase };
+
+            if (hasSpouse) {
+                let spouseIsFem = false;
+                if (spouseId) {
+                    const spouseClient = clientes.find(c => c._id === spouseId || c.id === spouseId);
+                    const so = extraData?.PARTICIPANT_DETAILS?.[spouseId] || {};
+                    spouseIsFem = (so.gender || (spouseClient as any)?.gender) === 'Feminino';
+                }
+                return (isFem && spouseIsFem) ? plur.fp : plur.mp;
+            } else {
+                return isFem ? sing.f : sing.m;
+            }
+        };
+
         // Helper para labels de grupo (Ex: VENDEDOR, VENDEDORA, VENDEDORES, VENDEDORAS)
         const getGroupRoleLabel = (ids: string[], roleBase: string) => {
             if (ids.length === 0) return '';
 
-            const participants = ids.map(id => {
-                const client = clientes.find(c => c._id === id);
+            const participantsWithSpouses: { gender: string }[] = [];
+            let hasSpouse = false;
+
+            ids.forEach(id => {
+                const client = clientes.find(c => c._id === id || c.id === id);
                 const o = extraData?.PARTICIPANT_DETAILS?.[id] || {};
-                return { gender: o.gender || (client as any)?.gender || 'Masculino' };
+                const g = o.gender || (client as any)?.gender || 'Masculino';
+                participantsWithSpouses.push({ gender: g });
+
+                const spouseId = o.spouseId || (client as any)?.spouseRef;
+                if (spouseId && spouseId !== 'no_spouse') {
+                    hasSpouse = true;
+                    const spouseClient = clientes.find(c => c._id === spouseId || c.id === spouseId);
+                    const so = extraData?.PARTICIPANT_DETAILS?.[spouseId] || {};
+                    participantsWithSpouses.push({
+                        gender: so.gender || (spouseClient as any)?.gender || 'Masculino'
+                    });
+                }
             });
 
-            const allFem = participants.every(p => p.gender === 'Feminino');
-            const isPlural = ids.length > 1;
+            const allFem = participantsWithSpouses.every(p => p.gender === 'Feminino');
+            const isPlural = ids.length > 1 || hasSpouse;
 
             const map: any = {
                 'Locador': { ms: 'O LOCADOR', fs: 'A LOCADORA', mp: 'OS LOCADORES', fp: 'AS LOCADORAS' },
@@ -186,7 +396,7 @@ export class ContractEngine {
             if (isPlural) {
                 return allFem ? labels.fp : labels.mp;
             } else {
-                return participants[0].gender === 'Feminino' ? labels.fs : labels.ms;
+                return participantsWithSpouses[0].gender === 'Feminino' ? labels.fs : labels.ms;
             }
         };
 
@@ -194,12 +404,12 @@ export class ContractEngine {
         const locadoraIds = extraData?.LOCADORES_IDS || [];
         if (locadoraIds.length > 0) {
             const firstId = locadoraIds[0];
-            const client = clientes.find(c => c._id === firstId);
+            const client = clientes.find(c => c._id === firstId || c.id === firstId);
             const o = extraData?.PARTICIPANT_DETAILS?.[firstId] || {};
             const isFem = (o.gender || (client as any)?.gender) === 'Feminino';
 
-            data.LOCADORA_LABEL = isFem ? 'A LOCADORA' : 'O LOCADOR';
-            data.LOCADORA_NOME = o.name || client?.clientName || '';
+            data.LOCADORA_LABEL = getIndividualLabel(firstId, 'Locador');
+            data.LOCADORA_NOME = o.name || client?.clientName || client?.name || '';
             data.LOCADORA_QUALIFICACAO = getQualification(firstId);
 
             // Campos individuais
@@ -207,10 +417,83 @@ export class ContractEngine {
             data.LOCADORA_NACIONALIDADE = nationality;
             data.LOCADORA_ESTADO_CIVIL = o.maritalStatus || (client as any)?.maritalStatus || '';
             data.LOCADORA_PROFISSAO = o.profession || (client as any)?.profession || '';
+            data.LOCADORA_DOCUMENTO_TIPO = 'RG'; // Padrão
             data.LOCADORA_DOCUMENTO_NUM = o.rg || (client as any)?.rg || '';
-            data.LOCADORA_CPF = o.cpf || client?.cpfCnpj || '';
-            data.LOCADORA_EMAIL = o.email || client?.emailPrincipal || '';
-            data.LOCADORA_ENDERECO_COMPLETO = o.address || client?.address || '';
+            data.LOCADORA_CPF = o.cpf || client?.cpfCnpj || client?.document || '';
+            data.LOCADORA_EMAIL = o.email || client?.emailPrincipal || client?.email || '';
+            data.LOCADORA_ENDERECO_COMPLETO = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
+        }
+
+        // Mapear LOCATARIO (Inquilino principal) - Para preencher todos os dados individuais no contrato
+        const locatarioIds = extraData?.LOCATARIOS_IDS || [];
+        if (locatarioIds.length > 0) {
+            const firstId = locatarioIds[0];
+            const client = clientes.find(c => c._id === firstId || c.id === firstId);
+            const o = extraData?.PARTICIPANT_DETAILS?.[firstId] || {};
+            const isFem = (o.gender || (client as any)?.gender) === 'Feminino';
+
+            data.LOCATARIO_LABEL = getIndividualLabel(firstId, 'Locatário');
+            data.LOCATARIO_NOME = o.name || client?.clientName || client?.name || '';
+            data.LOCATARIO_QUALIFICACAO = getQualification(firstId);
+
+            // Campos individuais
+            const nationality = o.nationality || (client as any)?.nationality || (isFem ? 'brasileira' : 'brasileiro');
+            data.LOCATARIO_NACIONALIDADE = nationality;
+            data.LOCATARIO_ESTADO_CIVIL = o.maritalStatus || (client as any)?.maritalStatus || '';
+            data.LOCATARIO_PROFISSAO = o.profession || (client as any)?.profession || '';
+            data.LOCATARIO_DOCUMENTO_TIPO = 'RG';
+            data.LOCATARIO_DOCUMENTO_NUM = o.rg || (client as any)?.rg || '';
+            data.LOCATARIO_CPF = o.cpf || client?.cpfCnpj || client?.document || '';
+            data.LOCATARIO_EMAIL = o.email || client?.emailPrincipal || client?.email || '';
+            data.LOCATARIO_ENDERECO_COMPLETO = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
+        }
+
+        // Mapear VENDEDOR (Vendedor principal)
+        const vendedorIds = extraData?.VENDEDORES_IDS || [];
+        if (vendedorIds.length > 0) {
+            const firstId = vendedorIds[0];
+            const client = clientes.find(c => c._id === firstId || c.id === firstId);
+            const o = extraData?.PARTICIPANT_DETAILS?.[firstId] || {};
+            const isFem = (o.gender || (client as any)?.gender) === 'Feminino';
+
+            data.VENDEDOR_LABEL = getIndividualLabel(firstId, 'Vendedor');
+            data.VENDEDOR_NOME = o.name || client?.clientName || client?.name || '';
+            data.VENDEDOR_QUALIFICACAO = getQualification(firstId);
+
+            // Campos individuais
+            const nationality = o.nationality || (client as any)?.nationality || (isFem ? 'brasileira' : 'brasileiro');
+            data.VENDEDOR_NACIONALIDADE = nationality;
+            data.VENDEDOR_ESTADO_CIVIL = o.maritalStatus || (client as any)?.maritalStatus || '';
+            data.VENDEDOR_PROFISSAO = o.profession || (client as any)?.profession || '';
+            data.VENDEDOR_DOCUMENTO_TIPO = 'RG';
+            data.VENDEDOR_DOCUMENTO_NUM = o.rg || (client as any)?.rg || '';
+            data.VENDEDOR_CPF = o.cpf || client?.cpfCnpj || client?.document || '';
+            data.VENDEDOR_EMAIL = o.email || client?.emailPrincipal || client?.email || '';
+            data.VENDEDOR_ENDERECO_COMPLETO = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
+        }
+
+        // Mapear COMPRADOR (Comprador principal)
+        const compradorIds = extraData?.COMPRADORES_IDS || [];
+        if (compradorIds.length > 0) {
+            const firstId = compradorIds[0];
+            const client = clientes.find(c => c._id === firstId || c.id === firstId);
+            const o = extraData?.PARTICIPANT_DETAILS?.[firstId] || {};
+            const isFem = (o.gender || (client as any)?.gender) === 'Feminino';
+
+            data.COMPRADOR_LABEL = getIndividualLabel(firstId, 'Comprador');
+            data.COMPRADOR_NOME = o.name || client?.clientName || client?.name || '';
+            data.COMPRADOR_QUALIFICACAO = getQualification(firstId);
+
+            // Campos individuais
+            const nationality = o.nationality || (client as any)?.nationality || (isFem ? 'brasileira' : 'brasileiro');
+            data.COMPRADOR_NACIONALIDADE = nationality;
+            data.COMPRADOR_ESTADO_CIVIL = o.maritalStatus || (client as any)?.maritalStatus || '';
+            data.COMPRADOR_PROFISSAO = o.profession || (client as any)?.profession || '';
+            data.COMPRADOR_DOCUMENTO_TIPO = 'RG';
+            data.COMPRADOR_DOCUMENTO_NUM = o.rg || (client as any)?.rg || '';
+            data.COMPRADOR_CPF = o.cpf || client?.cpfCnpj || client?.document || '';
+            data.COMPRADOR_EMAIL = o.email || client?.emailPrincipal || client?.email || '';
+            data.COMPRADOR_ENDERECO_COMPLETO = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
         }
 
         // Mapear LISTAS e LABELS Dinâmicos
@@ -218,15 +501,12 @@ export class ContractEngine {
         data.LOCADORES_LABEL = getGroupRoleLabel(locadorIds, 'Locador');
         data.LOCADORES_LISTA = locadorIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
 
-        const locatarioIds = extraData?.LOCATARIOS_IDS || [];
         data.LOCATARIOS_LABEL = getGroupRoleLabel(locatarioIds, 'Locatário');
         data.LOCATARIOS_LISTA = locatarioIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
 
-        const vendedorIds = extraData?.VENDEDORES_IDS || [];
         data.VENDEDORES_LABEL = getGroupRoleLabel(vendedorIds, 'Vendedor');
         data.VENDEDORES_LISTA = vendedorIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
 
-        const compradorIds = extraData?.COMPRADORES_IDS || [];
         data.COMPRADORES_LABEL = getGroupRoleLabel(compradorIds, 'Comprador');
         data.COMPRADORES_LISTA = compradorIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
 
@@ -237,6 +517,10 @@ export class ContractEngine {
      * Gera o HTML final pronto para o Preview e PDF, incluindo CSS básico e Logo.
      */
     static renderContract(template: string, data: ContractData): string {
+        console.log(`[ContractEngine] Renderizando contrato. Tamanho do template: ${template?.length}`);
+        if (template?.includes('EUZIQUE')) {
+            console.warn('[ContractEngine] ALERTA: O template contém o nome "EUZIQUE" hardcoded!');
+        }
         const body = this.processTemplate(template, data);
 
         return `

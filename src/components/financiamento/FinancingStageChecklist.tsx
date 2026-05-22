@@ -84,10 +84,20 @@ export function FinancingStageChecklist({ caseData, onUpdateAnswer, answers = {}
                     // Count checked, failed, and irrelevant as "completed" interaction? 
                     // Usually progress implies "done". Let's count 'checked' and 'irrelevant'. 'failed' implies needs attention?
                     // For progress bar: (checked + irrelevant) / total
-                    const completedCount = visibleItems.filter(i => {
+                    let completedCount = visibleItems.filter(i => {
                         const s = stageAnswers[i.id]?.status;
                         return s === 'checked' || s === 'irrelevant';
                     }).length;
+
+                    // REQUIREMENT 2: Cartório R.Sales special logic
+                    if (stageId === 'cartorio-rsales') {
+                        const nosFaremos = stageAnswers['nos_faremos_cartorio']?.status;
+                        const recebemosMatricula = stageAnswers['recebemos_matricula_atualizada']?.status;
+                        
+                        if (nosFaremos === 'failed' && (recebemosMatricula === 'checked' || recebemosMatricula === 'irrelevant')) {
+                            completedCount = totalItems; // Force 100%
+                        }
+                    }
 
                     const progress = totalItems > 0 ? (completedCount / totalItems) * 100 : 0;
                     const isComplete = progress === 100;

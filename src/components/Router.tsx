@@ -5,6 +5,7 @@ import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { ProtectedAdminRoute } from '@/components/ui/protected-admin-route';
 import { ClerkProvider } from '@clerk/clerk-react';
 import ErrorPage from '@/integrations/errorHandlers/ErrorPage';
+import { Toaster } from 'sonner';
 
 // Pages
 import HomePage from '@/components/pages/HomePage';
@@ -38,6 +39,17 @@ import AdminVendasKanbanPage from '@/components/pages/admin/AdminVendasKanbanPag
 import AdminVendasDashboardPage from '@/components/pages/admin/AdminVendasDashboardPage';
 import AdminLocacoesKanbanPage from '@/components/pages/admin/AdminLocacoesKanbanPage';
 import AdminLeilaoKanbanPage from '@/components/pages/admin/AdminLeilaoKanbanPage';
+import AdminAuctionPendenciasPage from '@/components/pages/admin/AdminAuctionPendenciasPage';
+import AdminAuctionTarefasPage from '@/components/pages/admin/AdminAuctionTarefasPage';
+import AdminAuctionAndamentoPage from '@/components/pages/admin/AdminAuctionAndamentoPage';
+import AdminSalesPendenciasPage from '@/components/pages/admin/AdminSalesPendenciasPage';
+import AdminSalesTarefasPage from '@/components/pages/admin/AdminSalesTarefasPage';
+import AdminSalesAndamentoPage from '@/components/pages/admin/AdminSalesAndamentoPage';
+import AdminRentalPendenciasPage from '@/components/pages/admin/AdminRentalPendenciasPage';
+import AdminRentalTarefasPage from '@/components/pages/admin/AdminRentalTarefasPage';
+import AdminRentalAndamentoPage from '@/components/pages/admin/AdminRentalAndamentoPage';
+import ContractTemplatesPage from '@/components/pages/admin/ContractTemplatesPage';
+
 
 import AdminWhatsAppInboxPage from '@/components/pages/admin/AdminWhatsAppInboxPage';
 import AdminPropertyImportPage from '@/components/pages/admin/AdminPropertyImportPage';
@@ -214,6 +226,31 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "admin/vendas-pendencias",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminSalesPendenciasPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/vendas-tarefas",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminSalesTarefasPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/vendas-andamento",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminSalesAndamentoPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+
+      {
         path: "admin/locacoes/kanban",
         element: (
           <ProtectedAdminRoute>
@@ -222,6 +259,39 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "admin/locacoes-pendencias",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminRentalPendenciasPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/locacoes-tarefas",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminRentalTarefasPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/locacoes-andamento",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminRentalAndamentoPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/contract-templates",
+        element: (
+          <ProtectedAdminRoute>
+            <ContractTemplatesPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+
+      {
         path: "admin/leilao/kanban",
         element: (
           <ProtectedAdminRoute>
@@ -229,6 +299,31 @@ const router = createBrowserRouter([
           </ProtectedAdminRoute>
         ),
       },
+      {
+        path: "admin/leilao-pendencias",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminAuctionPendenciasPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/leilao-tarefas",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminAuctionTarefasPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/leilao-andamento",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminAuctionAndamentoPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+
 
       {
         path: "admin/financiamento/:atendimentoId",
@@ -298,6 +393,7 @@ export default function AppRouter() {
   return (
     <ClerkProvider publishableKey={clerkPk}>
       <MemberProvider>
+        <Toaster position="top-right" richColors />
         <RouterProvider router={router} />
       </MemberProvider>
     </ClerkProvider>

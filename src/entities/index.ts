@@ -192,6 +192,10 @@ export interface Clients {
   notes?: string;
   /** @wixFieldType text */
   gender?: 'Masculino' | 'Feminino' | 'Outro';
+  rg?: string;
+  nationality?: string;
+  profession?: string;
+  maritalStatus?: string;
 }
 
 

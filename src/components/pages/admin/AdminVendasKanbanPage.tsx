@@ -3,54 +3,55 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
-import {
-    Plus,
-    AlertCircle,
-    CheckCircle,
-    Clock,
-    X,
-    Save,
-    FileText,
-    History,
-    Users,
-    ClipboardList,
-    Building2,
-    FileCheck,
-    Landmark,
-    UserCheck,
-    Wrench,
-    Folder,
-    Ban,
-    Upload,
-    Trash2,
-    Edit2,
-    Calendar,
-    Search,
-    Filter,
-    DollarSign,
-    Home,
-    CreditCard,
-    RotateCcw,
-    CheckSquare,
-    XCircle,
-    AlertTriangle,
-    Info,
-    ChevronRight,
-    Eye,
-    Download,
-    File,
-    LayoutGrid,
-    ListTodo,
-    Palette,
-    Settings,
-    Ticket,
-    Phone,
-    MessageSquare,
-    Hash,
-    TrendingUp,
-    Key,
-    Gavel,
-    CheckCircle2
+import SalesNavigation from '../../SalesNavigation';
+import { 
+    Plus, 
+    AlertCircle, 
+    CheckCircle, 
+    Clock, 
+    X, 
+    Save, 
+    FileText, 
+    History, 
+    Users, 
+    ClipboardList, 
+    Building2, 
+    FileCheck, 
+    Landmark, 
+    UserCheck, 
+    Wrench, 
+    Folder, 
+    Ban, 
+    Upload, 
+    Trash2, 
+    Edit2, 
+    Calendar, 
+    Search, 
+    Filter, 
+    DollarSign, 
+    Home, 
+    CreditCard, 
+    RotateCcw, 
+    CheckSquare, 
+    XCircle, 
+    AlertTriangle, 
+    Info, 
+    ChevronRight, 
+    Eye, 
+    Download, 
+    File, 
+    LayoutGrid, 
+    ListTodo, 
+    Palette, 
+    Settings, 
+    Ticket, 
+    Phone, 
+    MessageSquare, 
+    Hash, 
+    TrendingUp, 
+    Key, 
+    Gavel, 
+    CheckCircle2 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,7 @@ import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { BaseCrudService } from '@/integrations';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis, ChecklistdosProponentes } from '@/entities';
 import { formatCurrency, parseCurrency, formatCPF } from '@/lib/input-masks';
 
@@ -115,6 +117,7 @@ const VENDAS_COLUMNS = [
     { id: 'Em andamento', name: 'Em andamento', color: 'bg-purple-100 border-purple-300', bgColor: 'bg-purple-100', borderColor: 'border-purple-300' },
     { id: 'Pausados', name: 'Pausados', color: 'bg-orange-100 border-orange-300', bgColor: 'bg-orange-100', borderColor: 'border-orange-300' },
     { id: 'Suspensos', name: 'Suspensos', color: 'bg-red-100 border-red-300', bgColor: 'bg-red-100', borderColor: 'border-red-300' },
+    { id: 'Concluído', name: 'Concluído', color: 'bg-green-100 border-green-300', bgColor: 'bg-green-100', borderColor: 'border-green-300' },
 ];
 
 const BACKGROUND_OPTIONS = [
@@ -158,6 +161,132 @@ export default function AdminVendasKanbanPage() {
     // Linked card preview state
     type RelatedService = { _id: string; serviceType: string; contactName: string; pastaInterna: string; status: string };
     const [previewRelatedCard, setPreviewRelatedCard] = useState<RelatedService | null>(null);
+
+    // Quick action modals for card
+    const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
+    const [showQuickPendingModal, setShowQuickPendingModal] = useState(false);
+    const [quickActionCaseId, setQuickActionCaseId] = useState<string | null>(null);
+
+    const [newTaskData, setNewTaskData] = useState({
+        description: '',
+        internalResponsibleId: '',
+        dueDate: '',
+        externalResponsibleName: '',
+        responsibleType: 'Interno' as 'Interno' | 'Externo'
+    });
+
+    const [newPendingData, setNewPendingData] = useState({
+        description: '',
+        responsiblePartyType: 'Interno' as 'Interno' | 'Cliente',
+        averageDaysToComplete: 7
+    });
+
+    // Derived state for filtered users
+    const vendasTeam = users.filter(u => (u.setores?.includes('Vendas') || u.setores?.includes('Venda')) && u.ativo !== false);
+
+    const handleCreateQuickTask = async () => {
+        if (!quickActionCaseId || !newTaskData.description) return;
+
+        try {
+            const now = new Date().toISOString();
+            const dueDate = newTaskData.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+            const newTask: FinancingTasks = {
+                _id: crypto.randomUUID(),
+                atendimentoRef: quickActionCaseId,
+                titulo: newTaskData.description.substring(0, 100),
+                description: newTaskData.description,
+                status: 'A Fazer',
+                responsibleType: 'Equipe Vendas',
+                responsavelExternoRef: newTaskData.internalResponsibleId,
+                dueDate,
+                creationDate: now
+            };
+
+            await BaseCrudService.create('tarefasfinanciamento', newTask);
+
+            // Create history entry
+            await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+                _id: crypto.randomUUID(),
+                atendimentoRef: quickActionCaseId,
+                tipoEvento: 'Tarefa_Criada',
+                interactionType: 'Criação de tarefa',
+                interactionDescription: `Nova tarefa criada: "${newTask.titulo}"`,
+                interactionDate: now,
+                autorTipo: 'Sistema'
+            });
+
+            // Reset and close
+            setNewTaskData({
+                description: '',
+                internalResponsibleId: '',
+                dueDate: '',
+                externalResponsibleName: '',
+                responsibleType: 'Interno'
+            });
+            setShowQuickTaskModal(false);
+            setQuickActionCaseId(null);
+
+            toast.success('Tarefa criada com sucesso!');
+            loadData();
+        } catch (error) {
+            console.error('Error creating quick task:', error);
+            toast.error('Erro ao criar tarefa');
+        }
+    };
+
+    const handleCreateQuickPending = async () => {
+        if (!quickActionCaseId || !newPendingData.description) return;
+
+        try {
+            const now = new Date().toISOString();
+            const dueDate = new Date(Date.now() + (newPendingData.averageDaysToComplete || 7) * 24 * 60 * 60 * 1000).toISOString();
+
+            const newPending: PendnciasdoFinanciamento = {
+                _id: crypto.randomUUID(),
+                atendimentoRef: quickActionCaseId,
+                title: newPendingData.description.substring(0, 100),
+                description: newPendingData.description,
+                status: 'Pendente',
+                priority: 'Média',
+                dueDate,
+                responsiblePartyType: newPendingData.responsiblePartyType,
+                responsiblePartyDetails: '',
+                taskAutomaticallyCreated: false,
+                creationDate: now,
+                bloqueiaFase: false,
+                categoria: ''
+            };
+
+            await BaseCrudService.create('pendenciasfinanciamento', newPending);
+
+            // Create history entry
+            await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+                _id: crypto.randomUUID(),
+                atendimentoRef: quickActionCaseId,
+                tipoEvento: 'Pendencia_Criada',
+                interactionType: 'Criação de pendência',
+                interactionDescription: `Nova pendência criada: "${newPending.title}"`,
+                interactionDate: now,
+                autorTipo: 'Sistema'
+            });
+
+            // Reset and close
+            setNewPendingData({
+                description: '',
+                responsiblePartyType: 'Interno',
+                averageDaysToComplete: 7
+            });
+            setShowQuickPendingModal(false);
+            setQuickActionCaseId(null);
+
+            toast.success('Pendência criada com sucesso!');
+            loadData();
+        } catch (error) {
+            console.error('Error creating quick pending:', error);
+            toast.error('Erro ao criar pendência');
+        }
+    };
 
     useEffect(() => {
         loadData();
@@ -473,7 +602,9 @@ export default function AdminVendasKanbanPage() {
         try {
             await BaseCrudService.update('atendimentos', {
                 _id: selectedCase._id,
-                status: 'Concluídos',
+                status: 'Concluído',
+                faseAtual: 'Concluído',
+                isArchived: false, // Ensure it's not archived so it stays in the concluded column
             });
             toast.success('Processo concluído com sucesso!');
             setShowDetailsModal(false);
@@ -482,6 +613,23 @@ export default function AdminVendasKanbanPage() {
             toast.error('Erro ao concluir processo.');
         } finally {
             setIsSavingVenda(false);
+        }
+    };
+
+    const handleMoveCase = async (caseId: string, newStatus: string) => {
+        const caseItem = cases.find(c => c._id === caseId);
+        if (!caseItem || caseItem.status === newStatus) return;
+
+        // Optimistic update
+        setCases(prev => prev.map(c => c._id === caseId ? { ...c, status: newStatus, faseAtual: newStatus } : c));
+
+        try {
+            await BaseCrudService.update('atendimentos', { _id: caseId, status: newStatus });
+            toast.success(`Fase alterada para ${newStatus}`);
+        } catch (error) {
+            console.error('Error moving case:', error);
+            toast.error('Erro ao mover processo');
+            loadData();
         }
     };
 
@@ -513,7 +661,8 @@ export default function AdminVendasKanbanPage() {
 
     return (
         <AdminLayout>
-            <div className={`h-[calc(100vh-64px)] flex flex-col overflow-hidden transition-all duration-300 ${kanbanBackground}`}>
+            <SalesNavigation />
+            <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden bg-slate-50/50">
                 {/* Header */}
                 <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-20">
                     <div>
@@ -695,94 +844,69 @@ export default function AdminVendasKanbanPage() {
                                                                                 </div>
                                                                             </div>
 
-                                                                            {/* Mini Indicators */}
+                                                                            {/* Quick Action Buttons */}
                                                                             <div className="flex flex-wrap gap-2 mb-3">
-                                                                                {caseItem.pendenciasAbertas > 0 && (
-                                                                                    <div className="w-full space-y-1">
-                                                                                        <Badge variant="outline" className="bg-orange-50 border-orange-100 text-orange-600 text-[10px] gap-1 px-1.5 h-6">
-                                                                                            <AlertCircle className="w-3 h-3" />
-                                                                                            {caseItem.pendenciasAbertas} Pend.
-                                                                                        </Badge>
-                                                                                        <div className="pl-1 space-y-0.5">
-                                                                                            {(caseItem as any).pendenciasResumo?.map((p: string, i: number) => (
-                                                                                                <p key={i} className="text-[9px] text-orange-500 font-medium truncate">• {p}</p>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
-                                                                                {caseItem.tarefasAbertas > 0 && (
-                                                                                    <div className="w-full space-y-1">
-                                                                                        <Badge variant="outline" className="bg-blue-50 border-blue-100 text-blue-600 text-[10px] gap-1 px-1.5 h-6">
-                                                                                            <CheckCircle className="w-3 h-3" />
-                                                                                            {caseItem.tarefasAbertas} Tar.
-                                                                                        </Badge>
-                                                                                        <div className="pl-1 space-y-0.5">
-                                                                                            {(caseItem as any).tarefasResumo?.map((t: string, i: number) => (
-                                                                                                <p key={i} className="text-[9px] text-blue-500 font-medium truncate">• {t}</p>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
+                                                                                <button 
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setQuickActionCaseId(caseItem._id);
+                                                                                        setShowQuickPendingModal(true);
+                                                                                    }}
+                                                                                    className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors border border-red-100/50"
+                                                                                >
+                                                                                    <Plus className="w-2.5 h-2.5" />
+                                                                                    Pend. {caseItem.pendenciasAbertas > 0 && `(${caseItem.pendenciasAbertas})`}
+                                                                                </button>
+                                                                                <button 
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setQuickActionCaseId(caseItem._id);
+                                                                                        setShowQuickTaskModal(true);
+                                                                                    }}
+                                                                                    className="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-bold hover:bg-amber-100 transition-colors border border-amber-100/50"
+                                                                                >
+                                                                                    <Plus className="w-2.5 h-2.5" />
+                                                                                    Tarefa {caseItem.tarefasAbertas > 0 && `(${caseItem.tarefasAbertas})`}
+                                                                                </button>
                                                                             </div>
 
-                                                                            {/* Interlinks (Cross-Board Visibility) */}
-                                                                            {(caseItem.interlinks?.hasProperty ||
-                                                                                caseItem.interlinks?.activeSales ||
-                                                                                caseItem.interlinks?.activeRentals ||
-                                                                                caseItem.interlinks?.activeFinancing ||
-                                                                                caseItem.interlinks?.activeAuctions) ? (
-                                                                                <div className="flex flex-wrap gap-1.5 mb-3 p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                                                                                    {caseItem.interlinks.hasProperty && (
-                                                                                        <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100" title="Possui Imóvel Cadastrado">
-                                                                                            <Home className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeSales || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100" title={`${caseItem.interlinks.activeSales} Outras Vendas/Compras`}>
-                                                                                            <DollarSign className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeRentals || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100" title={`${caseItem.interlinks.activeRentals} Locações/Aluguéis`}>
-                                                                                            <Key className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeFinancing || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100" title={`${caseItem.interlinks.activeFinancing} Processos de Financiamento`}>
-                                                                                            <Landmark className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeAuctions || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100" title={`${caseItem.interlinks.activeAuctions} Processos de Leilão`}>
-                                                                                            <Gavel className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                </div>
-                                                                            ) : null}
-
-                                                                            {/* Blocking Icons */}
-                                                                            <div className="flex gap-1.5">
-                                                                                {caseItem.bloqueioDocumento && (
-                                                                                    <div className="w-6 h-6 rounded bg-red-100 flex items-center justify-center text-red-600" title="Pendência de Documento">
-                                                                                        <FileText className="w-3.5 h-3.5" />
-                                                                                    </div>
-                                                                                )}
-                                                                                {caseItem.bloqueioCliente && (
-                                                                                    <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center text-amber-600" title="Pendência de Cliente">
-                                                                                        <Users className="w-3.5 h-3.5" />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Status and Footer */}
-                                                                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-3">
-                                                                                <Badge variant="secondary" className="bg-slate-50 text-slate-500 text-[10px] font-normal px-2">
-                                                                                    {caseItem.serviceType}
-                                                                                </Badge>
-                                                                                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                                                                                </Button>
-                                                                            </div>
+                                                                             {/* Blocking Icons */}
+                                                                             <div className="flex items-center justify-end mb-3">
+                                                                                 <div className="flex gap-1.5">
+                                                                                     {caseItem.bloqueioDocumento && (
+                                                                                         <div className="w-6 h-6 rounded bg-red-100 flex items-center justify-center text-red-600" title="Pendência de Documento">
+                                                                                             <FileText className="w-3.5 h-3.5" />
+                                                                                         </div>
+                                                                                     )}
+                                                                                     {caseItem.bloqueioCliente && (
+                                                                                         <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center text-amber-600" title="Pendência de Cliente">
+                                                                                             <Users className="w-3.5 h-3.5" />
+                                                                                         </div>
+                                                                                     )}
+                                                                                 </div>
+                                                                             </div>
+                                                                            {/* Action Row: MOVER */}
+                                                                             <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-3">
+                                                                                 <Badge variant="secondary" className="bg-slate-50 text-slate-500 text-[10px] font-normal px-2">
+                                                                                     {caseItem.serviceType}
+                                                                                 </Badge>
+                                                                                 
+                                                                                 <Select value={caseItem.faseAtual} onValueChange={(value) => handleMoveCase(caseItem._id, value)}>
+                                                                                  <SelectTrigger 
+                                                                                         className="px-2 py-1 w-auto min-w-[60px] h-7 bg-blue-100 text-blue-700 border-none rounded text-[10px] font-bold hover:bg-blue-200 transition-colors flex items-center justify-center gap-1 focus:ring-0 focus:ring-offset-0"
+                                                                                         onClick={(e) => e.stopPropagation()}
+                                                                                     >
+                                                                                         <span>MOVER</span>
+                                                                                     </SelectTrigger>
+                                                                                     <SelectContent>
+                                                                                         {VENDAS_COLUMNS.map(col => (
+                                                                                             <SelectItem key={col.id} value={col.id}>
+                                                                                                 {col.name}
+                                                                                             </SelectItem>
+                                                                                         ))}
+                                                                                     </SelectContent>
+                                                                                 </Select>
+                                                                             </div>
                                                                         </Card>
                                                                     )}
                                                                 </Draggable>
@@ -800,118 +924,103 @@ export default function AdminVendasKanbanPage() {
                 </div>
 
                 <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-                    <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden rounded-3xl">
-                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-start">
+                    <DialogContent className="max-w-6xl h-[90vh] max-h-[90vh] p-0 overflow-hidden rounded-3xl flex flex-col bg-white">
+                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white sticky top-0 z-50 flex flex-row items-center justify-between">
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between mb-6">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-3 bg-blue-100 rounded-2xl">
-                                            <Building2 className="w-6 h-6 text-blue-600" />
-                                        </div>
-                                        <div>
-                                            <DialogTitle className="text-xl font-bold text-slate-800">
-                                                {selectedCase?.contactName}
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-blue-100 rounded-2xl text-blue-600">
+                                        <TrendingUp className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <DialogTitle className="text-2xl font-black text-slate-800 tracking-tight">
+                                                Vendas — {selectedCase?.contactName}
                                             </DialogTitle>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Badge className={`${VENDAS_COLUMNS.find(c => c.id === selectedCase?.status)?.color} border-none px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider`}>
-                                                    {selectedCase?.status}
-                                                </Badge>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-slate-400 hover:text-slate-600">
-                                                            <Edit2 className="w-3 h-3" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="start" className="w-48 bg-white border-slate-200">
-                                                        {VENDAS_COLUMNS.map(col => (
-                                                            <DropdownMenuItem 
-                                                                key={col.id} 
-                                                                onClick={() => handleQuickStatusChange(col.id)}
-                                                                className="text-xs hover:bg-slate-50 cursor-pointer"
-                                                            >
-                                                                {col.name}
-                                                            </DropdownMenuItem>
-                                                        ))}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                <span className="text-[10px] text-slate-400">• {selectedCase?.pastaInterna}</span>
+                                            <Select 
+                                                value={selectedCase?.status || ''} 
+                                                onValueChange={(val) => handleMoveCase(selectedCase?._id || '', val)}
+                                            >
+                                                <SelectTrigger className="h-7 text-[10px] font-black uppercase tracking-widest border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-full px-4 w-auto min-w-[160px] transition-all focus:ring-0">
+                                                    <SelectValue placeholder="Mover Processo" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {VENDAS_COLUMNS.map((col) => (
+                                                        <SelectItem key={col.id} value={col.id} className="text-[10px] font-bold uppercase tracking-wider">
+                                                            {col.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <span className="text-[11px] font-bold text-slate-300 tracking-wider">• {selectedCase?.pastaInterna}</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2 items-center">
+                                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-lg">
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pasta: {selectedCase?.pastaInterna}</span>
                                             </div>
+                                            {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mr-1">Vínculos:</span>
+                                                    {selectedCase.interlinks.relatedServices.map(rel => {
+                                                        const routeMap: Record<string, string> = {
+                                                            'Venda': '/admin/negocios/kanban',
+                                                            'Compra': '/admin/negocios/kanban',
+                                                            'Locação': '/admin/locacoes/kanban',
+                                                            'Aluguel': '/admin/locacoes/kanban',
+                                                            'Financiamento': '/admin/financiamento-kanban',
+                                                            'Crédito': '/admin/financiamento-kanban',
+                                                            'Leilão': '/admin/leilao/kanban'
+                                                        };
+                                                        const colorMap: Record<string, string> = {
+                                                            'Venda': 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100',
+                                                            'Locação': 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100',
+                                                            'Financiamento': 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100',
+                                                            'Leilão': 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
+                                                        };
+                                                        const route = routeMap[rel.serviceType.split(' ')[0]];
+                                                        if (!route) return null;
+                                                        return (
+                                                            <button 
+                                                                key={rel._id} 
+                                                                onClick={() => navigate(`${route}?openCard=${rel._id}`)} 
+                                                                className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-tighter transition-all ${colorMap[rel.serviceType.split(' ')[0]] || 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'}`}
+                                                            >
+                                                                {rel.serviceType}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-                                {/* Cross-board interlinks panel */}
-                                {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-2 items-center">
-                                        <span className="text-xs text-gray-400 font-medium">Vínculos:</span>
-                                        {selectedCase.interlinks.relatedServices.map(rel => {
-                                            const routeMap: Record<string, string> = {
-                                                'Venda': '/admin/negocios/kanban', 'Compra': '/admin/negocios/kanban',
-                                                'Locação': '/admin/locacoes/kanban', 'Aluguel': '/admin/locacoes/kanban',
-                                                'Financiamento': '/admin/financiamento-kanban', 'Crédito': '/admin/financiamento-kanban',
-                                                'Leilão': '/admin/leilao/kanban'
-                                            };
-                                            const colorMap: Record<string, string> = {
-                                                'Venda': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-                                                'Compra': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-                                                'Locação': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-                                                'Aluguel': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-                                                'Financiamento': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
-                                                'Crédito': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
-                                                'Leilão': 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
-                                            };
-                                            const iconMap: Record<string, string> = {
-                                                'Venda': '💰', 'Compra': '💰',
-                                                'Locação': '🔑', 'Aluguel': '🔑',
-                                                'Financiamento': '🏦', 'Crédito': '🏦',
-                                                'Leilão': '🔨'
-                                            };
-                                            const route = routeMap[rel.serviceType];
-                                            const color = colorMap[rel.serviceType] || 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
-                                            const icon = iconMap[rel.serviceType] || '📋';
-                                            if (!route) return null;
-                                            return (
-                                                <button
-                                                    key={rel._id}
-                                                    title={`Visualizar: ${rel.serviceType} - ${rel.contactName}`}
-                                                    onClick={() => {
-                                                        if (route) {
-                                                            navigate(`${route}?openCard=${rel._id}`);
-                                                        }
-                                                    }}
-                                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${color}`}
-                                                >
-                                                    <span>{icon}</span>
-                                                    <span>{rel.serviceType}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                                    </div>
+                            </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
                                 {selectedCase?.contactPhone && (
-                                    <Button
-                                        variant="outline"
-                                        className="h-10 px-4 rounded-2xl bg-green-50 text-green-700 border-green-100 hover:bg-green-100 hover:text-green-800 transition-all font-semibold"
+                                    <Button 
+                                        variant="outline" 
+                                        className="h-10 px-5 rounded-xl bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 transition-all font-bold text-xs" 
                                         onClick={() => {
                                             const phone = selectedCase.contactPhone?.replace(/\D/g, '');
                                             window.open(`https://wa.me/55${phone}`, '_blank');
                                         }}
                                     >
-                                        <MessageSquare className="w-4 h-4 mr-2" />
-                                        WhatsApp
+                                        <MessageSquare className="w-4 h-4 mr-2" /> WhatsApp
                                     </Button>
                                 )}
-                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setShowDetailsModal(false)}>
-                                    <X className="w-5 h-5" />
+                                <Button 
+                                    onClick={handleSaveVendaData} 
+                                    className="h-10 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-200 transition-all"
+                                >
+                                    <Save className="w-4 h-4 mr-2" /> Salvar
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-100" onClick={() => setShowDetailsModal(false)}>
+                                    <X className="w-5 h-5 text-slate-400" />
                                 </Button>
                             </div>
                         </DialogHeader>
 
-                        <ScrollArea className="h-[calc(90vh-100px)]">
-                            <div className="p-8">
-                                <Tabs value={modalTab} onValueChange={setModalTab}>
-                                    <TabsList className="grid grid-cols-7 mb-8 bg-slate-100/50 p-1 rounded-2xl h-12">
+                        <Tabs value={modalTab} onValueChange={setModalTab} className="flex-1 flex flex-col min-h-0 w-full">
+                            <TabsList className="grid grid-cols-7 mb-6 bg-slate-100/50 p-1 rounded-2xl h-12 flex-shrink-0 mx-8 mt-6">
                                         <TabsTrigger value="dados" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
                                             <FileText className="w-4 h-4" /> Dados
                                         </TabsTrigger>
@@ -935,13 +1044,16 @@ export default function AdminVendasKanbanPage() {
                                         </TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="dados" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <TabsContent value="dados" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                             <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <Info className="w-4 h-4 text-blue-500" />
-                                                    Informações Básicas
-                                                </h3>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                                        <Info className="w-4 h-4 text-blue-500" />
+                                                        Informações Básicas
+                                                    </h3>
+                                                    <CopyButton value={`Cliente: ${selectedCase?.contactName}\nCPF: ${selectedCase?.cpfProponentePrincipal ? formatCPF(selectedCase.cpfProponentePrincipal) : ''}\nPasta: ${selectedCase?.pastaInterna}`} className="h-7 w-7 rounded-lg bg-slate-50 border border-slate-200" />
+                                                </div>
                                                 <div className="space-y-4">
                                                     <div>
                                                         <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Nome Principal</Label>
@@ -965,10 +1077,13 @@ export default function AdminVendasKanbanPage() {
                                             </Card>
 
                                             <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <DollarSign className="w-4 h-4 text-green-500" />
-                                                    Valores do Negócio
-                                                </h3>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                                        <DollarSign className="w-4 h-4 text-green-500" />
+                                                        Valores do Negócio
+                                                    </h3>
+                                                    <CopyButton value={`Valor: ${formatCurrency(selectedCase?.propertyValue || 0)}\nServiço: ${selectedCase?.serviceType}`} className="h-7 w-7 rounded-lg bg-slate-50 border border-slate-200" />
+                                                </div>
                                                 <div className="space-y-4">
                                                     <div>
                                                         <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Valor do Imóvel</Label>
@@ -1009,7 +1124,7 @@ export default function AdminVendasKanbanPage() {
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="documentos" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <TabsContent value="documentos" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div
                                             onDragOver={e => { e.preventDefault(); setIsDraggingDoc(true); }}
                                             onDragLeave={() => setIsDraggingDoc(false)}
@@ -1072,7 +1187,7 @@ export default function AdminVendasKanbanPage() {
                                         )}
                                     </TabsContent>
 
-                                    <TabsContent value="proponentes" className="space-y-6">
+                                    <TabsContent value="proponentes" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 space-y-6">
                                         <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
                                             <div>
                                                 <h3 className="font-bold text-slate-800">Partes do Negócio</h3>
@@ -1099,7 +1214,7 @@ export default function AdminVendasKanbanPage() {
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="pendencias" className="space-y-4">
+                                    <TabsContent value="pendencias" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 space-y-4">
                                         <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-4">
                                             <AlertTriangle className="w-6 h-6 text-amber-600" />
                                             <div>
@@ -1121,7 +1236,7 @@ export default function AdminVendasKanbanPage() {
                                     </TabsContent>
 
                                     {/* Other tabs follow same premium pattern... */}
-                                    <TabsContent value="historico">
+                                    <TabsContent value="historico" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0">
                                         <div className="space-y-6">
                                             <div className="relative pl-8 border-l-2 border-slate-100 space-y-8">
                                                 <div className="relative">
@@ -1135,20 +1250,18 @@ export default function AdminVendasKanbanPage() {
                                             <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center">
                                                 <Button 
                                                     onClick={handleConcluirProcesso}
-                                                    disabled={isSavingVenda || selectedCase?.status === 'Suspensos'}
+                                                    disabled={isSavingVenda || selectedCase?.status === 'Concluído'}
                                                     className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 px-8 rounded-xl font-bold shadow-lg shadow-emerald-200"
                                                 >
-                                                    <CheckCircle2 className="w-5 h-5" /> Concluir e Arquivar Processo
+                                                    <CheckCircle2 className="w-5 h-5" /> Concluir Processo
                                                 </Button>
                                                 <p className="text-center text-xs text-slate-500 mt-3">
-                                                    Ao concluir, o negócio será movido para a etapa de "Concluídos".
+                                                    Ao concluir, o negócio será movido para a etapa de "Concluído" e o status será atualizado.
                                                 </p>
                                             </div>
                                         </div>
                                     </TabsContent>
                                 </Tabs>
-                            </div>
-                        </ScrollArea>
 
                         <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
                             <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 gap-2 rounded-xl">
@@ -1164,6 +1277,7 @@ export default function AdminVendasKanbanPage() {
                     </DialogContent>
                 </Dialog>
 
+
                 {selectedCase && (
                     <ContractWizard
                         isOpen={isWizardOpen}
@@ -1172,8 +1286,176 @@ export default function AdminVendasKanbanPage() {
                         atendimento={atendimentosRaw.find(a => a._id === selectedCase._id) as any || { _id: selectedCase._id, contactName: selectedCase.contactName }}
                     />
                 )}
-            </div>
 
+                {/* Quick Task Creation Modal */}
+                <Dialog open={showQuickTaskModal} onOpenChange={setShowQuickTaskModal}>
+                    <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle className="font-heading text-xl text-slate-800">
+                                Nova Tarefa
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <Label className="text-sm mb-2 block font-semibold">Descrição *</Label>
+                                <Textarea
+                                    value={newTaskData.description}
+                                    onChange={(e) => setNewTaskData({ ...newTaskData, description: e.target.value })}
+                                    placeholder="Descreva a tarefa..."
+                                    rows={3}
+                                    className="resize-none"
+                                />
+                            </div>
+
+                            <div>
+                                <Label className="text-sm mb-2 block font-semibold">Prazo</Label>
+                                <Input
+                                    type="date"
+                                    value={newTaskData.dueDate ? new Date(newTaskData.dueDate).toISOString().split('T')[0] : ''}
+                                    onChange={(e) => setNewTaskData({ ...newTaskData, dueDate: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                                    className="h-11"
+                                />
+                                <p className="text-xs text-foreground/60 mt-1">
+                                    Se não informado, será definido para 7 dias
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-sm font-semibold">Responsável (Logins Vendas)</Label>
+                                <Select
+                                    value={newTaskData.internalResponsibleId}
+                                    onValueChange={(val) => {
+                                        const user = vendasTeam.find(u => u._id === val);
+                                        setNewTaskData({
+                                            ...newTaskData,
+                                            internalResponsibleId: val,
+                                            externalResponsibleName: user?.name || user?.emailLogin || '',
+                                            responsibleType: 'Interno'
+                                        });
+                                    }}
+                                >
+                                    <SelectTrigger className="h-11">
+                                        <SelectValue placeholder="Selecione o responsável" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {vendasTeam.map(user => (
+                                            <SelectItem key={user._id} value={user._id}>
+                                                {user.name || user.emailLogin}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={handleCreateQuickTask}
+                                disabled={!newTaskData.description}
+                                className="h-11 flex-1 bg-slate-900 text-white hover:bg-slate-800"
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                Criar Tarefa
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowQuickTaskModal(false);
+                                    setQuickActionCaseId(null);
+                                    setNewTaskData({
+                                        description: '',
+                                        internalResponsibleId: '',
+                                        dueDate: '',
+                                        externalResponsibleName: '',
+                                        responsibleType: 'Interno'
+                                    });
+                                }}
+                                className="h-11 px-6"
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Quick Pending Creation Modal */}
+                <Dialog open={showQuickPendingModal} onOpenChange={setShowQuickPendingModal}>
+                    <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle className="font-heading text-xl text-slate-800">
+                                Nova Pendência
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <Label className="text-sm mb-2 block font-semibold">Responsável *</Label>
+                                <Select
+                                    value={newPendingData.responsiblePartyType}
+                                    onValueChange={(value) => setNewPendingData({ ...newPendingData, responsiblePartyType: value as any })}
+                                >
+                                    <SelectTrigger className="h-11">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Interno">Interno</SelectItem>
+                                        <SelectItem value="Cliente">Cliente</SelectItem>
+                                        <SelectItem value="Parceiro Externo">Parceiro Externo</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div>
+                                <Label className="text-sm mb-2 block font-semibold">Descrição *</Label>
+                                <Textarea
+                                    value={newPendingData.description}
+                                    onChange={(e) => setNewPendingData({ ...newPendingData, description: e.target.value })}
+                                    placeholder="Descreva a pendência..."
+                                    rows={4}
+                                    className="resize-none"
+                                />
+                            </div>
+
+                            <div>
+                                <Label className="text-sm mb-2 block font-semibold">Prazo Médio para Conclusão (dias) *</Label>
+                                <Input
+                                    type="number"
+                                    value={newPendingData.averageDaysToComplete}
+                                    onChange={(e) => setNewPendingData({ ...newPendingData, averageDaysToComplete: parseInt(e.target.value) || 7 })}
+                                    placeholder="7"
+                                    min="1"
+                                    className="h-11"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={handleCreateQuickPending}
+                                disabled={!newPendingData.description}
+                                className="h-11 flex-1 bg-slate-900 text-white hover:bg-slate-800"
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                Criar Pendência
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowQuickPendingModal(false);
+                                    setQuickActionCaseId(null);
+                                    setNewPendingData({
+                                        description: '',
+                                        responsiblePartyType: 'Interno',
+                                        averageDaysToComplete: 7
+                                    });
+                                }}
+                                className="h-11 px-6"
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
         </AdminLayout>
     );
 }

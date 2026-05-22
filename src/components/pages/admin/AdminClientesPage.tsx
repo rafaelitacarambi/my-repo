@@ -86,21 +86,60 @@ function AdminClientesContent() {
 
   const handleSave = async () => {
     try {
-      // Duplication check (exclude current client if editing)
-      const { items: allClients } = await BaseCrudService.getAll<Clients>('clientes');
-      const duplicate = allClients.find(c =>
-        c._id !== editingId && (
-          (formData.cpfCnpj && c.cpfCnpj === formData.cpfCnpj) ||
-          (formData.email && c.email === formData.email) ||
-          (formData.address && c.address?.toLowerCase() === formData.address?.toLowerCase())
-        )
-      );
+      let duplicate: Clients | null = null;
+
+      // 1. Search by CPF/CNPJ
+      if (formData.cpfCnpj) {
+        const rawDoc = formData.cpfCnpj.trim();
+        const sanitizedDoc = rawDoc.replace(/\D/g, '');
+        
+        let { items } = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+          filterField: 'document', 
+          filterValue: rawDoc 
+        });
+        
+        const match = items.find(c => c._id !== editingId);
+        if (match) {
+          duplicate = match;
+        }
+
+        if (!duplicate && sanitizedDoc && sanitizedDoc !== rawDoc) {
+          const res = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+            filterField: 'document', 
+            filterValue: sanitizedDoc 
+          });
+          const matchSanitized = res.items.find(c => c._id !== editingId);
+          if (matchSanitized) duplicate = matchSanitized;
+        }
+      }
+
+      // 2. Search by Email
+      if (!duplicate && formData.email) {
+        const cleanEmail = formData.email.trim().toLowerCase();
+        let { items } = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+          filterField: 'email', 
+          filterValue: cleanEmail 
+        });
+        const match = items.find(c => c._id !== editingId);
+        if (match) duplicate = match;
+      }
+
+      // 3. Search by Phone Number
+      if (!duplicate && formData.phoneNumber) {
+        const rawPhone = formData.phoneNumber.trim();
+        const { items } = await BaseCrudService.getAll<Clients>('clientes', undefined, { 
+          filterField: 'phone', 
+          filterValue: rawPhone 
+        });
+        const match = items.find(c => c._id !== editingId);
+        if (match) duplicate = match;
+      }
 
       if (duplicate) {
         const { items: allServices } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
-        const clientServices = allServices.filter(s => s.clientePrincipalRef === duplicate._id && !s.isArchived);
+        const clientServices = allServices.filter(s => s.clientePrincipalRef === duplicate!._id && !s.isArchived);
 
-        let message = `Este cliente/endereço já possui cadastro: ${duplicate.clientName}\n`;
+        let message = `Este cliente já possui cadastro: ${duplicate.clientName}\n`;
         if (clientServices.length > 0) {
           message += `\nCartões ativos encontrados:\n` + clientServices.map(s => `- ${s.serviceType} (Pasta: ${s.pastaInterna})`).join('\n');
         }
@@ -131,9 +170,13 @@ function AdminClientesContent() {
       }
 
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving cliente:', error);
-      alert("Erro ao salvar cliente.");
+      let errMsg = "Erro ao salvar cliente.";
+      if (error.message?.includes('P2002')) {
+        errMsg = "Já existe um cliente com este CPF/CNPJ cadastrado no sistema.";
+      }
+      alert(errMsg);
     }
   };
 

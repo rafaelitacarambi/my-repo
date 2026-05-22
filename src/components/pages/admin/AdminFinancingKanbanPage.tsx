@@ -49,7 +49,8 @@ import {
   Gavel,
   Hammer,
   Hash,
-  MessageSquare
+  MessageSquare,
+  CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -727,14 +728,25 @@ export default function AdminFinancingKanbanPage() {
         const dataEntrada = a._updatedDate || a._createdDate || new Date();
         const diasNaFase = Math.floor((new Date().getTime() - new Date(dataEntrada).getTime()) / (1000 * 60 * 60 * 24));
 
+        // Use faseFinanciamento if available, otherwise fallback to status
+        // Normalize to lowercase to match FINANCING_COLUMNS ids (e.g., 'concluido')
+        let rawFase = a.faseFinanciamento || a.status || '';
+        if (!rawFase || rawFase === 'Novos') rawFase = 'novos-clientes';
+        
+        // Normalization logic to match column IDs (e.g., "Concluído" -> "concluido")
+        const faseAtual = rawFase.toLowerCase().trim()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, '-');
+
         return {
           _id: a._id,
           agencia: a.unidadeResponsavelRef || '',
           proponentePrincipal: a.contactName || client?.clientName || 'Sem nome',
           cpfProponentePrincipal: client?.cpfCnpj || '',
           pastaInterna: a.pastaInterna || '',
-          status: (!a.status || a.status === 'Novos') ? 'novos-clientes' : a.status,
-          faseAtual: (!a.status || a.status === 'Novos') ? 'novos-clientes' : a.status,
+          status: a.status || '',
+          faseAtual,
           diasNaFase,
           pendenciasAbertas: 0, // Will be computed later
           tarefasAbertas: 0, // Will be computed later
@@ -1633,12 +1645,20 @@ export default function AdminFinancingKanbanPage() {
         };
       }
 
+      // Set status to "Concluído" if moving to the final column
+      if (newColumn === 'concluido') {
+        updates.status = 'Concluído';
+        updates.statusResultadoFinanciamento = 'Concluído';
+      }
+
       // Optimistic update
       setCases(cases.map(c => c._id === caseId ? {
         ...c,
         faseAnterior: c.faseAtual,
         faseAtual: newColumn,
         dataEntradaFaseAtual: now,
+        status: newColumn === 'concluido' ? 'Concluído' : c.status,
+        statusResultadoFinanciamento: newColumn === 'concluido' ? 'Concluído' : c.statusResultadoFinanciamento,
         diasNaFase: 0,
         ...updates
       } : c));
@@ -1721,6 +1741,7 @@ export default function AdminFinancingKanbanPage() {
         _id: selectedCase._id,
         status: 'Concluído',
         faseFinanciamento: 'concluido',
+        faseAtual: 'concluido', // Ensure both are set for board mapping
         dataPrevistaConclusao: new Date().toISOString()
       });
 
@@ -1740,14 +1761,32 @@ export default function AdminFinancingKanbanPage() {
     if (previousStatus === newStatus) return;
 
     // Optimistic update locally
+    const isCompleted = newStatus === 'concluido';
+    const displayStatus = isCompleted ? 'Concluído' : newStatus;
+
     const updatedCases = cases.map(c => 
-        c._id === selectedCase._id ? { ...c, status: newStatus, faseAtual: newStatus } : c
+        c._id === selectedCase._id ? { 
+            ...c, 
+            status: displayStatus, 
+            faseAtual: newStatus,
+            statusResultadoFinanciamento: isCompleted ? 'Concluído' : c.statusResultadoFinanciamento
+        } : c
     );
     setCases(updatedCases);
-    setSelectedCase({ ...selectedCase, status: newStatus, faseAtual: newStatus } as any);
+    setSelectedCase({ 
+        ...selectedCase, 
+        status: displayStatus, 
+        faseAtual: newStatus,
+        statusResultadoFinanciamento: isCompleted ? 'Concluído' : (selectedCase as any).statusResultadoFinanciamento
+    } as any);
 
     try {
-        await BaseCrudService.update('atendimentos', { _id: selectedCase._id, status: newStatus, faseAtual: newStatus });
+        await BaseCrudService.update('atendimentos', { 
+            _id: selectedCase._id, 
+            status: displayStatus, 
+            faseFinanciamento: newStatus,
+            statusResultadoFinanciamento: isCompleted ? 'Concluído' : undefined
+        });
         toast.success(`Fase alterada com sucesso!`);
     } catch (error) {
         console.error('Error changing status:', error);
@@ -2931,8 +2970,6 @@ export default function AdminFinancingKanbanPage() {
                 style={{
                   overflowX: 'auto',
                   overflowY: 'visible',
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
                   cursor: 'grab'
                 }}
                 onKeyDown={(e) => {
@@ -2949,6 +2986,8 @@ export default function AdminFinancingKanbanPage() {
                 {/* ... keep existing code (FINANCING_COLUMNS.map) ... */}
                 {FINANCING_COLUMNS.filter(column => {
                   if (showEmptyColumns) return true;
+                  // Always show "Concluído" column if it's the target of a recent move or exists in the list
+                  if (column.id === 'concluido') return true; 
                   const columnCases = getCasesByColumn(column.id);
                   return columnCases.length > 0;
                 }).map((column) => {
@@ -3095,41 +3134,6 @@ export default function AdminFinancingKanbanPage() {
                                             {caseItem.diasNaFase} {caseItem.diasNaFase === 1 ? 'dia' : 'dias'}
                                           </span>
                                         </div>
-
-                                        {/* Interlinks (Cross-Board Visibility) */}
-                                        {(caseItem.interlinks?.hasProperty ||
-                                          caseItem.interlinks?.activeSales ||
-                                          caseItem.interlinks?.activeRentals ||
-                                          caseItem.interlinks?.activeFinancing ||
-                                          caseItem.interlinks?.activeAuctions) ? (
-                                          <div className="flex flex-wrap gap-1.5 mb-3 p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                                            {caseItem.interlinks.hasProperty && (
-                                              <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100" title="Possui Imóvel Cadastrado">
-                                                <Home className="w-3.5 h-3.5" />
-                                              </div>
-                                            )}
-                                            {(caseItem.interlinks.activeSales || 0) > 0 && (
-                                              <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100" title={`${caseItem.interlinks.activeSales} Outras Vendas/Compras`}>
-                                                <DollarSign className="w-3.5 h-3.5" />
-                                              </div>
-                                            )}
-                                            {(caseItem.interlinks.activeRentals || 0) > 0 && (
-                                              <div className="w-6 h-6 rounded bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100" title={`${caseItem.interlinks.activeRentals} Locações/Aluguéis`}>
-                                                <Key className="w-3.5 h-3.5" />
-                                              </div>
-                                            )}
-                                            {(caseItem.interlinks.activeFinancing || 0) > 0 && (
-                                              <div className="w-6 h-6 rounded bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100" title={`${caseItem.interlinks.activeFinancing} Outros Processos de Financiamento`}>
-                                                <Landmark className="w-3.5 h-3.5" />
-                                              </div>
-                                            )}
-                                            {(caseItem.interlinks.activeAuctions || 0) > 0 && (
-                                              <div className="w-6 h-6 rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100" title={`${caseItem.interlinks.activeAuctions} Processos de Leilão`}>
-                                                <Gavel className="w-3.5 h-3.5" />
-                                              </div>
-                                            )}
-                                          </div>
-                                        ) : null}
 
                                         {/* Bloqueio Icons */}
                                         <div className="flex flex-wrap gap-2 mb-2">
@@ -3281,7 +3285,8 @@ export default function AdminFinancingKanbanPage() {
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              handleOpenDetails(caseItem, 'pendencias');
+                                              setQuickActionCaseId(caseItem._id);
+                                              setShowQuickPendingModal(true);
                                             }}
                                             className="px-2 py-1 bg-orange-50 text-orange-600 border border-orange-200 rounded text-xs font-semibold hover:bg-orange-100 transition-colors flex items-center gap-1"
                                           >
@@ -3290,7 +3295,8 @@ export default function AdminFinancingKanbanPage() {
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              handleOpenDetails(caseItem, 'tarefas');
+                                              setQuickActionCaseId(caseItem._id);
+                                              setShowQuickTaskModal(true);
                                             }}
                                             className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-200 rounded text-xs font-semibold hover:bg-blue-100 transition-colors flex items-center gap-1"
                                           >
@@ -3379,7 +3385,7 @@ export default function AdminFinancingKanbanPage() {
           }
           setShowDetailsModal(open);
         }}>
-          <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden">
+          <DialogContent className="max-w-6xl h-[90vh] max-h-[90vh] p-0 overflow-hidden flex flex-col bg-background">
             <DialogHeader className="px-6 py-4 border-b border-border-gray sticky top-0 bg-white z-10">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -3487,10 +3493,8 @@ export default function AdminFinancingKanbanPage() {
               </div>
             </DialogHeader>
 
-            <ScrollArea className="h-[calc(90vh-120px)]">
-              <div className="px-6 py-4">
-                <Tabs value={modalTab} onValueChange={setModalTab}>
-                  <TabsList className="grid w-full grid-cols-7 mb-6">
+            <Tabs value={modalTab} onValueChange={setModalTab} className="flex-1 flex flex-col min-h-0 w-full">
+              <TabsList className="grid grid-cols-7 mb-6 flex-shrink-0 mx-6 mt-6">
                     <TabsTrigger value="dados" className="text-xs">
                       <FileText className="w-4 h-4 mr-1" />
                       Dados
@@ -3544,7 +3548,7 @@ export default function AdminFinancingKanbanPage() {
                   </TabsList>
 
                   {/* Dados do Processo Tab */}
-                  <TabsContent value="dados" className="space-y-6">
+                  <TabsContent value="dados" className="flex-1 overflow-y-auto min-h-0 w-full px-6 pb-6 focus-visible:outline-none mt-0 space-y-6">
                     {(() => {
                       const firstParticipant = participants[0];
                       const participantClient = clients.find(c => c._id === firstParticipant?.clientRef);
@@ -4213,7 +4217,7 @@ export default function AdminFinancingKanbanPage() {
                   </TabsContent>
 
                   {/* Proponentes Tab */}
-                  <TabsContent value="proponentes" className="space-y-6">
+                  <TabsContent value="proponentes" className="flex-1 overflow-y-auto min-h-0 w-full px-6 pb-6 focus-visible:outline-none mt-0 space-y-6">
                     {/* Master-Detail Layout */}
                     <div className="flex flex-col md:flex-row gap-6 h-[600px]">
                       {/* Left Sidebar: Proponents List */}
@@ -4461,7 +4465,7 @@ export default function AdminFinancingKanbanPage() {
                   </TabsContent>
 
                   {/* Vendedores Tab */}
-                  <TabsContent value="vendedores" className="space-y-6">
+                  <TabsContent value="vendedores" className="flex-1 overflow-y-auto min-h-0 w-full px-6 pb-6 focus-visible:outline-none mt-0 space-y-6">
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-lg font-heading flex items-center gap-2">
@@ -4692,7 +4696,7 @@ export default function AdminFinancingKanbanPage() {
                   </TabsContent>
 
                   {/* Pendências Tab */}
-                  <TabsContent value="pendencias" className="space-y-6">
+                  <TabsContent value="pendencias" className="flex-1 overflow-y-auto min-h-0 w-full px-6 pb-6 focus-visible:outline-none mt-0 space-y-6">
                     {/* Pendências Section */}
                     <Card>
                       <CardHeader>
@@ -4950,7 +4954,7 @@ export default function AdminFinancingKanbanPage() {
                   </TabsContent>
 
                   {/* Tarefas Tab */}
-                  <TabsContent value="tarefas" className="space-y-6">
+                  <TabsContent value="tarefas" className="flex-1 overflow-y-auto min-h-0 w-full px-6 pb-6 focus-visible:outline-none mt-0 space-y-6">
                     {/* Task Creation Form - NOW AT TOP */}
                     {showTaskFormInModal && (
                       <Card className="border-2 border-secondary/30 shadow-lg">
@@ -5204,7 +5208,7 @@ export default function AdminFinancingKanbanPage() {
                   </TabsContent>
 
                   {/* Documentos Tab */}
-                  <TabsContent value="docs" className="space-y-6">
+                  <TabsContent value="docs" className="flex-1 overflow-y-auto min-h-0 w-full px-6 pb-6 focus-visible:outline-none mt-0 space-y-6">
                     <div>
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="font-heading text-lg">Documentos</h3>
@@ -5313,12 +5317,23 @@ export default function AdminFinancingKanbanPage() {
                   </TabsContent>
 
                   {/* Histórico Tab */}
-                  <TabsContent value="historico" className="space-y-6">
+                  <TabsContent value="historico" className="flex-1 overflow-y-auto min-h-0 w-full px-6 pb-6 focus-visible:outline-none mt-0 space-y-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg font-heading flex items-center gap-2">
-                          <ListTodo className="w-5 h-5 text-secondary" />
-                          Checklist e Histórico
+                        <CardTitle className="text-lg font-heading flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <ListTodo className="w-5 h-5 text-secondary" />
+                            Checklist e Histórico
+                          </div>
+                          {selectedCase?.faseAtual !== 'concluido' && (
+                            <Button 
+                              onClick={handleConcludeProcess}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 rounded-xl px-4 flex items-center gap-2 shadow-lg shadow-emerald-200"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              Concluir Processo
+                            </Button>
+                          )}
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
@@ -5356,13 +5371,11 @@ export default function AdminFinancingKanbanPage() {
                     </Card>
                   </TabsContent>
                 </Tabs>
-              </div>
-            </ScrollArea>
           </DialogContent>
-        </Dialog >
+        </Dialog>
 
         {/* Quick Task Creation Modal */}
-        < Dialog open={showQuickTaskModal} onOpenChange={setShowQuickTaskModal} >
+        <Dialog open={showQuickTaskModal} onOpenChange={setShowQuickTaskModal} >
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-heading text-xl text-secondary">
@@ -5454,10 +5467,10 @@ export default function AdminFinancingKanbanPage() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog >
+        </Dialog>
 
         {/* Quick Pending Creation Modal */}
-        < Dialog open={showQuickPendingModal} onOpenChange={setShowQuickPendingModal} >
+        <Dialog open={showQuickPendingModal} onOpenChange={setShowQuickPendingModal} >
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-heading text-xl text-secondary">
@@ -5539,10 +5552,10 @@ export default function AdminFinancingKanbanPage() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog >
+        </Dialog>
 
         {/* Add Participant Modal */}
-        < Dialog open={showAddParticipantModal} onOpenChange={setShowAddParticipantModal} >
+        <Dialog open={showAddParticipantModal} onOpenChange={setShowAddParticipantModal} >
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Adicionar Participante</DialogTitle>
@@ -5605,9 +5618,9 @@ export default function AdminFinancingKanbanPage() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog >
+        </Dialog>
         {/* Move Case Questions Modal */}
-        < Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen} >
+        <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen} >
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="font-heading text-xl text-secondary">

@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // A checagem da chave evita crashes caso a variável ainda não esteja no .env
 const resend = new Resend(process.env.RESEND_API_KEY || 're_mock_key');

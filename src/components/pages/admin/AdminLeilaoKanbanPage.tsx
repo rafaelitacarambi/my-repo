@@ -4,54 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import {
-    Plus,
-    AlertCircle,
-    CheckCircle,
-    Clock,
-    X,
-    Save,
-    FileText,
-    History,
-    Users,
-    ClipboardList,
-    Building2,
-    FileCheck,
-    Landmark,
-    UserCheck,
-    Wrench,
-    Folder,
-    Ban,
-    Upload,
-    Trash2,
-    Edit2,
-    Calendar,
-    Search,
-    Filter,
-    DollarSign,
-    Home,
-    CreditCard,
-    RotateCcw,
-    CheckSquare,
-    XCircle,
-    AlertTriangle,
-    Info,
-    ChevronRight,
-    Eye,
-    Download,
-    File,
-    LayoutGrid,
-    ListTodo,
-    Palette,
-    Settings,
-    Ticket,
-    Phone,
-    MessageSquare,
-    Hash,
-    TrendingUp,
-    Key,
-    Gavel,
-    CheckCircle2
+    X, MoreHorizontal, Plus, Search, Filter, Download, FileText, History, MessageSquare, Upload,
+    CheckCircle, AlertCircle, Settings, Eye, Trash2, File, Clock, Copy, CheckCircle2, AlertTriangle,
+    UserCheck, DollarSign, LayoutGrid, Info, Save, Wrench, CheckSquare, Home, Users, FileCheck, Share2, Palette, Building2, Gavel, Hash, Phone
 } from 'lucide-react';
+import { utils, writeFile } from 'xlsx';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,13 +20,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { BaseCrudService } from '@/integrations';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis, ChecklistdosProponentes } from '@/entities';
-import { formatCurrency, parseCurrency, formatCPF } from '@/lib/input-masks';
+import { formatCurrency, parseCurrency, formatCPF, handleCPFInput } from '@/lib/input-masks';
+import AuctionNavigation from '../../AuctionNavigation';
 
 // Types and Interfaces adapted for Leilão
 interface LeilaoCase {
@@ -107,6 +67,8 @@ interface LeilaoCase {
     };
     documentosAnexos?: { name: string; url: string; size: number; type: string; uploadedAt: string }[];
     leilaoExtra?: Record<string, string>;
+    pendenciasDescricao?: string[];
+    tarefasDescricao?: string[];
 }
 
 const LEILAO_COLUMNS = [
@@ -125,7 +87,7 @@ const LEILAO_COLUMNS = [
     { id: 'Enviar matrícula e IPTU', name: 'Enviar matrícula e IPTU', color: 'bg-lime-100 border-lime-300', bgColor: 'bg-lime-100', borderColor: 'border-lime-300' },
     { id: 'Documentos enviados para NF', name: 'Documentos enviados para NF', color: 'bg-fuchsia-100 border-fuchsia-300', bgColor: 'bg-fuchsia-100', borderColor: 'border-fuchsia-300' },
     { id: 'NF autorizada', name: 'NF autorizada', color: 'bg-yellow-100 border-yellow-300', bgColor: 'bg-yellow-100', borderColor: 'border-yellow-300' },
-    { id: 'Concluídos', name: 'Concluídos', color: 'bg-green-100 border-green-300', bgColor: 'bg-green-100', borderColor: 'border-green-300' },
+    { id: 'Concluído', name: 'Concluído', color: 'bg-green-100 border-green-300', bgColor: 'bg-green-100', borderColor: 'border-green-300' },
 ];
 
 const BACKGROUND_OPTIONS = [
@@ -152,6 +114,7 @@ export default function AdminLeilaoKanbanPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [kanbanBackground, setKanbanBackground] = useState<string>('bg-slate-50');
     const [pasteArea, setPasteArea] = useState<string>('');
+    const [pasteFeedback, setPasteFeedback] = useState<{ field: string; message: string; type: 'success' | 'warning' }[]>([]);
     const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
     const [isDraggingDoc, setIsDraggingDoc] = useState(false);
     const docInputRef = useRef<HTMLInputElement>(null);
@@ -163,6 +126,118 @@ export default function AdminLeilaoKanbanPage() {
     const [users, setUsers] = useState<UsuriosdoSistema[]>([]);
     const [leilaoFormData, setLeilaoFormData] = useState<Record<string, string>>({});
     const [isSavingLeilao, setIsSavingLeilao] = useState(false);
+
+    // Quick action modals for card
+    const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
+    const [showQuickPendingModal, setShowQuickPendingModal] = useState(false);
+    const [quickActionCaseId, setQuickActionCaseId] = useState<string | null>(null);
+
+    const [newTaskData, setNewTaskData] = useState({
+        description: '',
+        internalResponsibleId: '',
+        dueDate: '',
+        externalResponsibleName: '',
+        responsibleType: 'Interno' as 'Interno' | 'Externo'
+    });
+
+    const [newPendingData, setNewPendingData] = useState({
+        description: '',
+        responsiblePartyType: 'Interno' as 'Interno' | 'Cliente',
+        averageDaysToComplete: 7
+    });
+
+    // Custom Scrollbar Sync Logic
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const updateScrollbar = () => {
+            if (!scrollbarRef.current || !scrollbarThumbRef.current) return;
+            const scrollWidth = container.scrollWidth;
+            const clientWidth = container.clientWidth;
+            const scrollLeft = container.scrollLeft;
+
+            if (scrollWidth <= clientWidth) {
+                scrollbarRef.current.style.display = 'none';
+                return;
+            }
+            scrollbarRef.current.style.display = 'block';
+
+            const thumbWidth = (clientWidth / scrollWidth) * clientWidth;
+            scrollbarThumbRef.current.style.width = `${thumbWidth}px`;
+
+            const maxScroll = scrollWidth - clientWidth;
+            const scrollPercentage = maxScroll > 0 ? scrollLeft / maxScroll : 0;
+            const maxThumbPosition = clientWidth - thumbWidth;
+            scrollbarThumbRef.current.style.transform = `translateX(${scrollPercentage * maxThumbPosition}px)`;
+        };
+
+        container.addEventListener('scroll', updateScrollbar);
+        window.addEventListener('resize', updateScrollbar);
+        updateScrollbar();
+        
+        // Initial sync after data load
+        const timeout = setTimeout(updateScrollbar, 500);
+
+        return () => {
+            container.removeEventListener('scroll', updateScrollbar);
+            window.removeEventListener('resize', updateScrollbar);
+            clearTimeout(timeout);
+        };
+    }, [cases]);
+
+    // Wheel and Drag Scroll
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        let isMouseDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+
+        const handleMouseDown = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('button') || target.closest('[data-rbd-draggable-id]') || target.closest('input') || target.closest('textarea') || target.closest('select')) return;
+            isMouseDown = true;
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+            container.style.cursor = 'grabbing';
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isMouseDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX) * 2;
+            container.scrollLeft = scrollLeft - walk;
+        };
+
+        const stopScrolling = () => {
+            isMouseDown = false;
+            container.style.cursor = 'grab';
+        };
+
+        const handleWheel = (e: WheelEvent) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                container.scrollLeft += e.deltaY;
+            }
+        };
+
+        container.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', stopScrolling);
+        container.addEventListener('wheel', handleWheel, { passive: false });
+
+        return () => {
+            container.removeEventListener('mousedown', handleMouseDown);
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', stopScrolling);
+            container.removeEventListener('wheel', handleWheel);
+        };
+    }, []);
+
+    const leilaoTeam = users.filter(u => (u.setores?.includes('Leilão') || u.setores?.includes('Leilões')) && u.ativo !== false);
 
     useEffect(() => {
         loadData();
@@ -183,8 +258,8 @@ export default function AdminLeilaoKanbanPage() {
             setUsers(usersList);
 
             const { items: atendimentos } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
-            const { items: pendingsList } = await BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento');
-            const { items: tasksList } = await BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento');
+            const { items: pendingsList } = await BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasleilao'); // Changed to pendenciasleilao
+            const { items: tasksList } = await BaseCrudService.getAll<FinancingTasks>('tarefasleilao'); // Changed to tarefasleilao
             const { items: partiesList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
             const { items: propertiesList } = await BaseCrudService.getAll<Imveis>('imoveis');
             const { items: propertyLinks } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
@@ -253,7 +328,9 @@ export default function AdminLeilaoKanbanPage() {
                     notes: a.notes || '',
                     interlinks,
                     documentosAnexos: (a as any).documentosAnexos || [],
-                    leilaoExtra: (a as any).leilaoExtra || {}
+                    leilaoExtra: (a as any).leilaoExtra || {},
+                    pendenciasDescricao: casePendings.map(p => p.description || p.title),
+                    tarefasDescricao: caseTasks.map(t => t.description || t.titulo)
                 };
             });
 
@@ -320,11 +397,11 @@ export default function AdminLeilaoKanbanPage() {
         try {
             await BaseCrudService.update('atendimentos', {
                 _id: selectedCase._id,
-                status: 'Concluídos',
-                isArchived: true,
-                archivedDate: new Date().toISOString()
+                status: 'Concluído',
+                faseAtual: 'Concluído',
+                isArchived: false,
             });
-            toast.success('Processo concluído e arquivado!');
+            toast.success('Processo concluído!');
             setShowDetailsModal(false);
             loadData();
         } catch {
@@ -334,35 +411,225 @@ export default function AdminLeilaoKanbanPage() {
         }
     };
 
+    const handleExportToExcel = () => {
+        try {
+            const exportData = cases.map(c => ({
+                'Cliente': c.contactName,
+                'Pasta': c.pastaInterna,
+                'Agência': c.agencia,
+                'Fase': c.faseAtual,
+                'Status': c.status,
+                'CPF / CNPJ': c.cpfProponentePrincipal,
+                'Telefone': c.contactPhone,
+                'E-mail': c.contactEmail,
+                'Lote/Item': c.leilaoExtra?.imoveLote || '',
+                'Localidade': c.leilaoExtra?.imovelLocal || '',
+                'Valor Avaliação': c.leilaoExtra?.finValorAvaliacao || '',
+                'Valor Proposta': c.leilaoExtra?.finValorProposta || '',
+                'PENDENCIAS E TAREFAS': [
+                    ...(c.pendenciasDescricao || []),
+                    ...(c.tarefasDescricao || [])
+                ].join('; ')
+            }));
+
+            const ws = utils.json_to_sheet(exportData);
+            const wb = utils.book_new();
+            utils.book_append_sheet(wb, ws, 'Leilões');
+            
+            writeFile(wb, `Relatorio_Leilao_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+            toast.success('Excel exportado com sucesso!');
+        } catch (error) {
+            console.error('Error exporting to excel:', error);
+            toast.error('Erro ao exportar para Excel');
+        }
+    };
+
+    const handleMoveCase = async (caseId: string, newStatus: string) => {
+        const caseItem = cases.find(c => c._id === caseId);
+        if (!caseItem || caseItem.status === newStatus) return;
+
+        // Optimistic update
+        setCases(prev => prev.map(c => c._id === caseId ? { ...c, status: newStatus, faseAtual: newStatus } : c));
+
+        try {
+            await BaseCrudService.update('atendimentos', { _id: caseId, status: newStatus });
+            toast.success(`Fase alterada para ${newStatus}`);
+        } catch (error) {
+            console.error('Error moving case:', error);
+            toast.error('Erro ao mover processo');
+            loadData();
+        }
+    };
+
+    const handleCreateQuickTask = async () => {
+        if (!quickActionCaseId || !newTaskData.description) return;
+
+        try {
+            const now = new Date().toISOString();
+            const dueDate = newTaskData.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+            const newTask: FinancingTasks = {
+                _id: crypto.randomUUID(),
+                atendimentoRef: quickActionCaseId,
+                titulo: newTaskData.description.substring(0, 100),
+                description: newTaskData.description,
+                status: 'A Fazer',
+                responsibleType: 'Equipe Leilão',
+                responsavelExternoRef: newTaskData.internalResponsibleId,
+                dueDate,
+                creationDate: now
+            };
+
+            await BaseCrudService.create('tarefasleilao', newTask); // Changed to tarefasleilao
+
+            // Create history entry
+            await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+                _id: crypto.randomUUID(),
+                atendimentoRef: quickActionCaseId,
+                tipoEvento: 'Tarefa_Criada',
+                interactionType: 'Criação de tarefa',
+                interactionDescription: `Nova tarefa criada: "${newTask.titulo}"`,
+                interactionDate: now,
+                autorTipo: 'Sistema'
+            });
+
+            // Reset and close
+            setNewTaskData({
+                description: '',
+                internalResponsibleId: '',
+                dueDate: '',
+                externalResponsibleName: '',
+                responsibleType: 'Interno'
+            });
+            setShowQuickTaskModal(false);
+            setQuickActionCaseId(null);
+
+            toast.success('Tarefa criada com sucesso!');
+            loadData();
+        } catch (error) {
+            console.error('Error creating quick task:', error);
+            toast.error('Erro ao criar tarefa');
+        }
+    };
+
+    const handleCreateQuickPending = async () => {
+        if (!quickActionCaseId || !newPendingData.description) return;
+
+        try {
+            const now = new Date().toISOString();
+            const dueDate = new Date(Date.now() + (newPendingData.averageDaysToComplete || 7) * 24 * 60 * 60 * 1000).toISOString();
+
+            const newPending: PendnciasdoFinanciamento = {
+                _id: crypto.randomUUID(),
+                atendimentoRef: quickActionCaseId,
+                title: newPendingData.description.substring(0, 100),
+                description: newPendingData.description,
+                status: 'Pendente',
+                priority: 'Média',
+                dueDate,
+                responsiblePartyType: newPendingData.responsiblePartyType,
+                responsiblePartyDetails: '',
+                taskAutomaticallyCreated: false,
+                creationDate: now,
+                bloqueiaFase: false,
+                categoria: ''
+            };
+
+            await BaseCrudService.create('pendenciasleilao', newPending); // Changed to pendenciasleilao
+
+            // Create history entry
+            await BaseCrudService.create<HistricodeInteraes>('historicointeracoes', {
+                _id: crypto.randomUUID(),
+                atendimentoRef: quickActionCaseId,
+                tipoEvento: 'Pendencia_Criada',
+                interactionType: 'Criação de pendência',
+                interactionDescription: `Nova pendência criada: "${newPending.title}"`,
+                interactionDate: now,
+                autorTipo: 'Sistema'
+            });
+
+            // Reset and close
+            setNewPendingData({
+                description: '',
+                responsiblePartyType: 'Interno',
+                averageDaysToComplete: 7
+            });
+            setShowQuickPendingModal(false);
+            setQuickActionCaseId(null);
+
+            toast.success('Pendência criada com sucesso!');
+            loadData();
+        } catch (error) {
+            console.error('Error creating quick pending:', error);
+            toast.error('Erro ao criar pendência');
+        }
+    };
+
     const handleAutoFill = () => {
         if (!pasteArea.trim()) return;
         const newData: any = { ...leilaoFormData };
+        
+        // Improved Regex and keyword extraction
         const cpfRegex = /(\d{3}\.\d{3}\.\d{3}-\d{2})|(\d{11})/;
         const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
         const phoneRegex = /(\(?\d{2}\)?\s?9?\d{4}-?\d{4})/;
         const moneyRegex = /(?:R\$|R\$\s)?(\d{1,3}(?:\.\d{3})*(?:,\d{2}))/;
+        const editalRegex = /(Edital|EDITAL)[:\s]+([^\n\r,]+)/i;
+        const loteRegex = /(Lote|LOTE|Item|ITEM)[:\s]+([0-9A-Za-z.\-]+)/i;
+        const localRegex = /(Local|Localização|Endereço)[:\s]+([^\n\r]+)/i;
 
         const cpfMatch = pasteArea.match(cpfRegex);
         if (cpfMatch) newData.clienteCpfCnpj = cpfMatch[0];
+        
         const emailMatch = pasteArea.match(emailRegex);
         if (emailMatch) newData.clienteEmail = emailMatch[0];
+        
         const phoneMatch = pasteArea.match(phoneRegex);
         if (phoneMatch) newData.clienteTelefone = phoneMatch[0];
 
+        const editalMatch = pasteArea.match(editalRegex);
+        if (editalMatch) newData.leilaoEdital = editalMatch[2].trim();
+
+        const loteMatch = pasteArea.match(loteRegex);
+        if (loteMatch) newData.imoveLote = loteMatch[2].trim();
+
+        const localMatch = pasteArea.match(localRegex);
+        if (localMatch) newData.imovelLocal = localMatch[2].trim();
+
         const moneyMatches = Array.from(pasteArea.matchAll(new RegExp(moneyRegex, 'g'))).map(m => m[1]);
         if (moneyMatches.length > 0) {
-            const sorted = moneyMatches.sort((a, b) => {
-                const va = parseFloat(a.replace(/\./g, '').replace(',', '.'));
-                const vb = parseFloat(b.replace(/\./g, '').replace(',', '.'));
-                return vb - va;
-            });
-            newData.finValorAvaliacao = sorted[0];
-            if (sorted[1]) newData.finValorProposta = sorted[1];
+            const sorted = moneyMatches.map(m => parseFloat(m.replace(/\./g, '').replace(',', '.'))).sort((a, b) => b - a);
+            // Higher value is usually evaluation, lower is opening bid or proposal
+            newData.finValorAvaliacao = sorted[0].toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            if (sorted[1]) newData.finValorProposta = sorted[1].toLocaleString('pt-BR', { minimumFractionDigits: 2 });
         }
 
+        // Try to find Name by looking for patterns like "Nome:" or "Proponente:"
+        const nameRegex = /(Nome|Proponente|Cliente)[:\s]+([^\n\r,]+)/i;
+        const nameMatch = pasteArea.match(nameRegex);
+        if (nameMatch) newData.clienteNome = nameMatch[2].trim();
+
+        const feedback: { field: string; message: string; type: 'success' | 'warning' }[] = [];
+        if (cpfMatch) feedback.push({ field: 'CPF', message: 'CPF extraído com sucesso', type: 'success' });
+        if (moneyMatches.length > 0) feedback.push({ field: 'Valores', message: 'Preços extraídos com sucesso', type: 'success' });
+        if (nameMatch) feedback.push({ field: 'Nome', message: 'Nome extraído', type: 'success' });
+        
+        // Example of warning for non-matching or complex patterns
+        if (pasteArea.toLowerCase().includes('condicionante') && !pasteArea.toLowerCase().includes('financiamento')) {
+            feedback.push({ field: 'Atenção', message: 'Detectado termo "condicionante", verifique o campo de forma de pagamento.', type: 'warning' });
+        }
+
+        setPasteFeedback(feedback);
         setLeilaoFormData(newData);
         setPasteArea('');
-        toast.info("Dados extraídos com sucesso!");
+        
+        if (feedback.some(f => f.type === 'warning')) {
+            toast.warning("Dados extraídos com alguns alertas. Verifique os campos.");
+        } else if (feedback.length > 0) {
+            toast.info("Dados inteligentes extraídos e preenchidos!");
+        } else {
+            toast.error("Não foi possível extrair dados automáticos deste texto.");
+        }
     };
 
     const handleDocFileDrop = async (files: FileList | null) => {
@@ -401,6 +668,7 @@ export default function AdminLeilaoKanbanPage() {
 
     return (
         <AdminLayout>
+            <AuctionNavigation />
             <div className={`h-[calc(100vh-64px)] flex flex-col overflow-hidden transition-all duration-300 ${kanbanBackground}`}>
                 <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-20">
                     <div>
@@ -435,9 +703,37 @@ export default function AdminLeilaoKanbanPage() {
                         <Button variant="outline" size="icon" className="rounded-full bg-white shadow-sm" onClick={() => setShowBackgroundPicker(!showBackgroundPicker)}>
                             <Palette className="w-4 h-4" />
                         </Button>
+                        <Button variant="outline" onClick={handleExportToExcel} className="h-10 rounded-full bg-white border-slate-200 text-slate-600 gap-2 px-6 shadow-sm hover:bg-slate-50 transition-all">
+                            <Share2 className="w-4 h-4" /> Exportar Excel
+                        </Button>
                         <Button className="h-10 rounded-full bg-amber-600 hover:bg-amber-700 text-white gap-2 px-6 shadow-md">
                             <Plus className="w-4 h-4" /> Novo Processo
                         </Button>
+                    </div>
+                </div>
+
+                {/* Smart Paste Area (Added for auto-fill functionality) */}
+                <div className="bg-white/40 backdrop-blur-sm border-b border-slate-200/50 px-6 py-3 flex gap-4 items-center animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div className="relative flex-1">
+                        <textarea
+                            placeholder="Cole informações do leilão aqui para preenchimento automático inteligente..."
+                            value={pasteArea}
+                            onChange={(e) => setPasteArea(e.target.value)}
+                            className="w-full h-10 px-4 py-2 rounded-xl border border-amber-200 bg-white/80 focus:ring-2 focus:ring-amber-500 transition-all resize-none text-xs"
+                        />
+                        {pasteArea && (
+                            <Button 
+                                size="sm" 
+                                onClick={handleAutoFill}
+                                className="absolute right-1.5 top-1.5 h-7 rounded-lg bg-amber-600 hover:bg-amber-700 text-white gap-1 px-3 text-[10px] font-bold shadow-sm"
+                            >
+                                <CheckSquare className="w-3 h-3" />
+                                EXTRAIR DADOS
+                            </Button>
+                        )}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium max-w-[200px] leading-tight">
+                        Cole edital, Nome, CPF ou valores financeiros para preencher a ficha automaticamente.
                     </div>
                 </div>
 
@@ -460,10 +756,18 @@ export default function AdminLeilaoKanbanPage() {
                     )}
                 </AnimatePresence>
 
-                <div className="flex-1 relative overflow-hidden">
-                    <div ref={scrollContainerRef} className="h-full overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing no-scrollbar">
+                <div className="flex-1 relative overflow-hidden group/board">
+                    {/* Custom Scrollbar */}
+                    <div ref={scrollbarRef} className="absolute bottom-4 left-6 right-6 h-2 bg-slate-900/10 rounded-full z-30 opacity-0 group-hover/board:opacity-100 transition-opacity">
+                        <div ref={scrollbarThumbRef} className="h-full bg-slate-900/40 rounded-full cursor-grab active:cursor-grabbing hover:bg-slate-900/60 transition-colors" />
+                    </div>
+
+                    <div
+                        ref={scrollContainerRef}
+                        className="h-full overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing no-scrollbar scroll-smooth p-6"
+                    >
                         <DragDropContext onDragEnd={onDragEnd}>
-                            <div className="flex h-full p-6 gap-6 min-w-max">
+                            <div className="flex h-full gap-6 min-w-max">
                                 {LEILAO_COLUMNS.filter(column => showEmptyColumns || cases.some(c => c.faseAtual === column.id)).map((column) => (
                                     <div key={column.id} className="w-80 flex flex-col h-full rounded-2xl bg-slate-100/40 backdrop-blur-sm border border-slate-200/50">
                                         <div className="p-4 flex items-center justify-between">
@@ -486,7 +790,13 @@ export default function AdminLeilaoKanbanPage() {
                                                                     <Card ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} onClick={() => handleOpenDetails(caseItem)} className={`group relative p-4 bg-white border-slate-200 hover:border-amber-300 hover:shadow-xl transition-all cursor-pointer rounded-2xl ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-amber-500 scale-105 rotate-2' : ''}`}>
                                                                         <div className="mb-3">
                                                                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                                                                                <span className="flex items-center gap-1"><Hash className="w-3 h-3" />{caseItem.pastaInterna}</span>
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <span className="flex items-center gap-1"><Hash className="w-3 h-3" />{caseItem.pastaInterna}</span>
+                                                                                    <span className="flex items-center gap-1 ml-2"><Building2 className="w-3 h-3" />{caseItem.agencia}</span>
+                                                                                    {caseItem.status === 'Concluído' && (
+                                                                                        <Badge className="bg-emerald-500 text-white border-none text-[8px] h-4 px-1.5 font-black uppercase tracking-tighter">CONCLUÍDO</Badge>
+                                                                                    )}
+                                                                                </div>
                                                                                 <span className={`px-2 py-0.5 rounded-full text-white font-bold ${caseItem.diasNaFase > 15 ? 'bg-red-500' : caseItem.diasNaFase > 7 ? 'bg-orange-500' : 'bg-emerald-500'}`}>{caseItem.diasNaFase} d</span>
                                                                             </div>
                                                                             <h4 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-amber-600 transition-colors">{caseItem.contactName}</h4>
@@ -494,14 +804,68 @@ export default function AdminLeilaoKanbanPage() {
                                                                                 <Phone className="w-3 h-3 text-slate-400" />
                                                                                 <span>{caseItem.contactPhone || 'S/ Tel'}</span>
                                                                             </div>
-                                                                        </div>
-                                                                        <div className="flex flex-wrap gap-2 mb-3">
-                                                                            {caseItem.pendenciasAbertas > 0 && <Badge variant="outline" className="bg-red-50 border-red-100 text-red-600 text-[10px] gap-1 px-1.5 h-6"><AlertCircle className="w-3 h-3" />{caseItem.pendenciasAbertas}</Badge>}
-                                                                            {caseItem.tarefasAbertas > 0 && <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-600 text-[10px] gap-1 px-1.5 h-6"><CheckCircle className="w-3 h-3" />{caseItem.tarefasAbertas}</Badge>}
-                                                                        </div>
-                                                                        <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-3">
-                                                                            <Badge variant="secondary" className="bg-slate-50 text-slate-500 text-[10px] font-normal px-2 uppercase tracking-tight">{caseItem.serviceType}</Badge>
-                                                                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-all"><ChevronRight className="w-4 h-4 text-slate-400" /></Button>
+                                                                            <div className="flex flex-wrap gap-2 mb-3 mt-3">
+                                                                                {caseItem.pendenciasAbertas > 0 && (
+                                                                                    <Badge variant="outline" className="bg-red-50 border-red-100 text-red-600 text-[10px] gap-1 px-1.5 h-6">
+                                                                                        <AlertCircle className="w-3 h-3" />
+                                                                                        {caseItem.pendenciasAbertas} Pend.
+                                                                                    </Badge>
+                                                                                )}
+                                                                                {caseItem.tarefasAbertas > 0 && (
+                                                                                    <Badge variant="outline" className="bg-amber-50 border-amber-100 text-amber-600 text-[10px] gap-1 px-1.5 h-6">
+                                                                                        <CheckCircle className="w-3 h-3" />
+                                                                                        {caseItem.tarefasAbertas} Tarefas
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </div>
+
+                                                                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setQuickActionCaseId(caseItem._id);
+                                                                                        setShowQuickPendingModal(true);
+                                                                                    }}
+                                                                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-colors border border-red-100"
+                                                                                >
+                                                                                    <AlertCircle className="w-3 h-3" />
+                                                                                    + Pend
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setQuickActionCaseId(caseItem._id);
+                                                                                        setShowQuickTaskModal(true);
+                                                                                    }}
+                                                                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors border border-amber-100"
+                                                                                >
+                                                                                    <CheckCircle className="w-3 h-3" />
+                                                                                    + Tarefa
+                                                                                </button>
+                                                                                
+                                                                                <Select 
+                                                                                    value={caseItem.faseAtual} 
+                                                                                    onValueChange={(value) => handleMoveCase(caseItem._id, value)}
+                                                                                >
+                                                                                    <SelectTrigger 
+                                                                                        className="h-8 px-2 w-auto min-w-[70px] text-[10px] font-bold text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg border border-amber-100 bg-amber-50/30 flex items-center justify-center gap-1 focus:ring-0 focus:ring-offset-0"
+                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                    >
+                                                                                        <span>MOVER</span>
+                                                                                    </SelectTrigger>
+                                                                                    <SelectContent>
+                                                                                        {LEILAO_COLUMNS.map((col) => (
+                                                                                            <SelectItem 
+                                                                                                key={col.id} 
+                                                                                                value={col.id}
+                                                                                                className="text-xs font-semibold"
+                                                                                            >
+                                                                                                {col.name}
+                                                                                            </SelectItem>
+                                                                                        ))}
+                                                                                    </SelectContent>
+                                                                                </Select>
+                                                                            </div>
                                                                         </div>
                                                                     </Card>
                                                                 )}
@@ -520,60 +884,108 @@ export default function AdminLeilaoKanbanPage() {
                 </div>
 
                 <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-                    <DialogContent className="max-w-6xl h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-[32px]">
-                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-start">
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-4 bg-amber-100 rounded-[24px] shadow-sm"><Gavel className="w-7 h-7 text-amber-600" /></div>
-                                        <div>
-                                            <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">{selectedCase?.contactName}</DialogTitle>
-                                            <div className="flex items-center gap-3 mt-1.5">
-                                                <Badge className={`${LEILAO_COLUMNS.find(c => c.id === selectedCase?.status)?.color} border-none px-3 py-1 text-[11px] uppercase font-black tracking-widest rounded-full shadow-sm`}>{selectedCase?.status}</Badge>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-full transition-all"><Edit2 className="w-3.5 h-3.5" /></Button></DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="start" className="w-56 p-2 rounded-2xl bg-white/90 backdrop-blur-xl border-slate-200 shadow-2xl">
-                                                        {LEILAO_COLUMNS.map(col => (<DropdownMenuItem key={col.id} onClick={() => handleQuickStatusChange(col.id)} className="text-xs font-semibold p-3 rounded-xl hover:bg-amber-50 hover:text-amber-700 cursor-pointer transition-all">{col.name}</DropdownMenuItem>))}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                <span className="text-[11px] font-bold text-slate-400 tracking-wider">• {selectedCase?.pastaInterna}</span>
+                    <DialogContent className="max-w-6xl h-[90vh] max-h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-[32px] flex flex-col bg-white">
+                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-50 flex flex-row items-center justify-between">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-amber-100 rounded-2xl text-amber-600">
+                                        <FileText className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <DialogTitle className="text-2xl font-black text-slate-800 tracking-tight">
+                                                Leilão — {selectedCase?.contactName}
+                                            </DialogTitle>
+                                            <Select 
+                                                value={selectedCase?.status || ''} 
+                                                onValueChange={(val) => handleMoveCase(selectedCase?._id || '', val)}
+                                            >
+                                                <SelectTrigger className="h-7 text-[10px] font-black uppercase tracking-widest border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-full px-4 w-auto min-w-[160px] transition-all">
+                                                    <SelectValue placeholder="Mover Processo" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {LEILAO_COLUMNS.map((col) => (
+                                                        <SelectItem key={col.id} value={col.id} className="text-[10px] font-bold uppercase tracking-wider">
+                                                            {col.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <span className="text-[11px] font-bold text-slate-300 tracking-wider">• {selectedCase?.pastaInterna}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-lg">
+                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pasta: {selectedCase?.pastaInterna}</span>
                                             </div>
+                                            {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mr-1">Vínculos:</span>
+                                                    {selectedCase.interlinks.relatedServices.map(rel => {
+                                                        const routeMap: Record<string, string> = {
+                                                            'Venda': '/admin/negocios/kanban',
+                                                            'Compra': '/admin/negocios/kanban',
+                                                            'Locação': '/admin/locacoes/kanban',
+                                                            'Aluguel': '/admin/locacoes/kanban',
+                                                            'Financiamento': '/admin/financiamento-kanban',
+                                                            'Crédito': '/admin/financiamento-kanban',
+                                                            'Leilão': '/admin/leilao/kanban'
+                                                        };
+                                                        const colorMap: Record<string, string> = {
+                                                            'Venda': 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100',
+                                                            'Locação': 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100',
+                                                            'Financiamento': 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100',
+                                                            'Leilão': 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
+                                                        };
+                                                        const route = routeMap[rel.serviceType.split(' ')[0]]; // Quick fix for "Venda e Locação" etc
+                                                        if (!route) return null;
+                                                        return (
+                                                            <button 
+                                                                key={rel._id} 
+                                                                onClick={() => navigate(`${route}?openCard=${rel._id}`)} 
+                                                                className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-tighter transition-all ${colorMap[rel.serviceType.split(' ')[0]] || 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'}`}
+                                                            >
+                                                                {rel.serviceType}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-                                {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-4 items-center">
-                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mr-1">Vínculos:</span>
-                                        {selectedCase.interlinks.relatedServices.map(rel => (
-                                            <button key={rel._id} onClick={() => navigate(`${rel.serviceType.includes('Venda') ? '/admin/negocios/kanban' : rel.serviceType.includes('Loca') ? '/admin/locacoes/kanban' : '/admin/financiamento-kanban'}?openCard=${rel._id}`)} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 text-[10px] font-bold bg-white text-slate-600 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-all shadow-sm">{rel.serviceType}</button>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
-                            <div className="flex items-center gap-3 ml-6 flex-shrink-0">
+                            <div className="flex items-center gap-3 flex-shrink-0">
                                 {selectedCase?.contactPhone && (
-                                    <Button variant="outline" className="h-11 px-6 rounded-2xl bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 hover:text-emerald-800 transition-all font-bold shadow-sm" onClick={() => window.open(`https://wa.me/55${selectedCase.contactPhone?.replace(/\D/g, '')}`, '_blank')}>
+                                    <Button 
+                                        variant="outline" 
+                                        className="h-10 px-5 rounded-xl bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 transition-all font-bold text-xs" 
+                                        onClick={() => window.open(`https://wa.me/55${selectedCase.contactPhone?.replace(/\D/g, '')}`, '_blank')}
+                                    >
                                         <MessageSquare className="w-4 h-4 mr-2" /> WhatsApp
                                     </Button>
                                 )}
-                                <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-slate-100 transition-all" onClick={() => setShowDetailsModal(false)}><X className="w-6 h-6 text-slate-400" /></Button>
+                                <Button 
+                                    onClick={handleSaveLeilaoData} 
+                                    className="h-10 px-8 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-amber-200 transition-all"
+                                >
+                                    <Save className="w-4 h-4 mr-2" /> Salvar
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-100" onClick={() => setShowDetailsModal(false)}>
+                                    <X className="w-5 h-5 text-slate-400" />
+                                </Button>
                             </div>
                         </DialogHeader>
 
-                        <ScrollArea className="h-[calc(90vh-100px)]">
-                            <div className="p-8">
-                                <Tabs value={modalTab} onValueChange={setModalTab}>
-                                    <TabsList className="grid grid-cols-7 mb-10 bg-slate-100/50 p-1.5 rounded-[24px] h-14 shadow-inner">
+                        <Tabs value={modalTab} onValueChange={setModalTab} className="flex-1 flex flex-col min-h-0 w-full">
+                            <TabsList className="grid grid-cols-5 mb-6 bg-slate-100/50 p-1.5 rounded-[24px] h-14 shadow-inner flex-shrink-0 mx-8 mt-6">
                                         <TabsTrigger value="dados" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><FileText className="w-4 h-4" /> Dados</TabsTrigger>
-                                        <TabsTrigger value="proponentes" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><Users className="w-4 h-4" /> Partes</TabsTrigger>
                                         <TabsTrigger value="pendencias" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><AlertCircle className="w-4 h-4" /> Pendências</TabsTrigger>
                                         <TabsTrigger value="tarefas" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><CheckCircle className="w-4 h-4" /> Tarefas</TabsTrigger>
                                         <TabsTrigger value="documentos" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><Upload className="w-4 h-4" /> Arquivos</TabsTrigger>
-                                        <TabsTrigger value="imoveis" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><Home className="w-4 h-4" /> Imóvel</TabsTrigger>
                                         <TabsTrigger value="historico" className="rounded-[18px] data-[state=active]:bg-white data-[state=active]:shadow-lg text-[11px] font-bold uppercase tracking-wider gap-2.5 transition-all"><History className="w-4 h-4" /> Linha do Tempo</TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="dados" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-400">
+                                    <TabsContent value="dados" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-400">
                                         <div className="space-y-8">
                                             <Card className="p-6 border-amber-200 bg-amber-50/20 rounded-[32px] border-dashed border-2 shadow-sm">
                                                 <div className="flex items-center justify-between mb-5">
@@ -584,15 +996,29 @@ export default function AdminLeilaoKanbanPage() {
                                                     <Button onClick={handleAutoFill} className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl gap-2 font-bold transition-all px-5">Extrair e Preencher</Button>
                                                 </div>
                                                 <Textarea placeholder="Cole dados brutos do e-mail, portal ou edital aqui..." value={pasteArea} onChange={e => setPasteArea(e.target.value)} className="min-h-[140px] bg-white/80 border-amber-200 rounded-2xl text-sm italic shadow-inner focus:ring-amber-500" />
+                                                
+                                                {pasteFeedback.length > 0 && (
+                                                    <div className="mt-4 flex flex-wrap gap-2">
+                                                        {pasteFeedback.map((fb, idx) => (
+                                                            <Badge key={idx} variant="outline" className={`text-[10px] gap-1 px-2 py-0.5 rounded-lg ${fb.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-amber-50 border-amber-100 text-amber-600'}`}>
+                                                                {fb.type === 'success' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                                                                {fb.message}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </Card>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                                 <Card className="p-6 border-slate-100 rounded-[28px] shadow-sm hover:shadow-md transition-all">
-                                                    <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2.5"><UserCheck className="w-4 h-4 text-blue-500" /> Identificação do Cliente</h3>
+                                                    <div className="flex items-center justify-between mb-6">
+                                                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2.5"><UserCheck className="w-4 h-4 text-blue-500" /> Identificação do Cliente</h3>
+                                                        <CopyButton value={`Cliente: ${leilaoFormData.clienteNome}\nCPF: ${leilaoFormData.clienteCpfCnpj}\nTel: ${leilaoFormData.clienteTelefone}\nEmail: ${leilaoFormData.clienteEmail}`} className="h-7 w-7 rounded-lg bg-slate-50 border border-slate-200" />
+                                                    </div>
                                                     <div className="space-y-5">
                                                         <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Nome do Proponente</Label><Input value={leilaoFormData.clienteNome || ''} onChange={e => setLeilaoFormData({...leilaoFormData, clienteNome: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
                                                         <div className="grid grid-cols-2 gap-4">
-                                                            <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">CPF / CNPJ</Label><Input value={leilaoFormData.clienteCpfCnpj || ''} onChange={e => setLeilaoFormData({...leilaoFormData, clienteCpfCnpj: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
+                                                            <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">CPF / CNPJ</Label><Input value={leilaoFormData.clienteCpfCnpj || ''} onChange={e => { const { displayValue } = handleCPFInput(e.target.value); setLeilaoFormData({...leilaoFormData, clienteCpfCnpj: displayValue}); }} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
                                                             <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Contato</Label><Input value={leilaoFormData.clienteTelefone || ''} onChange={e => setLeilaoFormData({...leilaoFormData, clienteTelefone: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
                                                         </div>
                                                         <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">E-mail Principal</Label><Input value={leilaoFormData.clienteEmail || ''} onChange={e => setLeilaoFormData({...leilaoFormData, clienteEmail: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
@@ -600,7 +1026,10 @@ export default function AdminLeilaoKanbanPage() {
                                                 </Card>
 
                                                 <Card className="p-6 border-slate-100 rounded-[28px] shadow-sm hover:shadow-md transition-all">
-                                                    <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2.5"><DollarSign className="w-4 h-4 text-emerald-500" /> Condições Financeiras</h3>
+                                                    <div className="flex items-center justify-between mb-6">
+                                                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2.5"><DollarSign className="w-4 h-4 text-emerald-500" /> Condições Financeiras</h3>
+                                                        <CopyButton value={`Avaliação: ${leilaoFormData.finValorAvaliacao}\nLance: ${leilaoFormData.finValorProposta}\nForma: ${leilaoFormData.finFormaPagamento}`} className="h-7 w-7 rounded-lg bg-slate-50 border border-slate-200" />
+                                                    </div>
                                                     <div className="space-y-5">
                                                         <div className="grid grid-cols-2 gap-4">
                                                             <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Valor de Avaliação</Label><Input value={leilaoFormData.finValorAvaliacao || ''} onChange={e => setLeilaoFormData({...leilaoFormData, finValorAvaliacao: e.target.value})} className="h-11 rounded-xl bg-emerald-50/50 border-none font-black text-emerald-700" /></div>
@@ -622,7 +1051,10 @@ export default function AdminLeilaoKanbanPage() {
                                                 </Card>
 
                                                 <Card className="p-6 border-slate-100 rounded-[28px] shadow-sm hover:shadow-md transition-all">
-                                                    <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2.5"><LayoutGrid className="w-4 h-4 text-indigo-500" /> Detalhes do Imóvel</h3>
+                                                    <div className="flex items-center justify-between mb-6">
+                                                        <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2.5"><LayoutGrid className="w-4 h-4 text-indigo-500" /> Detalhes do Imóvel</h3>
+                                                        <CopyButton value={`Lote: ${leilaoFormData.imoveLote}\nLocal: ${leilaoFormData.imovelLocal}\nEdital: ${leilaoFormData.leilaoEdital}`} className="h-7 w-7 rounded-lg bg-slate-50 border border-slate-200" />
+                                                    </div>
                                                     <div className="space-y-5">
                                                         <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Número do Item / Lote</Label><Input value={leilaoFormData.imoveLote || ''} onChange={e => setLeilaoFormData({...leilaoFormData, imoveLote: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-black" /></div>
                                                         <div><Label className="text-[9px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Localidade</Label><Input value={leilaoFormData.imovelLocal || ''} onChange={e => setLeilaoFormData({...leilaoFormData, imovelLocal: e.target.value})} className="h-11 rounded-xl bg-slate-50 border-none font-medium" /></div>
@@ -630,6 +1062,16 @@ export default function AdminLeilaoKanbanPage() {
                                                     </div>
                                                 </Card>
                                             </div>
+
+                                            <Card className="p-6 border-slate-100 rounded-[28px] shadow-sm hover:shadow-md transition-all">
+                                                <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2.5"><Info className="w-4 h-4 text-amber-500" /> Observações Internas</h3>
+                                                <Textarea 
+                                                    value={leilaoFormData.observacoesInternas || ''} 
+                                                    onChange={e => setLeilaoFormData({...leilaoFormData, observacoesInternas: e.target.value})} 
+                                                    placeholder="Insira observações relevantes sobre este processo de leilão..."
+                                                    className="min-h-[100px] rounded-2xl bg-slate-50 border-none font-medium text-sm focus:ring-amber-500"
+                                                />
+                                            </Card>
 
                                             <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-50">
                                                 <Button variant="ghost" className="rounded-2xl px-6 text-slate-400 font-bold hover:bg-slate-50">Limpar Campos</Button>
@@ -640,7 +1082,7 @@ export default function AdminLeilaoKanbanPage() {
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="documentos" className="animate-in fade-in slide-in-from-bottom-2 duration-400">
+                                    <TabsContent value="documentos" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-400">
                                         <div
                                             onDragOver={e => { e.preventDefault(); setIsDraggingDoc(true); }}
                                             onDragLeave={() => setIsDraggingDoc(false)}
@@ -688,7 +1130,7 @@ export default function AdminLeilaoKanbanPage() {
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="historico" className="animate-in fade-in slide-in-from-bottom-2 duration-400">
+                                    <TabsContent value="historico" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-400">
                                         <div className="max-w-3xl mx-auto space-y-12">
                                             <div className="relative pl-12 border-l-4 border-slate-100 space-y-12 pb-10">
                                                 <div className="relative">
@@ -708,40 +1150,162 @@ export default function AdminLeilaoKanbanPage() {
                                                     <div className="w-20 h-20 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-200"><CheckCircle2 className="w-10 h-10" /></div>
                                                     <h3 className="text-xl font-black text-emerald-900 tracking-tight mb-3">Conclusão de Ciclo</h3>
                                                     <p className="text-xs text-emerald-700 font-medium mb-8 leading-relaxed">Ao arrematar, o processo será transposto para a categoria de conclusos, liberando recursos operacionais.</p>
-                                                    <Button onClick={handleConcluirProcesso} disabled={isSavingLeilao || selectedCase?.status === 'Concluídos'} className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white gap-3 rounded-[24px] font-black shadow-2xl shadow-emerald-200 uppercase tracking-widest text-xs transition-all ring-offset-2 hover:ring-2 ring-emerald-500">
-                                                        {isSavingLeilao ? 'Processando...' : 'Finalizar e Arquivar'}
+                                                    <Button onClick={handleConcluirProcesso} disabled={isSavingLeilao || selectedCase?.status === 'Concluído'} className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white gap-3 rounded-[24px] font-black shadow-2xl shadow-emerald-200 uppercase tracking-widest text-xs transition-all ring-offset-2 hover:ring-2 ring-emerald-500">
+                                                        {isSavingLeilao ? 'Processando...' : 'Finalizar Processo'}
                                                     </Button>
                                                 </div>
                                             </div>
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="proponentes" className="py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
-                                        <Users className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
-                                        <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Controle de Coproponentes</h3>
-                                        <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">Módulo de gestão de sócios e intervenientes garantidores está sendo otimizado pela engenharia.</p>
-                                    </TabsContent>
-                                    <TabsContent value="pendencias" className="py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
+                                    <TabsContent value="pendencias" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
                                         <AlertTriangle className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
                                         <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Painel de Impedimentos</h3>
                                         <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">O rastreador de pendências críticas será integrado na próxima iteração de build.</p>
                                     </TabsContent>
-                                    <TabsContent value="tarefas" className="py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
+                                    <TabsContent value="tarefas" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
                                         <CheckSquare className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
                                         <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Workflow de Micro-tarefas</h3>
                                         <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">A gestão granular de steps operacionais está em fase alfa de calibração.</p>
                                     </TabsContent>
-                                    <TabsContent value="imoveis" className="py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
-                                        <Home className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
-                                        <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Vinculação Patrimonial</h3>
-                                        <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">Módulo de interlink direto com o inventário imobiliário em fase de sincronização.</p>
-                                    </TabsContent>
                                 </Tabs>
-                            </div>
-                        </ScrollArea>
                     </DialogContent>
                 </Dialog>
             </div>
+            {/* Quick Task Modal */}
+            <Dialog open={showQuickTaskModal} onOpenChange={setShowQuickTaskModal}>
+                <DialogContent className="max-w-md p-6 rounded-3xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2 text-amber-600">
+                            <CheckCircle className="w-6 h-6" />
+                            Nova Tarefa Rápida
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-slate-700">O que precisa ser feito?</Label>
+                            <Input 
+                                placeholder="Descreva a tarefa..."
+                                value={newTaskData.description}
+                                onChange={(e) => setNewTaskData({...newTaskData, description: e.target.value})}
+                                className="h-12 rounded-xl focus:ring-amber-500 shadow-sm border-slate-200"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-slate-700">Responsável</Label>
+                            <Select 
+                                value={newTaskData.internalResponsibleId} 
+                                onValueChange={(val) => setNewTaskData({...newTaskData, internalResponsibleId: val})}
+                            >
+                                <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-slate-50/50">
+                                    <SelectValue placeholder="Selecione o responsável" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {leilaoTeam.map(u => (
+                                        <SelectItem key={u._id} value={u._id}>{u.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-slate-700">Prazo (opcional)</Label>
+                            <Input 
+                                type="date"
+                                value={newTaskData.dueDate}
+                                onChange={(e) => setNewTaskData({...newTaskData, dueDate: e.target.value})}
+                                className="h-12 rounded-xl border-slate-200"
+                            />
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <Button 
+                                onClick={handleCreateQuickTask}
+                                disabled={!newTaskData.description}
+                                className="h-12 flex-1 bg-amber-600 text-white hover:bg-amber-700 rounded-xl font-bold shadow-lg shadow-amber-200"
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                Criar Tarefa
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                    setShowQuickTaskModal(false);
+                                    setQuickActionCaseId(null);
+                                }}
+                                className="h-12 px-6 rounded-xl border-slate-200 text-slate-500 font-bold"
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Quick Pending Modal */}
+            <Dialog open={showQuickPendingModal} onOpenChange={setShowQuickPendingModal}>
+                <DialogContent className="max-w-md p-6 rounded-3xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2 text-red-600">
+                            <AlertCircle className="w-6 h-6" />
+                            Nova Pendência Rápida
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-slate-700">Qual a pendência?</Label>
+                            <Input 
+                                placeholder="Descreva a pendência..."
+                                value={newPendingData.description}
+                                onChange={(e) => setNewPendingData({...newPendingData, description: e.target.value})}
+                                className="h-12 rounded-xl focus:ring-red-500 shadow-sm border-slate-200"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-slate-700">Responsável pela solução</Label>
+                            <Select 
+                                value={newPendingData.responsiblePartyType} 
+                                onValueChange={(val: any) => setNewPendingData({...newPendingData, responsiblePartyType: val})}
+                            >
+                                <SelectTrigger className="h-12 rounded-xl border-slate-200 bg-slate-50/50">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Interno">Equipe R.Sales</SelectItem>
+                                    <SelectItem value="Cliente">Cliente / Proponente</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-bold text-slate-700">Prazo estimado (dias)</Label>
+                            <Input 
+                                type="number"
+                                value={newPendingData.averageDaysToComplete}
+                                onChange={(e) => setNewPendingData({...newPendingData, averageDaysToComplete: parseInt(e.target.value) || 7})}
+                                className="h-12 rounded-xl border-slate-200"
+                            />
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <Button 
+                                onClick={handleCreateQuickPending}
+                                disabled={!newPendingData.description}
+                                className="h-12 flex-1 bg-red-600 text-white hover:bg-red-700 rounded-xl font-bold shadow-lg shadow-red-200"
+                            >
+                                <Save className="w-4 h-4 mr-2" />
+                                Criar Pendência
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                    setShowQuickPendingModal(false);
+                                    setQuickActionCaseId(null);
+                                }}
+                                className="h-12 px-6 rounded-xl border-slate-200 text-slate-500 font-bold"
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </AdminLayout>
     );
 }

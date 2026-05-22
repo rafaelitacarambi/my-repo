@@ -49,7 +49,8 @@ import {
     MessageSquare,
     Hash,
     Gavel,
-    Key
+    Key,
+    Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -99,6 +100,23 @@ interface LocacoesCase {
     rentValue?: number;
     notes?: string;
 
+    // Contract conditions
+    garantia?: string;
+    prazoMeses?: string | number;
+    diaPagamento?: string | number;
+    reajusteIndice?: string;
+    multaRescisaoAlugueis?: string | number;
+    
+    // Caução Bank Details
+    caucaoValor?: number;
+    caucaoBanco?: string;
+    caucaoAgencia?: string;
+    caucaoConta?: string;
+    caucaoTitular?: string;
+    caucaoCpf?: string;
+
+    clientePrincipalRef?: string;
+
     interlinks?: {
         hasProperty: boolean;
         activeSales: number;
@@ -147,6 +165,70 @@ export default function AdminLocacoesKanbanPage() {
     const [clients, setClients] = useState<Clients[]>([]);
     const [users, setUsers] = useState<UsuriosdoSistema[]>([]);
     const [atendimentosRaw, setAtendimentosRaw] = useState<ServiceRecords[]>([]);
+    const [atendimentoPartes, setAtendimentoPartes] = useState<ServiceParties[]>([]);
+    const [imoveis, setImoveis] = useState<Imveis[]>([]);
+    const [atendimentoImoveis, setAtendimentoImoveis] = useState<AtendimentoImveis[]>([]);
+    const [selectedImovelId, setSelectedImovelId] = useState('');
+
+    // Popup Modal States
+    const [showNewClientModal, setShowNewClientModal] = useState(false);
+    const [activeModalTrigger, setActiveModalTrigger] = useState<'dados' | 'partes'>('dados');
+    const [newClientFormData, setNewClientFormData] = useState<Partial<Clients>>({
+        clientName: '',
+        cpfCnpj: '',
+        email: '',
+        phoneNumber: '',
+        rg: '',
+        nationality: 'Brasileiro(a)',
+        profession: '',
+        maritalStatus: 'Solteiro(a)',
+        gender: 'Masculino',
+        address: '',
+        notes: '',
+        tipoPessoa: 'FÍSICA',
+        status: 'Ativo'
+    });
+
+    // Property Modal States
+    const [showNewImovelModal, setShowNewImovelModal] = useState(false);
+    const [editingImovelId, setEditingImovelId] = useState<string | null>(null);
+
+    // Edit Parte Modal State
+    const [editingParte, setEditingParte] = useState<{ parteId: string; clientId: string } | null>(null);
+    const [editingParteForm, setEditingParteForm] = useState<Partial<Clients>>({});
+    const [isSavingParte, setIsSavingParte] = useState(false);
+
+    const [newImovelFormData, setNewImovelFormData] = useState<Partial<Imveis>>({
+        codImovel: '',
+        tipoImovel: 'Apartamento',
+        pretensao: 'Locação',
+        statusImovel: 'Ativo',
+        precoLocacao: undefined,
+        precoVenda: undefined,
+        valorCondominio: undefined,
+        valorIPTU: undefined,
+        cep: '',
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: 'SP',
+        nomeProprietario: '',
+        telefoneProprietario: '',
+        emailProprietario: ''
+    });
+
+    // Autocomplete Search States
+    const [clientSearchQuery, setClientSearchQuery] = useState('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [imovelSearchQuery, setImovelSearchQuery] = useState('');
+    const [isImovelDropdownOpen, setIsImovelDropdownOpen] = useState(false);
+
+    // Part / Participant Autocomplete States
+    const [partClientSearchQuery, setPartClientSearchQuery] = useState('');
+    const [isPartDropdownOpen, setIsPartDropdownOpen] = useState(false);
+    const [selectedPartRole, setSelectedPartRole] = useState<string>('Locatário');
     
     // Document Upload States
     const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
@@ -176,8 +258,11 @@ export default function AdminLocacoesKanbanPage() {
             const { items: pendingsList } = await BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento');
             const { items: tasksList } = await BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento');
             const { items: partiesList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
+            setAtendimentoPartes(partiesList);
             const { items: propertiesList } = await BaseCrudService.getAll<Imveis>('imoveis');
             const { items: propertyLinks } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
+            setImoveis(propertiesList);
+            setAtendimentoImoveis(propertyLinks);
 
             const filteredAtendimentos = atendimentos
                 .filter(a => ['Locação', 'Aluguel'].includes(a.serviceType || '') && !a.isArchived)
@@ -254,11 +339,31 @@ export default function AdminLocacoesKanbanPage() {
                     propertyValue: (a as any).propertyValue || 0,
                     rentValue: (a as any).rentValue || 0,
                     notes: a.notes || '',
+                    garantia: (a as any).garantia || 'Caucao',
+                    prazoMeses: (a as any).prazoMeses || '30',
+                    diaPagamento: (a as any).diaPagamento || '10',
+                    reajusteIndice: (a as any).reajusteIndice || 'IPCA',
+                    multaRescisaoAlugueis: (a as any).multaRescisaoAlugueis || '3',
+                    caucaoValor: (a as any).caucaoValor || 0,
+                    caucaoBanco: (a as any).caucaoBanco || 'Caixa Econômica Federal',
+                    caucaoAgencia: (a as any).caucaoAgencia || '',
+                    caucaoConta: (a as any).caucaoConta || '',
+                    caucaoTitular: (a as any).caucaoTitular || '',
+                    caucaoCpf: (a as any).caucaoCpf || '',
+                    clientePrincipalRef: a.clientePrincipalRef || '',
                     interlinks
                 };
             });
 
             setCases(filteredCases);
+
+            // Sync active case details if modal is open
+            if (selectedCase) {
+                const freshCase = filteredCases.find(c => c._id === selectedCase._id);
+                if (freshCase) {
+                    setSelectedCase(freshCase);
+                }
+            }
         } catch (error) {
             console.error('Error loading Locações Kanban data:', error);
             toast.error('Erro ao carregar dados do Kanban');
@@ -390,14 +495,298 @@ export default function AdminLocacoesKanbanPage() {
         try {
             await BaseCrudService.update('atendimentos', {
                 _id: selectedCase._id,
+                clientePrincipalRef: selectedCase.clientePrincipalRef,
+                contactName: selectedCase.contactName,
+                contactPhone: selectedCase.contactPhone,
+                contactEmail: selectedCase.contactEmail,
+                pastaInterna: selectedCase.pastaInterna,
+                rentValue: selectedCase.rentValue,
+                notes: selectedCase.notes,
+                
+                // Contract parameters
+                garantia: selectedCase.garantia,
+                prazoMeses: selectedCase.prazoMeses,
+                diaPagamento: selectedCase.diaPagamento,
+                reajusteIndice: selectedCase.reajusteIndice,
+                multaRescisaoAlugueis: selectedCase.multaRescisaoAlugueis,
+                
+                // Caução details
+                caucaoValor: selectedCase.caucaoValor,
+                caucaoBanco: selectedCase.caucaoBanco,
+                caucaoAgencia: selectedCase.caucaoAgencia,
+                caucaoConta: selectedCase.caucaoConta,
+                caucaoTitular: selectedCase.caucaoTitular,
+                caucaoCpf: selectedCase.caucaoCpf,
+                
                 documentosAnexos: uploadedDocs,
             });
             toast.success('Dados salvos com sucesso!');
-        } catch {
+            await loadData();
+        } catch (error) {
+            console.error('Erro ao salvar dados:', error);
             toast.error('Erro ao salvar dados.');
         } finally {
             setIsSavingLocacao(false);
         }
+    };
+
+    const handleCreateNewClientFromPopup = async () => {
+        if (!newClientFormData.clientName?.trim()) {
+            toast.error('O nome completo do cliente é obrigatório.');
+            return;
+        }
+        if (!newClientFormData.cpfCnpj?.trim()) {
+            toast.error('O CPF/CNPJ é obrigatório.');
+            return;
+        }
+
+        const cpfClean = newClientFormData.cpfCnpj.replace(/\D/g, '');
+        const exists = clients.some(c => c.cpfCnpj?.replace(/\D/g, '') === cpfClean);
+        if (exists) {
+            toast.error('Já existe um cliente com este CPF/CNPJ cadastrado.');
+            return;
+        }
+
+        setIsSavingLocacao(true);
+        try {
+            const clientId = crypto.randomUUID();
+            const clientPayload: Clients = {
+                _id: clientId,
+                clientName: newClientFormData.clientName.trim(),
+                cpfCnpj: newClientFormData.cpfCnpj.trim(),
+                email: newClientFormData.email?.trim() || '',
+                phoneNumber: newClientFormData.phoneNumber?.trim() || '',
+                rg: newClientFormData.rg?.trim() || '',
+                nationality: newClientFormData.nationality?.trim() || 'Brasileiro(a)',
+                profession: newClientFormData.profession?.trim() || '',
+                maritalStatus: newClientFormData.maritalStatus || 'Solteiro(a)',
+                gender: newClientFormData.gender || 'Masculino',
+                address: newClientFormData.address?.trim() || '',
+                notes: newClientFormData.notes?.trim() || '',
+                tipoPessoa: newClientFormData.tipoPessoa || 'FÍSICA',
+                status: 'Ativo',
+                whatsAppPrincipal: newClientFormData.phoneNumber?.trim() || '',
+                telefonePrincipal: newClientFormData.phoneNumber?.trim() || '',
+                emailPrincipal: newClientFormData.email?.trim() || '',
+                nomeRazaoSocial: newClientFormData.clientName.trim(),
+                papeis: 'Cliente',
+            };
+
+            await BaseCrudService.create('clientes', clientPayload);
+            toast.success('Cliente cadastrado com sucesso!');
+
+            // If we are in "dados" mode, update selectedCase
+            if (activeModalTrigger === 'dados' && selectedCase) {
+                setSelectedCase(prev => prev ? {
+                    ...prev,
+                    clientePrincipalRef: clientId,
+                    contactName: clientPayload.clientName,
+                    contactPhone: clientPayload.phoneNumber || '',
+                    contactEmail: clientPayload.email || '',
+                    cpfProponentePrincipal: clientPayload.cpfCnpj
+                } : null);
+                setClientSearchQuery('');
+            } else if (activeModalTrigger === 'partes' && selectedCase) {
+                // If we are in "partes" mode, create link automatically
+                const partyId = crypto.randomUUID();
+                await BaseCrudService.create('atendimentopartes', {
+                    _id: partyId,
+                    serviceRecordRef: selectedCase._id,
+                    clientRef: clientId,
+                    roleInService: selectedPartRole || 'Locatário',
+                    participationPercentage: 100,
+                    notes: 'Adicionado pós-cadastro rápido'
+                });
+                toast.success(`Adicionado como ${selectedPartRole} com sucesso!`);
+                setPartClientSearchQuery('');
+            }
+
+            // Reload all lists
+            await loadData();
+            
+            // Close modal and reset form
+            setShowNewClientModal(false);
+            setNewClientFormData({
+                clientName: '',
+                cpfCnpj: '',
+                email: '',
+                phoneNumber: '',
+                rg: '',
+                nationality: 'Brasileiro(a)',
+                profession: '',
+                maritalStatus: 'Solteiro(a)',
+                gender: 'Masculino',
+                address: '',
+                notes: '',
+                tipoPessoa: 'FÍSICA',
+                status: 'Ativo'
+            });
+        } catch (error) {
+            console.error('Erro ao cadastrar cliente:', error);
+            toast.error('Erro ao salvar o cadastro do cliente.');
+        } finally {
+            setIsSavingLocacao(false);
+        }
+    };
+
+    const handleOpenNewImovelModal = () => {
+        const randomCode = `IMO-${Math.floor(1000 + Math.random() * 9000)}`;
+        setNewImovelFormData({
+            codImovel: randomCode,
+            codigoReference: randomCode,
+            tipoImovel: 'Apartamento',
+            pretensao: 'Locação',
+            statusImovel: 'Ativo',
+            precoLocacao: undefined,
+            precoVenda: undefined,
+            valorCondominio: undefined,
+            valorIPTU: undefined,
+            cep: '',
+            logradouro: '',
+            numero: '',
+            complemento: '',
+            bairro: '',
+            cidade: '',
+            estado: 'SP',
+            nomeProprietario: '',
+            telefoneProprietario: '',
+            emailProprietario: ''
+        });
+        setEditingImovelId(null);
+        setShowNewImovelModal(true);
+    };
+
+    const handleOpenEditImovelModal = (imovel: Imveis) => {
+        setNewImovelFormData({
+            codImovel: imovel.codImovel || imovel.codigoReference || '',
+            codigoReference: imovel.codigoReference || imovel.codImovel || '',
+            tipoImovel: imovel.tipoImovel || 'Apartamento',
+            pretensao: imovel.pretensao || 'Locação',
+            statusImovel: imovel.statusImovel || 'Ativo',
+            precoLocacao: imovel.precoLocacao,
+            precoVenda: imovel.precoVenda,
+            valorCondominio: imovel.valorCondominio,
+            valorIPTU: imovel.valorIPTU,
+            cep: imovel.cep || '',
+            logradouro: imovel.logradouro || imovel.enderecoRua || '',
+            numero: imovel.numero || '',
+            complemento: imovel.complemento || imovel.enderecoComplemento || '',
+            bairro: imovel.bairro || imovel.enderecoBairro || '',
+            cidade: imovel.cidade || imovel.enderecoCidade || '',
+            estado: imovel.estado || imovel.enderecoEstado || 'SP',
+            nomeProprietario: imovel.nomeProprietario || '',
+            telefoneProprietario: imovel.telefoneProprietario || '',
+            emailProprietario: imovel.emailProprietario || ''
+        });
+        setEditingImovelId(imovel._id);
+        setShowNewImovelModal(true);
+    };
+
+    const handleSaveImovel = async () => {
+        if (!newImovelFormData.codImovel?.trim()) {
+            toast.error('O código do imóvel é obrigatório.');
+            return;
+        }
+        if (!newImovelFormData.tipoImovel) {
+            toast.error('O tipo do imóvel é obrigatório.');
+            return;
+        }
+
+        setIsSavingLocacao(true);
+        try {
+            const imovelPayload: Imveis = {
+                _id: editingImovelId || crypto.randomUUID(),
+                codImovel: newImovelFormData.codImovel.trim(),
+                codigoReference: newImovelFormData.codImovel.trim(),
+                tipoImovel: newImovelFormData.tipoImovel,
+                pretensao: newImovelFormData.pretensao || 'Locação',
+                statusImovel: newImovelFormData.statusImovel || 'Ativo',
+                precoLocacao: newImovelFormData.precoLocacao,
+                precoVenda: newImovelFormData.precoVenda,
+                valorCondominio: newImovelFormData.valorCondominio,
+                valorIPTU: newImovelFormData.valorIPTU,
+                cep: newImovelFormData.cep?.trim() || '',
+                logradouro: newImovelFormData.logradouro?.trim() || '',
+                numero: newImovelFormData.numero?.trim() || '',
+                complemento: newImovelFormData.complemento?.trim() || '',
+                bairro: newImovelFormData.bairro?.trim() || '',
+                cidade: newImovelFormData.cidade?.trim() || '',
+                estado: newImovelFormData.estado || 'SP',
+                nomeProprietario: newImovelFormData.nomeProprietario?.trim() || '',
+                telefoneProprietario: newImovelFormData.telefoneProprietario?.trim() || '',
+                emailProprietario: newImovelFormData.emailProprietario?.trim() || ''
+            };
+
+            if (editingImovelId) {
+                await BaseCrudService.update('imoveis', imovelPayload);
+                toast.success('Imóvel atualizado com sucesso!');
+            } else {
+                await BaseCrudService.create('imoveis', imovelPayload);
+                toast.success('Imóvel cadastrado com sucesso!');
+
+                if (selectedCase) {
+                    const linkExists = atendimentoImoveis.some(
+                        ai => ai.atendimentoRef === selectedCase._id && ai.imovelRef === imovelPayload._id
+                    );
+                    if (!linkExists) {
+                        await BaseCrudService.create('atendimentoimoveis', {
+                            _id: crypto.randomUUID(),
+                            atendimentoRef: selectedCase._id,
+                            imovelRef: imovelPayload._id,
+                            status: 'Ativo'
+                        });
+                        toast.success('Imóvel vinculado automaticamente à locação!');
+                    }
+                }
+            }
+
+            await loadData();
+            setShowNewImovelModal(false);
+            setEditingImovelId(null);
+        } catch (error) {
+            console.error('Erro ao salvar imóvel:', error);
+            toast.error('Erro ao salvar as informações do imóvel.');
+        } finally {
+            setIsSavingLocacao(false);
+        }
+    };
+
+    const handleCpfCnpjChange = (val: string) => {
+        const clean = val.replace(/\D/g, '');
+        let formatted = clean;
+        if (clean.length <= 11) {
+            formatted = formatCPF(clean);
+        } else {
+            const limited = clean.substring(0, 14);
+            if (limited.length <= 2) {
+                formatted = limited;
+            } else if (limited.length <= 5) {
+                formatted = `${limited.slice(0, 2)}.${limited.slice(2)}`;
+            } else if (limited.length <= 8) {
+                formatted = `${limited.slice(0, 2)}.${limited.slice(2, 5)}.${limited.slice(5)}`;
+            } else if (limited.length <= 12) {
+                formatted = `${limited.slice(0, 2)}.${limited.slice(2, 5)}.${limited.slice(5, 8)}/${limited.slice(8)}`;
+            } else {
+                formatted = `${limited.slice(0, 2)}.${limited.slice(2, 5)}.${limited.slice(5, 8)}/${limited.slice(8, 12)}-${limited.slice(12)}`;
+            }
+        }
+        setNewClientFormData(prev => ({ ...prev, cpfCnpj: formatted }));
+    };
+
+    const handlePhoneChange = (val: string) => {
+        const clean = val.replace(/\D/g, '');
+        let formatted = clean;
+        const limited = clean.substring(0, 11);
+        if (limited.length <= 2) {
+            formatted = limited;
+        } else if (limited.length <= 6) {
+            formatted = `(${limited.slice(0, 2)}) ${limited.slice(2)}`;
+        } else if (limited.length <= 10) {
+            formatted = `(${limited.slice(0, 2)}) ${limited.slice(2, 6)}-${limited.slice(6)}`;
+        } else {
+            formatted = `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`;
+        }
+        setNewClientFormData(prev => ({ ...prev, phoneNumber: formatted }));
     };
 
     const handleDocFileDrop = async (files: FileList | null) => {
@@ -450,6 +839,51 @@ export default function AdminLocacoesKanbanPage() {
             toast.error('Erro ao concluir processo.');
         } finally {
             setIsSavingLocacao(false);
+        }
+    };
+
+    const handleLinkImovel = async () => {
+        if (!selectedCase) return;
+        if (!selectedImovelId) {
+            toast.error('Selecione um imóvel para vincular.');
+            return;
+        }
+
+        // Evitar duplicidade de vínculo de imóvel para o mesmo atendimento
+        const isDuplicate = atendimentoImoveis.some(
+            (p) => p.atendimentoRef === selectedCase._id && p.imovelRef === selectedImovelId
+        );
+        if (isDuplicate) {
+            toast.error('Este imóvel já está vinculado a esta locação.');
+            return;
+        }
+
+        try {
+            const newLink: any = {
+                _id: crypto.randomUUID(),
+                atendimentoRef: selectedCase._id,
+                imovelRef: selectedImovelId,
+                status: 'Ativo'
+            };
+
+            await BaseCrudService.create('atendimentoimoveis', newLink);
+            toast.success('Imóvel vinculado com sucesso!');
+            setSelectedImovelId('');
+            await loadData();
+        } catch (error) {
+            console.error('Erro ao vincular imóvel:', error);
+            toast.error('Erro ao vincular imóvel.');
+        }
+    };
+
+    const handleUnlinkImovel = async (linkId: string) => {
+        try {
+            await BaseCrudService.delete('atendimentoimoveis', linkId);
+            toast.success('Vínculo do imóvel removido com sucesso!');
+            await loadData();
+        } catch (error) {
+            console.error('Erro ao desvincular imóvel:', error);
+            toast.error('Erro ao desvincular imóvel.');
         }
     };
 
@@ -665,6 +1099,21 @@ export default function AdminLocacoesKanbanPage() {
                                                                                 </div>
                                                                             </div>
 
+                                                                            {/* Resumo do Imóvel Vinculado */}
+                                                                            {(() => {
+                                                                                const vinculado = atendimentoImoveis.find(ai => ai.atendimentoRef === caseItem._id);
+                                                                                const imovel = vinculado ? imoveis.find(i => i._id === vinculado.imovelRef) : null;
+                                                                                if (!imovel) return null;
+                                                                                return (
+                                                                                    <div className="mt-2 flex items-center gap-1.5 text-[10px] bg-slate-50 border border-slate-100/50 rounded-lg px-2.5 py-1.5 text-slate-600 font-medium hover:bg-slate-100 hover:border-slate-200 transition-all">
+                                                                                        <Home className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                                                                        <span className="font-black text-emerald-700 text-[9px] uppercase tracking-wider">{imovel.codImovel || imovel.codigoReference || 'S/Cód'}</span>
+                                                                                        <span className="text-slate-300">•</span>
+                                                                                        <span className="truncate">{imovel.enderecoRua || imovel.logradouro || imovel.enderecoBairro || imovel.bairro || 'Sem endereço'}</span>
+                                                                                    </div>
+                                                                                );
+                                                                            })()}
+
                                                                             {/* Mini Indicators */}
                                                                             <div className="flex flex-wrap gap-2 mb-3">
                                                                                 {caseItem.pendenciasAbertas > 0 && (
@@ -768,8 +1217,8 @@ export default function AdminLocacoesKanbanPage() {
                 </div>
 
                 <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-                    <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden rounded-3xl">
-                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-start">
+                    <DialogContent className="max-w-6xl h-[90vh] max-h-[90vh] p-0 gap-0 overflow-hidden rounded-3xl flex flex-col bg-white">
+                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-white/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-start flex-shrink-0">
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between mb-6">
                                     <div className="flex items-center gap-3">
@@ -875,16 +1324,12 @@ export default function AdminLocacoesKanbanPage() {
                             </div>
                         </DialogHeader>
 
-                        <ScrollArea className="h-[calc(90vh-100px)]">
-                            <div className="p-8">
-                                <Tabs value={modalTab} onValueChange={setModalTab}>
-                                    <TabsList className="grid grid-cols-7 mb-8 bg-slate-100/50 p-1 rounded-2xl h-12">
+                        <Tabs value={modalTab} onValueChange={setModalTab} className="flex-1 flex flex-col min-h-0 w-full">
+                            <TabsList className="grid grid-cols-5 mb-6 bg-slate-100/50 p-1 rounded-2xl h-12 flex-shrink-0 mx-8 mt-6">
                                         <TabsTrigger value="dados" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
                                             <FileText className="w-4 h-4" /> Dados
                                         </TabsTrigger>
-                                        <TabsTrigger value="proponentes" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <Users className="w-4 h-4" /> Partes
-                                        </TabsTrigger>
+
                                         <TabsTrigger value="pendencias" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
                                             <AlertCircle className="w-4 h-4" /> Pendências
                                         </TabsTrigger>
@@ -894,86 +1339,596 @@ export default function AdminLocacoesKanbanPage() {
                                         <TabsTrigger value="documentos" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
                                             <Upload className="w-4 h-4" /> Documentos
                                         </TabsTrigger>
-                                        <TabsTrigger value="imoveis" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
-                                            <Home className="w-4 h-4" /> Imóvel
-                                        </TabsTrigger>
+
                                         <TabsTrigger value="historico" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs gap-2">
                                             <History className="w-4 h-4" /> Histórico
                                         </TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="dados" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <Info className="w-4 h-4 text-emerald-500" />
-                                                    Informações Básicas
-                                                </h3>
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Inquilino Principal</Label>
-                                                        <p className="text-sm font-medium text-slate-900">{selectedCase?.contactName}</p>
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider">CPF</Label>
-                                                        <p className="text-sm font-medium text-slate-900">{selectedCase?.cpfProponentePrincipal ? formatCPF(selectedCase.cpfProponentePrincipal) : '—'}</p>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Telefone</Label>
-                                                            <p className="text-sm font-medium text-slate-900">{selectedCase?.contactPhone || '—'}</p>
+                                    <TabsContent value="dados" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        
+                                        {/* SEÇÃO: Imóvel da Locação */}
+                                        <div className="space-y-4">
+                                            <h3 className="text-sm font-bold text-slate-800 flex items-center justify-between">
+                                                <span className="flex items-center gap-2 text-slate-850 font-bold">
+                                                    <Home className="w-4 h-4 text-emerald-500" />
+                                                    Imóvel da Locação
+                                                </span>
+                                                <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold rounded-lg px-2 py-0.5">
+                                                    {atendimentoImoveis.filter(ai => ai.atendimentoRef === selectedCase?._id).length} vinculado
+                                                </Badge>
+                                            </h3>
+                                            
+                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                {/* Left card (Property detail or placeholder) */}
+                                                <div className="lg:col-span-2">
+                                                    {atendimentoImoveis.filter(ai => ai.atendimentoRef === selectedCase?._id).length > 0 ? (
+                                                        atendimentoImoveis
+                                                            .filter(ai => ai.atendimentoRef === selectedCase?._id)
+                                                            .map(ai => {
+                                                                const imovel = imoveis.find(i => i._id === ai.imovelRef);
+                                                                return (
+                                                                    <Card key={ai._id} className="p-5 border-slate-150 hover:border-emerald-300 transition-all rounded-2xl flex flex-col sm:flex-row gap-5 shadow-sm bg-white overflow-hidden relative group">
+                                                                        {imovel?.propertyImages?.[0] || imovel?.galeriaFotos?.[0] ? (
+                                                                            <div className="w-full sm:w-32 h-24 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
+                                                                                <img src={imovel.propertyImages?.[0] || imovel.galeriaFotos?.[0]} alt={imovel.tipoImovel} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="w-full sm:w-32 h-24 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0 border border-slate-100">
+                                                                                <Building2 className="w-8 h-8 animate-pulse text-slate-350" />
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="flex-1 flex flex-col justify-between">
+                                                                            <div>
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md">
+                                                                                        {imovel?.codImovel || imovel?.codigoReference || 'SEM CÓDIGO'}
+                                                                                    </span>
+                                                                                    <span className="text-xs text-slate-400 font-medium">
+                                                                                        {imovel?.tipoImovel}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <h4 className="text-base font-bold text-slate-800 mt-1.5 line-clamp-1">{imovel?.enderecoRua || imovel?.logradouro || 'Endereço não informado'}</h4>
+                                                                                <p className="text-xs text-slate-500 mt-1">
+                                                                                    {imovel?.bairro ? `${imovel.bairro}, ` : ''}{imovel?.cidade ? `${imovel.cidade} - ${imovel.estado || 'SP'}` : ''}
+                                                                                </p>
+                                                                            </div>
+                                                                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                                                                                <div className="text-xs text-slate-400">
+                                                                                    Valor do aluguel estimado: <span className="font-bold text-slate-800 text-sm">{imovel?.precoLocacao ? formatCurrency(imovel.precoLocacao) : 'Não informado'}</span>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    {imovel && (
+                                                                                        <Button 
+                                                                                            variant="ghost" 
+                                                                                            size="sm" 
+                                                                                            className="text-slate-650 hover:text-emerald-600 hover:bg-slate-50 font-bold text-xs gap-1 rounded-xl h-8 px-3"
+                                                                                            onClick={() => handleOpenEditImovelModal(imovel)}
+                                                                                        >
+                                                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                                                            Editar
+                                                                                        </Button>
+                                                                                    )}
+                                                                                    <Button 
+                                                                                        variant="ghost" 
+                                                                                        size="sm" 
+                                                                                        className="text-red-500 hover:text-red-650 hover:bg-red-50 font-bold text-xs gap-1 rounded-xl h-8 px-3"
+                                                                                        onClick={() => handleUnlinkImovel(ai._id)}
+                                                                                    >
+                                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                                        Desvincular
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </Card>
+                                                                );
+                                                            })
+                                                    ) : (
+                                                        <div className="text-center p-8 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400 h-full flex flex-col justify-center items-center">
+                                                            <Building2 className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                                                            <p className="text-sm font-semibold">Nenhum imóvel vinculado.</p>
+                                                            <p className="text-xs mt-1">Selecione e vincule o imóvel correspondente no painel ao lado.</p>
                                                         </div>
-                                                        <div>
-                                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Pasta</Label>
-                                                            <p className="text-sm font-medium text-slate-900">{selectedCase?.pastaInterna}</p>
-                                                        </div>
-                                                    </div>
+                                                    )}
                                                 </div>
-                                            </Card>
+                                                
+                                                {/* Right: Inline Vincular Imóvel */}
+                                                <div className="lg:col-span-1 flex flex-col gap-3 p-5 bg-slate-50/40 border border-slate-100 rounded-2xl shadow-sm">
+                                                    <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                                                        <Building2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                        Vincular Imóvel
+                                                    </p>
 
-                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <DollarSign className="w-4 h-4 text-emerald-500" />
-                                                    Valores da Locação
-                                                </h3>
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Valor do Aluguel</Label>
-                                                        <p className="text-lg font-bold text-slate-900">{formatCurrency(selectedCase?.rentValue || 0)}</p>
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider">Tipo de Contrato</Label>
-                                                        <div className="flex items-center justify-between">
-                                                            <Badge className="mt-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none">{selectedCase?.serviceType}</Badge>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                className="h-8 border-secondary text-secondary hover:bg-secondary/10 gap-2 font-bold"
-                                                                onClick={() => setIsWizardOpen(true)}
-                                                            >
-                                                                <FileText className="w-4 h-4" />
-                                                                Gerar Contrato
+                                                    {selectedImovelId ? (
+                                                        <div className="flex items-center justify-between p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 flex-shrink-0">
+                                                                    <Building2 className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider block truncate">
+                                                                        {imoveis.find(i => i._id === selectedImovelId)?.codImovel || imoveis.find(i => i._id === selectedImovelId)?.codigoReference || 'SEM CÓDIGO'}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-slate-500 truncate block">
+                                                                        {imoveis.find(i => i._id === selectedImovelId)?.tipoImovel} • {imoveis.find(i => i._id === selectedImovelId)?.bairro || 'Sem Bairro'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg flex-shrink-0" onClick={() => { setSelectedImovelId(''); setImovelSearchQuery(''); }}>
+                                                                <X className="w-3.5 h-3.5" />
                                                             </Button>
                                                         </div>
+                                                    ) : (
+                                                        <div className="relative">
+                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                                <Search className="h-3.5 w-3.5 text-slate-400" />
+                                                            </div>
+                                                            <Input
+                                                                type="text"
+                                                                placeholder="Código, endereço, proprietário..."
+                                                                className="pl-9 h-10 bg-white border-slate-200 rounded-xl text-xs w-full focus-visible:ring-emerald-500"
+                                                                value={imovelSearchQuery}
+                                                                onChange={(e) => { setImovelSearchQuery(e.target.value); setIsImovelDropdownOpen(true); }}
+                                                                onFocus={() => setIsImovelDropdownOpen(true)}
+                                                                onBlur={() => setTimeout(() => setIsImovelDropdownOpen(false), 200)}
+                                                            />
+                                                            {isImovelDropdownOpen && (
+                                                                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-56 overflow-y-auto p-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                    {imoveis
+                                                                        .filter(i => {
+                                                                            if (!imovelSearchQuery.trim()) return true;
+                                                                            const q = imovelSearchQuery.toLowerCase().trim();
+                                                                            return (i.codImovel || '').toLowerCase().includes(q) ||
+                                                                                   (i.codigoReference || '').toLowerCase().includes(q) ||
+                                                                                   (i.enderecoRua || '').toLowerCase().includes(q) ||
+                                                                                   (i.logradouro || '').toLowerCase().includes(q) ||
+                                                                                   (i.bairro || '').toLowerCase().includes(q) ||
+                                                                                   (i.cidade || '').toLowerCase().includes(q) ||
+                                                                                   (i.nomeProprietario || '').toLowerCase().includes(q) ||
+                                                                                   (imovelSearchQuery.replace(/\D/g, '') !== '' && (i.telefoneProprietario || '').replace(/\D/g, '').includes(imovelSearchQuery.replace(/\D/g, '')));
+                                                                        })
+                                                                        .map(i => (
+                                                                            <button
+                                                                                key={i._id}
+                                                                                type="button"
+                                                                                className="w-full flex flex-col items-start text-left p-2.5 rounded-lg hover:bg-slate-50 transition-colors"
+                                                                                onClick={() => { setSelectedImovelId(i._id); setIsImovelDropdownOpen(false); }}
+                                                                            >
+                                                                                <div className="flex items-center justify-between w-full">
+                                                                                    <span className="text-xs font-bold text-slate-800">{i.codImovel || i.codigoReference || 'SEM CÓD'} - {i.tipoImovel}</span>
+                                                                                    {i.precoLocacao && <span className="text-xs font-bold text-emerald-600">{formatCurrency(i.precoLocacao)}</span>}
+                                                                                </div>
+                                                                                <span className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">📍 {i.logradouro || i.enderecoRua || 'Sem rua'}, {i.numero || 'S/N'} - {i.bairro}</span>
+                                                                                {i.nomeProprietario && <span className="text-[10px] text-slate-400 mt-0.5">👤 {i.nomeProprietario}</span>}
+                                                                            </button>
+                                                                        ))}
+                                                                    {imoveis.filter(i => {
+                                                                        if (!imovelSearchQuery.trim()) return true;
+                                                                        const q = imovelSearchQuery.toLowerCase().trim();
+                                                                        return (i.codImovel || '').toLowerCase().includes(q) || (i.logradouro || '').toLowerCase().includes(q) || (i.nomeProprietario || '').toLowerCase().includes(q);
+                                                                    }).length === 0 && (
+                                                                        <div className="text-center py-3 text-xs text-slate-400">Nenhum imóvel encontrado.</div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <Button
+                                                        onClick={handleLinkImovel}
+                                                        className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+                                                        Vincular Imóvel
+                                                    </Button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleOpenNewImovelModal}
+                                                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center justify-center gap-1"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                        Cadastrar Novo Imóvel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                                
+                                                {/* Valores da Locação */}
+                                                <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
+                                                    <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                                        <DollarSign className="w-4 h-4 text-emerald-500" />
+                                                        Valores Negociados da Locação
+                                                    </h3>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <div>
+                                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Valor do Aluguel</Label>
+                                                            <Input
+                                                                type="text"
+                                                                className="h-11 bg-slate-50 border-none rounded-xl text-lg font-bold text-slate-850 focus-visible:ring-emerald-500"
+                                                                value={selectedCase?.rentValue ? formatCurrency(selectedCase.rentValue) : ''}
+                                                                onChange={e => {
+                                                                    const val = parseCurrency(e.target.value);
+                                                                    setSelectedCase(prev => prev ? { ...prev, rentValue: val } : null);
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Tipo de Contrato</Label>
+                                                            <div className="flex items-center justify-between mt-1 h-11">
+                                                                <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-100 rounded-lg px-2.5 py-1 text-xs font-bold">{selectedCase?.serviceType}</Badge>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="h-8 border-secondary text-secondary hover:bg-secondary/15 gap-2 font-bold rounded-lg text-xs"
+                                                                    onClick={() => {
+                                                                        const partesAtuais = atendimentoPartes.filter(p => p.serviceRecordRef === selectedCase?._id);
+                                                                        const locadores = partesAtuais.filter(p => p.roleInService === 'Locador');
+                                                                        const locatarios = partesAtuais.filter(p => p.roleInService === 'Locatário');
+                                                                        
+                                                                        if (locadores.length === 0 || locatarios.length === 0) {
+                                                                            toast.error('O contrato precisa ter pelo menos um locador e um locatário.');
+                                                                            return;
+                                                                        }
+
+                                                                        const hasMissingInfo = partesAtuais.some(part => {
+                                                                            const client = clients.find(c => c._id === part.clientRef);
+                                                                            if (!client) return true;
+                                                                            
+                                                                            const isPessoaJuridica = client.tipoPessoa === 'JURÍDICA' || (client.cpfCnpj && client.cpfCnpj.length > 14);
+                                                                            
+                                                                            if (!client.clientName || !client.cpfCnpj || !client.email || !client.phoneNumber || !client.address) {
+                                                                                return true;
+                                                                            }
+                                                                            
+                                                                            if (!isPessoaJuridica) {
+                                                                                if (!(client as any).rg || !(client as any).profession || !(client as any).nationality || !(client as any).maritalStatus) {
+                                                                                    return true;
+                                                                                }
+                                                                            }
+                                                                            
+                                                                            return false;
+                                                                        });
+
+                                                                        if (hasMissingInfo) {
+                                                                            toast.error('Preencha todas as informações obrigatórias de todas as partes (nome, CPF, RG, etc) antes de gerar o contrato. Clique em "Editar" nas partes vinculadas.');
+                                                                            return;
+                                                                        }
+
+                                                                        setIsWizardOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <FileText className="w-3.5 h-3.5" />
+                                                                    Gerar Contrato
+                                                                </Button>
+                                                            </div>
+                                                        </div>
                                                     </div>
+                                                </Card>
+
+                                                {/* Partes Vinculadas ao Contrato */}
+                                                <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                                            <Users className="w-4 h-4 text-emerald-500" />
+                                                            Partes Vinculadas ao Contrato ({atendimentoPartes.filter(p => p.serviceRecordRef === selectedCase?._id).length})
+                                                        </h3>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setModalTab('proponentes')}
+                                                            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1"
+                                                        >
+                                                            <Plus className="w-3.5 h-3.5" />
+                                                            Vincular Nova Parte
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                                                        {atendimentoPartes.filter(p => p.serviceRecordRef === selectedCase?._id).length === 0 ? (
+                                                            <div className="text-center py-8 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl">
+                                                                <Users className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                                                                <p className="text-xs font-medium text-slate-500">Nenhuma parte vinculada ainda</p>
+                                                                <p className="text-[10px] text-slate-400 mt-0.5">Clique em "Vincular Nova Parte" para começar.</p>
+                                                            </div>
+                                                        ) : (
+                                                            atendimentoPartes
+                                                                .filter(p => p.serviceRecordRef === selectedCase?._id)
+                                                                .map((part) => {
+                                                                    const client = clients.find(c => c._id === part.clientRef);
+                                                                    return (
+                                                                        <div key={part._id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-sm">
+                                                                            <div className="flex items-center gap-3.5 min-w-0">
+                                                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-[11px] flex-shrink-0 ${
+                                                                                    part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700' :
+                                                                                    part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700' :
+                                                                                    'bg-amber-100 text-amber-700'
+                                                                                }`}>
+                                                                                    {part.roleInService === 'Locatário' ? 'LT' : part.roleInService === 'Locador' ? 'LD' : 'FD'}
+                                                                                </div>
+                                                                                <div className="min-w-0">
+                                                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                                                        <span className="text-sm font-bold text-slate-800 truncate">{client?.clientName || 'Cliente desconhecido'}</span>
+                                                                                        <Badge className={`text-[9px] font-bold border-none px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                                                                            part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
+                                                                                            part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
+                                                                                            'bg-amber-100 text-amber-700 hover:bg-amber-100'
+                                                                                        }`}>
+                                                                                            {part.roleInService || 'Locatário'}
+                                                                                        </Badge>
+                                                                                    </div>
+                                                                                    <p className="text-xs text-slate-500 truncate mt-0.5">
+                                                                                        CPF/CNPJ: {client?.cpfCnpj ? formatCPF(client.cpfCnpj) : '—'} • E-mail: {client?.email || '—'}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    className="h-8 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl text-xs gap-1 px-2"
+                                                                                    onClick={() => {
+                                                                                        if (client) {
+                                                                                            setEditingParte({ parteId: part._id, clientId: client._id });
+                                                                                            setEditingParteForm({
+                                                                                                clientName: client.clientName || '',
+                                                                                                cpfCnpj: client.cpfCnpj || '',
+                                                                                                email: client.email || '',
+                                                                                                phoneNumber: client.phoneNumber || '',
+                                                                                                rg: (client as any).rg || '',
+                                                                                                nationality: (client as any).nationality || 'Brasileiro(a)',
+                                                                                                profession: (client as any).profession || '',
+                                                                                                maritalStatus: (client as any).maritalStatus || 'Solteiro(a)',
+                                                                                                address: client.address || '',
+                                                                                            });
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                                                    Editar
+                                                                                </Button>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl flex-shrink-0"
+                                                                                    onClick={async () => {
+                                                                                        if (confirm('Tem certeza que deseja remover esta parte deste processo?')) {
+                                                                                            setIsSavingLocacao(true);
+                                                                                            try {
+                                                                                                await BaseCrudService.delete('atendimentopartes', part._id);
+                                                                                                toast.success('Parte desvinculada com sucesso!');
+                                                                                                await loadData();
+                                                                                            } catch (err) {
+                                                                                                toast.error('Erro ao remover parte.');
+                                                                                            } finally {
+                                                                                                setIsSavingLocacao(false);
+                                                                                            }
+                                                                                        }
+                                                                                    }}
+                                                                                >
+                                                                                    <Trash2 className="w-4 h-4" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                        )}
+                                                    </div>
+                                                </Card>
+
+
+
+                                                {/* Notas Internas Card */}
+                                                <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
+                                                    <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                                        <ClipboardList className="w-4 h-4 text-amber-500" />
+                                                        Notas Internas do Atendimento
+                                                    </h3>
+                                                    <Textarea
+                                                        className="min-h-[120px] bg-slate-50 border-none rounded-xl text-sm italic focus-visible:ring-emerald-500"
+                                                        placeholder="Digite observações importantes sobre este atendimento..."
+                                                        value={selectedCase?.notes || ''}
+                                                        onChange={e => setSelectedCase(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                                                    />
+                                                </Card>
+
+                                            </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="proponentes" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            {/* Adicionar Participante Form */}
+                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl lg:col-span-1 h-fit">
+                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                                    <Plus className="w-4 h-4 text-indigo-500" />
+                                                    Vincular Nova Parte
+                                                </h3>
+                                                
+                                                <div className="space-y-4">
+                                                    <div className="relative">
+                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Buscar Cliente</Label>
+                                                        <div className="relative">
+                                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                                <Search className="h-4 w-4 text-slate-400" />
+                                                            </div>
+                                                            <Input
+                                                                type="text"
+                                                                placeholder="Nome ou CPF/CNPJ..."
+                                                                className="pl-10 h-11 bg-slate-50 border-none rounded-xl text-sm w-full"
+                                                                value={partClientSearchQuery}
+                                                                onChange={(e) => {
+                                                                    setPartClientSearchQuery(e.target.value);
+                                                                    setIsPartDropdownOpen(true);
+                                                                }}
+                                                                onFocus={() => setIsPartDropdownOpen(true)}
+                                                                onBlur={() => setTimeout(() => setIsPartDropdownOpen(false), 200)}
+                                                            />
+                                                            {isPartDropdownOpen && (
+                                                                <div className="absolute z-50 w-full mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-60 overflow-y-auto p-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                    {clients
+                                                                        .filter(c => {
+                                                                            const q = partClientSearchQuery.toLowerCase();
+                                                                            return (c.clientName || '').toLowerCase().includes(q) || 
+                                                                                   (c.cpfCnpj || '').replace(/\D/g, '').includes(q.replace(/\D/g, ''));
+                                                                        })
+                                                                        .slice(0, 5)
+                                                                        .map((c) => (
+                                                                            <button
+                                                                                key={c._id}
+                                                                                type="button"
+                                                                                className="w-full flex flex-col items-start text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                                                                                onClick={async () => {
+                                                                                    if (!selectedCase) return;
+                                                                                    // Quick add!
+                                                                                    setIsSavingLocacao(true);
+                                                                                    try {
+                                                                                        const existsPart = atendimentoPartes.some(p => p.serviceRecordRef === selectedCase._id && p.clientRef === c._id && p.roleInService === selectedPartRole);
+                                                                                        if (existsPart) {
+                                                                                            toast.error('Este cliente já está vinculado com esta função.');
+                                                                                            return;
+                                                                                        }
+                                                                                        const partyId = crypto.randomUUID();
+                                                                                        await BaseCrudService.create('atendimentopartes', {
+                                                                                            _id: partyId,
+                                                                                            serviceRecordRef: selectedCase._id,
+                                                                                            clientRef: c._id,
+                                                                                            roleInService: selectedPartRole,
+                                                                                            participationPercentage: 100,
+                                                                                            notes: 'Adicionado via Kanban'
+                                                                                        });
+                                                                                        toast.success('Parte vinculada com sucesso!');
+                                                                                        setPartClientSearchQuery('');
+                                                                                        await loadData();
+                                                                                    } catch (err) {
+                                                                                        toast.error('Erro ao vincular parte.');
+                                                                                    } finally {
+                                                                                        setIsSavingLocacao(false);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                <span className="text-sm font-bold text-slate-800">{c.clientName}</span>
+                                                                                <span className="text-xs text-slate-500 mt-0.5">
+                                                                                    CPF/CNPJ: {c.cpfCnpj ? formatCPF(c.cpfCnpj) : '—'}
+                                                                                </span>
+                                                                            </button>
+                                                                        ))}
+                                                                    <div className="border-t border-slate-50 mt-1 pt-1">
+                                                                        <button
+                                                                            type="button"
+                                                                            className="w-full flex items-center justify-center gap-2 p-2.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50/50 rounded-lg transition-colors"
+                                                                            onClick={() => {
+                                                                                setActiveModalTrigger('partes');
+                                                                                setShowNewClientModal(true);
+                                                                                setIsPartDropdownOpen(false);
+                                                                            }}
+                                                                        >
+                                                                            <Plus className="w-4 h-4" />
+                                                                            Cadastrar Novo Cliente
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Papel / Função</Label>
+                                                        <Select value={selectedPartRole} onValueChange={setSelectedPartRole}>
+                                                            <SelectTrigger className="h-11 bg-slate-50 border-none rounded-xl">
+                                                                <SelectValue placeholder="Selecione o papel..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                                                <SelectItem value="Locatário" className="rounded-lg">Locatário (Inquilino)</SelectItem>
+                                                                <SelectItem value="Locador" className="rounded-lg">Locador (Proprietário)</SelectItem>
+                                                                <SelectItem value="Fiador" className="rounded-lg">Fiador</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    <p className="text-xs text-slate-400 italic">
+                                                        Dica: Digite o nome no campo acima e selecione o cliente para vinculá-lo instantaneamente ao contrato com a função desejada.
+                                                    </p>
                                                 </div>
                                             </Card>
 
-                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
-                                                <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                    <ClipboardList className="w-4 h-4 text-amber-500" />
-                                                    Notas Internas
+                                            {/* List of current parties */}
+                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl lg:col-span-2">
+                                                <h3 className="text-sm font-bold text-slate-700 mb-6 flex items-center gap-2">
+                                                    <Users className="w-4 h-4 text-emerald-500" />
+                                                    Partes Vinculadas ao Contrato ({atendimentoPartes.filter(p => p.serviceRecordRef === selectedCase?._id).length})
                                                 </h3>
-                                                <Textarea
-                                                    className="min-h-[120px] bg-slate-50 border-none rounded-xl text-sm italic"
-                                                    value={selectedCase?.notes || ''}
-                                                    readOnly
-                                                />
+
+                                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                                    {atendimentoPartes.filter(p => p.serviceRecordRef === selectedCase?._id).length === 0 ? (
+                                                        <div className="text-center py-12 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                                                            <Users className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                                                            <p className="text-sm font-bold text-slate-500">Nenhuma parte vinculada ainda</p>
+                                                            <p className="text-xs text-slate-400 mt-1">Busque um cliente cadastrado ou clique em '+ Novo Cadastro' para começar.</p>
+                                                        </div>
+                                                    ) : (
+                                                        atendimentoPartes
+                                                            .filter(p => p.serviceRecordRef === selectedCase?._id)
+                                                            .map((part) => {
+                                                                const client = clients.find(c => c._id === part.clientRef);
+                                                                return (
+                                                                    <div key={part._id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:shadow-md hover:bg-white">
+                                                                        <div className="flex items-center gap-4 min-w-0">
+                                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                                                                                part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700' :
+                                                                                part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700' :
+                                                                                'bg-amber-100 text-amber-700'
+                                                                            }`}>
+                                                                                {part.roleInService === 'Locatário' ? 'LT' : part.roleInService === 'Locador' ? 'LD' : 'FD'}
+                                                                            </div>
+                                                                            <div className="min-w-0">
+                                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                                    <span className="text-sm font-bold text-slate-800 truncate">{client?.clientName || 'Cliente desconhecido'}</span>
+                                                                                    <Badge className={`text-[10px] font-bold border-none px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                                                                        part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
+                                                                                        part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
+                                                                                        'bg-amber-100 text-amber-700 hover:bg-amber-100'
+                                                                                    }`}>
+                                                                                        {part.roleInService || 'Locatário'}
+                                                                                    </Badge>
+                                                                                </div>
+                                                                                <p className="text-xs text-slate-500 mt-1 truncate">
+                                                                                    CPF/CNPJ: {client?.cpfCnpj ? formatCPF(client.cpfCnpj) : '—'} • E-mail: {client?.email || '—'}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-9 w-9 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl flex-shrink-0"
+                                                                            onClick={async () => {
+                                                                                if (confirm('Tem certeza que deseja remover esta parte deste processo?')) {
+                                                                                    setIsSavingLocacao(true);
+                                                                                    try {
+                                                                                        await BaseCrudService.delete('atendimentopartes', part._id);
+                                                                                        toast.success('Parte desvinculada com sucesso!');
+                                                                                        await loadData();
+                                                                                    } catch (err) {
+                                                                                        toast.error('Erro ao remover parte.');
+                                                                                    } finally {
+                                                                                        setIsSavingLocacao(false);
+                                                                                    }
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                    )}
+                                                </div>
                                             </Card>
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="documentos" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <TabsContent value="documentos" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div
                                             onDragOver={e => { e.preventDefault(); setIsDraggingDoc(true); }}
                                             onDragLeave={() => setIsDraggingDoc(false)}
@@ -1036,7 +1991,236 @@ export default function AdminLocacoesKanbanPage() {
                                         )}
                                     </TabsContent>
 
-                                    <TabsContent value="historico">
+                                    <TabsContent value="imoveis" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            {/* Formulário de Vínculo de Imóvel */}
+                                            <Card className="p-6 border-slate-100 shadow-sm rounded-2xl lg:col-span-1 bg-slate-50/30">
+                                                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                                    <Building2 className="w-4 h-4 text-emerald-500" />
+                                                    Vincular Imóvel
+                                                </h3>
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-700">Selecione o Imóvel</Label>
+                                                        {selectedImovelId ? (
+                                                            <div className="flex items-center justify-between p-3.5 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                                                                        <Building2 className="w-4.5 h-4.5" />
+                                                                    </div>
+                                                                    <div className="text-left">
+                                                                        <span className="text-xs font-black text-emerald-700 uppercase tracking-wider block">
+                                                                            {imoveis.find(i => i._id === selectedImovelId)?.codImovel || imoveis.find(i => i._id === selectedImovelId)?.codigoReference || 'SEM CÓDIGO'}
+                                                                        </span>
+                                                                        <span className="text-xs text-slate-500 font-medium">
+                                                                            {imoveis.find(i => i._id === selectedImovelId)?.tipoImovel} • {imoveis.find(i => i._id === selectedImovelId)?.bairro || 'Sem Bairro'}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <Button 
+                                                                    type="button"
+                                                                    variant="ghost" 
+                                                                    size="sm" 
+                                                                    className="h-8 w-8 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                                                                    onClick={() => {
+                                                                        setSelectedImovelId('');
+                                                                        setImovelSearchQuery('');
+                                                                    }}
+                                                                >
+                                                                    <X className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="relative">
+                                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                                    <Search className="h-4 w-4 text-slate-400" />
+                                                                </div>
+                                                                <Input
+                                                                    type="text"
+                                                                    placeholder="Buscar por código, endereço, proprietário..."
+                                                                    className="pl-10 h-11 bg-white border border-slate-200 rounded-xl text-sm w-full focus-visible:ring-emerald-500"
+                                                                    value={imovelSearchQuery}
+                                                                    onChange={(e) => {
+                                                                        setImovelSearchQuery(e.target.value);
+                                                                        setIsImovelDropdownOpen(true);
+                                                                    }}
+                                                                    onFocus={() => setIsImovelDropdownOpen(true)}
+                                                                    onBlur={() => setTimeout(() => setIsImovelDropdownOpen(false), 200)}
+                                                                />
+                                                                {isImovelDropdownOpen && (
+                                                                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-100 shadow-xl rounded-xl max-h-64 overflow-y-auto p-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                        {imoveis
+                                                                            .filter(i => {
+                                                                                if (!imovelSearchQuery.trim()) return true;
+                                                                                const q = imovelSearchQuery.toLowerCase().trim();
+                                                                                const matchesCode = (i.codImovel || '').toLowerCase().includes(q) || (i.codigoReference || '').toLowerCase().includes(q);
+                                                                                const matchesAddress = (i.enderecoRua || '').toLowerCase().includes(q) || 
+                                                                                                       (i.logradouro || '').toLowerCase().includes(q) || 
+                                                                                                       (i.bairro || '').toLowerCase().includes(q) || 
+                                                                                                       (i.cidade || '').toLowerCase().includes(q);
+                                                                                const matchesOwnerName = (i.nomeProprietario || '').toLowerCase().includes(q);
+                                                                                const cleanPhoneQuery = q.replace(/\D/g, '');
+                                                                                const matchesOwnerPhone = cleanPhoneQuery !== '' && (i.telefoneProprietario || '').replace(/\D/g, '').includes(cleanPhoneQuery);
+                                                                                return matchesCode || matchesAddress || matchesOwnerName || matchesOwnerPhone;
+                                                                            })
+                                                                            .map(i => (
+                                                                                <button
+                                                                                    key={i._id}
+                                                                                    type="button"
+                                                                                    className="w-full flex flex-col items-start text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                                                                                    onClick={() => {
+                                                                                        setSelectedImovelId(i._id);
+                                                                                        setIsImovelDropdownOpen(false);
+                                                                                    }}
+                                                                                >
+                                                                                    <div className="flex items-center justify-between w-full">
+                                                                                        <span className="text-xs font-bold text-slate-800">
+                                                                                            {i.codImovel || i.codigoReference || 'SEM CÓDIGO'} - {i.tipoImovel}
+                                                                                        </span>
+                                                                                        {i.precoLocacao && (
+                                                                                            <span className="text-xs font-bold text-emerald-600">
+                                                                                                {formatCurrency(i.precoLocacao)}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <span className="text-xs text-slate-500 mt-0.5 line-clamp-1 text-left">
+                                                                                        📍 {i.logradouro || i.enderecoRua || 'Sem rua'}, {i.numero || 'S/N'} - {i.bairro || 'Sem Bairro'}
+                                                                                    </span>
+                                                                                    {i.nomeProprietario && (
+                                                                                        <span className="text-[10px] text-slate-400 mt-0.5 block text-left">
+                                                                                            👤 Proprietário: {i.nomeProprietario} {i.telefoneProprietario ? `(${i.telefoneProprietario})` : ''}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </button>
+                                                                            ))}
+                                                                        {imoveis.filter(i => {
+                                                                            if (!imovelSearchQuery.trim()) return true;
+                                                                            const q = imovelSearchQuery.toLowerCase().trim();
+                                                                            const matchesCode = (i.codImovel || '').toLowerCase().includes(q) || (i.codigoReference || '').toLowerCase().includes(q);
+                                                                            const matchesAddress = (i.enderecoRua || '').toLowerCase().includes(q) || 
+                                                                                                   (i.logradouro || '').toLowerCase().includes(q) || 
+                                                                                                   (i.bairro || '').toLowerCase().includes(q) || 
+                                                                                                   (i.cidade || '').toLowerCase().includes(q);
+                                                                            const matchesOwnerName = (i.nomeProprietario || '').toLowerCase().includes(q);
+                                                                            const cleanPhoneQuery = q.replace(/\D/g, '');
+                                                                            const matchesOwnerPhone = cleanPhoneQuery !== '' && (i.telefoneProprietario || '').replace(/\D/g, '').includes(cleanPhoneQuery);
+                                                                            return matchesCode || matchesAddress || matchesOwnerName || matchesOwnerPhone;
+                                                                        }).length === 0 && (
+                                                                            <div className="text-center py-4 text-xs text-slate-400">
+                                                                                Nenhum imóvel correspondente encontrado.
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <Button 
+                                                        onClick={handleLinkImovel}
+                                                        className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all flex items-center justify-center mt-2"
+                                                    >
+                                                        <Plus className="w-4 h-4 mr-2" />
+                                                        Vincular Imóvel
+                                                    </Button>
+
+                                                    <div className="text-center pt-2 border-t border-slate-100 mt-4">
+                                                        <button 
+                                                            type="button"
+                                                            onClick={handleOpenNewImovelModal}
+                                                            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center justify-center gap-1 mx-auto"
+                                                        >
+                                                            <Plus className="w-3.5 h-3.5" />
+                                                            Cadastrar Novo Imóvel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </Card>
+
+                                            {/* Listagem de Imóveis Vinculados */}
+                                            <div className="lg:col-span-2 space-y-4">
+                                                <h3 className="text-sm font-bold text-slate-800 flex items-center justify-between">
+                                                    <span>Imóvel da Locação</span>
+                                                    <Badge variant="secondary" className="bg-slate-100 text-slate-600">
+                                                        {atendimentoImoveis.filter(ai => ai.atendimentoRef === selectedCase?._id).length} vinculado
+                                                    </Badge>
+                                                </h3>
+
+                                                <div className="space-y-3">
+                                                    {atendimentoImoveis
+                                                        .filter(ai => ai.atendimentoRef === selectedCase?._id)
+                                                        .map(ai => {
+                                                            const imovel = imoveis.find(i => i._id === ai.imovelRef);
+                                                            return (
+                                                                <Card key={ai._id} className="p-5 border-slate-150 hover:border-emerald-300 transition-all rounded-2xl flex flex-col md:flex-row gap-5 shadow-sm bg-white overflow-hidden relative group">
+                                                                    {imovel?.propertyImages?.[0] || imovel?.galeriaFotos?.[0] ? (
+                                                                        <div className="w-full md:w-32 h-24 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
+                                                                            <img src={imovel.propertyImages?.[0] || imovel.galeriaFotos?.[0]} alt={imovel.tipoImovel} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="w-full md:w-32 h-24 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0 border border-slate-100">
+                                                                            <Building2 className="w-8 h-8" />
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="flex-1 flex flex-col justify-between">
+                                                                        <div>
+                                                                            <div className="flex items-center justify-between">
+                                                                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md">
+                                                                                    {imovel?.codImovel || imovel?.codigoReference || 'SEM CÓDIGO'}
+                                                                                </span>
+                                                                                <span className="text-xs text-slate-400 font-medium">
+                                                                                    {imovel?.tipoImovel}
+                                                                                </span>
+                                                                            </div>
+                                                                            <h4 className="text-base font-bold text-slate-800 mt-1.5">{imovel?.enderecoRua || imovel?.logradouro || 'Endereço não informado'}</h4>
+                                                                            <p className="text-xs text-slate-500 mt-1">
+                                                                                {imovel?.bairro ? `${imovel.bairro}, ` : ''}{imovel?.cidade ? `${imovel.cidade} - ${imovel.estado || 'SP'}` : ''}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                                                                            <div className="text-xs text-slate-400">
+                                                                                Valor do aluguel estimado: <span className="font-bold text-slate-800 text-sm">{imovel?.precoLocacao ? formatCurrency(imovel.precoLocacao) : 'Não informado'}</span>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                {imovel && (
+                                                                                    <Button 
+                                                                                        variant="ghost" 
+                                                                                        size="sm" 
+                                                                                        className="text-slate-600 hover:text-emerald-600 hover:bg-slate-50 font-bold text-xs gap-1 rounded-xl h-8 px-3"
+                                                                                        onClick={() => handleOpenEditImovelModal(imovel)}
+                                                                                    >
+                                                                                        <Edit2 className="w-3.5 h-3.5" />
+                                                                                        Editar
+                                                                                    </Button>
+                                                                                )}
+                                                                                <Button 
+                                                                                    variant="ghost" 
+                                                                                    size="sm" 
+                                                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50 font-bold text-xs gap-1 rounded-xl h-8 px-3"
+                                                                                    onClick={() => handleUnlinkImovel(ai._id)}
+                                                                                >
+                                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                                    Desvincular
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </Card>
+                                                            );
+                                                        })}
+
+                                                    {atendimentoImoveis.filter(ai => ai.atendimentoRef === selectedCase?._id).length === 0 && (
+                                                        <div className="text-center p-12 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
+                                                            <Building2 className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                                                            <p className="text-sm font-medium">Nenhum imóvel vinculado.</p>
+                                                            <p className="text-xs mt-1">Selecione e vincule o imóvel correspondente no painel ao lado.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="historico" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0">
                                         <div className="space-y-6">
                                             <div className="relative pl-8 border-l-2 border-slate-100 space-y-8">
                                                 <div className="relative">
@@ -1047,34 +2231,32 @@ export default function AdminLocacoesKanbanPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center">
-                                                <Button
-                                                    onClick={handleConcluirProcesso}
-                                                    disabled={isSavingLocacao || selectedCase?.status === 'Concluídos'}
-                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 px-8 rounded-xl font-bold shadow-lg shadow-emerald-200"
-                                                >
-                                                    <CheckCircle2 className="w-5 h-5" /> Concluir e Arquivar Processo
-                                                </Button>
-                                                <p className="text-center text-xs text-slate-500 mt-3">
-                                                    Ao concluir, o negócio será movido para a etapa de "Concluídos".
+                                            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center gap-4">
+                                                <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                                                    <Button variant="outline" className="text-red-500 border-red-100 hover:text-red-600 hover:bg-red-50 gap-2 px-8 rounded-xl font-bold">
+                                                        <Trash2 className="w-5 h-5" /> Cancelar Processo
+                                                    </Button>
+                                                    <Button
+                                                        onClick={handleConcluirProcesso}
+                                                        disabled={isSavingLocacao || selectedCase?.status === 'Concluídos'}
+                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 px-8 rounded-xl font-bold shadow-lg shadow-emerald-200"
+                                                    >
+                                                        <CheckCircle2 className="w-5 h-5" /> Concluir e Arquivar Processo
+                                                    </Button>
+                                                </div>
+                                                <p className="text-center text-xs text-slate-500 mt-1">
+                                                    Ao concluir, o negócio será movido para a etapa de "Concluídos". Ao cancelar, o processo é encerrado.
                                                 </p>
                                             </div>
                                         </div>
                                     </TabsContent>
                                 </Tabs>
-                            </div>
-                        </ScrollArea>
 
-                        <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-                            <Button variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50 gap-2 rounded-xl">
-                                <Trash2 className="w-4 h-4" /> Cancelar Processo
+                        <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end items-center flex-shrink-0 gap-3">
+                            <Button variant="outline" className="rounded-xl px-6" onClick={() => setShowDetailsModal(false)}>Fechar</Button>
+                            <Button disabled={isSavingLocacao} onClick={handleSaveLocacaoData} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-emerald-200">
+                                {isSavingLocacao ? 'Salvando...' : 'Salvar Alterações'}
                             </Button>
-                            <div className="flex gap-3">
-                                <Button variant="outline" className="rounded-xl px-6" onClick={() => setShowDetailsModal(false)}>Fechar</Button>
-                                <Button disabled={isSavingLocacao} onClick={handleSaveLocacaoData} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-emerald-200">
-                                    {isSavingLocacao ? 'Salvando...' : 'Salvar Alterações'}
-                                </Button>
-                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -1087,6 +2269,641 @@ export default function AdminLocacoesKanbanPage() {
                         atendimento={atendimentosRaw.find(a => a._id === selectedCase._id) as any || { _id: selectedCase._id, contactName: selectedCase.contactName }}
                     />
                 )}
+
+                {/* Edit Parte (Locador/Locatário) Dialog */}
+                <Dialog open={!!editingParte} onOpenChange={(open) => { if (!open) setEditingParte(null); }}>
+                    <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl flex flex-col bg-white border border-slate-100 shadow-2xl">
+                        <DialogHeader className="px-8 py-5 border-b border-slate-100 bg-slate-50/60 flex flex-row justify-between items-center flex-shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
+                                    <UserCheck className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-lg font-bold text-slate-800">Editar Dados da Parte</DialogTitle>
+                                    <p className="text-xs text-slate-500 mt-0.5">Atualize as informações do locador ou locatário.</p>
+                                </div>
+                            </div>
+                        </DialogHeader>
+
+                        <div className="overflow-y-auto px-8 py-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Nome */}
+                                <div className="md:col-span-2 space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Nome Completo *</Label>
+                                    <Input
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        placeholder="Nome completo"
+                                        value={editingParteForm.clientName || ''}
+                                        onChange={e => setEditingParteForm(p => ({ ...p, clientName: e.target.value }))}
+                                    />
+                                </div>
+                                {/* CPF/CNPJ */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">CPF / CNPJ</Label>
+                                    <Input
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        placeholder="000.000.000-00"
+                                        value={editingParteForm.cpfCnpj || ''}
+                                        onChange={e => setEditingParteForm(p => ({ ...p, cpfCnpj: e.target.value }))}
+                                    />
+                                </div>
+                                {/* RG */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">RG</Label>
+                                    <Input
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        placeholder="00.000.000-0"
+                                        value={(editingParteForm as any).rg || ''}
+                                        onChange={e => setEditingParteForm(p => ({ ...p, rg: e.target.value } as any))}
+                                    />
+                                </div>
+                                {/* Email */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">E-mail</Label>
+                                    <Input
+                                        type="email"
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        placeholder="email@exemplo.com"
+                                        value={editingParteForm.email || ''}
+                                        onChange={e => setEditingParteForm(p => ({ ...p, email: e.target.value }))}
+                                    />
+                                </div>
+                                {/* Telefone */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Telefone</Label>
+                                    <Input
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        placeholder="(11) 99999-9999"
+                                        value={editingParteForm.phoneNumber || ''}
+                                        onChange={e => setEditingParteForm(p => ({ ...p, phoneNumber: e.target.value }))}
+                                    />
+                                </div>
+                                {/* Profissão */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Profissão</Label>
+                                    <Input
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        placeholder="Ex: Engenheiro, Médico..."
+                                        value={(editingParteForm as any).profession || ''}
+                                        onChange={e => setEditingParteForm(p => ({ ...p, profession: e.target.value } as any))}
+                                    />
+                                </div>
+                                {/* Nacionalidade */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Nacionalidade</Label>
+                                    <Input
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        placeholder="Ex: Brasileiro(a)"
+                                        value={(editingParteForm as any).nationality || ''}
+                                        onChange={e => setEditingParteForm(p => ({ ...p, nationality: e.target.value } as any))}
+                                    />
+                                </div>
+                                {/* Estado Civil */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Estado Civil</Label>
+                                    <Select value={(editingParteForm as any).maritalStatus || 'Solteiro(a)'} onValueChange={val => setEditingParteForm(p => ({ ...p, maritalStatus: val } as any))}>
+                                        <SelectTrigger className="h-11 bg-slate-50 border-none rounded-xl">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                            <SelectItem value="Solteiro(a)">Solteiro(a)</SelectItem>
+                                            <SelectItem value="Casado(a)">Casado(a)</SelectItem>
+                                            <SelectItem value="Divorciado(a)">Divorciado(a)</SelectItem>
+                                            <SelectItem value="Viúvo(a)">Viúvo(a)</SelectItem>
+                                            <SelectItem value="União Estável">União Estável</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {/* Endereço */}
+                                <div className="md:col-span-2 space-y-1.5">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Endereço Completo</Label>
+                                    <Input
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        placeholder="Rua, número, bairro, cidade - UF"
+                                        value={editingParteForm.address || ''}
+                                        onChange={e => setEditingParteForm(p => ({ ...p, address: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="px-8 py-5 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0 bg-slate-50/40">
+                            <Button variant="ghost" className="h-11 rounded-xl text-slate-600 font-bold" onClick={() => setEditingParte(null)}>
+                                Cancelar
+                            </Button>
+                            <Button
+                                className="h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-sm"
+                                disabled={isSavingParte}
+                                onClick={async () => {
+                                    if (!editingParte) return;
+                                    setIsSavingParte(true);
+                                    try {
+                                        await BaseCrudService.update('clientes', { _id: editingParte.clientId, ...editingParteForm });
+                                        toast.success('Dados atualizados com sucesso!');
+                                        await loadData();
+                                        setEditingParte(null);
+                                    } catch (err) {
+                                        toast.error('Erro ao salvar. Tente novamente.');
+                                    } finally {
+                                        setIsSavingParte(false);
+                                    }
+                                }}
+                            >
+                                {isSavingParte ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</> : <><Save className="w-4 h-4 mr-2" />Salvar Alterações</>}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+
+                <Dialog open={showNewClientModal} onOpenChange={setShowNewClientModal}>
+                    <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] p-0 gap-0 overflow-hidden rounded-3xl flex flex-col bg-white border border-slate-100 shadow-2xl">
+                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-center flex-shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
+                                    <UserCheck className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-xl font-bold text-slate-800">
+                                        Novo Cadastro de Cliente
+                                    </DialogTitle>
+                                    <p className="text-xs text-slate-500 mt-1">Preencha todos os dados cadastrais solicitados para geração do contrato.</p>
+                                </div>
+                            </div>
+                            <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100" 
+                                onClick={() => setShowNewClientModal(false)}
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </DialogHeader>
+
+                        <div className="flex-1 overflow-y-auto min-h-0 w-full px-8 py-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
+                                {/* Row 1: Tipo Pessoa & CPF/CNPJ */}
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Tipo de Pessoa</Label>
+                                    <Select 
+                                        value={newClientFormData.tipoPessoa || 'FÍSICA'} 
+                                        onValueChange={(val) => setNewClientFormData(prev => ({ ...prev, tipoPessoa: val as 'FÍSICA' | 'JURÍDICA' }))}
+                                    >
+                                        <SelectTrigger className="h-11 bg-slate-50 border-none rounded-xl">
+                                            <SelectValue placeholder="Selecione..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                            <SelectItem value="FÍSICA" className="rounded-lg">Pessoa Física</SelectItem>
+                                            <SelectItem value="JURÍDICA" className="rounded-lg">Pessoa Jurídica</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">CPF / CNPJ *</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder={newClientFormData.tipoPessoa === 'JURÍDICA' ? '00.000.000/0000-00' : '000.000.000-00'}
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        value={newClientFormData.cpfCnpj || ''}
+                                        onChange={(e) => handleCpfCnpjChange(e.target.value)}
+                                    />
+                                </div>
+
+                                {/* Row 2: Nome Completo & RG */}
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">
+                                        {newClientFormData.tipoPessoa === 'JURÍDICA' ? 'Razão Social / Nome Fantasia *' : 'Nome Completo *'}
+                                    </Label>
+                                    <Input
+                                        type="text"
+                                        placeholder={newClientFormData.tipoPessoa === 'JURÍDICA' ? 'Ex: R. Sales Empreendimentos LTDA' : 'Ex: Gabriel Souza Santos'}
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        value={newClientFormData.clientName || ''}
+                                        onChange={(e) => setNewClientFormData(prev => ({ ...prev, clientName: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">
+                                        {newClientFormData.tipoPessoa === 'JURÍDICA' ? 'Inscrição Estadual' : 'RG / Órgão Expedidor'}
+                                    </Label>
+                                    <Input
+                                        type="text"
+                                        placeholder={newClientFormData.tipoPessoa === 'JURÍDICA' ? 'Isento ou 000.000.000' : 'Ex: 12.345.678-9 SSP/SP'}
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        value={newClientFormData.rg || ''}
+                                        onChange={(e) => setNewClientFormData(prev => ({ ...prev, rg: e.target.value }))}
+                                    />
+                                </div>
+
+                                {/* Row 3: E-mail & Telefone */}
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">E-mail</Label>
+                                    <Input
+                                        type="email"
+                                        placeholder="Ex: cliente@email.com"
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        value={newClientFormData.email || ''}
+                                        onChange={(e) => setNewClientFormData(prev => ({ ...prev, email: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Telefone / WhatsApp</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Ex: (11) 99999-9999"
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        value={newClientFormData.phoneNumber || ''}
+                                        onChange={(e) => handlePhoneChange(e.target.value)}
+                                    />
+                                </div>
+
+                                {/* Row 4: Nacionalidade, Estado Civil & Gênero */}
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Nacionalidade</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Ex: Brasileiro(a)"
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        value={newClientFormData.nationality || ''}
+                                        onChange={(e) => setNewClientFormData(prev => ({ ...prev, nationality: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Estado Civil</Label>
+                                    <Select 
+                                        value={newClientFormData.maritalStatus || 'Solteiro(a)'} 
+                                        onValueChange={(val) => setNewClientFormData(prev => ({ ...prev, maritalStatus: val }))}
+                                    >
+                                        <SelectTrigger className="h-11 bg-slate-50 border-none rounded-xl">
+                                            <SelectValue placeholder="Selecione..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                            <SelectItem value="Solteiro(a)" className="rounded-lg">Solteiro(a)</SelectItem>
+                                            <SelectItem value="Casado(a)" className="rounded-lg">Casado(a)</SelectItem>
+                                            <SelectItem value="Divorciado(a)" className="rounded-lg">Divorciado(a)</SelectItem>
+                                            <SelectItem value="Viúvo(a)" className="rounded-lg">Viúvo(a)</SelectItem>
+                                            <SelectItem value="União Estável" className="rounded-lg">União Estável</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Gênero</Label>
+                                    <Select 
+                                        value={newClientFormData.gender || 'Masculino'} 
+                                        onValueChange={(val) => setNewClientFormData(prev => ({ ...prev, gender: val as 'Masculino' | 'Feminino' | 'Outro' }))}
+                                    >
+                                        <SelectTrigger className="h-11 bg-slate-50 border-none rounded-xl">
+                                            <SelectValue placeholder="Selecione..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                            <SelectItem value="Masculino" className="rounded-lg">Masculino</SelectItem>
+                                            <SelectItem value="Feminino" className="rounded-lg">Feminino</SelectItem>
+                                            <SelectItem value="Outro" className="rounded-lg">Outro</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Profissão</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Ex: Engenheiro(a) Civil"
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        value={newClientFormData.profession || ''}
+                                        onChange={(e) => setNewClientFormData(prev => ({ ...prev, profession: e.target.value }))}
+                                    />
+                                </div>
+
+                                {/* Row 5: Endereço Completo */}
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Endereço Completo</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Ex: Av. Paulista, 1000 - Apto 51 - Bela Vista, São Paulo/SP - CEP 01310-100"
+                                        className="h-11 bg-slate-50 border-none rounded-xl text-sm"
+                                        value={newClientFormData.address || ''}
+                                        onChange={(e) => setNewClientFormData(prev => ({ ...prev, address: e.target.value }))}
+                                    />
+                                </div>
+
+                                {/* Row 6: Notas / Observações */}
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Observações / Notas</Label>
+                                    <Textarea
+                                        placeholder="Informações adicionais como referências comerciais, conjugais ou de renda..."
+                                        className="bg-slate-50 border-none rounded-xl text-sm min-h-[100px] resize-none"
+                                        value={newClientFormData.notes || ''}
+                                        onChange={(e) => setNewClientFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
+                            <Button 
+                                type="button"
+                                variant="outline" 
+                                className="rounded-xl px-6 h-11 text-slate-600 border-slate-200 hover:bg-slate-100 transition-colors" 
+                                onClick={() => setShowNewClientModal(false)}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                disabled={isSavingLocacao} 
+                                onClick={handleCreateNewClientFromPopup} 
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-8 h-11 font-bold shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
+                            >
+                                {isSavingLocacao ? 'Salvando...' : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        Salvar e Vincular
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={showNewImovelModal} onOpenChange={setShowNewImovelModal}>
+                    <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] p-0 gap-0 overflow-hidden rounded-3xl flex flex-col bg-white border border-slate-100 shadow-2xl">
+                        <DialogHeader className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 backdrop-blur-md sticky top-0 z-10 flex flex-row justify-between items-center flex-shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
+                                    <Building2 className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-xl font-bold text-slate-800">
+                                        {editingImovelId ? 'Editar Informações do Imóvel' : 'Cadastrar Novo Imóvel'}
+                                    </DialogTitle>
+                                    <p className="text-xs text-slate-400 mt-0.5">
+                                        {editingImovelId ? 'Altere as informações abaixo e clique em Salvar' : 'Preencha as informações básicas para cadastrar e vincular o imóvel'}
+                                    </p>
+                                </div>
+                            </div>
+                        </DialogHeader>
+
+                        <div className="flex-1 overflow-y-auto min-h-0 w-full px-8 py-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Seção 1: Identificação */}
+                                <div className="space-y-4 md:col-span-2">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <Building2 className="w-3.5 h-3.5" />
+                                        Identificação do Imóvel
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Código do Imóvel</Label>
+                                            <Input
+                                                placeholder="Ex: LOC-004"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.codImovel || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, codImovel: e.target.value, codigoReference: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Tipo de Imóvel</Label>
+                                            <Select 
+                                                value={newImovelFormData.tipoImovel || 'Apartamento'} 
+                                                onValueChange={(val) => setNewImovelFormData(prev => ({ ...prev, tipoImovel: val }))}
+                                            >
+                                                <SelectTrigger className="h-10 bg-slate-50 border-none rounded-xl text-sm">
+                                                    <SelectValue placeholder="Selecione..." />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                                    <SelectItem value="Apartamento">Apartamento</SelectItem>
+                                                    <SelectItem value="Casa">Casa</SelectItem>
+                                                    <SelectItem value="Sobrado">Sobrado</SelectItem>
+                                                    <SelectItem value="Comercial">Comercial</SelectItem>
+                                                    <SelectItem value="Terreno">Terreno</SelectItem>
+                                                    <SelectItem value="Outro">Outro</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Pretensão</Label>
+                                            <Select 
+                                                value={newImovelFormData.pretensao || 'Locação'} 
+                                                onValueChange={(val) => setNewImovelFormData(prev => ({ ...prev, pretensao: val }))}
+                                            >
+                                                <SelectTrigger className="h-10 bg-slate-50 border-none rounded-xl text-sm">
+                                                    <SelectValue placeholder="Selecione..." />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                                    <SelectItem value="Locação">Locação</SelectItem>
+                                                    <SelectItem value="Venda">Venda</SelectItem>
+                                                    <SelectItem value="Venda e Locação">Venda e Locação</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Seção 2: Valores */}
+                                <div className="space-y-4 md:col-span-2">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <DollarSign className="w-3.5 h-3.5" />
+                                        Acordo Financeiro
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Aluguel Estimado</Label>
+                                            <Input
+                                                type="text"
+                                                placeholder="R$ 0,00"
+                                                className="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-800"
+                                                value={newImovelFormData.precoLocacao ? formatCurrency(newImovelFormData.precoLocacao) : ''}
+                                                onChange={(e) => {
+                                                    const val = parseCurrency(e.target.value);
+                                                    setNewImovelFormData(prev => ({ ...prev, precoLocacao: val || undefined }));
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Valor de Venda</Label>
+                                            <Input
+                                                type="text"
+                                                placeholder="R$ 0,00"
+                                                className="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-800"
+                                                value={newImovelFormData.precoVenda ? formatCurrency(newImovelFormData.precoVenda) : ''}
+                                                onChange={(e) => {
+                                                    const val = parseCurrency(e.target.value);
+                                                    setNewImovelFormData(prev => ({ ...prev, precoVenda: val || undefined }));
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Condomínio</Label>
+                                            <Input
+                                                type="text"
+                                                placeholder="R$ 0,00"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.valorCondominio ? formatCurrency(newImovelFormData.valorCondominio) : ''}
+                                                onChange={(e) => {
+                                                    const val = parseCurrency(e.target.value);
+                                                    setNewImovelFormData(prev => ({ ...prev, valorCondominio: val || undefined }));
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">IPTU Estimado</Label>
+                                            <Input
+                                                type="text"
+                                                placeholder="R$ 0,00"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.valorIPTU ? formatCurrency(newImovelFormData.valorIPTU) : ''}
+                                                onChange={(e) => {
+                                                    const val = parseCurrency(e.target.value);
+                                                    setNewImovelFormData(prev => ({ ...prev, valorIPTU: val || undefined }));
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Seção 3: Endereço */}
+                                <div className="space-y-4 md:col-span-2">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <Home className="w-3.5 h-3.5" />
+                                        Localização / Endereço
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">CEP</Label>
+                                            <Input
+                                                placeholder="00000-000"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.cep || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, cep: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Rua / Logradouro</Label>
+                                            <Input
+                                                placeholder="Avenida Paulista"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.logradouro || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, logradouro: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Número</Label>
+                                            <Input
+                                                placeholder="123"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.numero || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, numero: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Complemento</Label>
+                                            <Input
+                                                placeholder="Apt 42"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.complemento || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, complemento: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Bairro</Label>
+                                            <Input
+                                                placeholder="Bela Vista"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.bairro || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, bairro: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Cidade</Label>
+                                            <Input
+                                                placeholder="São Paulo"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.cidade || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, cidade: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Estado</Label>
+                                            <Input
+                                                placeholder="SP"
+                                                maxLength={2}
+                                                className="bg-slate-50 border-none rounded-xl text-sm uppercase"
+                                                value={newImovelFormData.estado || 'SP'}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, estado: e.target.value }))}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Seção 4: Proprietário */}
+                                <div className="space-y-4 md:col-span-2">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <Users className="w-3.5 h-3.5" />
+                                        Informações do Proprietário
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Nome do Proprietário</Label>
+                                            <Input
+                                                placeholder="Nome Completo"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.nomeProprietario || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, nomeProprietario: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Telefone / WhatsApp</Label>
+                                            <Input
+                                                placeholder="(11) 99999-9999"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.telefoneProprietario || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, telefoneProprietario: e.target.value }))}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">E-mail</Label>
+                                            <Input
+                                                type="email"
+                                                placeholder="exemplo@email.com"
+                                                className="bg-slate-50 border-none rounded-xl text-sm"
+                                                value={newImovelFormData.emailProprietario || ''}
+                                                onChange={(e) => setNewImovelFormData(prev => ({ ...prev, emailProprietario: e.target.value }))}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
+                            <Button 
+                                type="button"
+                                variant="outline" 
+                                className="rounded-xl px-6 h-11 text-slate-600 border-slate-200 hover:bg-slate-100 transition-colors" 
+                                onClick={() => setShowNewImovelModal(false)}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button 
+                                disabled={isSavingLocacao} 
+                                onClick={handleSaveImovel} 
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-8 h-11 font-bold shadow-lg shadow-emerald-200 transition-all flex items-center gap-2"
+                            >
+                                {isSavingLocacao ? 'Salvando...' : (
+                                    <>
+                                        <Save className="w-4 h-4" />
+                                        Salvar
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AdminLayout>
     );

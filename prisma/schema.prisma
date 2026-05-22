@@ -40,11 +40,19 @@ model Client {
   document String? @unique // CPF ou CNPJ
   type     String  @default("LEAD") // LEAD, TENANT, OWNER, GUARANTOR
   address  String?
+  rg       String?
+  nationality   String?
+  maritalStatus String?
+  profession    String?
 
   status   String? @default("Ativo")
   papeis   String?
   notes    String? @db.Text
   gender   String?
+
+  // Novos campos para origem do cliente
+  canalOrigem           String?
+  responsavelInternoId  String?
 
   // Relacionamentos para Contratos e Imóveis
   ownedProperties   Property[] @relation("PropertyOwner")
@@ -87,6 +95,8 @@ model Lead {
   
   responsavelRef     String?  // ID do Corretor
   unidadeRef         String?  // ID da Unidade
+  
+  generatedContracts GeneratedContract[]
   
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -213,4 +223,51 @@ model EmailLog {
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// -------------------------------------------------------------------------
+// 8. Templates de Contrato (Gerador de Contratos)
+// -------------------------------------------------------------------------
+model ContractTemplate {
+  id                  String   @id @default(uuid())
+  nome                String
+  categoria           String   // LOCACAO, VENDA, OUTROS
+  tipoOperacao        String?  // Ex: "Locacao", "Compra e Venda"
+  subtipo             String?  // Ex: "Com Fiador", "A Vista"
+  garantia            String?  // Ex: "SEGURO", "FIADOR", "CAUCAO"
+  conteudoHtml        String   @db.Text
+  variaveisDetectadas String[] @default([])
+  ativo               Boolean  @default(true)
+  versao              Int      @default(1)
+  
+  contratosGerados    GeneratedContract[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// -------------------------------------------------------------------------
+// 9. Contratos Gerados (Atendimentos / Kanban)
+// -------------------------------------------------------------------------
+model GeneratedContract {
+  id                String   @id @default(uuid())
+  
+  leadId            String?  
+  lead              Lead?    @relation(fields: [leadId], references: [id])
+  
+  templateId        String
+  template          ContractTemplate @relation(fields: [templateId], references: [id])
+  
+  nomeDocumento     String
+  conteudoFinalHtml String   @db.Text
+  pdfUrl            String?
+  status            String   @default("GERADO") // GERADO, ASSINADO, CANCELADO
+  
+  // Assinatura Eletronica
+  signUrl           String?
+  statusAssinatura  String?
+  signedAt          DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

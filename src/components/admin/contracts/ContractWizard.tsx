@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BaseCrudService } from '@/integrations';
-import { ContractTemplates, Clients, Imveis, ServiceRecords, Contracts } from '@/entities';
+import { ContractTemplates, Clients, Imveis, ServiceRecords, Contracts, ServiceParties } from '@/entities';
 import { ContractEngine } from '@/services/ContractEngine';
 import { toast } from 'sonner';
 import {
@@ -56,12 +56,9 @@ interface ContractWizardProps {
 
 const STEPS = [
     { id: 1, title: 'Tipo', icon: FileText },
-    { id: 2, title: 'Partes', icon: Users },
-    { id: 3, title: 'Imóvel', icon: Home },
-    { id: 4, title: 'Financeiro', icon: DollarSign },
-    { id: 5, title: 'Opcionais', icon: Settings },
-    { id: 6, title: 'Revisão', icon: Eye },
-    { id: 7, title: 'Assinatura', icon: PenTool },
+    { id: 2, title: 'Opcionais', icon: Settings },
+    { id: 3, title: 'Revisão', icon: Eye },
+    { id: 4, title: 'Assinatura', icon: PenTool },
 ];
 
 export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: ContractWizardProps) {
@@ -72,6 +69,8 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
     const [contractId, setContractId] = useState<string | null>(null);
     const [isSeeding, setIsSeeding] = useState(false);
     const [isTemplateMissing, setIsTemplateMissing] = useState(false);
+    const [useDefaultTemplateOverride, setUseDefaultTemplateOverride] = useState(false);
+    const [availableTemplatesForType, setAvailableTemplatesForType] = useState<any[]>([]);
     const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
     const [editingParticipantKey, setEditingParticipantKey] = useState<string | null>(null);
 
@@ -82,7 +81,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
     const [comparisonData, setComparisonData] = useState<{ current: any, next: any } | null>(null);
 
     // Data States
-    const [templates, setTemplates] = useState<ContractTemplates[]>([]);
+    const [templates, setTemplates] = useState<any[]>([]);
     const [clientes, setClientes] = useState<Clients[]>([]);
     const [imoveis, setImoveis] = useState<Imveis[]>([]);
 
@@ -92,7 +91,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
     const [selectedImovelId, setSelectedImovelId] = useState<string>('');
 
     // Form States
-    const [formData, setFormData] = useState<any>({
+    const INITIAL_FORM_DATA = {
         // Partes (Múltiplos)
         LOCADORES_IDS: [],
         LOCATARIOS_IDS: [],
@@ -135,7 +134,65 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         TESTEMUNHA1_RG: '',
         TESTEMUNHA2_NOME: '',
         TESTEMUNHA2_RG: '',
-    });
+        // Dados de Imóvel Editáveis
+        IMOVEL_TIPO: '',
+        IMOVEL_LOGRADOURO: '',
+        IMOVEL_NUMERO: '',
+        IMOVEL_COMPLEMENTO: '',
+        IMOVEL_BAIRRO: '',
+        IMOVEL_CIDADE: '',
+        IMOVEL_ESTADO: '',
+        IMOVEL_CEP: '',
+        MATRICULA: '',
+        IMOVEL_VAGAS_GARAGEM: 0,
+    };
+
+    // Atualiza os campos de imóvel editáveis no formData quando o imóvel é selecionado
+    useEffect(() => {
+        if (selectedImovelId) {
+            const imovel = imoveis.find(i => i._id === selectedImovelId);
+            if (imovel) {
+                const translatePropertyType = (type: string) => {
+                    if (!type) return 'Apartamento';
+                    const clean = type.toUpperCase().trim();
+                    if (clean === 'TWO_STORY_HOUSE' || clean === 'SOBRADO') return 'Sobrado';
+                    if (clean === 'HOUSE' || clean === 'CASA') return 'Casa';
+                    if (clean === 'APARTMENT' || clean === 'APARTAMENTO' || clean === 'APTO') return 'Apartamento';
+                    if (clean === 'COMMERCIAL' || clean === 'SALA_COMERCIAL' || clean === 'SALA') return 'Sala Comercial';
+                    if (clean === 'LAND' || clean === 'TERRENO') return 'Terreno';
+                    return type;
+                };
+
+                setFormData(prev => ({
+                    ...prev,
+                    IMOVEL_TIPO: prev.IMOVEL_TIPO || translatePropertyType(imovel.tipoImovel || ''),
+                    IMOVEL_LOGRADOURO: prev.IMOVEL_LOGRADOURO || imovel.logradouro || '',
+                    IMOVEL_NUMERO: prev.IMOVEL_NUMERO || imovel.numero || '',
+                    IMOVEL_COMPLEMENTO: prev.IMOVEL_COMPLEMENTO || imovel.complemento || '',
+                    IMOVEL_BAIRRO: prev.IMOVEL_BAIRRO || imovel.bairro || '',
+                    IMOVEL_CIDADE: prev.IMOVEL_CIDADE || imovel.cidade || '',
+                    IMOVEL_ESTADO: prev.IMOVEL_ESTADO || imovel.estado || (imovel as any).uf || 'SP',
+                    IMOVEL_CEP: prev.IMOVEL_CEP || imovel.cep || '',
+                    MATRICULA: prev.MATRICULA || (imovel as any).matricula || '',
+                    IMOVEL_VAGAS_GARAGEM: prev.IMOVEL_VAGAS_GARAGEM !== undefined ? prev.IMOVEL_VAGAS_GARAGEM : (imovel.vagas || 0),
+                    VALOR_CONDOMINIO: prev.VALOR_CONDOMINIO !== undefined && prev.VALOR_CONDOMINIO !== 0 ? prev.VALOR_CONDOMINIO : (imovel.valorCondominio || 0),
+                    VALOR_IPTU: prev.VALOR_IPTU !== undefined && prev.VALOR_IPTU !== 0 ? prev.VALOR_IPTU : (imovel.valorIPTU || 0)
+                }));
+            }
+        }
+    }, [selectedImovelId, imoveis]);
+
+    const [formData, setFormData] = useState<any>(INITIAL_FORM_DATA);
+
+    // Auto-calcula o valor da caução (3x o aluguel) como sugestão inicial editável
+    useEffect(() => {
+        if (formData.VALOR_ALUGUEL && formData.GARANTIA === 'Caucao' && !formData.CAUCAO_VALOR) {
+            setFormData(prev => ({
+                ...prev,
+                CAUCAO_VALOR: prev.VALOR_ALUGUEL * 3
+            }));
+        }
+    }, [formData.VALOR_ALUGUEL, formData.GARANTIA]);
 
     const [previewContent, setPreviewContent] = useState('');
     const [pdfDiagnostics, setPdfDiagnostics] = useState<any>({
@@ -144,29 +201,167 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         htmlLength: 0,
         placeholderCount: 0,
         replacementsCount: 0,
+        templateSource: '',
         containerStats: { width: 0, height: 0 },
         lastError: '',
         status: 'idle'
     });
     const [showDebug, setShowDebug] = useState(false);
 
-    useEffect(() => {
-        if (isOpen) {
-            loadInitialData();
-            loadDraft();
-        }
-    }, [isOpen]);
+    const syncLatestCardData = async (type = selectedType) => {
+        try {
+            console.log('[ContractWizard] Sincronizando dados mais recentes do cartão...');
+            
+            // 1. Fresh CRM objects and linked tables
+            const [freshAtendimentosRes, partiesRes, linkImovelRes, allClients, allImoveis] = await Promise.all([
+                BaseCrudService.getAll<any>('atendimentos'),
+                BaseCrudService.getAll<any>('atendimentopartes'),
+                BaseCrudService.getAll<any>('atendimentoimoveis'),
+                BaseCrudService.getAll<any>('clientes'),
+                BaseCrudService.getAll<any>('imoveis')
+            ]);
 
-    const loadInitialData = async () => {
+            const freshCase = freshAtendimentosRes.items?.find((a: any) => a._id === atendimento._id) || atendimento;
+            const freshParties = partiesRes.items?.filter((p: any) => p.serviceRecordRef === atendimento._id) || [];
+            const freshImoveis = linkImovelRes.items?.filter((ai: any) => ai.atendimentoRef === atendimento._id) || [];
+
+            // Update templates/clients/imoveis state to match fresh data
+            setClientes(allClients.items || []);
+            setImoveis(allImoveis.items || []);
+
+            let newFormData = { ...formData };
+
+            // 2. Map Parties
+            if (freshParties.length > 0) {
+                const locadores: string[] = [];
+                const locatarios: string[] = [];
+                const vendedores: string[] = [];
+                const compradores: string[] = [];
+
+                freshParties.forEach((p: any) => {
+                    if (p.clientRef) {
+                        if (p.roleInService === 'Locador' || p.roleInService === 'Vendedor') {
+                            if (type?.startsWith('Loc')) locadores.push(p.clientRef);
+                            else vendedores.push(p.clientRef);
+                        } else if (p.roleInService === 'Locatário' || p.roleInService === 'Proponente' || p.roleInService === 'Comprador') {
+                            if (type?.startsWith('Loc')) locatarios.push(p.clientRef);
+                            else compradores.push(p.clientRef);
+                        }
+                    }
+                });
+
+                // Fallback for primary client if empty
+                if (locatarios.length === 0 && compradores.length === 0 && freshCase.clientePrincipalRef) {
+                    if (type?.startsWith('Loc')) locatarios.push(freshCase.clientePrincipalRef);
+                    else compradores.push(freshCase.clientePrincipalRef);
+                }
+
+                newFormData.LOCADORES_IDS = locadores;
+                newFormData.LOCATARIOS_IDS = locatarios;
+                newFormData.VENDEDORES_IDS = vendedores;
+                newFormData.COMPRADORES_IDS = compradores;
+            } else if (freshCase.clientePrincipalRef) {
+                newFormData.LOCATARIOS_IDS = [freshCase.clientePrincipalRef];
+                newFormData.COMPRADORES_IDS = [freshCase.clientePrincipalRef];
+            }
+
+            // 3. Map Imóvel
+            if (freshImoveis.length > 0 && freshImoveis[0].imovelRef) {
+                const matchedImovelId = freshImoveis[0].imovelRef;
+                setSelectedImovelId(matchedImovelId);
+                const imovel = allImoveis.items?.find((i: any) => i._id === matchedImovelId);
+                if (imovel) {
+                    const translatePropertyType = (t: string) => {
+                        if (!t) return 'Apartamento';
+                        const clean = t.toUpperCase().trim();
+                        if (clean === 'TWO_STORY_HOUSE' || clean === 'SOBRADO') return 'Sobrado';
+                        if (clean === 'HOUSE' || clean === 'CASA') return 'Casa';
+                        if (clean === 'APARTMENT' || clean === 'APARTAMENTO' || clean === 'APTO') return 'Apartamento';
+                        if (clean === 'COMMERCIAL' || clean === 'SALA_COMERCIAL' || clean === 'SALA') return 'Sala Comercial';
+                        if (clean === 'LAND' || clean === 'TERRENO') return 'Terreno';
+                        return t;
+                    };
+                    newFormData.IMOVEL_TIPO = translatePropertyType(imovel.tipoImovel || '');
+                    newFormData.IMOVEL_LOGRADOURO = imovel.logradouro || '';
+                    newFormData.IMOVEL_NUMERO = imovel.numero || '';
+                    newFormData.IMOVEL_COMPLEMENTO = imovel.complemento || '';
+                    newFormData.IMOVEL_BAIRRO = imovel.bairro || '';
+                    newFormData.IMOVEL_CIDADE = imovel.cidade || '';
+                    newFormData.IMOVEL_ESTADO = imovel.estado || imovel.uf || 'SP';
+                    newFormData.IMOVEL_CEP = imovel.cep || '';
+                    newFormData.MATRICULA = imovel.matricula || '';
+                    newFormData.IMOVEL_VAGAS_GARAGEM = imovel.vagas || 0;
+                    newFormData.VALOR_CONDOMINIO = imovel.valorCondominio || 0;
+                    newFormData.VALOR_IPTU = imovel.valorIPTU || 0;
+                }
+            }
+
+            // 4. Map Financeiro
+            newFormData.VALOR_ALUGUEL = freshCase.rentValue || 0;
+            newFormData.GARANTIA = freshCase.garantia || 'Caucao';
+            newFormData.VALOR_CONDOMINIO = freshCase.valorCondominio || newFormData.VALOR_CONDOMINIO || 0;
+            newFormData.VALOR_IPTU = freshCase.valorIPTU || newFormData.VALOR_IPTU || 0;
+            newFormData.PRAZO_MESES = freshCase.prazoMeses || '30';
+            newFormData.DIA_PAGAMENTO = freshCase.diaPagamento || '10';
+            newFormData.REAJUSTE_INDICE = freshCase.reajusteIndice || 'IPCA';
+            newFormData.MULTA_RESCISAO_ALUGUEIS = freshCase.multaRescisaoAlugueis || '3';
+
+            // Caução mappings
+            newFormData.CAUCAO_VALOR = freshCase.caucaoValor || 0;
+            newFormData.CAUCAO_BANCO = freshCase.caucaoBanco || 'Caixa Econômica Federal';
+            newFormData.CAUCAO_AGENCIA = freshCase.caucaoAgencia || '';
+            newFormData.CAUCAO_CONTA = freshCase.caucaoConta || '';
+            newFormData.CAUCAO_TITULAR = freshCase.caucaoTitular || '';
+            newFormData.CAUCAO_CPF = freshCase.caucaoCpf || '';
+
+            setFormData(newFormData);
+            console.log('[ContractWizard] Sincronização concluída com sucesso. Novo formData:', newFormData);
+            return newFormData;
+        } catch (err) {
+            console.error('[ContractWizard] Erro em syncLatestCardData:', err);
+            toast.error('Erro ao sincronizar dados com o Kanban');
+        }
+    };
+
+    useEffect(() => {
+        const initializeWizard = async () => {
+            if (isOpen) {
+                console.log('[ContractWizard] Abrindo para atendimento:', atendimento._id);
+                // Reset total do estado para evitar poluição entre atendimentos
+                setCurrentStep(1);
+                setContractId(null);
+                setSelectedType('');
+                setSelectedTemplate('');
+                setSelectedImovelId('');
+                setFormData(INITIAL_FORM_DATA);
+                setPreviewContent('');
+                
+                setLoading(true);
+                await syncLatestCardData('');
+                await loadDraft();
+                setLoading(false);
+            }
+        };
+        initializeWizard();
+    }, [isOpen, atendimento._id]);
+
+    // Re-sincroniza participantes quando o tipo de contrato muda (Step 1 -> Step 2)
+    useEffect(() => {
+        if (isOpen && selectedType && currentStep === 1) {
+            syncLatestCardData(selectedType);
+        }
+    }, [selectedType]);
+
+    const loadInitialData = async (forceReloadCRM = false) => {
         setLoading(true);
         try {
             const [templatesRes, clientsRes, imoveisRes] = await Promise.all([
-                BaseCrudService.getAll<ContractTemplates>('templatescontratos'),
+                fetch('/api/v1/contract-templates').then(res => res.json()),
                 BaseCrudService.getAll<Clients>('clientes'),
                 BaseCrudService.getAll<Imveis>('imoveis')
             ]);
 
-            setTemplates(templatesRes.items.filter(i => i.isActive));
+            setTemplates(templatesRes.items?.filter((i: any) => (i.ativo || i.isActive)) || []);
             setClientes(clientsRes.items);
             setImoveis(imoveisRes.items);
 
@@ -175,22 +370,63 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             const signed = allContracts.some(c => c.atendimentoRef === atendimento._id && c.status === 'Assinado');
             setHasSignedContract(signed);
 
-            // Tenta pré-vincular o cliente do atendimento na etapa de partes
-            if (atendimento.clientePrincipalRef && formData.LOCATARIOS_IDS?.length === 0 && formData.COMPRADORES_IDS?.length === 0) {
-                const client = clientsRes.items.find(c => c._id === atendimento.clientePrincipalRef);
-                if (client) {
-                    setFormData(prev => ({
-                        ...prev,
-                        LOCATARIOS_IDS: [client._id],
-                        COMPRADORES_IDS: [client._id]
-                    }));
+            // Se for carregamento inicial ou reload forçado, tenta puxar participantes do CRM
+            if (forceReloadCRM || (formData.LOCATARIOS_IDS?.length === 0 && formData.COMPRADORES_IDS?.length === 0)) {
+                console.log('[ContractWizard] Buscando participantes vinculados ao atendimento no CRM...');
+                const { items: allParties } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
+                const parties = allParties.filter(p => p.serviceRecordRef === atendimento._id);
+
+                let newFormData = { ...formData };
+
+                if (parties.length > 0) {
+                    const locadores: string[] = [];
+                    const locatarios: string[] = [];
+                    const vendedores: string[] = [];
+                    const compradores: string[] = [];
+
+                    parties.forEach(p => {
+                        if (p.clientRef) {
+                            if (p.roleInService === 'Vendedor') {
+                                if (selectedType.startsWith('Loc')) locadores.push(p.clientRef);
+                                else vendedores.push(p.clientRef);
+                            } else if (p.roleInService === 'Proponente' || p.roleInService === 'Comprador') {
+                                if (selectedType.startsWith('Loc')) locatarios.push(p.clientRef);
+                                else compradores.push(p.clientRef);
+                            }
+                        }
+                    });
+
+                    // Se não encontrou via parties mas tem cliente principal, usa ele
+                    if (locatarios.length === 0 && compradores.length === 0 && atendimento.clientePrincipalRef) {
+                        if (selectedType.startsWith('Loc')) locatarios.push(atendimento.clientePrincipalRef);
+                        else compradores.push(atendimento.clientePrincipalRef);
+                    }
+
+                    newFormData = {
+                        ...newFormData,
+                        LOCADORES_IDS: locadores.length > 0 ? locadores : newFormData.LOCADORES_IDS,
+                        LOCATARIOS_IDS: locatarios.length > 0 ? locatarios : newFormData.LOCATARIOS_IDS,
+                        VENDEDORES_IDS: vendedores.length > 0 ? vendedores : newFormData.VENDEDORES_IDS,
+                        COMPRADORES_IDS: compradores.length > 0 ? compradores : newFormData.COMPRADORES_IDS,
+                    };
+                } else if (atendimento.clientePrincipalRef) {
+                    newFormData = {
+                        ...newFormData,
+                        LOCATARIOS_IDS: [atendimento.clientePrincipalRef!],
+                        COMPRADORES_IDS: [atendimento.clientePrincipalRef!]
+                    };
                 }
+                
+                setFormData(newFormData);
+                return newFormData;
             }
         } catch (error) {
+            console.error('[ContractWizard] Erro ao carregar dados iniciais:', error);
             toast.error('Erro ao conectar com o banco de dados');
         } finally {
             setLoading(false);
         }
+        return formData;
     };
 
     const syncParticipantsWithCRM = async () => {
@@ -248,6 +484,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 address: data.address || client.address,
                 phoneNumber: data.phoneNumber || client.phoneNumber,
                 rg: data.rg || (client as any).rg,
+                nationality: data.nationality || (client as any).nationality,
                 profession: data.profession || (client as any).profession,
                 maritalStatus: data.maritalStatus || (client as any).maritalStatus,
                 gender: data.gender || (client as any).gender,
@@ -337,23 +574,68 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
 
     const isStepValid = () => {
         switch (currentStep) {
-            case 1: return !!selectedType;
-            case 2:
+            case 1: 
+                return !!selectedType;
+            case 2: { // Opcionais (Step 2)
+                // We perform the complete checks for Partes, Imóvel, and Financeiro that are now synchronized from the card!
+                const errors: string[] = [];
+                
+                // 1. Partes validation
                 if (['LocacaoResidencial', 'LocacaoComercial'].includes(selectedType)) {
-                    return formData.LOCADORES_IDS?.length > 0 && formData.LOCATARIOS_IDS?.length > 0;
+                    if (!formData.LOCADORES_IDS || formData.LOCADORES_IDS.length === 0) {
+                        errors.push('Vinculação de Locador (Proprietário)');
+                    }
+                    if (!formData.LOCATARIOS_IDS || formData.LOCATARIOS_IDS.length === 0) {
+                        errors.push('Vinculação de Locatário (Inquilino)');
+                    }
+                } else if (selectedType === 'CompraEVenda') {
+                    if (!formData.VENDEDORES_IDS || formData.VENDEDORES_IDS.length === 0) {
+                        errors.push('Vinculação de Vendedor');
+                    }
+                    if (!formData.COMPRADORES_IDS || formData.COMPRADORES_IDS.length === 0) {
+                        errors.push('Vinculação de Comprador');
+                    }
                 }
-                if (selectedType === 'CompraEVenda') {
-                    return formData.VENDEDORES_IDS?.length > 0 && formData.COMPRADORES_IDS?.length > 0;
+
+                // 2. Imóvel validation
+                if (!['EntregaChaves', 'AutorizacaoDivulgacao'].includes(selectedType)) {
+                    if (!selectedImovelId) {
+                        errors.push('Vinculação de Imóvel da Locação');
+                    }
+                }
+
+                // 3. Financeiro validation
+                if (selectedType.startsWith('Locacao')) {
+                    if (!formData.VALOR_ALUGUEL || formData.VALOR_ALUGUEL <= 0) {
+                        errors.push('Valor do Aluguel (preencher no acordo financeiro do cartão)');
+                    }
+                    if (!formData.PRAZO_MESES || Number(formData.PRAZO_MESES) <= 0) {
+                        errors.push('Prazo do Contrato (meses)');
+                    }
+                } else if (selectedType === 'CompraEVenda') {
+                    if (!formData.VALOR_TOTAL || formData.VALOR_TOTAL <= 0) {
+                        errors.push('Valor Total da Transação');
+                    }
+                }
+
+                if (errors.length > 0) {
+                    // Display a nice custom warning toast listing the missing items!
+                    toast.error(
+                        <div>
+                            <p className="font-bold mb-1 text-red-800">Dados ausentes no cartão Kanban:</p>
+                            <ul className="list-disc pl-4 text-[11px] text-red-700 space-y-1 my-2">
+                                {errors.map((e, idx) => <li key={idx} className="font-medium">{e}</li>)}
+                            </ul>
+                            <p className="text-[10px] text-slate-500 font-semibold mt-2">Por favor, feche este assistente e preencha estas informações na aba "Dados" do cartão antes de gerar o contrato.</p>
+                        </div>,
+                        { duration: 7000 }
+                    );
+                    return false;
                 }
                 return true;
-            case 3:
-                if (['EntregaChaves', 'AutorizacaoDivulgacao'].includes(selectedType)) return true;
-                return !!selectedImovelId;
-            case 4:
-                if (selectedType.startsWith('Locacao')) return !!formData.VALOR_ALUGUEL;
-                if (selectedType === 'CompraEVenda') return !!formData.VALOR_TOTAL;
+            }
+            default: 
                 return true;
-            default: return true;
         }
     };
 
@@ -377,92 +659,213 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             // Apenas aviso, não bloqueia necessariamente se for intencional
             console.warn(`Atenção: ${pendingCount} variáveis não preenchidas.`);
         }
-
-        return true;
     };
 
     const generateAndSavePDF = async (downloadName?: string) => {
         setIsGeneratingPdf(true);
         setPdfDiagnostics(prev => ({ ...prev, status: 'generating', lastError: '' }));
-        console.log('[PDF] Iniciando fluxo de geração...', { downloadName, contentLength: previewContent?.length });
+        console.log('[PDF] Iniciando fluxo de geração com quebra de página inteligente...', { downloadName, contentLength: previewContent?.length });
 
         try {
             // 1. Validar conteúdo HTML
             console.log('[PDF] Etapa 1: Validando HTML...');
             validatePDFBeforeGeneration(previewContent);
 
-            // 2. Garantir container visível para o renderizador
-            console.log('[PDF] Etapa 2: Preparando renderizador off-screen...');
-            const sourceContainer = document.getElementById('contract-preview-container');
-            if (!sourceContainer) throw new Error('Container de preview não encontrado');
+            // 2. Preparar as páginas A4 divididas para evitar cortes horizontais de texto
+            console.log('[PDF] Etapa 2: Processando quebra de páginas inteligente...');
+            
+            // Container temporário para carregar todo o HTML
+            const parserContainer = document.createElement('div');
+            parserContainer.innerHTML = previewContent;
+            
+            // Ajustar CORS nas imagens
+            const images = parserContainer.querySelectorAll('img');
+            images.forEach(img => {
+                img.setAttribute('crossorigin', 'anonymous');
+            });
 
-            const hiddenRenderContainer = document.createElement('div');
-            hiddenRenderContainer.id = 'robotic-pdf-renderer';
-            hiddenRenderContainer.style.position = 'fixed';
-            hiddenRenderContainer.style.left = '-9999px';
-            hiddenRenderContainer.style.top = '0';
-            hiddenRenderContainer.style.width = '794px'; // Largura A4 aprox
-            hiddenRenderContainer.style.background = 'white';
-            hiddenRenderContainer.style.display = 'block';
-            hiddenRenderContainer.style.zIndex = '-1';
-            hiddenRenderContainer.innerHTML = previewContent;
-            document.body.appendChild(hiddenRenderContainer);
+            const pages: HTMLElement[] = [];
+            let currentPage = document.createElement('div');
+            
+            const setupPageStyles = (page: HTMLElement, forMeasurement: boolean = false) => {
+                page.style.width = '794px';
+                if (forMeasurement) {
+                    page.style.height = 'auto';
+                    page.style.minHeight = '0px';
+                    page.style.maxHeight = 'none';
+                } else {
+                    page.style.height = '1122px'; // A4 exato a 72/96 DPI
+                    page.style.minHeight = '1122px';
+                    page.style.maxHeight = '1122px';
+                }
+                page.style.padding = '65px 70px 75px 70px'; // Margens com espaço para header/footer
+                page.style.boxSizing = 'border-box';
+                page.style.background = 'white';
+                page.style.position = 'relative';
+                page.style.overflow = 'hidden';
+                page.style.display = 'flex';
+                page.style.flexDirection = 'column';
+                page.style.fontFamily = 'Arial, sans-serif';
+                page.style.color = '#333';
+            };
 
-            // 3. Aguardar renderização (frames e assets)
-            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-            await new Promise(resolve => setTimeout(resolve, 500)); // Delay para fontes/imagens
+            setupPageStyles(currentPage, true);
+            document.body.appendChild(currentPage);
 
-            const height = hiddenRenderContainer.offsetHeight;
-            const width = hiddenRenderContainer.offsetWidth;
+            // Função recursiva para achatar o HTML preservando estilos dos containers
+            const flattenHTMLNode = (node: Node): HTMLElement[] => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (!node.textContent?.trim()) return [];
+                    const span = document.createElement('span');
+                    span.textContent = node.textContent;
+                    return [span];
+                }
+                if (node.nodeType !== Node.ELEMENT_NODE) {
+                    return [];
+                }
+                
+                const el = node as HTMLElement;
+                const tagName = el.tagName.toLowerCase();
+                
+                const isLeafBlock = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'ul', 'ol', 'blockquote', 'address'].includes(tagName);
+                
+                const childrenArr = Array.from(el.childNodes);
+                const hasBlockChildren = childrenArr.some(child => {
+                    if (child.nodeType !== Node.ELEMENT_NODE) return false;
+                    const childTag = (child as HTMLElement).tagName.toLowerCase();
+                    return ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'ul', 'ol', 'div', 'section', 'blockquote', 'address'].includes(childTag);
+                });
+                
+                if (isLeafBlock || !hasBlockChildren) {
+                    return [el.cloneNode(true) as HTMLElement];
+                }
+                
+                const result: HTMLElement[] = [];
+                for (const child of childrenArr) {
+                    const flattened = flattenHTMLNode(child);
+                    for (const flatChild of flattened) {
+                        const parentClone = el.cloneNode(false) as HTMLElement;
+                        parentClone.style.marginTop = '0px';
+                        parentClone.style.marginBottom = '0px';
+                        parentClone.style.paddingTop = '0px';
+                        parentClone.style.paddingBottom = '0px';
+                        
+                        parentClone.appendChild(flatChild);
+                        result.push(parentClone);
+                    }
+                }
+                return result;
+            };
+
+            const flatElements: HTMLElement[] = [];
+            Array.from(parserContainer.childNodes).forEach(node => {
+                flatElements.push(...flattenHTMLNode(node));
+            });
+
+            for (const child of flatElements) {
+                const clone = child.cloneNode(true);
+                currentPage.appendChild(clone);
+                
+                // Mede a altura. Se ultrapassar a margem de segurança de 1020px, movemos para a próxima página.
+                if (currentPage.scrollHeight > 1020 && currentPage.childNodes.length > 1) {
+                    currentPage.removeChild(clone);
+                    
+                    // Remove do DOM, aplica estilo rígido A4 final e salva a página atual
+                    document.body.removeChild(currentPage);
+                    setupPageStyles(currentPage, false);
+                    pages.push(currentPage);
+                    
+                    // Cria nova página de medição (height: auto) e insere o elemento nela
+                    currentPage = document.createElement('div');
+                    setupPageStyles(currentPage, true);
+                    document.body.appendChild(currentPage);
+                    
+                    currentPage.appendChild(clone);
+                }
+            }
+            
+            // Adiciona a última página aplicando o estilo rígido A4 final
+            document.body.removeChild(currentPage);
+            setupPageStyles(currentPage, false);
+            pages.push(currentPage);
+
+            console.log(`[PDF] Total de páginas geradas: ${pages.length}`);
 
             setPdfDiagnostics(prev => ({
                 ...prev,
                 htmlLength: previewContent.length,
-                containerStats: { width, height },
+                containerStats: { width: 794, height: pages.length * 1122 },
                 placeholderCount: (previewContent.match(/\{\{/g) || []).length
             }));
 
-            if (height < 200) {
-                document.body.removeChild(hiddenRenderContainer);
-                throw new Error(`Falha no render: a altura do documento está muito baixa (${height}px). Certifique-se que o preview não está vazio.`);
-            }
-
-            // 4. Capturar Canvas
-            console.log('[PDF] Etapa 3: Capturando Canvas (html2canvas)...');
-            const canvas = await html2canvas(hiddenRenderContainer, {
-                scale: 2,
-                useCORS: true,
-                logging: true,
-                windowWidth: 800,
-                backgroundColor: '#ffffff'
-            });
-
-            // Limpar container temporário
-            document.body.removeChild(hiddenRenderContainer);
-
-            console.log('[PDF] Etapa 4: Gerando documento jsPDF...');
-            const imgData = canvas.toDataURL('image/png');
+            // 3. Gerar PDF página por página via canvas
+            console.log('[PDF] Etapa 3: Capturando páginas separadamente...');
+            
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
                 format: 'a4'
             });
 
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            for (let i = 0; i < pages.length; i++) {
+                const pageContainer = pages[i];
+                
+                // Adiciona cabeçalho e rodapé profissionais em cada página
+                const header = document.createElement('div');
+                header.style.position = 'absolute';
+                header.style.top = '20px';
+                header.style.left = '70px';
+                header.style.right = '70px';
+                header.style.borderBottom = '1px solid #f1f5f9';
+                header.style.paddingBottom = '5px';
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+                header.style.fontSize = '9px';
+                header.style.color = '#94a3b8';
+                header.style.fontWeight = 'bold';
+                header.style.textTransform = 'uppercase';
+                header.innerHTML = `<span>R.Sales Imóveis</span><span>Contrato de ${selectedType === 'CompraEVenda' ? 'Compra e Venda' : 'Locação'}</span>`;
+                pageContainer.appendChild(header);
 
-            let heightLeft = pdfHeight;
-            let position = 0;
+                const footer = document.createElement('div');
+                footer.style.position = 'absolute';
+                footer.style.bottom = '20px';
+                footer.style.left = '70px';
+                footer.style.right = '70px';
+                footer.style.borderTop = '1px solid #f1f5f9';
+                footer.style.paddingTop = '5px';
+                footer.style.display = 'flex';
+                footer.style.justifyContent = 'space-between';
+                footer.style.fontSize = '9px';
+                footer.style.color = '#94a3b8';
+                footer.innerHTML = `<span>Gerado pelo Motor Jurídico R.Sales</span><span>Página ${i + 1} de ${pages.length}</span>`;
+                pageContainer.appendChild(footer);
 
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pdf.internal.pageSize.getHeight();
+                document.body.appendChild(pageContainer);
+                
+                // Aguarda pequena renderização de imagem/logo
+                await new Promise(resolve => setTimeout(resolve, 100));
 
-            while (heightLeft >= 0) {
-                position = heightLeft - pdfHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                heightLeft -= pdf.internal.pageSize.getHeight();
+                const canvas = await html2canvas(pageContainer, {
+                    scale: 1.5,
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: 800,
+                    backgroundColor: '#ffffff'
+                });
+                
+                document.body.removeChild(pageContainer);
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                
+                if (i > 0) {
+                    pdf.addPage();
+                }
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             }
 
             const pdfBase64 = pdf.output('datauristring');
@@ -477,7 +880,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 tipoContrato: selectedType,
                 templateRef: selectedTemplate,
                 htmlLength: previewContent.length,
-                containerHeight: height,
+                containerHeight: pages.length * 1122,
                 status: 'Sucesso',
                 dataHora: new Date().toISOString()
             }).catch(e => console.error('Erro ao salvar log de debug', e));
@@ -531,7 +934,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             await BaseCrudService.update('contratos', {
                 _id: contractId!,
                 status: 'EmRevisao',
-                currentStep: 7,
+                currentStep: 4,
                 generatedPdfUrl: pdfUrl
             });
 
@@ -577,7 +980,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             return;
         }
 
-        if (currentStep === 7) {
+        if (currentStep === 4) {
             try {
                 // 1. Gerar e Salvar PDF Final (já faz o commit no banco de documentos)
                 const pdfUrl = await generateAndSavePDF();
@@ -585,7 +988,20 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 // 1.1 Sincronizar participantes com o CRM
                 await syncParticipantsWithCRM();
 
-                // 2. Registrar Contrato na Coleção 'contratos' com HTML Final
+                // 2. Registrar Contrato na Coleção 'generated-contracts' (Prisma)
+                await fetch('/api/v1/generated-contracts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        leadId: atendimento._id,
+                        templateId: selectedTemplate,
+                        nomeDocumento: `Contrato_${selectedType}_${new Date().toISOString().split('T')[0]}`,
+                        conteudoFinalHtml: previewContent,
+                        status: 'GERADO'
+                    })
+                });
+
+                // Mantém registro no CRM legado para Kanban
                 await BaseCrudService.create('contratos', {
                     atendimentoRef: atendimento._id,
                     imovelRef: selectedImovelId,
@@ -621,7 +1037,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             }).catch(() => { });
         }
 
-        if (nextStep === 6) {
+        if (nextStep === 3) {
             generatePreview();
         }
 
@@ -638,6 +1054,8 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         setIsSeeding(true);
         try {
             toast.info("Instalando template padrão...");
+            
+            // 1. Salvar no IndexedDB (CRM legado/Kanban)
             await BaseCrudService.create<ContractTemplates>('templatescontratos', {
                 templateName: `Template Padrão ${selectedType}`,
                 contractType: selectedType as any,
@@ -646,11 +1064,30 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 isActive: true,
                 version: 1
             });
-            toast.success("Template instalado com sucesso!");
 
-            // Recarregar templates
-            const res = await BaseCrudService.getAll<ContractTemplates>('templatescontratos');
-            setTemplates(res.items.filter(i => i.isActive));
+            // 2. Salvar no PostgreSQL (Prisma)
+            const cat = selectedType.startsWith('Loc') ? 'LOCACAO' : selectedType === 'CompraEVenda' ? 'VENDA' : 'OUTROS';
+            const prismaRes = await fetch('/api/v1/contract-templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nome: `Template Padrão ${selectedType}`,
+                    categoria: cat,
+                    tipoOperacao: selectedType,
+                    conteudoHtml: templateHtml,
+                    ativo: true
+                })
+            });
+
+            if (!prismaRes.ok) {
+                throw new Error(`Erro na API do Postgres: ${prismaRes.status}`);
+            }
+
+            toast.success("Template instalado com sucesso em ambas as bases!");
+
+            // 3. Recarregar templates do PostgreSQL (fonte da verdade do wizard)
+            const templatesRes = await fetch('/api/v1/contract-templates').then(res => res.json());
+            setTemplates(templatesRes.items?.filter((i: any) => (i.ativo || i.isActive)) || []);
         } catch (error) {
             console.error('Erro ao instalar template:', error);
             toast.error("Falha ao instalar template no banco de dados.");
@@ -663,29 +1100,73 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         setCurrentStep(prev => Math.max(prev - 1, 1));
     };
 
-    const generatePreview = () => {
-        // Tenta encontrar o template exato, senão busca o primeiro do mesmo tipo, senão qualquer um ativo
-        let template = templates.find(t => t.contractType === selectedType && t.isActive);
-        if (!template) template = templates.find(t => t.isActive);
+    // Atualiza a lista de templates disponíveis para o tipo selecionado
+    useEffect(() => {
+        if (selectedType) {
+            const filtered = templates.filter(t => (t.tipoOperacao === selectedType || t.contractType === selectedType) && (t.ativo || t.isActive));
+            setAvailableTemplatesForType(filtered);
+            if (filtered.length > 0 && !selectedTemplate) {
+                setSelectedTemplate(filtered[0]._id);
+            }
+        }
+    }, [selectedType, templates]);
+
+    const generatePreview = (overrideData?: any) => {
+        const dataToUse = overrideData || formData;
+        console.log(`[ContractWizard] Gerando prévia para: ${selectedType}. Override Default: ${useDefaultTemplateOverride}`);
+        
+        let templateRaw = '';
+        let templateNameUsed = '';
+
+        if (useDefaultTemplateOverride && DEFAULT_TEMPLATES[selectedType]) {
+            templateRaw = DEFAULT_TEMPLATES[selectedType];
+            templateNameUsed = 'MODELO OFICIAL (RESTORED)';
+            setIsTemplateMissing(false);
+        } else {
+            let template = selectedTemplate ? templates.find(t => t._id === selectedTemplate) : availableTemplatesForType[0];
+            
+            if (!template && availableTemplatesForType.length > 0) {
+                template = availableTemplatesForType[0];
+            }
+
+            if (!template) {
+                console.warn(`[ContractWizard] Nenhum template específico encontrado para ${selectedType}. Tentando fallback...`);
+                template = templates.find(t => t.ativo || t.isActive);
+            }
+
+            if (template) {
+                console.log(`[ContractWizard] Template selecionado: ${template.templateName || template.nome} (${template._id})`);
+                templateNameUsed = template.templateName || template.nome;
+                templateRaw = template?.conteudoHtml || template?.templateBody || template?.templateContent;
+            }
+        }
 
         const imovel = imoveis.find(i => i._id === selectedImovelId);
-
-        const engineData = ContractEngine.mapEntitiesToData(atendimento, clientes, imovel, formData);
-
-        // Suporte para múltiplos campos de conteúdo (flexibilidade do schema)
-        const templateRaw = template?.templateBody || template?.templateContent;
+        const engineData = ContractEngine.mapEntitiesToData(atendimento, clientes, imovel, dataToUse);
 
         if (templateRaw && templateRaw.length > 50) {
             setIsTemplateMissing(false);
+            setPdfDiagnostics(prev => ({ ...prev, templateSource: templateNameUsed }));
             const processed = ContractEngine.renderContract(templateRaw, engineData);
             setPreviewContent(processed);
             return processed;
         } else {
+            console.warn(`[ContractWizard] Conteúdo do template está vazio ou muito curto.`);
             setIsTemplateMissing(true);
             setPreviewContent('');
             return '';
         }
     };
+
+    // Atualiza a prévia automaticamente quando o formData mudar (se estiver na etapa de revisão)
+    useEffect(() => {
+        if (currentStep === 3 && isOpen) {
+            const timer = setTimeout(() => {
+                generatePreview();
+            }, 500); // Debounce para evitar múltiplas gerações pesadas
+            return () => clearTimeout(timer);
+        }
+    }, [formData, currentStep, isOpen]);
 
     const renderStepContent = () => {
         if (loading) return (
@@ -738,320 +1219,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                     </div>
                 );
 
-            case 2: // ETAPA 2: PARTES (Múltiplos)
-                const isLocStep = selectedType.startsWith('Locacao');
-                const group1Label = isLocStep ? 'Locador (Proprietário)' : 'Vendedor';
-                const group2Label = isLocStep ? 'Locatário (Inquilino)' : 'Comprador';
-                const group1Key = isLocStep ? 'LOCADORES_IDS' : 'VENDEDORES_IDS';
-                const group2Key = isLocStep ? 'LOCATARIOS_IDS' : 'COMPRADORES_IDS';
-
-                const renderParticipantGroup = (label: string, fieldKey: string, color: 'emerald' | 'blue') => {
-                    const ids = formData[fieldKey] || [];
-                    const bgColor = color === 'emerald' ? 'bg-emerald-50' : 'bg-blue-50';
-                    const borderColor = color === 'emerald' ? 'border-emerald-100' : 'border-blue-100';
-                    const textColor = color === 'emerald' ? 'text-emerald-900' : 'text-blue-900';
-                    const subTextColor = color === 'emerald' ? 'text-emerald-700/80' : 'text-blue-700/80';
-
-                    return (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <Label className="text-sm font-black uppercase tracking-widest text-slate-400">{label}</Label>
-                                <Badge variant="secondary" className="rounded-md">{ids.length} Selecionados</Badge>
-                            </div>
-
-                            <div className="space-y-4">
-                                {ids.map((id: string, index: number) => {
-                                    const client = clientes.find(c => c._id === id);
-                                    return (
-                                        <div key={`${fieldKey}-${index}`} className="animate-in fade-in slide-in-from-left-2 duration-300">
-                                            <div className="flex gap-2 mb-2">
-                                                <Select
-                                                    value={id}
-                                                    onValueChange={(val) => {
-                                                        const newIds = [...ids];
-                                                        newIds[index] = val;
-                                                        setFormData((p: any) => ({ ...p, [fieldKey]: newIds }));
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none px-6 focus:ring-secondary flex-1">
-                                                        <SelectValue placeholder="Selecionar cliente..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-2xl">
-                                                        {clientes.map(c => {
-                                                            const d = formData.PARTICIPANT_DETAILS?.[c._id] || {};
-                                                            const displayName = d.name || c.clientName;
-                                                            return (
-                                                                <SelectItem key={c._id} value={c._id} disabled={ids.includes(c._id) && c._id !== id}>
-                                                                    {displayName} - {formatCPF(d.cpf || c.cpfCnpj || '')}
-                                                                </SelectItem>
-                                                            );
-                                                        })}
-                                                    </SelectContent>
-                                                </Select>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="w-14 h-14 rounded-2xl bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50"
-                                                    onClick={() => {
-                                                        const newIds = ids.filter((_: any, i: number) => i !== index);
-                                                        setFormData((p: any) => ({ ...p, [fieldKey]: newIds }));
-                                                    }}
-                                                >
-                                                    <ChevronLeft className="rotate-45 w-5 h-5" />
-                                                </Button>
-                                            </div>
-
-                                            {client && (() => {
-                                                const d = (formData?.PARTICIPANT_DETAILS?.[id]) || {};
-                                                const name = d.name || client.clientName;
-                                                const cpf = d.cpf || client.cpfCnpj || '';
-                                                const emailOrCivil = color === 'emerald'
-                                                    ? (d.maritalStatus || (client as any).maritalStatus || 'N/D')
-                                                    : (d.email || client.emailPrincipal || 'N/D');
-
-                                                return (
-                                                    <div className={`p-6 ${bgColor} rounded-[24px] border ${borderColor} space-y-4`}>
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="flex items-center gap-2">
-                                                                <p className={`text-sm font-bold ${textColor}`}>{name}</p>
-                                                                {d.name && <Badge variant="secondary" className="text-[8px] h-4 bg-secondary/10 text-secondary border-none">Editado</Badge>}
-                                                            </div>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className={`h-8 rounded-xl px-3 text-[10px] font-black uppercase tracking-widest ${color === 'emerald' ? 'bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20' : 'bg-blue-500/10 text-blue-700 hover:bg-blue-500/20'}`}
-                                                                onClick={() => {
-                                                                    setEditingParticipantId(id);
-                                                                    setEditingParticipantKey(fieldKey);
-                                                                }}
-                                                            >
-                                                                < PenTool className="w-3 h-3 mr-1.5" /> Editar Dados
-                                                            </Button>
-                                                        </div>
-                                                        <div className={`grid grid-cols-2 gap-2 text-[11px] ${subTextColor}`}>
-                                                            <span>CPF: {formatCPF(cpf)}</span>
-                                                            <span>{color === 'emerald' ? `Civil: ${emailOrCivil}` : `Email: ${emailOrCivil}`}</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-                                    );
-                                })}
-
-                                <Button
-                                    variant="outline"
-                                    className="w-full h-14 rounded-2xl border-dashed border-2 border-slate-200 text-slate-400 hover:text-secondary hover:border-secondary transition-all"
-                                    onClick={() => {
-                                        setFormData((p: any) => ({ ...p, [fieldKey]: [...ids, ''] }));
-                                    }}
-                                >
-                                    + Adicionar outro {label}
-                                </Button>
-                            </div>
-                        </div>
-                    );
-                };
-
-                return (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                        <div className="text-center space-y-2">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Vincular Partes do CRM</h3>
-                            <p className="text-slate-500">Adicione todos os vendedores e compradores envolvidos no registro.</p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-                            {renderParticipantGroup(group1Label, group1Key, 'emerald')}
-                            {renderParticipantGroup(group2Label, group2Key, 'blue')}
-                        </div>
-                    </div>
-                );
-
-            case 3: // ETAPA 3: IMÓVEL
-                const imovel = imoveis.find(i => i._id === selectedImovelId);
-                return (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                        <div className="text-center space-y-2">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">O Imóvel do Contrato</h3>
-                            <p className="text-slate-500">Os dados serão extraídos da matrícula cadastrada para evitar erros jurídicos.</p>
-                        </div>
-                        <Select value={selectedImovelId} onValueChange={setSelectedImovelId}>
-                            <SelectTrigger className="h-20 rounded-[24px] bg-slate-50 border-none px-8 text-lg font-bold">
-                                <SelectValue placeholder="Selecionar Imóvel pelo Código (Ex: AP120)..." />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-2xl">
-                                {imoveis.map(i => <SelectItem key={i._id} value={i._id}>{i.codigoReference} - {i.logradouro}, {i.numero}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-
-                        {imovel && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="p-8 bg-white border border-slate-100 rounded-[32px] shadow-sm space-y-1">
-                                    <Badge variant="outline" className="text-xs uppercase text-slate-400 border-none px-0">Matrícula</Badge>
-                                    <p className="text-lg font-black text-slate-900">{(imovel as any).matricula || 'PENDENTE'}</p>
-                                </div>
-                                <div className="p-8 bg-white border border-slate-100 rounded-[32px] shadow-sm space-y-1">
-                                    <Badge variant="outline" className="text-xs uppercase text-slate-400 border-none px-0">IPTU (SQL)</Badge>
-                                    <p className="text-lg font-black text-slate-900">{imovel.valorIPTU || 'N/D'}</p>
-                                </div>
-                                <div className="p-8 bg-white border border-slate-100 rounded-[32px] shadow-sm space-y-1">
-                                    <Badge variant="outline" className="text-xs uppercase text-slate-400 border-none px-0">Área Útil</Badge>
-                                    <p className="text-lg font-black text-slate-900">{(imovel as any).areaPrivativa || (imovel as any).areaConstruida || 0} m²</p>
-                                </div>
-                                <div className="col-span-1 md:col-span-3 p-8 bg-slate-50 rounded-[32px] flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
-                                        <Globe className="w-6 h-6 text-secondary" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-slate-400 uppercase">Localização Completa</p>
-                                        <p className="text-slate-900 font-medium">{imovel.logradouro}, {imovel.numero} - {imovel.bairro}, {imovel.cidade}/{imovel.estado}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-
-            case 4: // ETAPA 4: FINANCEIRO
-                const isRentStep = selectedType.startsWith('Locacao');
-                return (
-                    <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                        <div className="text-center space-y-2">
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Acordo Financeiro</h3>
-                            <p className="text-slate-500">Formatado automaticamente para evitar divergências de valores.</p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            {isRentStep ? (
-                                <>
-                                    <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700">Valor do Aluguel (Mensal)</Label>
-                                        <Input
-                                            value={formatCurrency(formData.VALOR_ALUGUEL || 0)}
-                                            onChange={(e) => setFormData({ ...formData, VALOR_ALUGUEL: parseCurrency(e.target.value) })}
-                                            className="h-16 rounded-2xl text-xl font-black bg-slate-50 border-none px-6"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700">Tipo de Garantia</Label>
-                                        <Select value={formData.GARANTIA} onValueChange={(v) => setFormData({ ...formData, GARANTIA: v })}>
-                                            <SelectTrigger className="h-16 rounded-2xl bg-slate-50 border-none px-6">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-2xl">
-                                                <SelectItem value="Caucao">Depósito Caução (3 meses)</SelectItem>
-                                                <SelectItem value="SeguroFianca">Seguro Fiança / Título de Capitalização</SelectItem>
-                                                <SelectItem value="Fiador">Fiador com Imóvel Escriturado</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {formData.GARANTIA === 'Caucao' && (
-                                        <div className="col-span-1 md:col-span-2 p-8 bg-blue-50/50 rounded-[32px] border border-blue-100 space-y-6">
-                                            <div className="flex items-center gap-2 text-blue-700 font-black uppercase text-xs tracking-widest">
-                                                <ShieldCheck className="w-5 h-5" />
-                                                Dados para Depósito da Caução
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500">Banco</Label>
-                                                    <Input
-                                                        value={formData.CAUCAO_BANCO}
-                                                        onChange={(e) => setFormData({ ...formData, CAUCAO_BANCO: e.target.value })}
-                                                        className="bg-white border-slate-200 rounded-xl"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500">Agência</Label>
-                                                    <Input
-                                                        value={formData.CAUCAO_AGENCIA}
-                                                        onChange={(e) => setFormData({ ...formData, CAUCAO_AGENCIA: e.target.value })}
-                                                        className="bg-white border-slate-200 rounded-xl"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500">Conta / Operação</Label>
-                                                    <Input
-                                                        value={formData.CAUCAO_CONTA}
-                                                        onChange={(e) => setFormData({ ...formData, CAUCAO_CONTA: e.target.value })}
-                                                        className="bg-white border-slate-200 rounded-xl"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2 md:col-span-2">
-                                                    <Label className="text-xs font-bold text-slate-500">Titular da Conta</Label>
-                                                    <Input
-                                                        value={formData.CAUCAO_TITULAR}
-                                                        onChange={(e) => setFormData({ ...formData, CAUCAO_TITULAR: e.target.value })}
-                                                        className="bg-white border-slate-200 rounded-xl"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500">CPF/CNPJ do Titular</Label>
-                                                    <Input
-                                                        value={formData.CAUCAO_CPF}
-                                                        onChange={(e) => setFormData({ ...formData, CAUCAO_CPF: e.target.value })}
-                                                        className="bg-white border-slate-200 rounded-xl"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700">Prazo de Contrato (Meses)</Label>
-                                        <Input
-                                            type="number"
-                                            value={formData.PRAZO_MESES}
-                                            onChange={(e) => setFormData({ ...formData, PRAZO_MESES: e.target.value })}
-                                            className="h-16 rounded-2xl bg-slate-50 border-none px-6"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700">Índice de Reajuste</Label>
-                                        <Select value={formData.REAJUSTE_INDICE} onValueChange={(v) => setFormData({ ...formData, REAJUSTE_INDICE: v })}>
-                                            <SelectTrigger className="h-16 rounded-2xl bg-slate-50 border-none px-6">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-2xl">
-                                                <SelectItem value="IPCA">IPCA (IBGE)</SelectItem>
-                                                <SelectItem value="IGPM">IGP-M (FGV)</SelectItem>
-                                                <SelectItem value="INPC">INPC</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700">Valor Total da Transação</Label>
-                                        <Input
-                                            value={formatCurrency(formData.VALOR_TOTAL || 0)}
-                                            onChange={(e) => setFormData({ ...formData, VALOR_TOTAL: parseCurrency(e.target.value) })}
-                                            className="h-16 rounded-2xl text-xl font-black bg-slate-50 border-none px-6"
-                                        />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700">Valor de Entrada (Sinal)</Label>
-                                        <Input
-                                            value={formatCurrency(formData.VALOR_ENTRADA || 0)}
-                                            onChange={(e) => setFormData({ ...formData, VALOR_ENTRADA: parseCurrency(e.target.value) })}
-                                            className="h-16 rounded-2xl bg-slate-50 border-none px-6"
-                                        />
-                                    </div>
-                                    <div className="space-y-3 col-span-2">
-                                        <Label className="font-bold text-slate-700">Observações de Pagamento</Label>
-                                        <textarea
-                                            placeholder="Descreva as parcelas, financiamento, ou troca de bens..."
-                                            value={formData.FORMA_PAGAMENTO}
-                                            onChange={(e) => setFormData({ ...formData, FORMA_PAGAMENTO: e.target.value })}
-                                            className="w-full min-h-[120px] rounded-[24px] bg-slate-50 border-none p-6 text-sm resize-none"
-                                        />
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                );
-
-            case 5: // ETAPA 5: OPCIONAIS
+            case 2: // ETAPA 2: OPCIONAIS
                 return (
                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 text-center">
                         <div className="space-y-2">
@@ -1059,6 +1227,81 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                             <p className="text-slate-500">Selecione cláusulas que serão inseridas automaticamente no corpo do texto.</p>
                         </div>
                         <div className="space-y-12">
+                            {/* Condições Contratuais */}
+                            <div className="space-y-4 text-left">
+                                <Label className="text-secondary font-black uppercase tracking-widest text-xs">Condições Contratuais</Label>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                        <Label className="font-bold text-slate-700 text-sm">Prazo (Meses)</Label>
+                                        <Input type="number" placeholder="Ex: 30" value={formData.PRAZO_MESES} onChange={(e) => setFormData({ ...formData, PRAZO_MESES: e.target.value })} className="bg-white border-none rounded-xl" />
+                                    </div>
+                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                        <Label className="font-bold text-slate-700 text-sm">Dia de Vencimento</Label>
+                                        <Input type="number" placeholder="Ex: 10" value={formData.DIA_PAGAMENTO} onChange={(e) => setFormData({ ...formData, DIA_PAGAMENTO: e.target.value })} className="bg-white border-none rounded-xl" />
+                                    </div>
+                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                        <Label className="font-bold text-slate-700 text-sm">Índice de Reajuste</Label>
+                                        <Select value={formData.REAJUSTE_INDICE} onValueChange={(val) => setFormData({ ...formData, REAJUSTE_INDICE: val })}>
+                                            <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                            <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                                <SelectItem value="IPCA">IPCA (IBGE)</SelectItem>
+                                                <SelectItem value="IGPM">IGP-M (FGV)</SelectItem>
+                                                <SelectItem value="IPC-Fipe">IPC (Fipe)</SelectItem>
+                                                <SelectItem value="Sem Reajuste">Sem Reajuste</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                        <Label className="font-bold text-slate-700 text-sm">Multa Rescisória (Aluguéis)</Label>
+                                        <Input type="number" placeholder="Ex: 3" value={formData.MULTA_RESCISAO_ALUGUEIS} onChange={(e) => setFormData({ ...formData, MULTA_RESCISAO_ALUGUEIS: e.target.value })} className="bg-white border-none rounded-xl" />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                        <Label className="font-bold text-slate-700 text-sm">Garantia Locatícia</Label>
+                                        <Select value={formData.GARANTIA} onValueChange={(val) => setFormData({ ...formData, GARANTIA: val })}>
+                                            <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione a garantia..." /></SelectTrigger>
+                                            <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                                <SelectItem value="Caucao">Caução (Depósito)</SelectItem>
+                                                <SelectItem value="Fiador">Fiador</SelectItem>
+                                                <SelectItem value="SeguroFianca">Seguro Fiança</SelectItem>
+                                                <SelectItem value="SemGarantia">Sem Garantia</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    {formData.GARANTIA === 'Caucao' && (
+                                        <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                            <Label className="font-bold text-slate-700 text-sm">Valor do Caução</Label>
+                                            <Input type="text" placeholder="R$ 0,00" value={formData.CAUCAO_VALOR ? formatCurrency(formData.CAUCAO_VALOR) : ''} onChange={(e) => setFormData({ ...formData, CAUCAO_VALOR: parseCurrency(e.target.value) })} className="bg-white border-none rounded-xl font-bold" />
+                                        </div>
+                                    )}
+                                </div>
+                                {formData.GARANTIA === 'Caucao' && (
+                                    <div className="p-5 bg-slate-50/50 rounded-3xl border border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4 animate-in fade-in duration-300">
+                                        <div className="col-span-2">
+                                            <Label className="text-xs text-slate-500 font-bold block mb-1">Titular da Conta</Label>
+                                            <Input placeholder="Nome do Titular" value={formData.CAUCAO_TITULAR} onChange={(e) => setFormData({ ...formData, CAUCAO_TITULAR: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <Label className="text-xs text-slate-500 font-bold block mb-1">CPF do Titular</Label>
+                                            <Input placeholder="CPF do Titular" value={formData.CAUCAO_CPF} onChange={(e) => setFormData({ ...formData, CAUCAO_CPF: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs text-slate-500 font-bold block mb-1">Banco</Label>
+                                            <Input placeholder="Banco" value={formData.CAUCAO_BANCO} onChange={(e) => setFormData({ ...formData, CAUCAO_BANCO: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs text-slate-500 font-bold block mb-1">Agência</Label>
+                                            <Input placeholder="Agência" value={formData.CAUCAO_AGENCIA} onChange={(e) => setFormData({ ...formData, CAUCAO_AGENCIA: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <Label className="text-xs text-slate-500 font-bold block mb-1">Conta Corrente</Label>
+                                            <Input placeholder="Conta Corrente" value={formData.CAUCAO_CONTA} onChange={(e) => setFormData({ ...formData, CAUCAO_CONTA: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="space-y-4">
                                 <Label className="text-secondary font-black uppercase tracking-widest text-xs">Testemunhas do Contrato</Label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
@@ -1130,28 +1373,63 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                     </div>
                 );
 
-            case 6: // ETAPA 6: REVISÃO
+            case 3: // ETAPA 3: REVISÃO
                 return (
                     <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 h-full flex flex-col">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="space-y-1">
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Prévia do Instrumento</h3>
                                 <p className="text-slate-500 text-sm">O texto abaixo foi gerado dinamicamente. Revise cada parágrafo.</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
+                                {availableTemplatesForType.length > 1 && (
+                                    <Select value={selectedTemplate} onValueChange={(v) => { setSelectedTemplate(v); setUseDefaultTemplateOverride(false); }}>
+                                        <SelectTrigger className="h-10 rounded-xl bg-slate-50 border-slate-200 text-xs font-bold min-w-[200px]">
+                                            <SelectValue placeholder="Trocar Modelo..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            {availableTemplatesForType.map(t => (
+                                                <SelectItem key={t._id} value={t._id}>{t.templateName || t.nome}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                                
+                                {DEFAULT_TEMPLATES[selectedType] && (
+                                    <Button
+                                        variant={useDefaultTemplateOverride ? "secondary" : "outline"}
+                                        size="sm"
+                                        className={`rounded-xl h-10 gap-2 font-bold text-xs ${useDefaultTemplateOverride ? 'bg-amber-100 text-amber-700 border-amber-200' : 'border-slate-200'}`}
+                                        onClick={() => {
+                                            setUseDefaultTemplateOverride(!useDefaultTemplateOverride);
+                                            toast.info(useDefaultTemplateOverride ? "Usando template do banco" : "FORÇANDO MODELO PADRÃO DO SISTEMA");
+                                        }}
+                                    >
+                                        <PenTool className="w-4 h-4" /> {useDefaultTemplateOverride ? 'Usando Padrão' : 'Forçar Padrão'}
+                                    </Button>
+                                )}
+
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hover:text-secondary"
+                                    className="text-[10px] text-slate-400 font-bold uppercase tracking-widest hover:text-secondary h-10"
                                     onClick={() => setShowDebug(!showDebug)}
                                 >
                                     {showDebug ? 'Ocultar Diagnóstico' : 'Diagnóstico PDF'}
                                 </Button>
-                                <Button variant="outline" className="rounded-xl border-slate-200 gap-2 font-bold" onClick={generatePreview}>
+                                <Button
+                                    variant="outline"
+                                    className="rounded-xl border-slate-200 gap-2 font-bold h-10 text-xs"
+                                    onClick={async () => {
+                                        const freshData = await loadInitialData(true);
+                                        generatePreview(freshData);
+                                        toast.success("Variáveis sincronizadas com o CRM!");
+                                    }}
+                                >
                                     <Save className="w-4 h-4" /> Recarregar Variáveis
                                 </Button>
                                 <Button
-                                    className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white gap-2 font-bold"
+                                    className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white gap-2 font-bold h-10 text-xs"
                                     onClick={async () => {
                                         try {
                                             toast.info("Iniciando geração do PDF...");
@@ -1305,7 +1583,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                     </div>
                 );
 
-            case 7: // ETAPA 7: ASSINATURA
+            case 4: // ETAPA 4: ASSINATURA
                 return (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <div className="p-10 bg-emerald-50 rounded-[48px] border border-emerald-100 flex flex-col items-center text-center gap-6">
@@ -1399,7 +1677,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                                 </div>
                                                 <div className="space-y-0.5">
                                                     <p className="text-[10px] text-slate-500 font-bold uppercase">Modalidade</p>
-                                                    <p className="text-sm font-black text-white">{templates.find(t => t.contractType === selectedType)?.templateName || selectedType}</p>
+                                                    <p className="text-sm font-black text-white">{templates.find(t => t.tipoOperacao === selectedType || t.contractType === selectedType)?.templateName || templates.find(t => t.tipoOperacao === selectedType || t.contractType === selectedType)?.nome || selectedType}</p>
                                                 </div>
                                             </div>
 
@@ -1498,7 +1776,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                         <div className="flex-1 bg-white flex flex-col relative rounded-r-[48px] overflow-hidden">
                             <DialogHeader className="p-10 flex flex-row items-center justify-between space-y-0 bg-white/80 backdrop-blur-md sticky top-0 z-20">
                                 <div className="flex flex-col gap-1">
-                                    <DialogTitle className="text-xs font-black text-slate-300 uppercase tracking-[0.3em]">Etapa {currentStep} de 7</DialogTitle>
+                                    <DialogTitle className="text-xs font-black text-slate-300 uppercase tracking-[0.3em]">Etapa {currentStep} de 4</DialogTitle>
                                     <p className="text-3xl font-black text-slate-900 tracking-tight">{STEPS.find(s => s.id === currentStep)?.title}</p>
                                 </div>
                                 <Button
@@ -1522,7 +1800,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                                 }`}>
                                                 {currentStep > s.id ? <Check className="w-4 h-4 font-black" /> : <s.icon className="w-4 h-4" />}
                                             </div>
-                                            {s.id < 7 && (
+                                            {s.id < 4 && (
                                                 <div className={`absolute left-[50%] top-4 w-full h-[3px] -z-0 transition-colors duration-500 ${currentStep > s.id ? 'bg-emerald-100' : 'bg-slate-50'
                                                     }`} />
                                             )}
@@ -1564,7 +1842,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                         disabled={loading || saving}
                                         className="rounded-[22px] h-14 px-12 gap-3 bg-secondary hover:bg-secondary/90 text-white font-black shadow-[0_12px_24px_-8px_rgba(255,108,0,0.5)] transition-all hover:-translate-y-1"
                                     >
-                                        {currentStep === 7 ? 'Finalizar e Registrar' : 'Avançar Etapa'}
+                                        {currentStep === 4 ? 'Finalizar e Registrar' : 'Avançar Etapa'}
                                         <ChevronRight className="w-5 h-5" />
                                     </Button>
                                 </div>
@@ -1595,6 +1873,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                     name: client?.clientName || '',
                                     cpf: client?.cpfCnpj || '',
                                     rg: (client as any)?.rg || '',
+                                    nationality: (client as any)?.nationality || '',
                                     profession: (client as any)?.profession || '',
                                     maritalStatus: (client as any)?.maritalStatus || '',
                                     gender: (client as any)?.gender || 'Masculino',
@@ -1617,7 +1896,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase">Nome Completo</Label>
+                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                    Nome Completo <span className="text-red-500 font-black">*</span>
+                                                </Label>
                                                 <Input
                                                     value={details.name}
                                                     onChange={(e) => updateDetail('name', e.target.value)}
@@ -1625,7 +1906,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase">Email</Label>
+                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                    Email <span className="text-red-500 font-black">*</span>
+                                                </Label>
                                                 <Input
                                                     value={details.email}
                                                     onChange={(e) => updateDetail('email', e.target.value)}
@@ -1633,7 +1916,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase">CPF</Label>
+                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                    CPF <span className="text-red-500 font-black">*</span>
+                                                </Label>
                                                 <Input
                                                     value={details.cpf}
                                                     onChange={(e) => updateDetail('cpf', e.target.value)}
@@ -1641,7 +1926,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase">RG</Label>
+                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                    RG <span className="text-red-500 font-black">*</span>
+                                                </Label>
                                                 <Input
                                                     value={details.rg}
                                                     onChange={(e) => updateDetail('rg', e.target.value)}
@@ -1649,7 +1936,20 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase">Profissão</Label>
+                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                    Nacionalidade <span className="text-red-500 font-black">*</span>
+                                                </Label>
+                                                <Input
+                                                    value={details.nationality || ''}
+                                                    onChange={(e) => updateDetail('nationality', e.target.value)}
+                                                    className="h-14 rounded-2xl bg-white border-slate-200"
+                                                    placeholder="Ex: brasileira"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                    Profissão <span className="text-red-500 font-black">*</span>
+                                                </Label>
                                                 <Input
                                                     value={details.profession}
                                                     onChange={(e) => updateDetail('profession', e.target.value)}
@@ -1657,7 +1957,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase">Estado Civil</Label>
+                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                    Estado Civil <span className="text-red-500 font-black">*</span>
+                                                </Label>
                                                 <Select value={details.maritalStatus} onValueChange={(v) => updateDetail('maritalStatus', v)}>
                                                     <SelectTrigger className="h-14 rounded-2xl bg-white border-slate-200">
                                                         <SelectValue placeholder="Selecione..." />
@@ -1691,7 +1993,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                         </div>
 
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-slate-500 uppercase">Endereço Completo</Label>
+                                            <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                Endereço Completo <span className="text-red-500 font-black">*</span>
+                                            </Label>
                                             <Input
                                                 value={details.address}
                                                 onChange={(e) => updateDetail('address', e.target.value)}
@@ -1731,7 +2035,46 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                 className="px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold h-12"
                                 onClick={async () => {
                                     const clientId = editingParticipantId!;
-                                    const updatedData = formData.PARTICIPANT_DETAILS[clientId] || {};
+                                    const client = clientes.find(c => c._id === clientId);
+                                    const updatedData = {
+                                        name: client?.clientName || '',
+                                        cpf: client?.cpfCnpj || '',
+                                        rg: (client as any)?.rg || '',
+                                        nationality: (client as any)?.nationality || '',
+                                        profession: (client as any)?.profession || '',
+                                        maritalStatus: (client as any)?.maritalStatus || '',
+                                        gender: (client as any)?.gender || 'Masculino',
+                                        email: client?.emailPrincipal || '',
+                                        address: client?.address || '',
+                                        spouseId: (client as any)?.spouseRef || '',
+                                        ...(formData.PARTICIPANT_DETAILS?.[clientId] || {})
+                                    };
+
+                                    // Validar campos obrigatórios no motor
+                                    const missingFields: string[] = [];
+                                    if (!updatedData.name?.trim()) missingFields.push('Nome Completo');
+                                    if (!updatedData.nationality?.trim()) missingFields.push('Nacionalidade');
+                                    if (!updatedData.maritalStatus?.trim()) missingFields.push('Estado Civil');
+                                    if (!updatedData.profession?.trim()) missingFields.push('Profissão');
+                                    if (!updatedData.rg?.trim()) missingFields.push('RG');
+                                    if (!updatedData.cpf?.trim()) missingFields.push('CPF');
+                                    if (!updatedData.address?.trim()) missingFields.push('Endereço Completo');
+                                    if (!updatedData.email?.trim()) missingFields.push('Email');
+
+                                    if (missingFields.length > 0) {
+                                        toast.error(`Campos obrigatórios ausentes: ${missingFields.join(', ')}`);
+                                        return;
+                                    }
+
+                                    // Atualiza formData com o objeto mesclado e completo
+                                    setFormData((prev: any) => ({
+                                        ...prev,
+                                        PARTICIPANT_DETAILS: {
+                                            ...prev.PARTICIPANT_DETAILS,
+                                            [clientId]: updatedData
+                                        }
+                                    }));
+
                                     const originalClient = clientes.find(c => c._id === clientId);
 
                                     if (hasSignedContract) {

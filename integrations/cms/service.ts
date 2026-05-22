@@ -9,6 +9,10 @@ export interface PaginationOptions {
   limit?: number;
   /** Number of items to skip (for offset-based pagination) */
   skip?: number;
+  /** Field to filter by */
+  filterField?: string;
+  /** Value to filter for */
+  filterValue?: string;
 }
 
 /**
@@ -107,7 +111,14 @@ export class BaseCrudService {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(itemData)
         });
-        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        if (!res.ok) {
+          let errMsg = `API returned ${res.status}`;
+          try {
+             const errorData = await res.json();
+             if (errorData.error) errMsg = errorData.error;
+          } catch(e) {}
+          throw new Error(errMsg);
+        }
         return await res.json() as T;
       } catch (e) {
         console.error(`Error creating ${collectionId} in Postgres API:`, e);
@@ -172,7 +183,11 @@ export class BaseCrudService {
 
     if (isPostgres(collectionId)) {
       try {
-        const res = await fetch(`/api/v1/${collectionId}?limit=${limit}&skip=${skip}`);
+        let url = `/api/v1/${collectionId}?limit=${limit}&skip=${skip}`;
+        if (pagination?.filterField && pagination?.filterValue) {
+          url += `&filterField=${pagination.filterField}&filterValue=${encodeURIComponent(pagination.filterValue)}`;
+        }
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`API returned ${res.status}`);
         const data = await res.json();
         return data as PaginatedResult<T>;

@@ -1,7 +1,5 @@
 import type { APIRoute } from 'astro';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // Mapeamento das coleções antigas Mockadas para tabelas Prisma
 const resolveModel = (collectionId: string) => {
@@ -23,12 +21,55 @@ export const GET: APIRoute = async ({ params, request }) => {
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });
 
     try {
-        // Implementação extremamente simplificada de getAll (com bypass em filtros complexos por hora)
-        // @ts-ignore
-        const items = await model.findMany({
+        const { searchParams } = new URL(request.url);
+        const filterField = searchParams.get('filterField');
+        const filterValue = searchParams.get('filterValue');
+
+        let whereClause = {};
+        if (filterField && filterValue) {
+            whereClause = { [filterField]: filterValue };
+        }
+
+        let queryOptions: any = {
+            where: whereClause,
             take: 200,
             orderBy: { createdAt: 'desc' }
-        });
+        };
+
+        if (collection === 'imoveis') {
+            queryOptions.select = {
+                id: true,
+                code: true,
+                title: true,
+                type: true,
+                finalidade: true,
+                status: true,
+                salePrice: true,
+                rentPrice: true,
+                condoPrice: true,
+                iptuPrice: true,
+                mainImage: true,
+                areaTotal: true,
+                areaUtil: true,
+                bedrooms: true,
+                suites: true,
+                bathrooms: true,
+                garages: true,
+                zipCode: true,
+                street: true,
+                number: true,
+                complement: true,
+                neighborhood: true,
+                city: true,
+                state: true,
+                ownerId: true,
+                createdAt: true,
+                updatedAt: true
+            };
+        }
+
+        // @ts-ignore
+        const items = await model.findMany(queryOptions);
 
         const mappedItems = items.map((item: any) => mapForFrontend(collection as string, item));
 
@@ -144,6 +185,12 @@ export const mapForPrismaCreate = (collection: string, item: any) => {
             papeis: item.papeis || null,
             notes: item.notes || null,
             gender: item.gender || null,
+            canalOrigem: item.canalOrigem || null,
+            responsavelInternoId: item.responsavelInternoId || null,
+            rg: item.rg || null,
+            nationality: item.nationality || null,
+            maritalStatus: item.maritalStatus || null,
+            profession: item.profession || null,
         };
     }
 
@@ -272,6 +319,12 @@ export const mapForFrontend = (collection: string, row: any) => {
             papeis: row.papeis,
             notes: row.notes,
             gender: row.gender,
+            canalOrigem: row.canalOrigem,
+            responsavelInternoId: row.responsavelInternoId,
+            rg: row.rg,
+            nationality: row.nationality,
+            maritalStatus: row.maritalStatus,
+            profession: row.profession,
             _createdDate: row.createdAt,
             _updatedDate: row.updatedAt,
         };
