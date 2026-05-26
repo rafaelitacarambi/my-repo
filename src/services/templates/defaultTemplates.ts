@@ -356,20 +356,31 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 </div>`,
 
     'VistoriaSaida': `
-<h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">TERMO DE VISTORIA FINAL E ENTREGA DE CHAVES</h2>
-<h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">RESCISÃO CONTRATUAL E SAÍDA DO IMÓVEL</h3>
+<h2 style="text-align: center; color: #000; font-size: 18px; margin-bottom: 20px; font-weight: bold;">Termo de Vistoria de desocupação</h2>
 
-<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
-    <p><strong>DA QUALIFICAÇÃO DO ATO:</strong></p>
-    <p><strong>IMOVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
-    <p><strong>LOCADOR(A):</strong> {{LOCADORES_LISTA}}</p>
-    <p><strong>LOCATÁRIO(A):</strong> {{LOCATARIOS_LISTA}}</p>
+<div style="font-size: 14px; text-align: left; line-height: 1.6;">
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
     
-    <p style="margin-top: 20px;">O presente Termo de Vistoria de Saída tem por finalidade registrar a entrega das chaves e a restituição do imóvel ao LOCADOR(A).</p>
+    <p style="margin-top: 20px;"><strong>{{LOCADORES_LABEL}}:</strong> {{LOCADORES_LISTA}}</p>
     
-    <p>As partes reconhecem e declaram que foi realizada a vistoria final do imóvel, apurando-se seu estado de conservação em comparação com a vistoria de entrada.</p>
+    <p style="margin-top: 20px;"><strong>{{LOCATARIOS_LABEL}}:</strong> {{LOCATARIOS_LISTA}}</p>
     
-    <p>O imóvel foi restituído no mesmo estado de conservação em que foi recebido, exceto eventuais ressalvas descritas no laudo anexo.</p>
+    <p style="margin-top: 20px;"><strong>QUALIFICAÇÃO DO IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
+    
+    [[IF ESTADO_CONSERVACAO]]
+    <p style="margin-top: 30px;"><strong>CONDIÇÕES DO IMÓVEL SENDO DEVOLVIDO:</strong></p>
+    <div style="padding-left: 20px;">
+        <p>{{ESTADO_CONSERVACAO}}</p>
+    </div>
+
+    <p style="margin-top: 30px;"><strong>Observação:</strong> Todas as condições acima descritas encontram-se registradas em laudo fotográfico anexo, que passa a integrar o presente termo de vistoria.</p>
+    [[ENDIF]]
+    
+    {{LAUDO_FOTOS_HTML}}
+    
+    <p style="margin-top: 25px;">O presente Termo de Vistoria de Saída tem por finalidade registrar a restituição do imóvel ao {{LOCADORES_LABEL}}, declarando que foi realizada a vistoria final do imóvel, apurando-se seu estado de conservação em comparação com a vistoria de entrada.</p>
+    
+    <p>Assim as partes nomeiam o foro da Comarca de Poá (SP) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital.</p>
 
     {{ASSINATURAS_HTML}}
 </div>`

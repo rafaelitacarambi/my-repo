@@ -554,7 +554,10 @@ export class ContractEngine {
                 if (!extraData?.LAUDO_FOTOS || extraData.LAUDO_FOTOS.length === 0) return '';
                 let html = '<div style="margin-top: 40px;">';
                 html += '<h3 style="font-size: 14px; color: #000; font-weight: bold; margin-bottom: 10px;">Relação de Fotos</h3>';
-                html += '<p style="font-size: 12px; margin-bottom: 20px;">Abaixo segue uma relação de fotos que ilustram o estado atual do imóvel, dos ambientes mencionados e de outros itens que foram deixados no imóvel, servindo como referência para a vistoria inicial.</p>';
+                const desc = contractType === 'VistoriaSaida'
+                    ? 'Abaixo segue uma relação de fotos que ilustram o estado final do imóvel, dos ambientes mencionados e de outros itens, servindo como referência para a vistoria de desocupação.'
+                    : 'Abaixo segue uma relação de fotos que ilustram o estado atual do imóvel, dos ambientes mencionados e de outros itens que foram deixados no imóvel, servindo como referência para a vistoria inicial.';
+                html += `<p style="font-size: 12px; margin-bottom: 20px;">${desc}</p>`;
                 
                 const fotos = extraData.LAUDO_FOTOS;
                 
