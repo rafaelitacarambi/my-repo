@@ -350,7 +350,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p style="margin-top: 20px;">{{TEXTO_RESPONSABILIDADE_CHAVES}}</p>
     [[ENDIF]]
     <p>{{TEXTO_COMPROMISSO_DEVOLUCAO}}</p>
-    <p>Assim as partes nomeiam o foro da Comarca de Poá (SP) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital, juntamente com as testemunhas que também assinam.</p>
+    <p>Assim as partes nomeiam o foro da Comarca de {{IMOVEL_CIDADE}} ({{IMOVEL_ESTADO}}) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital, juntamente com as testemunhas que também assinam.</p>
 
     {{ASSINATURAS_HTML}}
 </div>`,
@@ -380,7 +380,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     
     <p style="margin-top: 25px;">O presente Termo de Vistoria de Saída tem por finalidade registrar a restituição do imóvel ao {{LOCADORES_LABEL}}, declarando que foi realizada a vistoria final do imóvel, apurando-se seu estado de conservação em comparação com a vistoria de entrada.</p>
     
-    <p>Assim as partes nomeiam o foro da Comarca de Poá (SP) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital.</p>
+    <p>Assim as partes nomeiam o foro da Comarca de {{IMOVEL_CIDADE}} ({{IMOVEL_ESTADO}}) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital.</p>
 
     {{ASSINATURAS_HTML}}
 </div>`

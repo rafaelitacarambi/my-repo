@@ -505,6 +505,8 @@ export class ContractEngine {
             IMOVEL_CEP: extraData?.IMOVEL_CEP || imovel?.cep || '',
             IMOVEL_VAGAS_GARAGEM: extraData?.IMOVEL_VAGAS_GARAGEM !== undefined ? extraData.IMOVEL_VAGAS_GARAGEM : (imovel?.vagas || 0),
             MATRICULA: extraData?.MATRICULA || (imovel as any)?.matricula || '',
+            IMOVEL_CIDADE: extraData?.IMOVEL_CIDADE || imovel?.cidade || 'Poá',
+            IMOVEL_ESTADO: extraData?.IMOVEL_ESTADO || imovel?.estado || imovel?.uf || 'SP',
 
             // Condições
             FINALIDADE: imovel?.finalidade || 'Residencial',
