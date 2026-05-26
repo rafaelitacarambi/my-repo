@@ -1423,16 +1423,18 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                 <div className="space-y-4 text-left">
                                     <Label className="text-secondary font-black uppercase tracking-widest text-xs">Dados do Laudo de Vistoria</Label>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className={`grid grid-cols-1 ${selectedType === 'VistoriaSaida' ? '' : 'md:grid-cols-2'} gap-4`}>
                                         <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
                                             <Label className="font-bold text-slate-700 text-sm">Data da Vistoria <span className="text-red-500">*</span></Label>
                                             <Input type="date" value={formData.DATA_VISTORIA} onChange={(e) => setFormData({ ...formData, DATA_VISTORIA: e.target.value })} className="bg-white border-none rounded-xl" />
                                         </div>
-                                        <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
-                                            <Label className="font-bold text-slate-700 text-sm">Data de Entrega das Chaves</Label>
-                                            <Input type="date" value={formData.DATA_ENTREGA_CHAVES} onChange={(e) => setFormData({ ...formData, DATA_ENTREGA_CHAVES: e.target.value })} className="bg-white border-none rounded-xl" />
-                                            <p className="text-xs text-slate-500">Se vazio, o texto será adaptado sem data.</p>
-                                        </div>
+                                        {selectedType !== 'VistoriaSaida' && (
+                                            <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                <Label className="font-bold text-slate-700 text-sm">Data de Entrega das Chaves</Label>
+                                                <Input type="date" value={formData.DATA_ENTREGA_CHAVES} onChange={(e) => setFormData({ ...formData, DATA_ENTREGA_CHAVES: e.target.value })} className="bg-white border-none rounded-xl" />
+                                                <p className="text-xs text-slate-500">Se vazio, o texto será adaptado sem data.</p>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
                                         <Label className="font-bold text-slate-700 text-sm">Anotações / Estado de Conservação</Label>
