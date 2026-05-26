@@ -147,8 +147,285 @@ export class ContractEngine {
             return txt;
         };
 
+        // --- 1. NORMALIZAÇÃO DE RÓTULOS ESTÁTICOS ---
         let processed = content;
-        
+
+        // Tratar "LOCADOR(a)", "do(a) LOCADOR(a)" e "LOCADOR/Vendedor" antes de qualquer outra coisa
+        if (ms === 'LOCADOR') {
+            const locadorVar = isPlural 
+                ? (isFeminine ? 'LOCADORAS' : 'LOCADORES') 
+                : (isFeminine ? 'LOCADORA' : 'LOCADOR');
+            
+            const doLocadorVar = isPlural 
+                ? (isFeminine ? 'das LOCADORAS' : 'dos LOCADORES') 
+                : (isFeminine ? 'da LOCADORA' : 'do LOCADOR');
+
+            processed = processed
+                .replace(new RegExp(`${pre}do\\(a\\)\\s+LOCADOR\\(a\\)${post}`, 'gi'), doLocadorVar)
+                .replace(new RegExp(`${pre}do\\(a\\)\\s+LOCADOR\\/Vendedor${post}`, 'gi'), isPlural ? (isFeminine ? 'das LOCADORAS/VENDEDORAS' : 'dos LOCADORES/VENDEDORES') : (isFeminine ? 'da LOCADORA/VENDEDORA' : 'do LOCADOR/VENDEDOR'))
+                .replace(new RegExp(`${pre}LOCADOR\\/Vendedor${post}`, 'gi'), isPlural ? (isFeminine ? 'LOCADORAS/VENDEDORAS' : 'LOCADORES/VENDEDORES') : (isFeminine ? 'LOCADORA/VENDEDORA' : 'LOCADOR/VENDEDOR'));
+        }
+
+        // Limpar rótulos estáticos com parênteses, ex: "LOCATÁRIO(S)" ou "LOCADOR(A)"
+        const staticLabelPattern = new RegExp(`${pre}${ms}\\(S\\)|${ms}\\(A\\)|${ms}\\(A\\)\\(S\\)|${ms}\\(A\\)\\(ES\\)${post}`, 'gi');
+        processed = processed.replace(staticLabelPattern, () => {
+            if (isPlural) {
+                return isFeminine ? fp : mp;
+            } else {
+                return isFeminine ? fs : ms;
+            }
+        });
+
+        // --- 2. SUBSTITUIÇÃO DE PROMITENTES ---
+        const replacePromitente = (txt: string) => {
+            const regex = new RegExp(
+                `${pre}(O\\(s\\)|Os?|As?|DO\\(S\\)|Do?s?|Da?s?|AO\\(S\\)|Ao?s?|Às?|PELO\\(S\\)|Pelo?s?|Pela?s?)\\s+(PROMITENTE\\(S\\)|PROMITENTES?|promitentes?)\\s+(${ms}\\(ES\\)|${ms}|${mp}|${fs}|${fp}|${ms.toLowerCase()}|${mp.toLowerCase()}|${fs.toLowerCase()}|${fp.toLowerCase()})${post}`,
+                'g'
+            );
+
+            return txt.replace(regex, (match, prep, prom, roleWord) => {
+                let p = prep.toLowerCase();
+                let resPrep = prep;
+                
+                if (isPlural) {
+                    if (isFeminine) {
+                        if (p.startsWith('o(s)') || p === 'o' || p === 'os' || p === 'a' || p === 'as') resPrep = prep.toUpperCase() === prep ? 'AS' : (prep[0] === prep[0].toUpperCase() ? 'As' : 'as');
+                        else if (p.startsWith('do(s)') || p === 'do' || p === 'dos' || p === 'da' || p === 'das') resPrep = prep.toUpperCase() === prep ? 'DAS' : (prep[0] === prep[0].toUpperCase() ? 'Das' : 'das');
+                        else if (p.startsWith('ao(s)') || p === 'ao' || p === 'aos' || p === 'à' || p === 'às') resPrep = prep.toUpperCase() === prep ? 'ÀS' : (prep[0] === prep[0].toUpperCase() ? 'Às' : 'às');
+                        else if (p.startsWith('pelo(s)') || p === 'pelo' || p === 'pelos' || p === 'pela' || p === 'pelas') resPrep = prep.toUpperCase() === prep ? 'PELAS' : (prep[0] === prep[0].toUpperCase() ? 'Pelas' : 'pelas');
+                    } else {
+                        if (p.startsWith('o(s)') || p === 'o' || p === 'os' || p === 'a' || p === 'as') resPrep = prep.toUpperCase() === prep ? 'OS' : (prep[0] === prep[0].toUpperCase() ? 'Os' : 'os');
+                        else if (p.startsWith('do(s)') || p === 'do' || p === 'dos' || p === 'da' || p === 'das') resPrep = prep.toUpperCase() === prep ? 'DOS' : (prep[0] === prep[0].toUpperCase() ? 'Dos' : 'dos');
+                        else if (p.startsWith('ao(s)') || p === 'ao' || p === 'aos' || p === 'à' || p === 'às') resPrep = prep.toUpperCase() === prep ? 'AOS' : (prep[0] === prep[0].toUpperCase() ? 'Aos' : 'aos');
+                        else if (p.startsWith('pelo(s)') || p === 'pelo' || p === 'pelos' || p === 'pela' || p === 'pelas') resPrep = prep.toUpperCase() === prep ? 'PELOS' : (prep[0] === prep[0].toUpperCase() ? 'Pelos' : 'pelos');
+                    }
+                } else {
+                    if (isFeminine) {
+                        if (p.startsWith('o(s)') || p === 'o' || p === 'os' || p === 'a' || p === 'as') resPrep = prep.toUpperCase() === prep ? 'A' : (prep[0] === prep[0].toUpperCase() ? 'A' : 'a');
+                        else if (p.startsWith('do(s)') || p === 'do' || p === 'dos' || p === 'da' || p === 'das') resPrep = prep.toUpperCase() === prep ? 'DA' : (prep[0] === prep[0].toUpperCase() ? 'Da' : 'da');
+                        else if (p.startsWith('ao(s)') || p === 'ao' || p === 'aos' || p === 'à' || p === 'às') resPrep = prep.toUpperCase() === prep ? 'À' : (prep[0] === prep[0].toUpperCase() ? 'À' : 'à');
+                        else if (p.startsWith('pelo(s)') || p === 'pelo' || p === 'pelos' || p === 'pela' || p === 'pelas') resPrep = prep.toUpperCase() === prep ? 'PELA' : (prep[0] === prep[0].toUpperCase() ? 'Pela' : 'pela');
+                    } else {
+                        if (p.startsWith('o(s)') || p === 'o' || p === 'os' || p === 'a' || p === 'as') resPrep = prep.toUpperCase() === prep ? 'O' : (prep[0] === prep[0].toUpperCase() ? 'O' : 'o');
+                        else if (p.startsWith('do(s)') || p === 'do' || p === 'dos' || p === 'da' || p === 'das') resPrep = prep.toUpperCase() === prep ? 'DO' : (prep[0] === prep[0].toUpperCase() ? 'Do' : 'do');
+                        else if (p.startsWith('ao(s)') || p === 'ao' || p === 'aos' || p === 'à' || p === 'às') resPrep = prep.toUpperCase() === prep ? 'AO' : (prep[0] === prep[0].toUpperCase() ? 'Ao' : 'ao');
+                        else if (p.startsWith('pelo(s)') || p === 'pelo' || p === 'pelos' || p === 'pela' || p === 'pelas') resPrep = prep.toUpperCase() === prep ? 'PELO' : (prep[0] === prep[0].toUpperCase() ? 'Pelo' : 'pelo');
+                    }
+                }
+
+                let promWord = prom;
+                if (prom.toUpperCase() === prom) {
+                    promWord = isPlural ? 'PROMITENTES' : 'PROMITENTE';
+                } else if (prom[0] === prom[0].toUpperCase()) {
+                    promWord = isPlural ? 'Promitentes' : 'Promitente';
+                } else {
+                    promWord = isPlural ? 'promitentes' : 'promitente';
+                }
+
+                let resRole = '';
+                if (roleWord.toUpperCase() === roleWord) {
+                    resRole = isPlural ? (isFeminine ? fp : mp) : (isFeminine ? fs : ms);
+                } else {
+                    resRole = isPlural ? (isFeminine ? fp.toLowerCase() : mp.toLowerCase()) : (isFeminine ? fs.toLowerCase() : ms.toLowerCase());
+                }
+
+                return `${resPrep} ${promWord} ${resRole}`;
+            });
+        };
+
+        const replaceStandalonePromitente = (txt: string) => {
+            const regex = new RegExp(
+                `${pre}(PROMITENTE\\(S\\)|PROMITENTES?|promitentes?)\\s+(${ms}\\(ES\\)|${ms}|${mp}|${fs}|${fp}|${ms.toLowerCase()}|${mp.toLowerCase()}|${fs.toLowerCase()}|${fp.toLowerCase()})${post}`,
+                'g'
+            );
+            return txt.replace(regex, (match, prom, roleWord) => {
+                let promWord = prom;
+                if (prom.toUpperCase() === prom) {
+                    promWord = isPlural ? 'PROMITENTES' : 'PROMITENTE';
+                } else if (prom[0] === prom[0].toUpperCase()) {
+                    promWord = isPlural ? 'Promitentes' : 'Promitente';
+                } else {
+                    promWord = isPlural ? 'promitentes' : 'promitente';
+                }
+
+                let resRole = '';
+                if (roleWord.toUpperCase() === roleWord) {
+                    resRole = isPlural ? (isFeminine ? fp : mp) : (isFeminine ? fs : ms);
+                } else {
+                    resRole = isPlural ? (isFeminine ? fp.toLowerCase() : mp.toLowerCase()) : (isFeminine ? fs.toLowerCase() : ms.toLowerCase());
+                }
+
+                return `${promWord} ${resRole}`;
+            });
+        };
+
+        processed = replacePromitente(processed);
+        processed = replaceStandalonePromitente(processed);
+
+        // --- 3. INFLEXÃO GRAMATICAL DE ACORDO DE GÊNERO E NÚMERO (VERBOS E ADJETIVOS) ---
+        const singularToPluralMap: Record<string, string> = {
+            'devera': 'deverão',
+            'deverá': 'deverão',
+            'compromete-se': 'comprometem-se',
+            'compromete': 'comprometem',
+            'obriga-se': 'obrigam-se',
+            'obriga': 'obrigam',
+            'sera': 'serão',
+            'será': 'serão',
+            'tera': 'terão',
+            'terá': 'terão',
+            'tenha': 'tenham',
+            'declare': 'declarem',
+            'atesta': 'atestam',
+            'assume': 'assumem',
+            'restituirá': 'restituirão',
+            'pagará': 'pagarão',
+            'efetuará': 'efetuarão',
+            'apresentará': 'apresentarão',
+            'arcará': 'arcarão',
+            'responsabiliza': 'responsabilizam',
+            'deve': 'devem',
+            'poderá': 'poderão',
+            'pode': 'podem',
+            'está': 'estão',
+            'fica': 'ficam',
+            'é': 'são',
+            'cometer': 'cometerem',
+            'efetuou': 'efetuaram',
+            'recebeu': 'receberam',
+            'pretenda': 'pretendam',
+            'desejar': 'desejarem',
+            
+            'responsável': 'responsáveis',
+            'adimplente': 'adimplentes',
+            'interessado': 'interessados',
+            'qualificado': 'qualificados',
+            'destinado': 'destinados',
+            'vacinado': 'vacinados',
+            'autorizado': 'autorizados',
+            'obrigado': 'obrigados',
+            'proibido': 'proibidos',
+            
+            'responsavel': 'responsáveis',
+            'interessada': 'interessadas',
+            'qualificada': 'qualificadas',
+            'destinada': 'destinadas',
+            'vacinada': 'vacinadas',
+            'autorizada': 'autorizadas',
+            'obrigada': 'obrigadas',
+            'proibida': 'proibidas',
+        };
+
+        const pluralToSingularMap: Record<string, string> = {};
+        for (const [sing, plur] of Object.entries(singularToPluralMap)) {
+            pluralToSingularMap[plur] = sing;
+        }
+        pluralToSingularMap['responsáveis'] = 'responsável';
+        pluralToSingularMap['adimplentes'] = 'adimplente';
+
+        const inflectWord = (w: string): string => {
+            const lower = w.toLowerCase();
+            let res = w;
+            
+            if (isPlural) {
+                if (singularToPluralMap[lower]) {
+                    const mapped = singularToPluralMap[lower];
+                    res = w === w.toUpperCase() ? mapped.toUpperCase() : (w[0] === w[0].toUpperCase() ? mapped[0].toUpperCase() + mapped.slice(1) : mapped);
+                }
+            } else {
+                if (pluralToSingularMap[lower]) {
+                    const mapped = pluralToSingularMap[lower];
+                    res = w === w.toUpperCase() ? mapped.toUpperCase() : (w[0] === w[0].toUpperCase() ? mapped[0].toUpperCase() + mapped.slice(1) : mapped);
+                }
+            }
+            
+            const currentLower = res.toLowerCase();
+            if (isFeminine) {
+                const femMap: Record<string, string> = {
+                    'interessado': 'interessada',
+                    'interessados': 'interessadas',
+                    'qualificado': 'qualificada',
+                    'qualificados': 'qualificadas',
+                    'destinado': 'destinada',
+                    'destinados': 'destinadas',
+                    'vacinado': 'vacinada',
+                    'vacinados': 'vacinadas',
+                    'autorizado': 'autorizada',
+                    'autorizados': 'autorizadas',
+                    'obrigado': 'obrigada',
+                    'obrigados': 'obrigadas',
+                    'proibido': 'proibida',
+                    'proibidos': 'proibidas',
+                };
+                if (femMap[currentLower]) {
+                    const mapped = femMap[currentLower];
+                    res = res === res.toUpperCase() ? mapped.toUpperCase() : (res[0] === res[0].toUpperCase() ? mapped[0].toUpperCase() + mapped.slice(1) : mapped);
+                }
+            } else {
+                const mascMap: Record<string, string> = {
+                    'interessada': 'interessado',
+                    'interessadas': 'interessados',
+                    'qualificada': 'qualificado',
+                    'qualificadas': 'qualificados',
+                    'destinada': 'destinado',
+                    'destinadas': 'destinados',
+                    'vacinada': 'vacinado',
+                    'vacinadas': 'vacinados',
+                    'autorizada': 'autorizado',
+                    'autorizadas': 'autorizados',
+                    'obrigada': 'obrigado',
+                    'obrigadas': 'obrigados',
+                    'proibida': 'proibido',
+                    'proibidas': 'proibidos',
+                };
+                if (mascMap[currentLower]) {
+                    const mapped = mascMap[currentLower];
+                    res = res === res.toUpperCase() ? mapped.toUpperCase() : (res[0] === res[0].toUpperCase() ? mapped[0].toUpperCase() + mapped.slice(1) : mapped);
+                }
+            }
+            
+            return res;
+        };
+
+        const rolesList = [ms, mp, fs, fp].sort((a, b) => b.length - a.length);
+        const rolesPatternStr = rolesList.map(r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+
+        // Processar palavras que vêm DEPOIS do papel (sufixos)
+        const suffixRegex = new RegExp(
+            `(${pre})(?:${rolesPatternStr})(${post}\\s+[^.!?<>\n]{1,80})`,
+            'gi'
+        );
+
+        processed = processed.replace(suffixRegex, (match, prefixBound, textAfter) => {
+            const words = textAfter.split(/([a-zA-ZÀ-ÿ-]+)/g);
+            const inflectedWords = words.map(part => {
+                if (/^[a-zA-ZÀ-ÿ-]+$/.test(part)) {
+                    return inflectWord(part);
+                }
+                return part;
+            });
+            const matchedRole = match.substring(0, match.length - textAfter.length);
+            return matchedRole + inflectedWords.join('');
+        });
+
+        // Processar palavras que vêm ANTES do papel (prefixos)
+        const prefixRegex = new RegExp(
+            `([^.!?<>\n]{1,80})(${pre})(?:${rolesPatternStr})(${post})`,
+            'gi'
+        );
+
+        processed = processed.replace(prefixRegex, (match, textBefore, prefixBound, roleMatched) => {
+            const words = textBefore.split(/([a-zA-ZÀ-ÿ-]+)/g);
+            const inflectedWords = words.map(part => {
+                if (/^[a-zA-ZÀ-ÿ-]+$/.test(part)) {
+                    return inflectWord(part);
+                }
+                return part;
+            });
+            return inflectedWords.join('') + prefixBound + match.substring(textBefore.length + prefixBound.length);
+        });
+
+        // --- 4. SUBSTITUIÇÕES DE DE/A/PARA E DO PAPEL ---
         // 1. Mapear ocorrências plurais do template para o destino resolvido (Ex: "OS LOCATÁRIOS" -> "O LOCATÁRIO" ou "AS LOCATÁRIAS")
         processed = processed
             .replace(new RegExp(`${pre}OS\\s+${mp}${post}`, 'g'), isPlural ? (isFeminine ? `AS ${fp}` : `OS ${mp}`) : (isFeminine ? `A ${fs}` : `O ${ms}`))
