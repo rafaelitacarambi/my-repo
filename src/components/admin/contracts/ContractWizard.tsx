@@ -1480,23 +1480,25 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
 
 
                             {/* --- TESTEMUNHAS --- */}
-                            <div className="space-y-4 text-left">
-                                <Label className="text-secondary font-black uppercase tracking-widest text-xs">Testemunhas do Contrato</Label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
-                                    <div className="p-6 bg-slate-50 rounded-3xl space-y-4 border border-slate-100">
-                                        <Label className="font-bold text-slate-700">Testemunha 1 (Nome)</Label>
-                                        <Input value={formData.TESTEMUNHA1_NOME} onChange={(e) => setFormData({ ...formData, TESTEMUNHA1_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
-                                        <Label className="font-bold text-slate-700">RG / CPF</Label>
-                                        <Input value={formData.TESTEMUNHA1_RG} onChange={(e) => setFormData({ ...formData, TESTEMUNHA1_RG: e.target.value })} className="bg-white border-none rounded-xl" />
-                                    </div>
-                                    <div className="p-6 bg-slate-50 rounded-3xl space-y-4 border border-slate-100">
-                                        <Label className="font-bold text-slate-700">Testemunha 2 (Nome)</Label>
-                                        <Input value={formData.TESTEMUNHA2_NOME} onChange={(e) => setFormData({ ...formData, TESTEMUNHA2_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
-                                        <Label className="font-bold text-slate-700">RG / CPF</Label>
-                                        <Input value={formData.TESTEMUNHA2_RG} onChange={(e) => setFormData({ ...formData, TESTEMUNHA2_RG: e.target.value })} className="bg-white border-none rounded-xl" />
+                            {!['VistoriaEntrada', 'VistoriaSaida', 'EntregaChaves'].includes(selectedType) && (
+                                <div className="space-y-4 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <Label className="text-secondary font-black uppercase tracking-widest text-xs">Testemunhas do Contrato</Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
+                                        <div className="p-6 bg-slate-50 rounded-3xl space-y-4 border border-slate-100">
+                                            <Label className="font-bold text-slate-700">Testemunha 1 (Nome)</Label>
+                                            <Input value={formData.TESTEMUNHA1_NOME} onChange={(e) => setFormData({ ...formData, TESTEMUNHA1_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
+                                            <Label className="font-bold text-slate-700">RG / CPF</Label>
+                                            <Input value={formData.TESTEMUNHA1_RG} onChange={(e) => setFormData({ ...formData, TESTEMUNHA1_RG: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
+                                        <div className="p-6 bg-slate-50 rounded-3xl space-y-4 border border-slate-100">
+                                            <Label className="font-bold text-slate-700">Testemunha 2 (Nome)</Label>
+                                            <Input value={formData.TESTEMUNHA2_NOME} onChange={(e) => setFormData({ ...formData, TESTEMUNHA2_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
+                                            <Label className="font-bold text-slate-700">RG / CPF</Label>
+                                            <Input value={formData.TESTEMUNHA2_RG} onChange={(e) => setFormData({ ...formData, TESTEMUNHA2_RG: e.target.value })} className="bg-white border-none rounded-xl" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                         </div>
                     </div>
