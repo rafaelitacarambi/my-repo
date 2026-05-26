@@ -1181,7 +1181,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         }
 
         const imovel = imoveis.find(i => i._id === selectedImovelId);
-        const engineData = ContractEngine.mapEntitiesToData(atendimento, clientes, imovel, dataToUse);
+        const engineData = ContractEngine.mapEntitiesToData(atendimento, clientes, imovel, dataToUse, selectedType);
 
         if (templateRaw && templateRaw.length > 50) {
             setIsTemplateMissing(false);

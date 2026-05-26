@@ -112,45 +112,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>DÉCIMA SEXTA - DA CONTRATAÇÃO DIGITAL:</strong> Os CONTRATANTES declaram e concordam que o presente instrumento, incluindo todas as páginas de assinatura e eventuais anexos, poderão ser todos formados por meio digital com o qual expressamente declaram concordar, representam a integralidade dos termos entre elas acordados, substituindo quaisquer outros acordos anteriores formalizados por qualquer outro meio, verbal ou escrito, físico ou digital, nos termos dos art. 107, 219 e 220 do Código Civil. Adicionalmente, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2, e do art. 2º, I da MP 983/2020, as PARTES expressamente concordam em utilizar e reconhecem como válida qualquer forma de comprovação de anuência aos termos ora acordados em formato eletrônico.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
-        <p><strong>ASSINATURAS E TESTEMUNHAS:</strong></p>
-        <p>Por estarem assim justas e contratadas, as partes assinam o presente instrumento por meio eletrônico e digital.</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
-            <tr>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>LOCADORA:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCADORA_NOME}}</strong>
-                    </div>
-                </td>
-                <td style="width: 4%;">&nbsp;</td>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>LOCATÁRIO(S):</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCATARIOS_NOMES}}</strong>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td style="width: 48%; vertical-align: top; padding-top: 20px;">
-                    <p style="margin-bottom: 40px;"><strong>Testemunha 1:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        Nome: {{TESTEMUNHA1_NOME}}<br/>
-                        RG/CPF: {{TESTEMUNHA1_RG}}
-                    </div>
-                </td>
-                <td style="width: 4%;">&nbsp;</td>
-                <td style="width: 48%; vertical-align: top; padding-top: 20px;">
-                    <p style="margin-bottom: 40px;"><strong>Testemunha 2:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        Nome: {{TESTEMUNHA2_NOME}}<br/>
-                        RG/CPF: {{TESTEMUNHA2_RG}}
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
+    {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
         {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
@@ -236,45 +198,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>NONA - DA CONTRATAÇÃO DIGITAL:</strong> As partes declaram-se cientes e de pleno acordo com a validade jurídica das assinaturas eletrônicas apostas neste instrumento.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
-        <p><strong>ASSINATURAS E TESTEMUNHAS:</strong></p>
-        <p>Por estarem justos e contratados, assinam eletronicamente o presente instrumento.</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
-            <tr>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>LOCADORA:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCADORA_NOME}}</strong>
-                    </div>
-                </td>
-                <td style="width: 4%;">&nbsp;</td>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>LOCATÁRIO(S):</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCATARIOS_NOMES}}</strong>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td style="width: 48%; vertical-align: top; padding-top: 20px;">
-                    <p style="margin-bottom: 40px;"><strong>Testemunha 1:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        Nome: {{TESTEMUNHA1_NOME}}<br/>
-                        RG/CPF: {{TESTEMUNHA1_RG}}
-                    </div>
-                </td>
-                <td style="width: 4%;">&nbsp;</td>
-                <td style="width: 48%; vertical-align: top; padding-top: 20px;">
-                    <p style="margin-bottom: 40px;"><strong>Testemunha 2:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        Nome: {{TESTEMUNHA2_NOME}}<br/>
-                        RG/CPF: {{TESTEMUNHA2_RG}}
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
+    {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
         {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
@@ -318,44 +242,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA NONA - DO FORO E DA ASSINATURA DIGITAL:</strong> As partes elegem o foro da comarca de [[IF OPCIONAIS.FORO_SAO_PAULO]]São Paulo-SP[[ELSE]]Poá-SP[[ENDIF]] para dirimir eventuais litígios judiciais. E, por estarem acordadas, assinam eletronicamente o presente instrumento na presença das testemunhas abaixo.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
-        <p><strong>ASSINATURAS E TESTEMUNHAS:</strong></p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
-            <tr>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>PROMITENTE VENDEDOR:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{VENDEDORES_NOMES}}</strong>
-                    </div>
-                </td>
-                <td style="width: 4%;">&nbsp;</td>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>PROMITENTE COMPRADOR:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{COMPRADORES_NOMES}}</strong>
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td style="width: 48%; vertical-align: top; padding-top: 20px;">
-                    <p style="margin-bottom: 40px;"><strong>Testemunha 1:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        Nome: {{TESTEMUNHA1_NOME}}<br/>
-                        RG/CPF: {{TESTEMUNHA1_RG}}
-                    </div>
-                </td>
-                <td style="width: 4%;">&nbsp;</td>
-                <td style="width: 48%; vertical-align: top; padding-top: 20px;">
-                    <p style="margin-bottom: 40px;"><strong>Testemunha 2:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        Nome: {{TESTEMUNHA2_NOME}}<br/>
-                        RG/CPF: {{TESTEMUNHA2_RG}}
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
+    {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
         {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
@@ -383,27 +270,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA QUARTA - DO FORO:</strong> Elegem o foro deste contrato nos mesmos termos do contrato de locação principal.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
-        <p><strong>ASSINATURAS:</strong></p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
-            <tr>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>LOCADOR(A):</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCADORA_NOME}}</strong>
-                    </div>
-                </td>
-                <td style="width: 4%;">&nbsp;</td>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>LOCATÁRIO(S):</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCATARIOS_NOMES}}</strong>
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
+    {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
         {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.

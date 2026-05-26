@@ -131,6 +131,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         const created = await model.create({ data: dataForPrisma });
         return new Response(JSON.stringify(mapForFrontend(collection, created)), { status: 201 });
     } catch (err: any) {
+        console.error('Error in POST', collection, err);
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
     }
 }

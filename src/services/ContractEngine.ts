@@ -169,7 +169,7 @@ export class ContractEngine {
         return processed;
     }
 
-    static mapEntitiesToData(atendimento: any, clientes: any[], imovel: any, extraData: any): ContractData {
+    static mapEntitiesToData(atendimento: any, clientes: any[], imovel: any, extraData: any, contractType?: string): ContractData {
         console.log(`[ContractEngine] Mapeando entidades para Atendimento: ${atendimento?._id}`);
         console.log(`[ContractEngine] Payload extraData (formData):`, {
             locadores: extraData?.LOCADORES_IDS?.length,
@@ -611,41 +611,99 @@ export class ContractEngine {
         }
 
         // -- SIGNATURES --
-        const parties = [];
-        locadorIds.forEach(id => parties.push({ role: (data.LOCADORES_LABEL || 'LOCADOR(A)').toUpperCase(), name: getName(id) }));
-        locatarioIds.forEach(id => parties.push({ role: (data.LOCATARIOS_LABEL || 'LOCATÁRIO(A)').toUpperCase(), name: getName(id) }));
-        if (extraData?.TESTEMUNHA_1_NOME) parties.push({ role: 'TESTEMUNHA 1', name: extraData.TESTEMUNHA_1_NOME });
-        if (extraData?.TESTEMUNHA_2_NOME) parties.push({ role: 'TESTEMUNHA 2', name: extraData.TESTEMUNHA_2_NOME });
+        const group1: { role: string; name: string }[] = [];
+        const group2: { role: string; name: string }[] = [];
+        const witnesses: { role: string; name: string }[] = [];
+
+        const isVenda = contractType === 'CompraEVenda' || (contractType || '').toLowerCase().includes('venda');
+
+        if (isVenda) {
+            const labelVendedor = (data.VENDEDORES_LABEL || 'VENDEDOR(A)').toUpperCase();
+            const labelComprador = (data.COMPRADORES_LABEL || 'COMPRADOR(A)').toUpperCase();
+            vendedorIds.forEach((id: string) => group1.push({ role: labelVendedor, name: getName(id) }));
+            compradorIds.forEach((id: string) => group2.push({ role: labelComprador, name: getName(id) }));
+        } else {
+            const labelLocador = (data.LOCADORES_LABEL || 'LOCADOR(A)').toUpperCase();
+            const labelLocatario = (data.LOCATARIOS_LABEL || 'LOCATÁRIO(A)').toUpperCase();
+            locadorIds.forEach((id: string) => group1.push({ role: labelLocador, name: getName(id) }));
+            locatarioIds.forEach((id: string) => group2.push({ role: labelLocatario, name: getName(id) }));
+        }
+
+        const isVistoria = contractType === 'VistoriaEntrada' || contractType === 'VistoriaSaida' || (contractType || '').toLowerCase().includes('vistoria') || contractType === 'EntregaChaves';
+
+        if (!isVistoria) {
+            const t1Name = extraData?.TESTEMUNHA_1_NOME || extraData?.TESTEMUNHA1_NOME || '';
+            const t2Name = extraData?.TESTEMUNHA_2_NOME || extraData?.TESTEMUNHA2_NOME || '';
+            const t1Doc = extraData?.TESTEMUNHA_1_CPF || extraData?.TESTEMUNHA1_RG || extraData?.TESTEMUNHA1_CPF || '';
+            const t2Doc = extraData?.TESTEMUNHA_2_CPF || extraData?.TESTEMUNHA2_RG || extraData?.TESTEMUNHA2_CPF || '';
+
+            if (t1Name) {
+                witnesses.push({ role: 'TESTEMUNHA 1', name: `${t1Name}${t1Doc ? ' (CPF/RG: ' + t1Doc + ')' : ''}` });
+            }
+            if (t2Name) {
+                witnesses.push({ role: 'TESTEMUNHA 2', name: `${t2Name}${t2Doc ? ' (CPF/RG: ' + t2Doc + ')' : ''}` });
+            }
+        }
 
         let sigHtml = '<div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">';
         sigHtml += '<p><strong>ASSINATURAS:</strong></p>';
         sigHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 30px;">';
-        
-        for (let i = 0; i < parties.length; i += 2) {
-            sigHtml += '<tr>';
-            // First column
-            sigHtml += `<td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px; font-size: 13px;"><strong>${parties[i].role}:</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px; font-size: 13px;">
-                        <strong>${parties[i].name}</strong>
-                    </div>
-                </td>`;
-            
-            sigHtml += '<td style="width: 4%;">&nbsp;</td>';
-            
-            // Second column
-            if (i + 1 < parties.length) {
-                sigHtml += `<td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                        <p style="margin-bottom: 40px; font-size: 13px;"><strong>${parties[i+1].role}:</strong></p>
+
+        const renderGroupRows = (items: { role: string; name: string }[]): string => {
+            let html = '';
+            for (let i = 0; i < items.length; i += 2) {
+                html += '<tr>';
+                // Primeira coluna
+                html += `<td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
+                        <p style="margin-bottom: 40px; font-size: 13px;"><strong>${items[i].role}:</strong></p>
                         <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px; font-size: 13px;">
-                            <strong>${parties[i+1].name}</strong>
+                            <strong>${items[i].name}</strong>
                         </div>
                     </td>`;
-            } else {
-                sigHtml += '<td style="width: 48%;"></td>';
+                
+                html += '<td style="width: 4%;">&nbsp;</td>';
+                
+                // Segunda coluna
+                if (i + 1 < items.length) {
+                    html += `<td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
+                            <p style="margin-bottom: 40px; font-size: 13px;"><strong>${items[i+1].role}:</strong></p>
+                            <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px; font-size: 13px;">
+                                <strong>${items[i+1].name}</strong>
+                            </div>
+                        </td>`;
+                } else {
+                    html += '<td style="width: 48%;"></td>';
+                }
+                html += '</tr>';
             }
-            sigHtml += '</tr>';
+            return html;
+        };
+
+        const L = group1.length;
+        const T = group2.length;
+
+        if (L === 1 && T === 1) {
+            // Caso simples: 1 locador e 1 locatário -> Lado a lado
+            sigHtml += renderGroupRows([group1[0], group2[0]]);
+        } else if (L === 1 && T === 2) {
+            // Caso especial: 1 locador e 2 locatários -> Locador em sua linha, locatários lado a lado
+            sigHtml += renderGroupRows([group1[0]]);
+            sigHtml += renderGroupRows(group2);
+        } else {
+            // Caso geral: locadores lado a lado, locatários lado a lado
+            if (L > 0) {
+                sigHtml += renderGroupRows(group1);
+            }
+            if (T > 0) {
+                sigHtml += renderGroupRows(group2);
+            }
         }
+
+        // Renderizar testemunhas
+        if (witnesses.length > 0) {
+            sigHtml += renderGroupRows(witnesses);
+        }
+
         sigHtml += '</table></div>';
         
         data.ASSINATURAS_HTML = sigHtml;
