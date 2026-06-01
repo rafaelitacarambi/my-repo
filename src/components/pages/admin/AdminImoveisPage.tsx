@@ -10,7 +10,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Textarea } from '@/components/ui/textarea';
 import { BaseCrudService } from '@/integrations';
-import { Imveis } from '@/entities';
+import { Imveis, UsuriosdoSistema } from '@/entities';
 import PropertyForm from '@/components/admin/properties/PropertyForm';
 import * as XLSX from 'xlsx'; // Added Import
 

@@ -92,59 +92,57 @@ export class ContractEngine {
 
         // Helper interno que cuida de preposições contraídas e artigos no singular
         const replaceHelper = (txt: string) => {
-            if (isPlural && !isFeminine) {
-                return txt
-                    .replace(new RegExp(`${pre}(A|O)\\s+(${fs}|${ms})${post}`, 'g'), `OS ${mp}`)
-                    .replace(new RegExp(`${pre}(a|o)\\s+(${fs}|${ms})${post}`, 'g'), `os ${mp}`)
-                    .replace(new RegExp(`${pre}(À|AO)\\s+(${fs}|${ms})${post}`, 'g'), `AOS ${mp}`)
-                    .replace(new RegExp(`${pre}(à|ao)\\s+(${fs}|${ms})${post}`, 'g'), `aos ${mp}`)
-                    .replace(new RegExp(`${pre}(DA|DO)\\s+(${fs}|${ms})${post}`, 'g'), `DOS ${mp}`)
-                    .replace(new RegExp(`${pre}(da|do)\\s+(${fs}|${ms})${post}`, 'g'), `dos ${mp}`)
-                    .replace(new RegExp(`${pre}(PELA|PELO)\\s+(${fs}|${ms})${post}`, 'g'), `PELOS ${mp}`)
-                    .replace(new RegExp(`${pre}(pela|pelo)\\s+(${fs}|${ms})${post}`, 'g'), `pelos ${mp}`)
-                    .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), mp)
-                    .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), mp.toLowerCase());
-            }
-            if (isPlural && isFeminine) {
-                return txt
-                    .replace(new RegExp(`${pre}(A|O)\\s+(${fs}|${ms})${post}`, 'g'), `AS ${fp}`)
-                    .replace(new RegExp(`${pre}(a|o)\\s+(${fs}|${ms})${post}`, 'g'), `as ${fp}`)
-                    .replace(new RegExp(`${pre}(À|AO)\\s+(${fs}|${ms})${post}`, 'g'), `ÀS ${fp}`)
-                    .replace(new RegExp(`${pre}(à|ao)\\s+(${fs}|${ms})${post}`, 'g'), `às ${fp}`)
-                    .replace(new RegExp(`${pre}(DA|DO)\\s+(${fs}|${ms})${post}`, 'g'), `DAS ${fp}`)
-                    .replace(new RegExp(`${pre}(da|do)\\s+(${fs}|${ms})${post}`, 'g'), `das ${fp}`)
-                    .replace(new RegExp(`${pre}(PELA|PELO)\\s+(${fs}|${ms})${post}`, 'g'), `PELAS ${fp}`)
-                    .replace(new RegExp(`${pre}(pela|pelo)\\s+(${fs}|${ms})${post}`, 'g'), `pelas ${fp}`)
-                    .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), fp)
-                    .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), fp.toLowerCase());
-            }
-            if (!isPlural && !isFeminine) {
-                return txt
-                    .replace(new RegExp(`${pre}(A|O)\\s+(${fs}|${ms})${post}`, 'g'), `O ${ms}`)
-                    .replace(new RegExp(`${pre}(a|o)\\s+(${fs}|${ms})${post}`, 'g'), `o ${ms}`)
-                    .replace(new RegExp(`${pre}(À|AO)\\s+(${fs}|${ms})${post}`, 'g'), `AO ${ms}`)
-                    .replace(new RegExp(`${pre}(à|ao)\\s+(${fs}|${ms})${post}`, 'g'), `ao ${ms}`)
-                    .replace(new RegExp(`${pre}(DA|DO)\\s+(${fs}|${ms})${post}`, 'g'), `DO ${ms}`)
-                    .replace(new RegExp(`${pre}(da|do)\\s+(${fs}|${ms})${post}`, 'g'), `do ${ms}`)
-                    .replace(new RegExp(`${pre}(PELA|PELO)\\s+(${fs}|${ms})${post}`, 'g'), `PELO ${ms}`)
-                    .replace(new RegExp(`${pre}(pela|pelo)\\s+(${fs}|${ms})${post}`, 'g'), `pelo ${ms}`)
-                    .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), ms)
-                    .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), ms.toLowerCase());
-            }
-            if (!isPlural && isFeminine) {
-                return txt
-                    .replace(new RegExp(`${pre}(A|O)\\s+(${fs}|${ms})${post}`, 'g'), `A ${fs}`)
-                    .replace(new RegExp(`${pre}(a|o)\\s+(${fs}|${ms})${post}`, 'g'), `a ${fs}`)
-                    .replace(new RegExp(`${pre}(À|AO)\\s+(${fs}|${ms})${post}`, 'g'), `À ${fs}`)
-                    .replace(new RegExp(`${pre}(à|ao)\\s+(${fs}|${ms})${post}`, 'g'), `à ${fs}`)
-                    .replace(new RegExp(`${pre}(DA|DO)\\s+(${fs}|${ms})${post}`, 'g'), `DA ${fs}`)
-                    .replace(new RegExp(`${pre}(da|do)\\s+(${fs}|${ms})${post}`, 'g'), `da ${fs}`)
-                    .replace(new RegExp(`${pre}(PELA|PELO)\\s+(${fs}|${ms})${post}`, 'g'), `PELA ${fs}`)
-                    .replace(new RegExp(`${pre}(pela|pelo)\\s+(${fs}|${ms})${post}`, 'g'), `pela ${fs}`)
-                    .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), fs)
-                    .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), fs.toLowerCase());
-            }
-            return txt;
+            let res = txt;
+            const targetRole = isPlural ? (isFeminine ? fp : mp) : (isFeminine ? fs : ms);
+            const targetRoleLower = targetRole.toLowerCase();
+
+            const determiners = [
+                { singM: 'O', singF: 'A', plurM: 'OS', plurF: 'AS' },
+                { singM: 'o', singF: 'a', plurM: 'os', plurF: 'as' },
+                { singM: 'AO', singF: 'À', plurM: 'AOS', plurF: 'ÀS' },
+                { singM: 'ao', singF: 'à', plurM: 'aos', plurF: 'às' },
+                { singM: 'DO', singF: 'DA', plurM: 'DOS', plurF: 'DAS' },
+                { singM: 'do', singF: 'da', plurM: 'dos', plurF: 'das' },
+                { singM: 'NO', singF: 'NA', plurM: 'NOS', plurF: 'NAS' },
+                { singM: 'no', singF: 'na', plurM: 'nos', plurF: 'nas' },
+                { singM: 'PELO', singF: 'PELA', plurM: 'PELOS', plurF: 'PELAS' },
+                { singM: 'pelo', singF: 'pela', plurM: 'pelos', plurF: 'pelas' },
+                { singM: 'ESTE', singF: 'ESTA', plurM: 'ESTES', plurF: 'ESTAS' },
+                { singM: 'este', singF: 'esta', plurM: 'estes', plurF: 'estas' },
+                { singM: 'Este', singF: 'Esta', plurM: 'Estes', plurF: 'Estas' },
+                { singM: 'DESTE', singF: 'DESTA', plurM: 'DESTES', plurF: 'DESTAS' },
+                { singM: 'deste', singF: 'desta', plurM: 'destes', plurF: 'destas' },
+                { singM: 'Deste', singF: 'Desta', plurM: 'Destes', plurF: 'Destas' },
+                { singM: 'NESTE', singF: 'NESTA', plurM: 'NESTES', plurF: 'NESTAS' },
+                { singM: 'neste', singF: 'nesta', plurM: 'nestes', plurF: 'nestas' },
+                { singM: 'Neste', singF: 'Nesta', plurM: 'Nestes', plurF: 'Nestas' },
+                { singM: 'AQUELE', singF: 'AQUELA', plurM: 'AQUELES', plurF: 'AQUELAS' },
+                { singM: 'aquele', singF: 'aquela', plurM: 'aqueles', plurF: 'aquelas' },
+                { singM: 'Aquele', singF: 'Aquela', plurM: 'Aqueles', plurF: 'Aquelas' },
+                { singM: 'ELE', singF: 'ELA', plurM: 'ELES', plurF: 'ELAS' },
+                { singM: 'ele', singF: 'ela', plurM: 'eles', plurF: 'elas' },
+                { singM: 'Ele', singF: 'Ela', plurM: 'Eles', plurF: 'Elas' },
+                { singM: 'DELE', singF: 'DELA', plurM: 'DELES', plurF: 'DELAS' },
+                { singM: 'dele', singF: 'dela', plurM: 'deles', plurF: 'delas' },
+                { singM: 'Dele', singF: 'Dela', plurM: 'Deles', plurF: 'Delas' },
+                { singM: 'NELE', singF: 'NELA', plurM: 'NELES', plurF: 'NELAS' },
+                { singM: 'nele', singF: 'nela', plurM: 'neles', plurF: 'nelas' },
+                { singM: 'Nele', singF: 'Nela', plurM: 'Neles', plurF: 'Nelas' }
+            ];
+
+            determiners.forEach(det => {
+                const targetDet = isPlural ? (isFeminine ? det.plurF : det.plurM) : (isFeminine ? det.singF : det.singM);
+                res = res.replace(new RegExp(`${pre}(${det.singM})\\s+(${ms})${post}`, 'g'), `${targetDet} ${targetRole}`);
+                res = res.replace(new RegExp(`${pre}(${det.singF})\\s+(${fs})${post}`, 'g'), `${targetDet} ${targetRole}`);
+                res = res.replace(new RegExp(`${pre}(${det.plurM})\\s+(${mp})${post}`, 'g'), `${targetDet} ${targetRole}`);
+                res = res.replace(new RegExp(`${pre}(${det.plurF})\\s+(${fp})${post}`, 'g'), `${targetDet} ${targetRole}`);
+            });
+
+            res = res
+                .replace(new RegExp(`${pre}(${fs}|${ms})${post}`, 'g'), targetRole)
+                .replace(new RegExp(`${pre}(${fs.toLowerCase()}|${ms.toLowerCase()})${post}`, 'g'), targetRoleLower);
+
+            return res;
         };
 
         // --- 1. NORMALIZAÇÃO DE RÓTULOS ESTÁTICOS ---
@@ -264,12 +262,30 @@ export class ContractEngine {
 
         // --- 3. INFLEXÃO GRAMATICAL DE ACORDO DE GÊNERO E NÚMERO (VERBOS E ADJETIVOS) ---
         const singularToPluralMap: Record<string, string> = {
+            // Verbos
             'devera': 'deverão',
             'deverá': 'deverão',
             'compromete-se': 'comprometem-se',
             'compromete': 'comprometem',
             'obriga-se': 'obrigam-se',
             'obriga': 'obrigam',
+            'responsabiliza-se': 'responsabilizam-se',
+            'responsabiliza': 'responsabilizam',
+            'declara-se': 'declaram-se',
+            'declara': 'declaram',
+            'isenta-se': 'isentam-se',
+            'assina': 'assinam',
+            'apresenta': 'apresentam',
+            'entrega': 'entregam',
+            'recebe': 'recebem',
+            'desocupa': 'desocupam',
+            'restitui': 'restituem',
+            'presta': 'prestam',
+            'comprova': 'comprovam',
+            'renuncia': 'renunciam',
+            'concorda': 'concordam',
+            'autoriza': 'autorizam',
+            'reconhece': 'reconhecem',
             'sera': 'serão',
             'será': 'serão',
             'tera': 'terão',
@@ -283,7 +299,6 @@ export class ContractEngine {
             'efetuará': 'efetuarão',
             'apresentará': 'apresentarão',
             'arcará': 'arcarão',
-            'responsabiliza': 'responsabilizam',
             'deve': 'devem',
             'poderá': 'poderão',
             'pode': 'podem',
@@ -296,7 +311,9 @@ export class ContractEngine {
             'pretenda': 'pretendam',
             'desejar': 'desejarem',
             
+            // Adjetivos / Particípios Masculinos
             'responsável': 'responsáveis',
+            'responsavel': 'responsáveis',
             'adimplente': 'adimplentes',
             'interessado': 'interessados',
             'qualificado': 'qualificados',
@@ -305,8 +322,23 @@ export class ContractEngine {
             'autorizado': 'autorizados',
             'obrigado': 'obrigados',
             'proibido': 'proibidos',
+            'solidário': 'solidários',
+            'solidario': 'solidários',
+            'isento': 'isentos',
+            'mesmo': 'mesmos',
+            'único': 'únicos',
+            'unico': 'únicos',
+            'proprietário': 'proprietários',
+            'proprietario': 'proprietários',
+            'inquilino': 'inquilinos',
+            'fiador': 'fiadores',
+            'locatário': 'locatários',
+            'locatario': 'locatários',
+            'locador': 'locadores',
+            'vendedor': 'vendedores',
+            'comprador': 'compradores',
             
-            'responsavel': 'responsáveis',
+            // Adjetivos / Particípios Femininos
             'interessada': 'interessadas',
             'qualificada': 'qualificadas',
             'destinada': 'destinadas',
@@ -314,6 +346,21 @@ export class ContractEngine {
             'autorizada': 'autorizadas',
             'obrigada': 'obrigadas',
             'proibida': 'proibidas',
+            'solidária': 'solidárias',
+            'solidaria': 'solidárias',
+            'isenta': 'isentas',
+            'mesma': 'mesmas',
+            'única': 'únicas',
+            'unica': 'únicas',
+            'proprietária': 'proprietárias',
+            'proprietaria': 'proprietárias',
+            'inquilina': 'inquilinas',
+            'fiadora': 'fiadoras',
+            'locatária': 'locatárias',
+            'locataria': 'locatárias',
+            'locadora': 'locadoras',
+            'vendedora': 'vendedoras',
+            'compradora': 'compradoras'
         };
 
         const pluralToSingularMap: Record<string, string> = {};
@@ -356,6 +403,32 @@ export class ContractEngine {
                     'obrigados': 'obrigadas',
                     'proibido': 'proibida',
                     'proibidos': 'proibidas',
+                    'solidário': 'solidária',
+                    'solidários': 'solidárias',
+                    'solidario': 'solidária',
+                    'isento': 'isenta',
+                    'isentos': 'isentas',
+                    'mesmo': 'mesma',
+                    'mesmos': 'mesmas',
+                    'único': 'única',
+                    'únicos': 'únicas',
+                    'unico': 'única',
+                    'proprietário': 'proprietária',
+                    'proprietários': 'proprietárias',
+                    'proprietario': 'proprietária',
+                    'inquilino': 'inquilina',
+                    'inquilinos': 'inquilinas',
+                    'fiador': 'fiadora',
+                    'fiadores': 'fiadoras',
+                    'locatário': 'locatária',
+                    'locatários': 'locatárias',
+                    'locatario': 'locatária',
+                    'locador': 'locadora',
+                    'locadores': 'locadoras',
+                    'vendedor': 'vendedora',
+                    'vendedores': 'vendedoras',
+                    'comprador': 'compradora',
+                    'compradores': 'compradoras'
                 };
                 if (femMap[currentLower]) {
                     const mapped = femMap[currentLower];
@@ -377,6 +450,32 @@ export class ContractEngine {
                     'obrigadas': 'obrigados',
                     'proibida': 'proibido',
                     'proibidas': 'proibidos',
+                    'solidária': 'solidário',
+                    'solidárias': 'solidários',
+                    'solidaria': 'solidário',
+                    'isenta': 'isento',
+                    'isentas': 'isentos',
+                    'mesma': 'mesmo',
+                    'mesmas': 'mesmos',
+                    'única': 'único',
+                    'únicas': 'únicos',
+                    'unica': 'único',
+                    'proprietária': 'proprietário',
+                    'proprietárias': 'proprietários',
+                    'proprietaria': 'proprietário',
+                    'inquilina': 'inquilino',
+                    'inquilinas': 'inquilinos',
+                    'fiadora': 'fiador',
+                    'fiadoras': 'fiadores',
+                    'locatária': 'locatário',
+                    'locatárias': 'locatários',
+                    'locataria': 'locatário',
+                    'locadora': 'locador',
+                    'locadoras': 'locadores',
+                    'vendedora': 'vendedor',
+                    'vendedoras': 'vendedores',
+                    'compradora': 'comprador',
+                    'compradoras': 'compradores'
                 };
                 if (mascMap[currentLower]) {
                     const mapped = mascMap[currentLower];
@@ -625,18 +724,45 @@ export class ContractEngine {
             if (!client && !extraData?.PARTICIPANT_DETAILS?.[clientId]) return '';
 
             const o = extraData?.PARTICIPANT_DETAILS?.[clientId] || {};
-            const name = o.name || client?.clientName || client?.name || '';
-            const gender = o.gender || (client as any)?.gender || 'Masculino';
+            const name = o.name || client?.clientName || client?.nomeRazaoSocial || client?.name || '';
+            const cpf = o.cpf || client?.cpfCnpj || client?.document || '';
+            const email = o.email || client?.emailPrincipal || client?.email || '';
+            const address = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
+            const phone = o.phone || client?.telefonePrincipal || client?.phoneNumber || client?.phone || '';
 
+            // Detect if Pessoa Jurídica (PJ)
+            const sanitizedDoc = cpf.replace(/\D/g, '');
+            const isPJ = o.tipoPessoa === 'Jurídica' || client?.tipoPessoa === 'Jurídica' || sanitizedDoc.length > 11;
+
+            if (isPJ) {
+                // PJ Format
+                const tradeName = o.tradeName || client?.nomeFantasia || '';
+                let text = name;
+                if (tradeName) {
+                    text += `, sob o nome fantasia "${tradeName}"`;
+                }
+                text += `, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº ${cpf}, com sede em ${address}`;
+                if (email) text += `, e-mail ${email}`;
+                if (phone) text += `, telefone ${phone}`;
+
+                // Representative details
+                const repName = o.representativeName;
+                if (repName) {
+                    text += `, neste ato representada por seu representante legal, ${repName}`;
+                    if (o.representativeRg) text += `, portador do RG nº ${o.representativeRg}`;
+                    if (o.representativeCpf) text += ` e CPF nº ${o.representativeCpf}`;
+                }
+                return text;
+            }
+
+            // PF Format
+            const gender = o.gender || (client as any)?.gender || 'Masculino';
             const isFem = gender === 'Feminino';
 
             const nationality = o.nationality || (client as any)?.nationality || (isFem ? 'brasileira' : 'brasileiro');
             const maritalStatus = o.maritalStatus || (client as any)?.maritalStatus || (isFem ? 'estado civil n/d' : 'estado civil n/d');
             const profession = o.profession || (client as any)?.profession || 'profissão n/d';
             const rg = o.rg || (client as any)?.rg || '';
-            const cpf = o.cpf || client?.cpfCnpj || client?.document || '';
-            const address = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
-            const email = o.email || client?.emailPrincipal || client?.email || '';
 
             // Qualificação de gênero nas palavras
             const portador = isFem ? 'portadora' : 'portador';
@@ -862,7 +988,7 @@ export class ContractEngine {
         // -- GRAMMAR LOGIC --
         const locLabel = data.LOCATARIOS_LABEL || 'LOCATÁRIO(A)';
         const locIsPlural = locLabel.endsWith('S');
-        const locIsFeminine = locLabel.includes('A');
+        const locIsFeminine = locLabel.endsWith('A') || (locLabel.endsWith('AS') && !locLabel.endsWith('OS') && !locLabel.endsWith('ES'));
         
         const dataEntrega = data.DATA_ENTREGA_CHAVES || '[PENDENTE]';
 
@@ -898,12 +1024,17 @@ export class ContractEngine {
         const witnesses: { role: string; name: string }[] = [];
 
         const isVenda = contractType === 'CompraEVenda' || (contractType || '').toLowerCase().includes('venda');
+        const isAutorizacao = contractType === 'AutorizacaoDivulgacao';
 
         if (isVenda) {
             const labelVendedor = (data.VENDEDORES_LABEL || 'VENDEDOR(A)').toUpperCase();
             const labelComprador = (data.COMPRADORES_LABEL || 'COMPRADOR(A)').toUpperCase();
             vendedorIds.forEach((id: string) => group1.push({ role: labelVendedor, name: getName(id) }));
             compradorIds.forEach((id: string) => group2.push({ role: labelComprador, name: getName(id) }));
+        } else if (isAutorizacao) {
+            const labelProprietario = (data.LOCADORES_LABEL || 'PROPRIETÁRIO(A)').toUpperCase();
+            locadorIds.forEach((id: string) => group1.push({ role: labelProprietario, name: getName(id) }));
+            group2.push({ role: 'CORRETOR AUTORIZADO (R.SALES IMÓVEIS)', name: 'Gestão e Parcerias R.Sales' });
         } else {
             const labelLocador = (data.LOCADORES_LABEL || 'LOCADOR(A)').toUpperCase();
             const labelLocatario = (data.LOCATARIOS_LABEL || 'LOCATÁRIO(A)').toUpperCase();
@@ -911,20 +1042,16 @@ export class ContractEngine {
             locatarioIds.forEach((id: string) => group2.push({ role: labelLocatario, name: getName(id) }));
         }
 
-        const isVistoria = contractType === 'VistoriaEntrada' || contractType === 'VistoriaSaida' || (contractType || '').toLowerCase().includes('vistoria') || contractType === 'EntregaChaves';
+        const t1Name = extraData?.TESTEMUNHA_1_NOME || extraData?.TESTEMUNHA1_NOME || '';
+        const t2Name = extraData?.TESTEMUNHA_2_NOME || extraData?.TESTEMUNHA2_NOME || '';
+        const t1Doc = extraData?.TESTEMUNHA_1_CPF || extraData?.TESTEMUNHA1_RG || extraData?.TESTEMUNHA1_CPF || '';
+        const t2Doc = extraData?.TESTEMUNHA_2_CPF || extraData?.TESTEMUNHA2_RG || extraData?.TESTEMUNHA2_CPF || '';
 
-        if (!isVistoria) {
-            const t1Name = extraData?.TESTEMUNHA_1_NOME || extraData?.TESTEMUNHA1_NOME || '';
-            const t2Name = extraData?.TESTEMUNHA_2_NOME || extraData?.TESTEMUNHA2_NOME || '';
-            const t1Doc = extraData?.TESTEMUNHA_1_CPF || extraData?.TESTEMUNHA1_RG || extraData?.TESTEMUNHA1_CPF || '';
-            const t2Doc = extraData?.TESTEMUNHA_2_CPF || extraData?.TESTEMUNHA2_RG || extraData?.TESTEMUNHA2_CPF || '';
-
-            if (t1Name) {
-                witnesses.push({ role: 'TESTEMUNHA 1', name: `${t1Name}${t1Doc ? ' (CPF/RG: ' + t1Doc + ')' : ''}` });
-            }
-            if (t2Name) {
-                witnesses.push({ role: 'TESTEMUNHA 2', name: `${t2Name}${t2Doc ? ' (CPF/RG: ' + t2Doc + ')' : ''}` });
-            }
+        if (t1Name) {
+            witnesses.push({ role: 'TESTEMUNHA 1', name: `${t1Name}${t1Doc ? ' (CPF/RG: ' + t1Doc + ')' : ''}` });
+        }
+        if (t2Name) {
+            witnesses.push({ role: 'TESTEMUNHA 2', name: `${t2Name}${t2Doc ? ' (CPF/RG: ' + t2Doc + ')' : ''}` });
         }
 
         let sigHtml = '<div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">';

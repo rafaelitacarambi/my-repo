@@ -257,8 +257,8 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p><strong>DA QUALIFICAÇÃO DO ATO:</strong></p>
     
     <p><strong>IMOVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
-    <p><strong>LOCATÁRIO(S):</strong> {{LOCATARIOS_LISTA}}</p>
-    <p><strong>LOCADOR(A):</strong> {{LOCADORA_NOME}}</p>
+    <p><strong>{{LOCATARIOS_LABEL}}:</strong> {{LOCATARIOS_LISTA}}</p>
+    <p><strong>{{LOCADORES_LABEL}}:</strong> {{LOCADORES_LISTA}}</p>
 
     <p>Pelo presente instrumento, as partes formalizam a entrega das chaves da unidade acima qualificada, declarando e assentindo o seguinte:</p>
 
@@ -269,6 +269,45 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p><strong>CLÁUSULA TERCEIRA - DOS ENCARGOS DO IMÓVEL:</strong> A partir desta data, os LOCATÁRIOS assumem a responsabilidade integral por todas as despesas decorrentes do uso do imóvel, tais como condomínio ordinário, IPTU, consumo de água, energia elétrica, gás e seguros.</p>
 
     <p><strong>CLÁUSULA QUARTA - DO FORO:</strong> Elegem o foro deste contrato nos mesmos termos do contrato de locação principal.</p>
+
+    {{ASSINATURAS_HTML}}
+
+    <p style="text-align: center; margin-top: 50px;">
+        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+    </p>
+</div>
+    `,
+    DevolucaoChaves: `
+<h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">TERMO DE ENTREGA PROVISÓRIA DE CHAVES E VISTORIA DE SAÍDA</h2>
+<h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">INSTRUMENTO DE DESOCUPAÇÃO E VISTORIA FINAL</h3>
+
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
+    <p><strong>DATA:</strong> [[IF DATA_ENTREGA_CHAVES]]{{DATA_ENTREGA_CHAVES}}[[ELSE]]{{DATA_HOJE}}[[ENDIF]]</p>
+    <p><strong>{{LOCADORES_LABEL}}:</strong> {{LOCADORES_LISTA}}</p>
+    <p><strong>{{LOCATARIOS_LABEL}}:</strong> {{LOCATARIOS_LISTA}}</p>
+    <p><strong>IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
+
+    <p>Pelo presente instrumento, as partes declaram:</p>
+
+    <p><strong>1. DA ENTREGA DAS CHAVES:</strong><br/>
+    O(A) {{LOCATARIOS_LABEL}} realiza, nesta data ([[IF DATA_ENTREGA_CHAVES]]{{DATA_ENTREGA_CHAVES}}[[ELSE]]{{DATA_HOJE}}[[ENDIF]]), a entrega das chaves do imóvel acima descrito para a realização da Vistoria de Saída, em cumprimento à Cláusula Décima do contrato.</p>
+
+    <p><strong>2. DA ISENÇÃO/COBRANÇA DE MULTA CONTRATUAL:</strong><br/>
+    As partes reconhecem que [[IF INCIDE_MULTA]]incide[[ELSE]]não incide[[ENDIF]] multa rescisória pela desocupação antecipada [[IF MULTA_JUSTIFICATIVA]]({{MULTA_JUSTIFICATIVA}})[[ELSE]](uma vez que já foi cumprido o período mínimo de locação estipulado ou o prazo contratual foi integralmente observado)[[ENDIF]].</p>
+
+    <p><strong>3. DA VISTORIA E APONTAMENTOS:</strong><br/>
+    A entrega das chaves neste ato é provisória e não configura quitação plena. A quitação final dependerá da aprovação do estado de conservação do imóvel na vistoria a ser realizada.<br/>
+    O imóvel deve ser devolvido nas mesmas condições em que foi recebido, exceto pelo desgaste natural, conforme a Cláusula Segunda e Cláusula Quinta do contrato original.<br/>
+    Qualquer dano, furação não autorizada ou alteração na pintura constatada será apontada para reparo ou indenização.</p>
+
+    <p><strong>4. PENDÊNCIAS FINANCEIRAS E CONSUMO:</strong><br/>
+    O Termo de Rescisão Final e a devolução da garantia serão processados após a verificação de:<br/>
+    • Quitação dos aluguéis e condomínio proporcionais até a data de hoje;<br/>
+    • Apresentação dos comprovantes de pagamento final e desligamento/transferência de titularidade das contas de Energia Elétrica e Gás;<br/>
+    • Pagamento de eventual excedente de consumo de água cobrado pelo condomínio.</p>
+
+    <p><strong>5. DA GARANTIA LOCATÍCIA:</strong><br/>
+    O valor da garantia [[IF GARANTIA_CAUCAO]](Depósito Caução de R$ {{CAUCAO_VALOR}})[[ENDIF]][[IF GARANTIA_FIADOR]](Garantia por Fiador)[[ENDIF]][[IF GARANTIA_SEGURO_FIANCA]](Seguro Fiança)[[ENDIF]] será utilizado no acerto de contas final (deduzindo eventuais reparos ou débitos) ou devolvido/liberado integralmente caso não haja pendências, conforme Cláusula de Garantia do contrato.</p>
 
     {{ASSINATURAS_HTML}}
 
@@ -294,27 +333,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA QUARTA - DO TRATAMENTO DE DADOS (LGPD):</strong> O PROPRIETÁRIO autoriza expressamente a captação de fotografias, vídeos e dados do imóvel para fins de marketing nos portais e mídias sociais.</p>
 
-    <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">
-        <p><strong>ASSINATURAS:</strong></p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
-            <tr>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>PROPRIETÁRIO(S):</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>{{LOCADORES_NOMES}}</strong>
-                    </div>
-                </td>
-                <td style="width: 4%;">&nbsp;</td>
-                <td style="width: 48%; vertical-align: top; padding-bottom: 30px;">
-                    <p style="margin-bottom: 40px;"><strong>CORRETOR AUTORIZADO (R.SALES IMÓVEIS):</strong></p>
-                    <div style="border-top: 1px solid #999; width: 90%; padding-top: 5px;">
-                        <strong>Gestão e Parcerias R.Sales</strong>
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </div>
+    {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
         {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
@@ -383,5 +402,49 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p>Assim as partes nomeiam o foro da Comarca de {{IMOVEL_CIDADE}} ({{IMOVEL_ESTADO}}) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital.</p>
 
     {{ASSINATURAS_HTML}}
-</div>`
+</div>`,
+    'EntregaChavesVenda': `
+<h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">TERMO DE ENTREGA DE CHAVES E VISTORIA – COMPRA E VENDA</h2>
+
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
+    <p><strong>QUALIFICAÇÃO DO ATO:</strong></p>
+    
+    <p><strong>IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
+    <p><strong>{{VENDEDORES_LABEL}} (PROMITENTE VENDEDOR):</strong> {{VENDEDORES_LISTA}}</p>
+    <p><strong>{{COMPRADORES_LABEL}} (PROMITENTE COMPRADOR):</strong> {{COMPRADORES_LISTA}}</p>
+
+    <p>Pelo presente instrumento, as partes formalizam a entrega das chaves da unidade acima qualificada, declarando e assentindo o seguinte:</p>
+
+    <p><strong>1. DA IMISSÃO NA POSSE E ENTREGA DAS CHAVES:</strong><br/>
+    O(S) VENDEDOR(ES) realiza(m), nesta data, a entrega definitiva das chaves do imóvel acima descrito ao(s) COMPRADOR(ES), transferindo-lhe(s) a posse direta do bem, em estrito cumprimento ao Instrumento Particular de Compromisso de Compra e Venda firmado entre as partes.</p>
+
+    <p><strong>2. DA VISTORIA DE ENTREGA:</strong><br/>
+    O(S) COMPRADOR(ES) declara(m) ter vistoriado o imóvel nesta data, recebendo-o nas exatas condições físicas e de conservação acordadas no contrato de compra e venda. Declara(m), ainda, que as instalações elétricas, hidráulicas e os acabamentos encontram-se em conformidade com o que foi negociado, não havendo ressalvas a fazer (exceto as eventualmente apontadas no registro fotográfico abaixo).</p>
+
+    <p><strong>3. TRANSFERÊNCIA DE RESPONSABILIDADES E CONSUMO:</strong><br/>
+    A partir desta data de entrega das chaves, passam a ser de inteira e exclusiva responsabilidade do(s) COMPRADOR(ES):<br/>
+    • O pagamento de todos os impostos (IPTU) e taxas incidentes sobre o imóvel;<br/>
+    • O pagamento das cotas condominiais ordinárias e extraordinárias;<br/>
+    • A transferência de titularidade junto às concessionárias de serviços públicos (Energia Elétrica, Água, Gás, etc.), isentando o(s) VENDEDOR(ES) de qualquer responsabilidade sobre o consumo a partir desta data.<br/>
+    O(s) VENDEDOR(ES) declara(m) ter quitado o consumo proporcional até o dia de hoje.</p>
+
+    <p><strong>4. REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
+    [[IF ESTADO_CONSERVACAO]]
+    <div style="padding-left: 20px; margin-bottom: 15px;">
+        <p>{{ESTADO_CONSERVACAO}}</p>
+    </div>
+    [[ENDIF]]
+    
+    {{LAUDO_FOTOS_HTML}}
+
+    <p><strong>5. QUITAÇÃO:</strong><br/>
+    Com a assinatura deste termo e a respectiva entrega das chaves, as partes dão por cumprida a obrigação de imissão na posse estipulada no contrato de compra e venda, nada mais tendo a reclamar sobre o estado físico do imóvel.</p>
+
+    {{ASSINATURAS_HTML}}
+
+    <p style="text-align: center; margin-top: 50px;">
+        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+    </p>
+</div>
+`
 };

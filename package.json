@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "check": "astro check",
     "test:run": "vitest run",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "sync-imoveis": "tsx scripts/sync_imoveis.ts"
   },
   "dependencies": {
     "@astrojs/check": "0.9.4",
@@ -62,6 +63,7 @@
     "@typescript-eslint/utils": "^8.47.0",
     "@typescript-eslint/visitor-keys": "^8.47.0",
     "@wix/astro": "2.23.0",
+    "mammoth": "^1.6.0",
     "@wix/astro-pages": "^2.0.1",
     "@wix/auto-patterns": "^1.17.0",
     "@wix/babel-plugin-jsx-dynamic-data": "1.0.11",

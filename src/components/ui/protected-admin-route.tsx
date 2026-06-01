@@ -106,7 +106,7 @@ export function ProtectedAdminRoute({
   console.log('[ProtectedAdminRoute] Rendering with allowedProfiles:', allowedProfiles);
   
   return (
-    <MemberProtectedRoute messageToSignIn={messageToSignIn}>
+    <MemberProtectedRoute>
       <ProtectedAdminContent allowedProfiles={allowedProfiles}>
         {children}
       </ProtectedAdminContent>

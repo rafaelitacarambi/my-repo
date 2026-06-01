@@ -6,7 +6,8 @@ import type { DropResult } from '@hello-pangea/dnd';
 import {
     X, MoreHorizontal, Plus, Search, Filter, Download, FileText, History, MessageSquare, Upload,
     CheckCircle, AlertCircle, Settings, Eye, Trash2, File, Clock, Copy, CheckCircle2, AlertTriangle,
-    UserCheck, DollarSign, LayoutGrid, Info, Save, Wrench, CheckSquare, Home, Users, FileCheck, Share2, Palette, Building2, Gavel, Hash, Phone
+    UserCheck, DollarSign, LayoutGrid, Info, Save, Wrench, CheckSquare, Home, Users, FileCheck, Share2, Palette, Building2, Gavel, Hash, Phone,
+    ChevronDown, XCircle, Edit2
 } from 'lucide-react';
 import { utils, writeFile } from 'xlsx';
 import { format } from 'date-fns';
@@ -29,6 +30,7 @@ import { BaseCrudService } from '@/integrations';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis, ChecklistdosProponentes } from '@/entities';
 import { formatCurrency, parseCurrency, formatCPF, handleCPFInput } from '@/lib/input-masks';
 import AuctionNavigation from '../../AuctionNavigation';
+import { TasksAndPendenciesTabs } from '@/components/admin/tasks/TasksAndPendenciesTabs';
 
 // Types and Interfaces adapted for Leilão
 interface LeilaoCase {
@@ -48,6 +50,7 @@ interface LeilaoCase {
     contactName: string;
     contactPhone?: string;
     contactEmail?: string;
+    propertyRefs?: string[];
 
     // Blocking icons
     bloqueioDocumento?: boolean;
@@ -63,7 +66,16 @@ interface LeilaoCase {
         activeRentals: number;
         activeFinancing: number;
         activeAuctions: number;
-        relatedServices: { _id: string; serviceType: string; contactName: string; pastaInterna: string; status: string }[];
+        relatedServices: {
+            _id: string;
+            serviceType: string;
+            contactName: string;
+            pastaInterna: string;
+            status: string;
+            imovelRef: string | null;
+            imovelCod: string | null;
+            imovelEndereco: string;
+        }[];
     };
     documentosAnexos?: { name: string; url: string; size: number; type: string; uploadedAt: string }[];
     leilaoExtra?: Record<string, string>;
@@ -118,6 +130,8 @@ export default function AdminLeilaoKanbanPage() {
     const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
     const [isDraggingDoc, setIsDraggingDoc] = useState(false);
     const docInputRef = useRef<HTMLInputElement>(null);
+    const [isEditingPasta, setIsEditingPasta] = useState(false);
+    const [pastaInputValue, setPastaInputValue] = useState('');
     const [showBackgroundPicker, setShowBackgroundPicker] = useState(false);
     const [showEmptyColumns, setShowEmptyColumns] = useState(true);
     type RelatedService = { _id: string; serviceType: string; contactName: string; pastaInterna: string; status: string };
@@ -251,18 +265,28 @@ export default function AdminLeilaoKanbanPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const { items: clientsList } = await BaseCrudService.getAll<Clients>('clientes');
+            const [
+                { items: clientsList },
+                { items: usersList },
+                { items: atendimentos },
+                { items: pendingsList },
+                { items: tasksList },
+                { items: partiesList },
+                { items: propertiesList },
+                { items: propertyLinks }
+            ] = await Promise.all([
+                BaseCrudService.getAll<Clients>('clientes'),
+                BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema'),
+                BaseCrudService.getAll<ServiceRecords>('atendimentos'),
+                BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasleilao'),
+                BaseCrudService.getAll<FinancingTasks>('tarefasleilao'),
+                BaseCrudService.getAll<ServiceParties>('atendimentopartes'),
+                BaseCrudService.getAll<Imveis>('imoveis'),
+                BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis')
+            ]);
+
             setClients(clientsList);
-
-            const { items: usersList } = await BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema');
             setUsers(usersList);
-
-            const { items: atendimentos } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
-            const { items: pendingsList } = await BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasleilao'); // Changed to pendenciasleilao
-            const { items: tasksList } = await BaseCrudService.getAll<FinancingTasks>('tarefasleilao'); // Changed to tarefasleilao
-            const { items: partiesList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
-            const { items: propertiesList } = await BaseCrudService.getAll<Imveis>('imoveis');
-            const { items: propertyLinks } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
 
             const filteredAtendimentos = atendimentos
                 .filter(a => ['Leilão'].includes(a.serviceType || '') && !a.isArchived)
@@ -297,13 +321,20 @@ export default function AdminLeilaoKanbanPage() {
                     activeRentals: uniqueRelated.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
                     activeFinancing: uniqueRelated.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
                     activeAuctions: uniqueRelated.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
-                    relatedServices: uniqueRelated.map(s => ({
-                        _id: s._id,
-                        serviceType: s.serviceType || '',
-                        contactName: s.contactName || '',
-                        pastaInterna: (s as any).pastaInterna || '',
-                        status: s.status || ''
-                    }))
+                    relatedServices: uniqueRelated.map(s => {
+                        const plink = propertyLinks.find(pl => pl.atendimentoRef === s._id);
+                        const prop = plink ? propertiesList.find(pr => pr._id === plink.imovelRef) : null;
+                        return {
+                            _id: s._id,
+                            serviceType: s.serviceType || '',
+                            contactName: s.contactName || '',
+                            pastaInterna: (s as any).pastaInterna || '',
+                            status: s.status || '',
+                            imovelRef: plink ? plink.imovelRef : null,
+                            imovelCod: prop ? (prop.codImovel || prop.codigoReference || '') : null,
+                            imovelEndereco: prop ? (prop.enderecoRua || prop.logradouro || prop.enderecoBairro || prop.bairro || '') : ''
+                        };
+                    })
                 };
 
                 return {
@@ -326,6 +357,7 @@ export default function AdminLeilaoKanbanPage() {
                     propertyValue: (a as any).propertyValue || 0,
                     bidValue: (a as any).bidValue || (a as any).propertyValue || 0,
                     notes: a.notes || '',
+                    propertyRefs: clientPropertyIds,
                     interlinks,
                     documentosAnexos: (a as any).documentosAnexos || [],
                     leilaoExtra: (a as any).leilaoExtra || {},
@@ -335,9 +367,9 @@ export default function AdminLeilaoKanbanPage() {
             });
 
             setCases(filteredCases);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error loading Leilão Kanban data:', error);
-            toast.error('Erro ao carregar dados do Kanban');
+            toast.error(`Erro ao carregar dados do Kanban: ${error?.message || error}`);
         } finally {
             setLoading(false);
         }
@@ -388,6 +420,23 @@ export default function AdminLeilaoKanbanPage() {
             toast.error('Erro ao salvar dados.');
         } finally {
             setIsSavingLeilao(false);
+        }
+    };
+
+    const handleSavePasta = async () => {
+        if (!selectedCase) return;
+        try {
+            await BaseCrudService.update('atendimentos', {
+                _id: selectedCase._id,
+                pastaInterna: pastaInputValue
+            });
+            setCases(prev => prev.map(c => c._id === selectedCase._id ? { ...c, pastaInterna: pastaInputValue } : c));
+            setSelectedCase(prev => prev ? { ...prev, pastaInterna: pastaInputValue } : null);
+            setIsEditingPasta(false);
+            toast.success('Nome da pasta atualizado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao atualizar nome da pasta:', error);
+            toast.error('Erro ao atualizar nome da pasta.');
         }
     };
 
@@ -911,43 +960,238 @@ export default function AdminLeilaoKanbanPage() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <span className="text-[11px] font-bold text-slate-300 tracking-wider">• {selectedCase?.pastaInterna}</span>
+                                            <span className="text-[11px] font-bold text-slate-300 tracking-wider">•</span>
+                                            {isEditingPasta ? (
+                                                <div className="flex items-center gap-1">
+                                                    <input
+                                                        type="text"
+                                                        value={pastaInputValue}
+                                                        onChange={(e) => setPastaInputValue(e.target.value)}
+                                                        className="text-[10px] text-slate-750 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-400 h-5"
+                                                        autoFocus
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') handleSavePasta();
+                                                            if (e.key === 'Escape') setIsEditingPasta(false);
+                                                        }}
+                                                    />
+                                                    <Button onClick={handleSavePasta} variant="ghost" className="h-5 w-5 p-0 text-emerald-500 hover:text-emerald-700">
+                                                        <CheckCircle className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button onClick={() => setIsEditingPasta(false)} variant="ghost" className="h-5 w-5 p-0 text-rose-500 hover:text-rose-700">
+                                                        <XCircle className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1 group/pasta">
+                                                    <span className="text-[11px] font-bold text-slate-400">{selectedCase?.pastaInterna || '—'}</span>
+                                                    <Button
+                                                        onClick={() => {
+                                                            setPastaInputValue(selectedCase?.pastaInterna || '');
+                                                            setIsEditingPasta(true);
+                                                        }}
+                                                        variant="ghost"
+                                                        className="h-5 w-5 p-0 text-slate-400 hover:text-slate-650 opacity-100 sm:opacity-0 group-hover/pasta:opacity-100 transition-opacity"
+                                                    >
+                                                        <Edit2 className="w-2.5 h-2.5" />
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-lg">
                                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pasta: {selectedCase?.pastaInterna}</span>
                                             </div>
+                                            {(() => {
+                                                const propertyPills = selectedCase?.interlinks?.relatedServices?.filter(rel => 
+                                                    rel.imovelRef && selectedCase.propertyRefs?.includes(rel.imovelRef)
+                                                ) || [];
+                                                if (propertyPills.length === 0) return null;
+                                                return (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mr-1">Vínculos:</span>
+                                                        {propertyPills.map(rel => {
+                                                            const routeMap: Record<string, string> = {
+                                                                'Venda': '/admin/negocios/kanban',
+                                                                'Compra': '/admin/negocios/kanban',
+                                                                'Locação': '/admin/locacoes/kanban',
+                                                                'Aluguel': '/admin/locacoes/kanban',
+                                                                'Financiamento': '/admin/financiamento-kanban',
+                                                                'Crédito': '/admin/financiamento-kanban',
+                                                                'Leilão': '/admin/leilao/kanban'
+                                                            };
+                                                            const colorMap: Record<string, string> = {
+                                                                'Venda': 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100',
+                                                                'Compra': 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100',
+                                                                'Locação': 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100',
+                                                                'Aluguel': 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100',
+                                                                'Financiamento': 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100',
+                                                                'Crédito': 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100',
+                                                                'Leilão': 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
+                                                            };
+                                                            const firstType = (rel.serviceType || '').split(',').map(t => t.trim())[0] || '';
+                                                            const route = routeMap[firstType];
+                                                            if (!route) return null;
+                                                            return (
+                                                                <button 
+                                                                    key={rel._id} 
+                                                                    onClick={() => navigate(`${route}?openCard=${rel._id}`)} 
+                                                                    className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-tighter transition-all ${colorMap[firstType] || 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'}`}
+                                                                >
+                                                                    {rel.serviceType}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })()}
                                             {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mr-1">Vínculos:</span>
-                                                    {selectedCase.interlinks.relatedServices.map(rel => {
-                                                        const routeMap: Record<string, string> = {
-                                                            'Venda': '/admin/negocios/kanban',
-                                                            'Compra': '/admin/negocios/kanban',
-                                                            'Locação': '/admin/locacoes/kanban',
-                                                            'Aluguel': '/admin/locacoes/kanban',
-                                                            'Financiamento': '/admin/financiamento-kanban',
-                                                            'Crédito': '/admin/financiamento-kanban',
-                                                            'Leilão': '/admin/leilao/kanban'
-                                                        };
-                                                        const colorMap: Record<string, string> = {
-                                                            'Venda': 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100',
-                                                            'Locação': 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100',
-                                                            'Financiamento': 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100',
-                                                            'Leilão': 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
-                                                        };
-                                                        const route = routeMap[rel.serviceType.split(' ')[0]]; // Quick fix for "Venda e Locação" etc
-                                                        if (!route) return null;
-                                                        return (
-                                                            <button 
-                                                                key={rel._id} 
-                                                                onClick={() => navigate(`${route}?openCard=${rel._id}`)} 
-                                                                className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-tighter transition-all ${colorMap[rel.serviceType.split(' ')[0]] || 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'}`}
-                                                            >
-                                                                {rel.serviceType}
-                                                            </button>
-                                                        );
-                                                    })}
+                                                <div className="flex items-center">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="sm" className="h-7 w-auto px-3 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center gap-1.5 justify-start">
+                                                                Outros cartões <ChevronDown className="w-3.5 h-3.5" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="start" className="w-[350px] bg-white border-slate-200 p-2 flex flex-col gap-3 shadow-xl rounded-xl">
+                                                            {(() => {
+                                                                const groupsMap = new Map<string, {
+                                                                    imovelRef: string | null;
+                                                                    imovelCod: string | null;
+                                                                    imovelEndereco: string;
+                                                                    services: typeof selectedCase.interlinks.relatedServices;
+                                                                }>();
+                                                                const noPropertyGroup: typeof selectedCase.interlinks.relatedServices = [];
+
+                                                                selectedCase.interlinks.relatedServices.forEach(rel => {
+                                                                    if (rel.imovelRef) {
+                                                                        if (!groupsMap.has(rel.imovelRef)) {
+                                                                            groupsMap.set(rel.imovelRef, {
+                                                                                imovelRef: rel.imovelRef,
+                                                                                imovelCod: rel.imovelCod,
+                                                                                imovelEndereco: rel.imovelEndereco,
+                                                                                services: []
+                                                                            });
+                                                                        }
+                                                                        groupsMap.get(rel.imovelRef)!.services.push(rel);
+                                                                    } else {
+                                                                        noPropertyGroup.push(rel);
+                                                                    }
+                                                                });
+
+                                                                const groups = Array.from(groupsMap.values());
+                                                                
+                                                                const routeMap: Record<string, string> = {
+                                                                    'Venda': '/admin/negocios/kanban', 'Compra': '/admin/negocios/kanban',
+                                                                    'Locação': '/admin/locacoes/kanban', 'Aluguel': '/admin/locacoes/kanban',
+                                                                    'Financiamento': '/admin/financiamento-kanban', 'Crédito': '/admin/financiamento-kanban',
+                                                                    'Leilão': '/admin/leilao/kanban'
+                                                                };
+                                                                const iconMap: Record<string, string> = {
+                                                                    'Venda': '💰', 'Compra': '💰', 'Locação': '🔑', 'Aluguel': '🔑',
+                                                                    'Financiamento': '🏦', 'Crédito': '🏦', 'Leilão': '🔨'
+                                                                };
+
+                                                                return (
+                                                                    <>
+                                                                        {groups.map(group => (
+                                                                            <div key={group.imovelRef} className="flex flex-col gap-1.5 font-sans normal-case">
+                                                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                                                                                    <span>🏠</span>
+                                                                                    <span className="truncate max-w-[280px]">
+                                                                                        {group.imovelCod ? `${group.imovelCod} - ` : ''}{group.imovelEndereco || 'Imóvel sem endereço'}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="flex flex-wrap gap-2 p-1.5 bg-slate-50/50 rounded-lg border border-slate-100">
+                                                                                    {group.services.map(rel => {
+                                                                                        const firstType = (rel.serviceType || '').split(',').map(t => t.trim())[0] || '';
+                                                                                        const route = routeMap[firstType];
+                                                                                        const icon = iconMap[firstType] || '📋';
+                                                                                        const colorMap: Record<string, string> = {
+                                                                                            'Venda': 'hover:bg-blue-50 hover:border-blue-200 border-slate-200',
+                                                                                            'Compra': 'hover:bg-blue-50 hover:border-blue-200 border-slate-200',
+                                                                                            'Locação': 'hover:bg-purple-50 hover:border-purple-200 border-slate-200',
+                                                                                            'Aluguel': 'hover:bg-purple-50 hover:border-purple-200 border-slate-200',
+                                                                                            'Financiamento': 'hover:bg-amber-50 hover:border-amber-200 border-slate-200',
+                                                                                            'Crédito': 'hover:bg-amber-50 hover:border-amber-200 border-slate-200',
+                                                                                            'Leilão': 'hover:bg-red-50 hover:border-red-200 border-slate-200'
+                                                                                        };
+                                                                                        const color = colorMap[firstType] || 'hover:bg-slate-50 hover:border-slate-300 border-slate-200';
+                                                                                        if (!route) return null;
+                                                                                        return (
+                                                                                            <DropdownMenuItem
+                                                                                                key={rel._id}
+                                                                                                asChild
+                                                                                                className="focus:bg-transparent p-0 border-none cursor-pointer flex-1 min-w-[140px]"
+                                                                                            >
+                                                                                                <button
+                                                                                                    onClick={() => navigate(`${route}?openCard=${rel._id}`)}
+                                                                                                    className={`flex items-center gap-2 p-2 rounded-lg border bg-white shadow-sm transition-all text-left ${color}`}
+                                                                                                >
+                                                                                                    <span className="text-sm">{icon}</span>
+                                                                                                    <div className="flex flex-col min-w-0">
+                                                                                                        <span className="font-bold text-slate-700 text-[11px] truncate leading-tight">{rel.serviceType}</span>
+                                                                                                        <span className="text-[9px] text-slate-400 font-medium truncate leading-none mt-0.5">
+                                                                                                            {rel.pastaInterna || rel.contactName}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                </button>
+                                                                                            </DropdownMenuItem>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                        {noPropertyGroup.length > 0 && (
+                                                                            <div className="flex flex-col gap-1.5 font-sans normal-case">
+                                                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                                                                                    <span>📋</span>
+                                                                                    <span>Outros Serviços</span>
+                                                                                </div>
+                                                                                <div className="flex flex-wrap gap-2 p-1.5 bg-slate-50/50 rounded-lg border border-slate-100">
+                                                                                    {noPropertyGroup.map(rel => {
+                                                                                        const firstType = (rel.serviceType || '').split(',').map(t => t.trim())[0] || '';
+                                                                                        const route = routeMap[firstType];
+                                                                                        const icon = iconMap[firstType] || '📋';
+                                                                                        const colorMap: Record<string, string> = {
+                                                                                            'Venda': 'hover:bg-blue-50 hover:border-blue-200 border-slate-200',
+                                                                                            'Compra': 'hover:bg-blue-50 hover:border-blue-200 border-slate-200',
+                                                                                            'Locação': 'hover:bg-purple-50 hover:border-purple-200 border-slate-200',
+                                                                                            'Aluguel': 'hover:bg-purple-50 hover:border-purple-200 border-slate-200',
+                                                                                            'Financiamento': 'hover:bg-amber-50 hover:border-amber-200 border-slate-200',
+                                                                                            'Crédito': 'hover:bg-amber-50 hover:border-amber-200 border-slate-200',
+                                                                                            'Leilão': 'hover:bg-red-50 hover:border-red-200 border-slate-200'
+                                                                                        };
+                                                                                        const color = colorMap[firstType] || 'hover:bg-slate-50 hover:border-slate-300 border-slate-200';
+                                                                                        if (!route) return null;
+                                                                                        return (
+                                                                                            <DropdownMenuItem
+                                                                                                key={rel._id}
+                                                                                                asChild
+                                                                                                className="focus:bg-transparent p-0 border-none cursor-pointer flex-1 min-w-[140px]"
+                                                                                            >
+                                                                                                <button
+                                                                                                    onClick={() => navigate(`${route}?openCard=${rel._id}`)}
+                                                                                                    className={`flex items-center gap-2 p-2 rounded-lg border bg-white shadow-sm transition-all text-left ${color}`}
+                                                                                                >
+                                                                                                    <span className="text-sm">{icon}</span>
+                                                                                                    <div className="flex flex-col min-w-0">
+                                                                                                        <span className="font-bold text-slate-700 text-[11px] truncate leading-tight">{rel.serviceType}</span>
+                                                                                                        <span className="text-[9px] text-slate-400 font-medium truncate leading-none mt-0.5">
+                                                                                                            {rel.pastaInterna || rel.contactName}
+                                                                                                        </span>
+                                                                                                    </div>
+                                                                                                </button>
+                                                                                            </DropdownMenuItem>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                );
+                                                            })()}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             )}
                                         </div>
@@ -1158,15 +1402,30 @@ export default function AdminLeilaoKanbanPage() {
                                         </div>
                                     </TabsContent>
 
-                                    <TabsContent value="pendencias" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
-                                        <AlertTriangle className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
-                                        <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Painel de Impedimentos</h3>
-                                        <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">O rastreador de pendências críticas será integrado na próxima iteração de build.</p>
+                                    <TabsContent value="pendencias" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        {selectedCase && (
+                                            <TasksAndPendenciesTabs
+                                                atendimentoRef={selectedCase._id}
+                                                serviceType="leilao"
+                                                tab="pendencias"
+                                                clients={clients}
+                                                users={users}
+                                                onSuccess={loadData}
+                                            />
+                                        )}
                                     </TabsContent>
-                                    <TabsContent value="tarefas" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 py-20 text-center bg-slate-50/30 rounded-[40px] border border-slate-50">
-                                        <CheckSquare className="w-16 h-16 text-slate-200 mx-auto mb-6 opacity-50" />
-                                        <h3 className="text-lg font-black text-slate-300 uppercase tracking-widest">Workflow de Micro-tarefas</h3>
-                                        <p className="max-w-xs mx-auto text-slate-400 font-medium text-xs mt-3 leading-relaxed">A gestão granular de steps operacionais está em fase alfa de calibração.</p>
+
+                                    <TabsContent value="tarefas" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        {selectedCase && (
+                                            <TasksAndPendenciesTabs
+                                                atendimentoRef={selectedCase._id}
+                                                serviceType="leilao"
+                                                tab="tarefas"
+                                                clients={clients}
+                                                users={users}
+                                                onSuccess={loadData}
+                                            />
+                                        )}
                                     </TabsContent>
                                 </Tabs>
                     </DialogContent>

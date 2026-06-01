@@ -31,6 +31,12 @@ export const GET: APIRoute = async ({ request }) => {
                 conteudoHtml: DEFAULT_TEMPLATES.EntregaChaves
             },
             {
+                tipoOperacao: 'EntregaChavesVenda',
+                nome: 'Termo Padrão Entrega de Chaves (Venda)',
+                categoria: 'VENDA',
+                conteudoHtml: DEFAULT_TEMPLATES.EntregaChavesVenda
+            },
+            {
                 tipoOperacao: 'AutorizacaoDivulgacao',
                 nome: 'Autorização Padrão Divulgação Imóvel',
                 categoria: 'OUTROS',

@@ -62,11 +62,6 @@ export default function RentalNavigation() {
       label: 'Em Andamento',
       icon: <Play className="w-5 h-5" />,
     },
-    {
-      path: '/admin/contract-templates',
-      label: 'Modelos de Contrato',
-      icon: <CheckSquare className="w-5 h-5" />,
-    },
   ];
 
   const handleNavigation = (path: string) => {

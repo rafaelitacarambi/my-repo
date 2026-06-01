@@ -44,8 +44,9 @@ export const GET: APIRoute = async () => {
     try {
         // Importar dinamicamente pdf-parse
         let PDFParse: any;
+        let pdfParseModule: any;
         try {
-            const pdfParseModule = await import('pdf-parse');
+            pdfParseModule = await import('pdf-parse');
             PDFParse = pdfParseModule.PDFParse || pdfParseModule.default?.PDFParse || pdfParseModule.default;
         } catch (err: any) {
             console.error('Erro ao importar pdf-parse:', err);
@@ -66,14 +67,15 @@ export const GET: APIRoute = async () => {
             { filename: 'Seguro fiança.pdf', nome: 'Locação Residencial - Seguro Fiança', tipoOperacao: 'LocacaoResidencialSeguro', subtipo: 'Residencial', garantia: 'SEGURO' },
             { filename: 'Procuração.pdf', nome: 'Procuração de Administração de Locação', tipoOperacao: 'ProcuracaoLocacao', subtipo: 'Administracao', garantia: null },
             { filename: 'Termo de Recisão.pdf', nome: 'Termo de Rescisão de Contrato de Locação', tipoOperacao: 'TermoRescisaoLocacao', subtipo: 'Locacao', garantia: null },
-            { filename: 'Termo de entrega de chaves.pdf', nome: 'Termo de Entrega de Chaves', tipoOperacao: 'TermoEntregaChaves', subtipo: 'Locacao', garantia: null },
-            { filename: 'Termo de devolução de chaves e vistoria saida.pdf', nome: 'Termo de Devolução de Chaves e Vistoria (Saída)', tipoOperacao: 'TermoDevolucaoChavesVistoriaSaida', subtipo: 'Locacao', garantia: null }
+            { filename: 'Termo_Entrega_Provisoria_Chaves.pdf', nome: 'Termo de Devolução de Chaves (Provisória)', tipoOperacao: 'DevolucaoChaves', subtipo: 'Locacao', garantia: null },
+            { filename: 'Termo de devolução de chaves.pdf', nome: 'Termo de Devolução de Chaves (Definitiva)', tipoOperacao: 'TermoDevolucaoChavesVistoriaSaida', subtipo: 'Locacao', garantia: null }
         ];
 
         // Mapeamentos para categoria Venda
         const vendaConfigs = [
             { filename: 'Financiamento.pdf', nome: 'Compromisso de Compra e Venda - Financiamento Bancário', tipoOperacao: 'VendaFinanciamento', subtipo: 'Venda', garantia: null },
-            { filename: 'À vista.pdf', nome: 'Compromisso de Compra e Venda - Pagamento à Vista', tipoOperacao: 'VendaAVista', subtipo: 'Venda', garantia: null }
+            { filename: 'À vista.pdf', nome: 'Compromisso de Compra e Venda - Pagamento à Vista', tipoOperacao: 'VendaAVista', subtipo: 'Venda', garantia: null },
+            { filename: 'Termo de entrega de chaves de vendas.pdf', nome: 'Termo de Entrega de Chaves (Venda)', tipoOperacao: 'EntregaChavesVenda', subtipo: 'Venda', garantia: null }
         ];
 
         // 1. Processar e Importar Locação

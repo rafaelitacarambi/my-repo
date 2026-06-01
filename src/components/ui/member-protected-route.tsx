@@ -6,6 +6,7 @@ interface MemberProtectedRouteProps {
   children: ReactNode;
   messageToLoading?: string;
   loadingClassName?: string;
+  messageToSignIn?: string;
 }
 
 export function MemberProtectedRoute({

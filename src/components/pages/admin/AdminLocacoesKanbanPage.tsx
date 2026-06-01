@@ -50,7 +50,9 @@ import {
     Hash,
     Gavel,
     Key,
-    Loader2
+    Loader2,
+    Layers,
+    ChevronDown
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -67,9 +69,11 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { BaseCrudService } from '@/integrations';
+import { BaseCrudService, WixDataItem } from '@/integrations';
 import { ServiceRecords, UsuriosdoSistema, PendnciasdoFinanciamento, FinancingTasks, ServiceParties, Clients, DocumentosdoFinanciamento, HistricodeInteraes, Imveis, AtendimentoImveis, ChecklistdosProponentes } from '@/entities';
 import { formatCurrency, parseCurrency, formatCPF } from '@/lib/input-masks';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { TasksAndPendenciesTabs } from '@/components/admin/tasks/TasksAndPendenciesTabs';
 
 // Types and Interfaces adapted for Locações
 interface LocacoesCase {
@@ -116,6 +120,7 @@ interface LocacoesCase {
     caucaoCpf?: string;
 
     clientePrincipalRef?: string;
+    propertyRefs?: string[];
 
     interlinks?: {
         hasProperty: boolean;
@@ -123,7 +128,16 @@ interface LocacoesCase {
         activeRentals: number;
         activeFinancing: number;
         activeAuctions: number;
-        relatedServices: { _id: string; serviceType: string; contactName: string; pastaInterna: string; status: string }[];
+        relatedServices: {
+            _id: string;
+            serviceType: string;
+            contactName: string;
+            pastaInterna: string;
+            status: string;
+            imovelRef: string | null;
+            imovelCod: string | null;
+            imovelEndereco: string;
+        }[];
     };
 }
 
@@ -205,6 +219,9 @@ export default function AdminLocacoesKanbanPage() {
         tipoImovel: 'Apartamento',
         pretensao: 'Locação',
         statusImovel: 'Ativo',
+        origemCaptacao: '',
+        corretorExternoNome: '',
+        corretorExternoContato: '',
         precoLocacao: undefined,
         precoVenda: undefined,
         valorCondominio: undefined,
@@ -237,6 +254,9 @@ export default function AdminLocacoesKanbanPage() {
     const [isDraggingDoc, setIsDraggingDoc] = useState(false);
     const [isSavingLocacao, setIsSavingLocacao] = useState(false);
     const docInputRef = useRef<HTMLInputElement>(null);
+    const [isEditingPasta, setIsEditingPasta] = useState(false);
+    const [pastaInputValue, setPastaInputValue] = useState('');
+    const [selectedPartClient, setSelectedPartClient] = useState<any | null>(null);
     useEffect(() => {
         loadData();
         const storedBg = localStorage.getItem('kanban-background-locacoes');
@@ -249,25 +269,47 @@ export default function AdminLocacoesKanbanPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const { items: clientsList } = await BaseCrudService.getAll<Clients>('clientes');
+            async function safeGetAll<T extends WixDataItem>(collectionId: string): Promise<{ items: T[] }> {
+                try {
+                    return await BaseCrudService.getAll<T>(collectionId);
+                } catch (e) {
+                    console.error(`Error loading collection ${collectionId}:`, e);
+                    return { items: [] };
+                }
+            }
+
+            const [
+                { items: clientsList },
+                { items: usersList },
+                { items: atendimentos },
+                { items: pendingsList },
+                { items: tasksList },
+                { items: partiesList },
+                { items: propertiesList },
+                { items: propertyLinks }
+            ] = await Promise.all([
+                safeGetAll<Clients>('clientes'),
+                safeGetAll<UsuriosdoSistema>('usuariossistema'),
+                safeGetAll<ServiceRecords>('atendimentos'),
+                safeGetAll<PendnciasdoFinanciamento>('pendenciaslocacoes'),
+                safeGetAll<FinancingTasks>('tarefaslocacoes'),
+                safeGetAll<ServiceParties>('atendimentopartes'),
+                safeGetAll<Imveis>('imoveis'),
+                safeGetAll<AtendimentoImveis>('atendimentoimoveis')
+            ]);
+
             setClients(clientsList);
-
-            const { items: usersList } = await BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema');
             setUsers(usersList);
-
-            const { items: atendimentos } = await BaseCrudService.getAll<ServiceRecords>('atendimentos');
             setAtendimentosRaw(atendimentos);
-            const { items: pendingsList } = await BaseCrudService.getAll<PendnciasdoFinanciamento>('pendenciasfinanciamento');
-            const { items: tasksList } = await BaseCrudService.getAll<FinancingTasks>('tarefasfinanciamento');
-            const { items: partiesList } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
             setAtendimentoPartes(partiesList);
-            const { items: propertiesList } = await BaseCrudService.getAll<Imveis>('imoveis');
-            const { items: propertyLinks } = await BaseCrudService.getAll<AtendimentoImveis>('atendimentoimoveis');
             setImoveis(propertiesList);
             setAtendimentoImoveis(propertyLinks);
 
             const filteredAtendimentos = atendimentos
-                .filter(a => ['Locação', 'Aluguel'].includes(a.serviceType || '') && !a.isArchived)
+                .filter(a => {
+                    const types = (a.serviceType || '').split(',').map(t => t.trim().toLowerCase());
+                    return (types.includes('locação') || types.includes('aluguel')) && !a.isArchived;
+                })
                 .sort((a, b) => {
                     const dateA = new Date(a._updatedDate || a._createdDate || 0).getTime();
                     const dateB = new Date(b._updatedDate || b._createdDate || 0).getTime();
@@ -305,17 +347,36 @@ export default function AdminLocacoesKanbanPage() {
 
                 const interlinks = {
                     hasProperty: clientPropertyIds.length > 0 || propertiesList.some(p => p.proprietarioId === clientId || p.emailProprietario === client?.emailPrincipal || p.telefoneProprietario === client?.phoneNumber),
-                    activeSales: uniqueRelated.filter(s => ['Venda', 'Compra', 'Leilão'].includes(s.serviceType || '')).length,
-                    activeRentals: uniqueRelated.filter(s => ['Locação', 'Aluguel'].includes(s.serviceType || '')).length,
-                    activeFinancing: uniqueRelated.filter(s => ['Financiamento', 'Crédito'].includes(s.serviceType || '')).length,
-                    activeAuctions: uniqueRelated.filter(s => ['Leilão'].includes(s.serviceType || '')).length,
-                    relatedServices: uniqueRelated.map(s => ({
-                        _id: s._id,
-                        serviceType: s.serviceType || '',
-                        contactName: s.contactName || '',
-                        pastaInterna: (s as any).pastaInterna || '',
-                        status: s.status || ''
-                    }))
+                    activeSales: uniqueRelated.filter(s => {
+                        const types = (s.serviceType || '').split(',').map(t => t.trim().toLowerCase());
+                        return types.includes('venda') || types.includes('compra');
+                    }).length,
+                    activeRentals: uniqueRelated.filter(s => {
+                        const types = (s.serviceType || '').split(',').map(t => t.trim().toLowerCase());
+                        return types.includes('locação') || types.includes('aluguel');
+                    }).length,
+                    activeFinancing: uniqueRelated.filter(s => {
+                        const types = (s.serviceType || '').split(',').map(t => t.trim().toLowerCase());
+                        return types.includes('financiamento') || types.includes('crédito');
+                    }).length,
+                    activeAuctions: uniqueRelated.filter(s => {
+                        const types = (s.serviceType || '').split(',').map(t => t.trim().toLowerCase());
+                        return types.includes('leilão');
+                    }).length,
+                    relatedServices: uniqueRelated.map(s => {
+                        const plink = propertyLinks.find(pl => pl.atendimentoRef === s._id);
+                        const prop = plink ? propertiesList.find(pr => pr._id === plink.imovelRef) : null;
+                        return {
+                            _id: s._id,
+                            serviceType: s.serviceType || '',
+                            contactName: s.contactName || '',
+                            pastaInterna: (s as any).pastaInterna || '',
+                            status: s.status || '',
+                            imovelRef: plink ? plink.imovelRef : null,
+                            imovelCod: prop ? (prop.codImovel || prop.codigoReference || '') : null,
+                            imovelEndereco: prop ? (prop.enderecoRua || prop.logradouro || prop.enderecoBairro || prop.bairro || '') : ''
+                        };
+                    })
                 };
 
                 return {
@@ -353,6 +414,7 @@ export default function AdminLocacoesKanbanPage() {
                     caucaoTitular: (a as any).caucaoTitular || '',
                     caucaoCpf: (a as any).caucaoCpf || '',
                     clientePrincipalRef: a.clientePrincipalRef || '',
+                    propertyRefs: clientPropertyIds,
                     interlinks
                 };
             });
@@ -366,9 +428,9 @@ export default function AdminLocacoesKanbanPage() {
                     setSelectedCase(freshCase);
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error loading Locações Kanban data:', error);
-            toast.error('Erro ao carregar dados do Kanban');
+            toast.error(`Erro ao carregar dados do Kanban: ${error?.message || error}`);
         } finally {
             setLoading(false);
         }
@@ -479,6 +541,23 @@ export default function AdminLocacoesKanbanPage() {
         }
     };
 
+    const handleMoveCase = async (caseId: string, newStatus: string) => {
+        const caseItem = cases.find(c => c._id === caseId);
+        if (!caseItem || caseItem.status === newStatus) return;
+
+        // Optimistic update
+        setCases(prev => prev.map(c => c._id === caseId ? { ...c, status: newStatus, faseAtual: newStatus } : c));
+
+        try {
+            await BaseCrudService.update('atendimentos', { _id: caseId, status: newStatus });
+            toast.success(`Fase alterada para ${newStatus}`);
+        } catch (error) {
+            console.error('Error moving case:', error);
+            toast.error('Erro ao mover processo');
+            loadData();
+        }
+    };
+
     const handleChangeBackground = (bg: string) => {
         setKanbanBackground(bg);
         localStorage.setItem('kanban-background-locacoes', bg);
@@ -489,6 +568,24 @@ export default function AdminLocacoesKanbanPage() {
         setSelectedCase(caseItem);
         setUploadedDocs((caseItem as any).documentosAnexos || []);
         setShowDetailsModal(true);
+    };
+
+    const currentModalities = selectedCase?.serviceType
+        ? selectedCase.serviceType.split(',').map((t: string) => t.trim())
+        : [];
+
+    const handleToggleModality = (modality: string) => {
+        if (!selectedCase) return;
+        const current = selectedCase.serviceType
+            ? selectedCase.serviceType.split(',').map((t: string) => t.trim())
+            : [];
+        let updated: string[];
+        if (current.includes(modality)) {
+            updated = current.filter((m: string) => m !== modality);
+        } else {
+            updated = [...current, modality];
+        }
+        setSelectedCase(prev => prev ? { ...prev, serviceType: updated.join(', ') } : null);
     };
 
     const handleSaveLocacaoData = async () => {
@@ -503,6 +600,8 @@ export default function AdminLocacoesKanbanPage() {
                 contactEmail: selectedCase.contactEmail,
                 pastaInterna: selectedCase.pastaInterna,
                 rentValue: selectedCase.rentValue,
+                propertyValue: selectedCase.propertyValue,
+                serviceType: selectedCase.serviceType,
                 notes: selectedCase.notes,
                 
                 // Contract parameters
@@ -527,6 +626,56 @@ export default function AdminLocacoesKanbanPage() {
         } catch (error) {
             console.error('Erro ao salvar dados:', error);
             toast.error('Erro ao salvar dados.');
+        } finally {
+            setIsSavingLocacao(false);
+        }
+    };
+
+    const handleSavePasta = async () => {
+        if (!selectedCase) return;
+        try {
+            await BaseCrudService.update('atendimentos', {
+                _id: selectedCase._id,
+                pastaInterna: pastaInputValue
+            });
+            setCases(prev => prev.map(c => c._id === selectedCase._id ? { ...c, pastaInterna: pastaInputValue } : c));
+            setSelectedCase(prev => prev ? { ...prev, pastaInterna: pastaInputValue } : null);
+            setIsEditingPasta(false);
+            toast.success('Nome da pasta atualizado com sucesso!');
+        } catch (error) {
+            console.error('Erro ao atualizar nome da pasta:', error);
+            toast.error('Erro ao atualizar nome da pasta.');
+        }
+    };
+
+    const handleConfirmVincularParte = async () => {
+        if (!selectedCase || !selectedPartClient) {
+            toast.error('Por favor, selecione um cliente primeiro.');
+            return;
+        }
+        setIsSavingLocacao(true);
+        try {
+            const existsPart = atendimentoPartes.some(p => p.serviceRecordRef === selectedCase._id && p.clientRef === selectedPartClient._id && p.roleInService === selectedPartRole);
+            if (existsPart) {
+                toast.error('Este cliente já está vinculado com esta função.');
+                return;
+            }
+            const partyId = crypto.randomUUID();
+            await BaseCrudService.create('atendimentopartes', {
+                _id: partyId,
+                serviceRecordRef: selectedCase._id,
+                clientRef: selectedPartClient._id,
+                roleInService: selectedPartRole,
+                participationPercentage: 100,
+                notes: 'Adicionado via Kanban'
+            });
+            toast.success('Parte vinculada com sucesso!');
+            setShowVincularParteModal(false);
+            setPartClientSearchQuery('');
+            setSelectedPartClient(null);
+            await loadData();
+        } catch (err) {
+            toast.error('Erro ao vincular parte.');
         } finally {
             setIsSavingLocacao(false);
         }
@@ -703,6 +852,9 @@ export default function AdminLocacoesKanbanPage() {
                 tipoImovel: newImovelFormData.tipoImovel,
                 pretensao: newImovelFormData.pretensao || 'Locação',
                 statusImovel: newImovelFormData.statusImovel || 'Ativo',
+                origemCaptacao: newImovelFormData.origemCaptacao || '',
+                corretorExternoNome: newImovelFormData.corretorExternoNome?.trim() || '',
+                corretorExternoContato: newImovelFormData.corretorExternoContato?.trim() || '',
                 precoLocacao: newImovelFormData.precoLocacao,
                 precoVenda: newImovelFormData.precoVenda,
                 valorCondominio: newImovelFormData.valorCondominio,
@@ -1068,140 +1220,119 @@ export default function AdminLocacoesKanbanPage() {
                                                                             onClick={() => handleOpenDetails(caseItem)}
                                                                             className={`group relative p-4 bg-white border-slate-200 hover:border-emerald-300 hover:shadow-xl transition-all cursor-pointer rounded-2xl ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-emerald-500 scale-105 rotate-2' : ''}`}
                                                                         >
-                                                                            <div className="mb-3">
-                                                                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center justify-between">
-                                                                                    <span className="flex items-center gap-1">
-                                                                                        <Hash className="w-3 h-3" />
-                                                                                        {caseItem.pastaInterna}
-                                                                                    </span>
-                                                                                    <span className={`px-2 py-0.5 rounded-full text-white ${caseItem.diasNaFase > 7 ? 'bg-orange-500' : 'bg-emerald-500'}`}>
-                                                                                        {caseItem.diasNaFase} {caseItem.diasNaFase === 1 ? 'dia' : 'dias'}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <h4 className="font-bold text-slate-900 text-base line-clamp-1 group-hover:text-emerald-600 transition-colors">
-                                                                                    {caseItem.contactName}
-                                                                                </h4>
-                                                                                <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
-                                                                                    <span className="flex items-center gap-1">
-                                                                                        <Phone className="w-3 h-3" />
-                                                                                        {caseItem.contactPhone || 'S/ Telefone'}
-                                                                                    </span>
-                                                                                    {caseItem.contactPhone && (
-                                                                                        <a
-                                                                                            href={`https://wa.me/55${caseItem.contactPhone.replace(/\D/g, '')}`}
-                                                                                            target="_blank"
-                                                                                            rel="noopener noreferrer"
-                                                                                            onClick={(e) => e.stopPropagation()}
-                                                                                            className="p-1 px-1.5 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-all flex items-center gap-1 border border-green-100/50"
-                                                                                            title="WhatsApp"
-                                                                                        >
-                                                                                            <MessageSquare className="w-3 h-3" />
-                                                                                            <span>WhatsApp</span>
-                                                                                        </a>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-
-                                                                            {/* Resumo do Imóvel Vinculado */}
-                                                                            {(() => {
-                                                                                const vinculado = atendimentoImoveis.find(ai => ai.atendimentoRef === caseItem._id);
-                                                                                const imovel = vinculado ? imoveis.find(i => i._id === vinculado.imovelRef) : null;
-                                                                                if (!imovel) return null;
-                                                                                return (
-                                                                                    <div className="mt-2 flex items-center gap-1.5 text-[10px] bg-slate-50 border border-slate-100/50 rounded-lg px-2.5 py-1.5 text-slate-600 font-medium hover:bg-slate-100 hover:border-slate-200 transition-all">
-                                                                                        <Home className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                                                                                        <span className="font-black text-emerald-700 text-[9px] uppercase tracking-wider">{imovel.codImovel || imovel.codigoReference || 'S/Cód'}</span>
-                                                                                        <span className="text-slate-300">•</span>
-                                                                                        <span className="truncate">{imovel.enderecoRua || imovel.logradouro || imovel.enderecoBairro || imovel.bairro || 'Sem endereço'}</span>
-                                                                                    </div>
-                                                                                );
-                                                                            })()}
-
-                                                                            {/* Mini Indicators */}
-                                                                            <div className="flex flex-wrap gap-2 mb-3">
-                                                                                {caseItem.pendenciasAbertas > 0 && (
-                                                                                    <div className="w-full space-y-1">
-                                                                                        <Badge variant="outline" className="bg-orange-50 border-orange-100 text-orange-600 text-[10px] gap-1 px-1.5 h-6">
-                                                                                            <AlertCircle className="w-3 h-3" />
-                                                                                            {caseItem.pendenciasAbertas} Pend.
-                                                                                        </Badge>
-                                                                                        <div className="pl-1 space-y-0.5">
-                                                                                            {(caseItem as any).pendenciasResumo?.map((p: string, i: number) => (
-                                                                                                <p key={i} className="text-[9px] text-orange-500 font-medium truncate">• {p}</p>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                )}
-                                                                                {caseItem.tarefasAbertas > 0 && (
-                                                                                    <div className="w-full space-y-1">
-                                                                                        <Badge variant="outline" className="bg-purple-50 border-purple-100 text-purple-600 text-[10px] gap-1 px-1.5 h-6">
-                                                                                            <CheckCircle className="w-3 h-3" />
-                                                                                            {caseItem.tarefasAbertas} Tar.
-                                                                                        </Badge>
-                                                                                        <div className="pl-1 space-y-0.5">
-                                                                                            {(caseItem as any).tarefasResumo?.map((t: string, i: number) => (
-                                                                                                <p key={i} className="text-[9px] text-purple-500 font-medium truncate">• {t}</p>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </div>
+                                                                            {/* Quick Action Buttons (visible on hover) */}
+                                                                            <div className="absolute top-2 right-2 hidden group-hover:flex items-center gap-1 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg px-1.5 py-1 shadow-sm z-10">
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleOpenDetails(caseItem); }}
+                                                                                    className="p-1 text-orange-500 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                                                                                    title="Ver Pendências"
+                                                                                >
+                                                                                    <AlertTriangle className="w-3.5 h-3.5" />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleOpenDetails(caseItem); }}
+                                                                                    className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                                                                    title="Ver Tarefas"
+                                                                                >
+                                                                                    <ListTodo className="w-3.5 h-3.5" />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleOpenDetails(caseItem); }}
+                                                                                    className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded transition-colors"
+                                                                                    title="Ver Histórico"
+                                                                                >
+                                                                                    <History className="w-3.5 h-3.5" />
+                                                                                </button>
+                                                                                {caseItem.contactPhone && (
+                                                                                    <a
+                                                                                        href={`https://wa.me/55${caseItem.contactPhone.replace(/\D/g, '')}`}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                        className="p-1 text-green-500 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
+                                                                                        title="Abrir WhatsApp"
+                                                                                    >
+                                                                                        <MessageSquare className="w-3.5 h-3.5" />
+                                                                                    </a>
                                                                                 )}
                                                                             </div>
 
-                                                                            {/* Interlinks (Cross-Board Visibility) */}
-                                                                            {(caseItem.interlinks?.hasProperty ||
-                                                                                caseItem.interlinks?.activeSales ||
-                                                                                caseItem.interlinks?.activeRentals ||
-                                                                                caseItem.interlinks?.activeFinancing ||
-                                                                                caseItem.interlinks?.activeAuctions) ? (
-                                                                                <div className="flex flex-wrap gap-1.5 mb-3 p-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                                                                                    {caseItem.interlinks.hasProperty && (
-                                                                                        <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100" title="Possui Imóvel Cadastrado">
-                                                                                            <Home className="w-3.5 h-3.5" />
+                                                                            <div className="mb-2">
+                                                                                {/* Top row: pasta + dias */}
+                                                                                <div className="flex justify-between items-start mb-2">
+                                                                                    <div className="flex-1 min-w-0 pr-2">
+                                                                                        <h4 className="font-bold text-slate-950 text-sm line-clamp-1">
+                                                                                            {caseItem.contactName}
+                                                                                        </h4>
+                                                                                        <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+                                                                                            • Pasta: {caseItem.pastaInterna || '—'}
                                                                                         </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeSales || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100" title={`${caseItem.interlinks.activeSales} Outras Vendas/Compras`}>
-                                                                                            <DollarSign className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeRentals || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100" title={`${caseItem.interlinks.activeRentals} Locações/Aluguéis`}>
-                                                                                            <Key className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeFinancing || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100" title={`${caseItem.interlinks.activeFinancing} Processos de Financiamento`}>
-                                                                                            <Landmark className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
-                                                                                    {(caseItem.interlinks.activeAuctions || 0) > 0 && (
-                                                                                        <div className="w-6 h-6 rounded bg-red-50 flex items-center justify-center text-red-600 border border-red-100" title={`${caseItem.interlinks.activeAuctions} Processos de Leilão`}>
-                                                                                            <Gavel className="w-3.5 h-3.5" />
-                                                                                        </div>
-                                                                                    )}
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                                                                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                                                                        <span className={`text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center h-5 ${caseItem.diasNaFase > 15 ? 'bg-red-500' : caseItem.diasNaFase > 7 ? 'bg-orange-500' : 'bg-emerald-500'}`}>
+                                                                                            {caseItem.diasNaFase} {caseItem.diasNaFase === 1 ? 'dia' : 'dias'}
+                                                                                        </span>
+                                                                                    </div>
                                                                                 </div>
-                                                                            ) : null}
 
-                                                                            <div className="flex gap-1.5">
-                                                                                {caseItem.bloqueioDocumento && (
-                                                                                    <div className="w-6 h-6 rounded bg-red-100 flex items-center justify-center text-red-600" title="Documentação Pendente">
-                                                                                        <FileText className="w-3.5 h-3.5" />
-                                                                                    </div>
-                                                                                )}
-                                                                                {caseItem.bloqueioPagamento && (
-                                                                                    <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center text-amber-600" title="Pendente Financeiro">
-                                                                                        <DollarSign className="w-3.5 h-3.5" />
-                                                                                    </div>
-                                                                                )}
+                                                                                {/* Endereço do Imóvel */}
+                                                                                {(() => {
+                                                                                    const vinculado = atendimentoImoveis.find(ai => ai.atendimentoRef === caseItem._id);
+                                                                                    const imovel = vinculado ? imoveis.find(i => i._id === vinculado.imovelRef) : null;
+                                                                                    if (!imovel) return null;
+                                                                                    return (
+                                                                                        <div className="mt-1.5 flex items-center gap-1.5 text-[10px] bg-slate-50 border border-slate-100/50 rounded-lg px-2.5 py-1.5 text-slate-600 font-medium hover:bg-slate-100 hover:border-slate-200 transition-all">
+                                                                                            <Home className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                                                                                            {(imovel.codImovel || imovel.codigoReference) && (
+                                                                                                <span className="font-black text-emerald-700 text-[9px] uppercase tracking-wider">{imovel.codImovel || imovel.codigoReference}</span>
+                                                                                            )}
+                                                                                            {(imovel.codImovel || imovel.codigoReference) && (imovel.enderecoRua || imovel.logradouro) && (
+                                                                                                <span className="text-slate-300">•</span>
+                                                                                            )}
+                                                                                            <span className="truncate flex-1">{imovel.enderecoRua || imovel.logradouro || imovel.bairro || 'Sem endereço'}</span>
+                                                                                        </div>
+                                                                                    );
+                                                                                })()}
                                                                             </div>
 
-                                                                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-3">
-                                                                                <Badge variant="secondary" className="bg-slate-50 text-slate-500 text-[10px] font-normal px-2">
-                                                                                    {caseItem.serviceType}
-                                                                                </Badge>
-                                                                                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                                                                                </Button>
+                                                                            {/* Pendência em destaque */}
+                                                                            {caseItem.pendenciasAbertas > 0 && (caseItem as any).pendenciasResumo?.[0] && (
+                                                                                <div className="space-y-1 mb-2">
+                                                                                    <div className="flex items-center gap-1.5 text-[10px] bg-orange-50 p-1.5 rounded-lg border border-orange-100/50">
+                                                                                        <AlertCircle className="w-3 h-3 flex-shrink-0 text-orange-500" />
+                                                                                        <span className="line-clamp-1 flex-1 text-slate-700 font-medium">{(caseItem as any).pendenciasResumo[0]}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Action Row */}
+                                                                            <div className="border-t border-slate-100 mt-3 pt-3 flex items-center gap-1.5 flex-wrap">
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleOpenDetails(caseItem); }}
+                                                                                    className="px-2.5 py-1.5 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-xs font-bold hover:bg-orange-100 transition-colors flex items-center gap-1"
+                                                                                >
+                                                                                    <Plus className="w-3.5 h-3.5" /> Pend.
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); handleOpenDetails(caseItem); }}
+                                                                                    className="px-2.5 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-1"
+                                                                                >
+                                                                                    <Plus className="w-3.5 h-3.5" /> Tarefa
+                                                                                </button>
+                                                                                <Select value={caseItem.faseAtual} onValueChange={(value) => handleMoveCase(caseItem._id, value)}>
+                                                                                    <SelectTrigger
+                                                                                        className="px-3 py-1.5 w-auto min-w-[65px] h-8 bg-slate-100 text-slate-700 border-none rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors flex items-center justify-center gap-1 focus:ring-0 focus:ring-offset-0"
+                                                                                        onClick={(e) => e.stopPropagation()}
+                                                                                    >
+                                                                                        <div className="flex items-center gap-1"><span>MOVER</span></div>
+                                                                                    </SelectTrigger>
+                                                                                    <SelectContent>
+                                                                                        {LOCACOES_COLUMNS.map(col => (
+                                                                                            <SelectItem key={col.id} value={col.id}>{col.name}</SelectItem>
+                                                                                        ))}
+                                                                                    </SelectContent>
+                                                                                </Select>
                                                                             </div>
                                                                         </Card>
                                                                     )}
@@ -1254,58 +1385,252 @@ export default function AdminLocacoesKanbanPage() {
                                                         ))}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
-                                                <span className="text-[10px] text-slate-400">• {selectedCase?.pastaInterna}</span>
+                                                <span className="text-[10px] text-slate-400">•</span>
+                                                {isEditingPasta ? (
+                                                    <div className="flex items-center gap-1">
+                                                        <input
+                                                            type="text"
+                                                            value={pastaInputValue}
+                                                            onChange={(e) => setPastaInputValue(e.target.value)}
+                                                            className="text-[10px] text-slate-750 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-emerald-400 h-5"
+                                                            autoFocus
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') handleSavePasta();
+                                                                if (e.key === 'Escape') setIsEditingPasta(false);
+                                                            }}
+                                                        />
+                                                        <Button onClick={handleSavePasta} variant="ghost" className="h-5 w-5 p-0 text-emerald-500 hover:text-emerald-700">
+                                                            <CheckCircle className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                        <Button onClick={() => setIsEditingPasta(false)} variant="ghost" className="h-5 w-5 p-0 text-rose-500 hover:text-rose-700">
+                                                            <XCircle className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1 group/pasta">
+                                                        <span className="text-[10px] text-slate-400">{selectedCase?.pastaInterna || '—'}</span>
+                                                        <Button
+                                                            onClick={() => {
+                                                                setPastaInputValue(selectedCase?.pastaInterna || '');
+                                                                setIsEditingPasta(true);
+                                                            }}
+                                                            variant="ghost"
+                                                            className="h-5 w-5 p-0 text-slate-400 hover:text-slate-650 opacity-100 sm:opacity-0 group-hover/pasta:opacity-100 transition-opacity"
+                                                        >
+                                                            <Edit2 className="w-2.5 h-2.5" />
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                {(() => {
+                                    const propertyPills = selectedCase?.interlinks?.relatedServices?.filter(rel => 
+                                        rel.imovelRef && selectedCase.propertyRefs?.includes(rel.imovelRef)
+                                    ) || [];
+                                    if (propertyPills.length === 0) return null;
+                                    return (
+                                        <div className="flex flex-col gap-2 mt-2">
+                                            <div className="flex flex-wrap gap-2 items-center">
+                                                <span className="text-xs text-gray-400 font-medium">Vínculos:</span>
+                                                {propertyPills.map(rel => {
+                                                    const routeMap: Record<string, string> = {
+                                                        'Venda': '/admin/negocios/kanban', 'Compra': '/admin/negocios/kanban',
+                                                        'Locação': '/admin/locacoes/kanban', 'Aluguel': '/admin/locacoes/kanban',
+                                                        'Financiamento': '/admin/financiamento-kanban', 'Crédito': '/admin/financiamento-kanban',
+                                                        'Leilão': '/admin/leilao/kanban'
+                                                    };
+                                                    const colorMap: Record<string, string> = {
+                                                        'Venda': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
+                                                        'Compra': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
+                                                        'Locação': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
+                                                        'Aluguel': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
+                                                        'Financiamento': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
+                                                        'Crédito': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
+                                                        'Leilão': 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
+                                                    };
+                                                    const iconMap: Record<string, string> = {
+                                                        'Venda': '💰', 'Compra': '💰',
+                                                        'Locação': '🔑', 'Aluguel': '🔑',
+                                                        'Financiamento': '🏦', 'Crédito': '🏦',
+                                                        'Leilão': '🔨'
+                                                    };
+                                                    const firstType = (rel.serviceType || '').split(',').map(t => t.trim())[0] || '';
+                                                    const route = routeMap[firstType];
+                                                    const color = colorMap[firstType] || 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
+                                                    const icon = iconMap[firstType] || '📋';
+                                                    if (!route) return null;
+                                                    return (
+                                                        <button
+                                                            key={rel._id}
+                                                            title={`Visualizar: ${rel.serviceType} - ${rel.contactName}`}
+                                                            onClick={() => {
+                                                                if (route) {
+                                                                    navigate(`${route}?openCard=${rel._id}`);
+                                                                }
+                                                            }}
+                                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${color}`}
+                                                        >
+                                                            <span>{icon}</span>
+                                                            <span>{rel.serviceType}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                                 {selectedCase?.interlinks?.relatedServices && selectedCase.interlinks.relatedServices.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-2 items-center">
-                                        <span className="text-xs text-gray-400 font-medium">Vínculos:</span>
-                                        {selectedCase.interlinks.relatedServices.map(rel => {
-                                            const routeMap: Record<string, string> = {
-                                                'Venda': '/admin/negocios/kanban', 'Compra': '/admin/negocios/kanban',
-                                                'Locação': '/admin/locacoes/kanban', 'Aluguel': '/admin/locacoes/kanban',
-                                                'Financiamento': '/admin/financiamento-kanban', 'Crédito': '/admin/financiamento-kanban',
-                                                'Leilão': '/admin/leilao/kanban'
-                                            };
-                                            const colorMap: Record<string, string> = {
-                                                'Venda': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-                                                'Compra': 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
-                                                'Locação': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-                                                'Aluguel': 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
-                                                'Financiamento': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
-                                                'Crédito': 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200',
-                                                'Leilão': 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
-                                            };
-                                            const iconMap: Record<string, string> = {
-                                                'Venda': '💰', 'Compra': '💰',
-                                                'Locação': '🔑', 'Aluguel': '🔑',
-                                                'Financiamento': '🏦', 'Crédito': '🏦',
-                                                'Leilão': '🔨'
-                                            };
-                                            const route = routeMap[rel.serviceType];
-                                            const color = colorMap[rel.serviceType] || 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
-                                            const icon = iconMap[rel.serviceType] || '📋';
-                                            if (!route) return null;
-                                            return (
-                                                <button
-                                                    key={rel._id}
-                                                    title={`Visualizar: ${rel.serviceType} - ${rel.contactName}`}
-                                                    onClick={() => {
-                                                        if (route) {
-                                                            navigate(`${route}?openCard=${rel._id}`);
-                                                        }
-                                                    }}
-                                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-semibold transition-colors cursor-pointer ${color}`}
-                                                >
-                                                    <span>{icon}</span>
-                                                    <span>{rel.serviceType}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                    <div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-7 w-auto px-3 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center gap-1.5 justify-start">
+                                                    Outros cartões <ChevronDown className="w-3.5 h-3.5" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="start" className="w-[350px] bg-white border-slate-200 p-2 flex flex-col gap-3 shadow-xl rounded-xl">
+                                                    {(() => {
+                                                        const groupsMap = new Map<string, {
+                                                            imovelRef: string | null;
+                                                            imovelCod: string | null;
+                                                            imovelEndereco: string;
+                                                            services: typeof selectedCase.interlinks.relatedServices;
+                                                        }>();
+                                                        const noPropertyGroup: typeof selectedCase.interlinks.relatedServices = [];
+
+                                                        selectedCase.interlinks.relatedServices.forEach(rel => {
+                                                            if (rel.imovelRef) {
+                                                                if (!groupsMap.has(rel.imovelRef)) {
+                                                                    groupsMap.set(rel.imovelRef, {
+                                                                        imovelRef: rel.imovelRef,
+                                                                        imovelCod: rel.imovelCod,
+                                                                        imovelEndereco: rel.imovelEndereco,
+                                                                        services: []
+                                                                    });
+                                                                }
+                                                                groupsMap.get(rel.imovelRef)!.services.push(rel);
+                                                            } else {
+                                                                noPropertyGroup.push(rel);
+                                                            }
+                                                        });
+
+                                                        const groups = Array.from(groupsMap.values());
+                                                        
+                                                        const routeMap: Record<string, string> = {
+                                                            'Venda': '/admin/negocios/kanban', 'Compra': '/admin/negocios/kanban',
+                                                            'Locação': '/admin/locacoes/kanban', 'Aluguel': '/admin/locacoes/kanban',
+                                                            'Financiamento': '/admin/financiamento-kanban', 'Crédito': '/admin/financiamento-kanban',
+                                                            'Leilão': '/admin/leilao/kanban'
+                                                        };
+                                                        const iconMap: Record<string, string> = {
+                                                            'Venda': '💰', 'Compra': '💰', 'Locação': '🔑', 'Aluguel': '🔑',
+                                                            'Financiamento': '🏦', 'Crédito': '🏦', 'Leilão': '🔨'
+                                                        };
+
+                                                        return (
+                                                            <>
+                                                                {groups.map(group => (
+                                                                    <div key={group.imovelRef} className="flex flex-col gap-1.5">
+                                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                                                                            <span>🏠</span>
+                                                                            <span className="truncate max-w-[280px]">
+                                                                                {group.imovelCod ? `${group.imovelCod} - ` : ''}{group.imovelEndereco || 'Imóvel sem endereço'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex flex-wrap gap-2 p-1.5 bg-slate-50/50 rounded-lg border border-slate-100">
+                                                                            {group.services.map(rel => {
+                                                                                const firstType = (rel.serviceType || '').split(',').map(t => t.trim())[0] || '';
+                                                                                const route = routeMap[firstType];
+                                                                                const icon = iconMap[firstType] || '📋';
+                                                                                const colorMap: Record<string, string> = {
+                                                                                    'Venda': 'hover:bg-blue-50 hover:border-blue-200 border-slate-200',
+                                                                                    'Compra': 'hover:bg-blue-50 hover:border-blue-200 border-slate-200',
+                                                                                    'Locação': 'hover:bg-purple-50 hover:border-purple-200 border-slate-200',
+                                                                                    'Aluguel': 'hover:bg-purple-50 hover:border-purple-200 border-slate-200',
+                                                                                    'Financiamento': 'hover:bg-amber-50 hover:border-amber-200 border-slate-200',
+                                                                                    'Crédito': 'hover:bg-amber-50 hover:border-amber-200 border-slate-200',
+                                                                                    'Leilão': 'hover:bg-red-50 hover:border-red-200 border-slate-200'
+                                                                                };
+                                                                                const color = colorMap[firstType] || 'hover:bg-slate-50 hover:border-slate-300 border-slate-200';
+                                                                                if (!route) return null;
+                                                                                return (
+                                                                                    <DropdownMenuItem
+                                                                                        key={rel._id}
+                                                                                        asChild
+                                                                                        className="focus:bg-transparent p-0 border-none cursor-pointer flex-1 min-w-[140px]"
+                                                                                    >
+                                                                                        <button
+                                                                                            onClick={() => navigate(`${route}?openCard=${rel._id}`)}
+                                                                                            className={`flex items-center gap-2 p-2 rounded-lg border bg-white shadow-sm transition-all text-left ${color}`}
+                                                                                        >
+                                                                                            <span className="text-sm">{icon}</span>
+                                                                                            <div className="flex flex-col min-w-0">
+                                                                                                <span className="font-bold text-slate-700 text-[11px] truncate leading-tight">{rel.serviceType}</span>
+                                                                                                <span className="text-[9px] text-slate-400 font-medium truncate leading-none mt-0.5">
+                                                                                                    {rel.pastaInterna || rel.contactName}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                        </button>
+                                                                                    </DropdownMenuItem>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                                {noPropertyGroup.length > 0 && (
+                                                                    <div className="flex flex-col gap-1.5">
+                                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">
+                                                                            <span>📋</span>
+                                                                            <span>Outros Serviços</span>
+                                                                        </div>
+                                                                        <div className="flex flex-wrap gap-2 p-1.5 bg-slate-50/50 rounded-lg border border-slate-100">
+                                                                            {noPropertyGroup.map(rel => {
+                                                                                const firstType = (rel.serviceType || '').split(',').map(t => t.trim())[0] || '';
+                                                                                const route = routeMap[firstType];
+                                                                                const icon = iconMap[firstType] || '📋';
+                                                                                const colorMap: Record<string, string> = {
+                                                                                    'Venda': 'hover:bg-blue-50 hover:border-blue-200 border-slate-200',
+                                                                                    'Compra': 'hover:bg-blue-50 hover:border-blue-200 border-slate-200',
+                                                                                    'Locação': 'hover:bg-purple-50 hover:border-purple-200 border-slate-200',
+                                                                                    'Aluguel': 'hover:bg-purple-50 hover:border-purple-200 border-slate-200',
+                                                                                    'Financiamento': 'hover:bg-amber-50 hover:border-amber-200 border-slate-200',
+                                                                                    'Crédito': 'hover:bg-amber-50 hover:border-amber-200 border-slate-200',
+                                                                                    'Leilão': 'hover:bg-red-50 hover:border-red-200 border-slate-200'
+                                                                                };
+                                                                                const color = colorMap[firstType] || 'hover:bg-slate-50 hover:border-slate-300 border-slate-200';
+                                                                                if (!route) return null;
+                                                                                return (
+                                                                                    <DropdownMenuItem
+                                                                                        key={rel._id}
+                                                                                        asChild
+                                                                                        className="focus:bg-transparent p-0 border-none cursor-pointer flex-1 min-w-[140px]"
+                                                                                    >
+                                                                                        <button
+                                                                                            onClick={() => navigate(`${route}?openCard=${rel._id}`)}
+                                                                                            className={`flex items-center gap-2 p-2 rounded-lg border bg-white shadow-sm transition-all text-left ${color}`}
+                                                                                        >
+                                                                                            <span className="text-sm">{icon}</span>
+                                                                                            <div className="flex flex-col min-w-0">
+                                                                                                <span className="font-bold text-slate-700 text-[11px] truncate leading-tight">{rel.serviceType}</span>
+                                                                                                <span className="text-[9px] text-slate-400 font-medium truncate leading-none mt-0.5">
+                                                                                                    {rel.pastaInterna || rel.contactName}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                        </button>
+                                                                                    </DropdownMenuItem>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    )}
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
                                 {selectedCase?.contactPhone && (
@@ -1437,15 +1762,14 @@ export default function AdminLocacoesKanbanPage() {
                                                         </div>
                                                     )}
                                                 </div>
-                                                
-
                                             </div>
                                         </div>
 
                                         <div className="space-y-6">
-                                                
-                                                {/* Valores da Locação */}
-                                                <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
+                                                 
+                                                 {/* Valores da Locação */}
+                                                 {currentModalities.some(m => m.toLowerCase() === 'locação' || m.toLowerCase() === 'aluguel') && (
+                                                     <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
                                                     <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
                                                         <DollarSign className="w-4 h-4 text-emerald-500" />
                                                         Valores Negociados da Locação
@@ -1453,12 +1777,10 @@ export default function AdminLocacoesKanbanPage() {
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <div>
                                                             <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Valor do Aluguel</Label>
-                                                            <Input
-                                                                type="text"
-                                                                className="h-11 bg-slate-50 border-none rounded-xl text-lg font-bold text-slate-850 focus-visible:ring-emerald-500"
-                                                                value={selectedCase?.rentValue ? formatCurrency(selectedCase.rentValue) : ''}
-                                                                onChange={e => {
-                                                                    const val = parseCurrency(e.target.value);
+                                                            <CurrencyInput
+                                                                className="h-11 bg-slate-50 border-none rounded-xl text-lg font-bold text-slate-850 focus-visible:ring-emerald-500 w-full"
+                                                                value={selectedCase?.rentValue}
+                                                                onValueChange={val => {
                                                                     setSelectedCase(prev => prev ? { ...prev, rentValue: val } : null);
                                                                 }}
                                                             />
@@ -1512,7 +1834,30 @@ export default function AdminLocacoesKanbanPage() {
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </Card>
+                                                    </Card>
+                                                 )}
+
+                                                 {/* Valores da Venda */}
+                                                 {currentModalities.some(m => m.toLowerCase() === 'venda' || m.toLowerCase() === 'compra') && (
+                                                     <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
+                                                         <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                                             <DollarSign className="w-4 h-4 text-emerald-500" />
+                                                             Valores Negociados da Venda
+                                                         </h3>
+                                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                             <div>
+                                                                 <Label className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Valor da Venda</Label>
+                                                                 <CurrencyInput
+                                                                     className="h-11 bg-slate-50 border-none rounded-xl text-lg font-bold text-slate-850 focus-visible:ring-emerald-500 w-full"
+                                                                     value={selectedCase?.propertyValue}
+                                                                     onValueChange={val => {
+                                                                         setSelectedCase(prev => prev ? { ...prev, propertyValue: val } : null);
+                                                                     }}
+                                                                 />
+                                                             </div>
+                                                         </div>
+                                                     </Card>
+                                                 )}
 
                                                 {/* Partes Vinculadas ao Contrato */}
                                                 <Card className="p-6 border-slate-100 shadow-sm rounded-2xl">
@@ -1642,7 +1987,31 @@ export default function AdminLocacoesKanbanPage() {
                                             </div>
                                     </TabsContent>
 
-                                    
+                                    <TabsContent value="pendencias" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        {selectedCase && (
+                                            <TasksAndPendenciesTabs
+                                                atendimentoRef={selectedCase._id}
+                                                serviceType="locacoes"
+                                                tab="pendencias"
+                                                clients={clients}
+                                                users={users}
+                                                onSuccess={loadData}
+                                            />
+                                        )}
+                                    </TabsContent>
+
+                                    <TabsContent value="tarefas" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        {selectedCase && (
+                                            <TasksAndPendenciesTabs
+                                                atendimentoRef={selectedCase._id}
+                                                serviceType="locacoes"
+                                                tab="tarefas"
+                                                clients={clients}
+                                                users={users}
+                                                onSuccess={loadData}
+                                            />
+                                        )}
+                                    </TabsContent>
 
                                     <TabsContent value="documentos" className="flex-1 overflow-y-auto min-h-0 w-full px-8 pb-8 focus-visible:outline-none mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                         <div
@@ -2153,8 +2522,12 @@ export default function AdminLocacoesKanbanPage() {
                                                                 className="pl-10 h-11 bg-slate-50 border-none rounded-xl text-sm w-full"
                                                                 value={partClientSearchQuery}
                                                                 onChange={(e) => {
-                                                                    setPartClientSearchQuery(e.target.value);
+                                                                    const val = e.target.value;
+                                                                    setPartClientSearchQuery(val);
                                                                     setIsPartDropdownOpen(true);
+                                                                    if (selectedPartClient && val !== selectedPartClient.clientName) {
+                                                                        setSelectedPartClient(null);
+                                                                    }
                                                                 }}
                                                                 onFocus={() => setIsPartDropdownOpen(true)}
                                                                 onBlur={() => setTimeout(() => setIsPartDropdownOpen(false), 200)}
@@ -2173,34 +2546,10 @@ export default function AdminLocacoesKanbanPage() {
                                                                                 key={c._id}
                                                                                 type="button"
                                                                                 className="w-full flex flex-col items-start text-left p-3 rounded-lg hover:bg-slate-50 transition-colors"
-                                                                                onClick={async () => {
-                                                                                    if (!selectedCase) return;
-                                                                                    // Quick add!
-                                                                                    setIsSavingLocacao(true);
-                                                                                    try {
-                                                                                        const existsPart = atendimentoPartes.some(p => p.serviceRecordRef === selectedCase._id && p.clientRef === c._id && p.roleInService === selectedPartRole);
-                                                                                        if (existsPart) {
-                                                                                            toast.error('Este cliente já está vinculado com esta função.');
-                                                                                            return;
-                                                                                        }
-                                                                                        const partyId = crypto.randomUUID();
-                                                                                        await BaseCrudService.create('atendimentopartes', {
-                                                                                            _id: partyId,
-                                                                                            serviceRecordRef: selectedCase._id,
-                                                                                            clientRef: c._id,
-                                                                                            roleInService: selectedPartRole,
-                                                                                            participationPercentage: 100,
-                                                                                            notes: 'Adicionado via Kanban'
-                                                                                        });
-                                                                                        toast.success('Parte vinculada com sucesso!');
-                                                                                        setShowVincularParteModal(false);
-                                                                                        setPartClientSearchQuery('');
-                                                                                        await loadData();
-                                                                                    } catch (err) {
-                                                                                        toast.error('Erro ao vincular parte.');
-                                                                                    } finally {
-                                                                                        setIsSavingLocacao(false);
-                                                                                    }
+                                                                                onClick={() => {
+                                                                                    setSelectedPartClient(c);
+                                                                                    setPartClientSearchQuery(c.clientName || '');
+                                                                                    setIsPartDropdownOpen(false);
                                                                                 }}
                                                                             >
                                                                                 <span className="text-sm font-bold text-slate-800">{c.clientName}</span>
@@ -2244,8 +2593,16 @@ export default function AdminLocacoesKanbanPage() {
                                                     </div>
 
                                                     <p className="text-xs text-slate-400 italic">
-                                                        Dica: Digite o nome no campo acima e selecione o cliente para vinculá-lo instantaneamente ao contrato com a função desejada.
+                                                        Dica: Digite o nome no campo acima e selecione o cliente, depois escolha a função desejada e clique em Vincular Parte abaixo.
                                                     </p>
+
+                                                    <Button
+                                                        onClick={handleConfirmVincularParte}
+                                                        disabled={!selectedPartClient || isSavingLocacao}
+                                                        className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-100 transition-all mt-2"
+                                                    >
+                                                        {isSavingLocacao ? 'Vinculando...' : 'Vincular Parte'}
+                                                    </Button>
                                                 </div>
                     </DialogContent>
                 </Dialog>
@@ -2640,6 +2997,83 @@ export default function AdminLocacoesKanbanPage() {
                                     </div>
                                 </div>
 
+                                {/* Seção 1.5: Origem da Captação */}
+                                <div className="space-y-4 md:col-span-2">
+                                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                        <UserCheck className="w-3.5 h-3.5" />
+                                        Origem da Captação
+                                    </h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {[
+                                            { value: 'R.Sales', label: 'R.Sales', desc: 'Captado pela própria equipe', icon: '🏢' },
+                                            { value: 'Corretor Interno', label: 'Corretor Interno', desc: 'Corretor cadastrado no sistema', icon: '👤' },
+                                            { value: 'Proprietário', label: 'Proprietário', desc: 'Direto pelo dono do imóvel', icon: '🔑' },
+                                            { value: 'Corretor Externo', label: 'Corretor Externo', desc: 'Parceiro não cadastrado', icon: '🤝' },
+                                        ].map(opt => (
+                                            <button
+                                                key={opt.value}
+                                                type="button"
+                                                onClick={() => setNewImovelFormData(prev => ({ ...prev, origemCaptacao: opt.value }))}
+                                                className={`flex flex-col items-start gap-1 p-3.5 rounded-xl border-2 text-left transition-all ${
+                                                    newImovelFormData.origemCaptacao === opt.value
+                                                        ? 'border-emerald-500 bg-emerald-50/50'
+                                                        : 'border-slate-200 hover:border-slate-300 bg-slate-50'
+                                                }`}
+                                            >
+                                                <span className="text-xl">{opt.icon}</span>
+                                                <span className={`text-xs font-bold ${ newImovelFormData.origemCaptacao === opt.value ? 'text-emerald-700' : 'text-slate-700'}`}>{opt.label}</span>
+                                                <span className="text-[10px] text-slate-400 leading-tight">{opt.desc}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Campo extra: Corretor Interno - selecionar do sistema */}
+                                    {newImovelFormData.origemCaptacao === 'Corretor Interno' && (
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Corretor Responsável</Label>
+                                            <Select
+                                                value={newImovelFormData.corretorResponsavelId || ''}
+                                                onValueChange={(val) => setNewImovelFormData(prev => ({ ...prev, corretorResponsavelId: val }))}
+                                            >
+                                                <SelectTrigger className="h-10 bg-slate-50 border-none rounded-xl text-sm">
+                                                    <SelectValue placeholder="Selecione o corretor..." />
+                                                </SelectTrigger>
+                                                <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                                    {users.map(u => (
+                                                        <SelectItem key={u._id} value={u._id}>
+                                                        {u.name || u.emailLogin}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+
+                                    {/* Campo extra: Corretor Externo - nome e contato */}
+                                    {newImovelFormData.origemCaptacao === 'Corretor Externo' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Nome do Corretor Externo</Label>
+                                                <Input
+                                                    placeholder="Nome completo"
+                                                    className="bg-slate-50 border-none rounded-xl text-sm"
+                                                    value={newImovelFormData.corretorExternoNome || ''}
+                                                    onChange={(e) => setNewImovelFormData(prev => ({ ...prev, corretorExternoNome: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Contato (Tel / Email / CRECI)</Label>
+                                                <Input
+                                                    placeholder="(11) 99999-9999 ou email"
+                                                    className="bg-slate-50 border-none rounded-xl text-sm"
+                                                    value={newImovelFormData.corretorExternoContato || ''}
+                                                    onChange={(e) => setNewImovelFormData(prev => ({ ...prev, corretorExternoContato: e.target.value }))}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Seção 2: Valores */}
                                 <div className="space-y-4 md:col-span-2">
                                     <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-2 border-b border-slate-100 pb-2">
@@ -2649,52 +3083,40 @@ export default function AdminLocacoesKanbanPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <div className="space-y-2">
                                             <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Aluguel Estimado</Label>
-                                            <Input
-                                                type="text"
-                                                placeholder="R$ 0,00"
+                                            <CurrencyInput
                                                 className="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-800"
-                                                value={newImovelFormData.precoLocacao ? formatCurrency(newImovelFormData.precoLocacao) : ''}
-                                                onChange={(e) => {
-                                                    const val = parseCurrency(e.target.value);
+                                                value={newImovelFormData.precoLocacao}
+                                                onValueChange={val => {
                                                     setNewImovelFormData(prev => ({ ...prev, precoLocacao: val || undefined }));
                                                 }}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Valor de Venda</Label>
-                                            <Input
-                                                type="text"
-                                                placeholder="R$ 0,00"
+                                            <CurrencyInput
                                                 className="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-800"
-                                                value={newImovelFormData.precoVenda ? formatCurrency(newImovelFormData.precoVenda) : ''}
-                                                onChange={(e) => {
-                                                    const val = parseCurrency(e.target.value);
+                                                value={newImovelFormData.precoVenda}
+                                                onValueChange={val => {
                                                     setNewImovelFormData(prev => ({ ...prev, precoVenda: val || undefined }));
                                                 }}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Condomínio</Label>
-                                            <Input
-                                                type="text"
-                                                placeholder="R$ 0,00"
+                                            <CurrencyInput
                                                 className="bg-slate-50 border-none rounded-xl text-sm"
-                                                value={newImovelFormData.valorCondominio ? formatCurrency(newImovelFormData.valorCondominio) : ''}
-                                                onChange={(e) => {
-                                                    const val = parseCurrency(e.target.value);
+                                                value={newImovelFormData.valorCondominio}
+                                                onValueChange={val => {
                                                     setNewImovelFormData(prev => ({ ...prev, valorCondominio: val || undefined }));
                                                 }}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">IPTU Estimado</Label>
-                                            <Input
-                                                type="text"
-                                                placeholder="R$ 0,00"
+                                            <CurrencyInput
                                                 className="bg-slate-50 border-none rounded-xl text-sm"
-                                                value={newImovelFormData.valorIPTU ? formatCurrency(newImovelFormData.valorIPTU) : ''}
-                                                onChange={(e) => {
-                                                    const val = parseCurrency(e.target.value);
+                                                value={newImovelFormData.valorIPTU}
+                                                onValueChange={val => {
                                                     setNewImovelFormData(prev => ({ ...prev, valorIPTU: val || undefined }));
                                                 }}
                                             />

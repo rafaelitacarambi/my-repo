@@ -61,9 +61,17 @@ const STEPS = [
     { id: 4, title: 'Assinatura', icon: PenTool },
 ];
 
-const isLocacao = (t: string | undefined) => t?.startsWith('Loc') || t?.startsWith('Vis') || t === 'EntregaChaves' || t === 'AutorizacaoDivulgacao';
+const isLocacao = (t: string | undefined) => t?.startsWith('Loc') || t?.startsWith('Vis') || t === 'EntregaChaves' || t === 'DevolucaoChaves' || t === 'AutorizacaoDivulgacao';
 
 export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: ContractWizardProps) {
+    const isLocacaoCard = atendimento?.serviceType?.toLowerCase().includes('loca') || 
+                          atendimento?.serviceType?.toLowerCase().includes('alug');
+                          
+    const isVendaCard = atendimento?.serviceType?.toLowerCase().includes('vend') || 
+                        atendimento?.serviceType?.toLowerCase().includes('comp') ||
+                        atendimento?.serviceType?.toLowerCase().includes('leil') ||
+                        atendimento?.serviceType?.toLowerCase().includes('finan');
+
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -508,13 +516,18 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 clientName: data.name || client.clientName,
                 cpfCnpj: data.cpf || client.cpfCnpj,
                 email: data.email || client.email,
+                emailPrincipal: data.email || client.emailPrincipal || client.email,
                 address: data.address || client.address,
-                phoneNumber: data.phoneNumber || client.phoneNumber,
+                phoneNumber: data.phone || data.phoneNumber || client.phoneNumber || client.telefonePrincipal,
+                telefonePrincipal: data.phone || (client as any).telefonePrincipal || client.phoneNumber,
                 rg: data.rg || (client as any).rg,
                 nationality: data.nationality || (client as any).nationality,
                 profession: data.profession || (client as any).profession,
                 maritalStatus: data.maritalStatus || (client as any).maritalStatus,
                 gender: data.gender || (client as any).gender,
+                tipoPessoa: data.tipoPessoa || (client as any).tipoPessoa,
+                nomeRazaoSocial: data.tipoPessoa === 'Jurídica' ? data.name : (client as any).nomeRazaoSocial || data.name,
+                nomeFantasia: data.tradeName || (client as any).nomeFantasia || '',
             };
 
             await BaseCrudService.update('clientes', updatePayload);
@@ -524,7 +537,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 await BaseCrudService.update('atendimentos', {
                     _id: atendimento._id,
                     contactName: data.name || (client as any).clientName,
-                    contactPhone: data.phoneNumber || (client as any).phoneNumber,
+                    contactPhone: updatePayload.phoneNumber || (client as any).phoneNumber,
                     contactEmail: data.email || (client as any).email,
                 });
             }
@@ -615,7 +628,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                     if (!formData.LOCATARIOS_IDS || formData.LOCATARIOS_IDS.length === 0) {
                         errors.push('Vinculação de Locatário (Inquilino)');
                     }
-                } else if (selectedType === 'CompraEVenda') {
+                } else if (selectedType === 'CompraEVenda' || selectedType === 'EntregaChavesVenda') {
                     if (!formData.VENDEDORES_IDS || formData.VENDEDORES_IDS.length === 0) {
                         errors.push('Vinculação de Vendedor');
                     }
@@ -625,7 +638,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 }
 
                 // 2. Imóvel validation
-                if (!['EntregaChaves', 'AutorizacaoDivulgacao'].includes(selectedType)) {
+                if (!['EntregaChaves', 'AutorizacaoDivulgacao', 'EntregaChavesVenda'].includes(selectedType)) {
                     if (!selectedImovelId) {
                         errors.push('Vinculação de Imóvel da Locação');
                     }
@@ -1103,7 +1116,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             });
 
             // 2. Salvar no PostgreSQL (Prisma)
-            const cat = isLocacao(selectedType) ? 'LOCACAO' : selectedType === 'CompraEVenda' ? 'VENDA' : 'OUTROS';
+            const cat = isLocacao(selectedType) ? 'LOCACAO' : ['CompraEVenda', 'EntregaChavesVenda'].includes(selectedType) ? 'VENDA' : 'OUTROS';
             const prismaRes = await fetch('/api/v1/contract-templates', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1242,14 +1255,20 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {[
-                                { id: 'LocacaoResidencial', name: 'Locação Residencial', icon: Home, color: 'bg-emerald-500', desc: 'Contratos padrão de moradia 12-30 meses.' },
-                                { id: 'LocacaoComercial', name: 'Locação Comercial', icon: Building2, color: 'bg-blue-500', desc: 'Salas, lojas e galpões para empresas.' },
-                                { id: 'CompraEVenda', name: 'Compra e Venda', icon: DollarSign, color: 'bg-amber-500', desc: 'Promessa de compra e venda de imóveis.' },
-                                { id: 'EntregaChaves', name: 'Entrega de Chaves', icon: Key, color: 'bg-purple-500', desc: 'Termo de entrega e vistoria final.' },
-                                { id: 'AutorizacaoDivulgacao', name: 'Autorização de Divulgação', icon: Globe, color: 'bg-pink-500', desc: 'Autorização do proprietário para marketing.' },
-                                { id: 'VistoriaEntrada', name: 'Vistoria de Entrada', icon: FileCheck, color: 'bg-teal-500', desc: 'Termo de vistoria inicial do imóvel.' },
-                                { id: 'VistoriaSaida', name: 'Vistoria de Saída', icon: LogOut, color: 'bg-rose-500', desc: 'Termo de vistoria de rescisão/saída.' },
-                            ].map(item => (
+                                { id: 'LocacaoResidencial', name: 'Locação Residencial', icon: Home, color: 'bg-emerald-500', desc: 'Contratos padrão de moradia 12-30 meses.', category: 'locacao' },
+                                { id: 'LocacaoComercial', name: 'Locação Comercial', icon: Building2, color: 'bg-blue-500', desc: 'Salas, lojas e galpões para empresas.', category: 'locacao' },
+                                { id: 'CompraEVenda', name: 'Compra e Venda', icon: DollarSign, color: 'bg-amber-500', desc: 'Promessa de compra e venda de imóveis.', category: 'venda' },
+                                { id: 'EntregaChaves', name: 'Entrega de Chaves', icon: Key, color: 'bg-emerald-600', desc: 'Termo de entrega de chaves no início.', category: 'locacao' },
+                                { id: 'EntregaChavesVenda', name: 'Entrega de Chaves (Venda)', icon: Key, color: 'bg-amber-600', desc: 'Termo de entrega de chaves na compra.', category: 'venda' },
+                                { id: 'DevolucaoChaves', name: 'Devolução de Chaves', icon: LogOut, color: 'bg-purple-500', desc: 'Termo de devolução de chaves no fim.', category: 'locacao' },
+                                { id: 'AutorizacaoDivulgacao', name: 'Autorização de Divulgação', icon: Globe, color: 'bg-pink-500', desc: 'Autorização do proprietário para marketing.', category: 'venda' },
+                                { id: 'VistoriaEntrada', name: 'Vistoria de Entrada', icon: FileCheck, color: 'bg-teal-500', desc: 'Termo de vistoria inicial do imóvel.', category: 'locacao' },
+                                { id: 'VistoriaSaida', name: 'Vistoria de Saída', icon: LogOut, color: 'bg-rose-500', desc: 'Termo de vistoria de rescisão/saída.', category: 'locacao' },
+                            ].filter(item => {
+                                if (isLocacaoCard) return item.category === 'locacao';
+                                if (isVendaCard) return item.category === 'venda';
+                                return true;
+                            }).map(item => (
                                 <div
                                     key={item.id}
                                     onClick={() => {
@@ -1419,16 +1438,16 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                             )}
 
                             {/* --- FORMULÁRIO DE VISTORIAS E CHAVES --- */}
-                            {(selectedType === 'VistoriaEntrada' || selectedType === 'VistoriaSaida' || selectedType === 'EntregaChaves') && (
+                            {(selectedType === 'VistoriaEntrada' || selectedType === 'VistoriaSaida' || selectedType === 'EntregaChaves' || selectedType === 'DevolucaoChaves' || selectedType === 'EntregaChavesVenda') && (
                                 <div className="space-y-4 text-left">
                                     <Label className="text-secondary font-black uppercase tracking-widest text-xs">Dados do Laudo de Vistoria</Label>
 
-                                    <div className={`grid grid-cols-1 ${selectedType === 'VistoriaSaida' ? '' : 'md:grid-cols-2'} gap-4`}>
+                                    <div className={`grid grid-cols-1 ${selectedType === 'VistoriaSaida' || selectedType === 'DevolucaoChaves' ? '' : 'md:grid-cols-2'} gap-4`}>
                                         <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
                                             <Label className="font-bold text-slate-700 text-sm">Data da Vistoria <span className="text-red-500">*</span></Label>
                                             <Input type="date" value={formData.DATA_VISTORIA} onChange={(e) => setFormData({ ...formData, DATA_VISTORIA: e.target.value })} className="bg-white border-none rounded-xl" />
                                         </div>
-                                        {selectedType !== 'VistoriaSaida' && (
+                                        {selectedType !== 'VistoriaSaida' && selectedType !== 'DevolucaoChaves' && (
                                             <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                                                 <Label className="font-bold text-slate-700 text-sm">Data de Entrega das Chaves</Label>
                                                 <Input type="date" value={formData.DATA_ENTREGA_CHAVES} onChange={(e) => setFormData({ ...formData, DATA_ENTREGA_CHAVES: e.target.value })} className="bg-white border-none rounded-xl" />
@@ -2003,16 +2022,22 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                             {(() => {
                                 const client = clientes.find(c => c._id === editingParticipantId);
                                 const details = (formData?.PARTICIPANT_DETAILS?.[editingParticipantId!]) || {
-                                    name: client?.clientName || '',
+                                    name: client?.nomeRazaoSocial || client?.clientName || (client as any)?.name || '',
                                     cpf: client?.cpfCnpj || '',
                                     rg: (client as any)?.rg || '',
                                     nationality: (client as any)?.nationality || '',
                                     profession: (client as any)?.profession || '',
                                     maritalStatus: (client as any)?.maritalStatus || '',
                                     gender: (client as any)?.gender || 'Masculino',
-                                    email: client?.emailPrincipal || '',
+                                    email: client?.emailPrincipal || client?.email || '',
                                     address: client?.address || '',
-                                    spouseId: (client as any)?.spouseRef || ''
+                                    spouseId: (client as any)?.spouseRef || '',
+                                    tipoPessoa: client?.tipoPessoa || (client?.cpfCnpj && client.cpfCnpj.replace(/\D/g, '').length > 11 ? 'Jurídica' : 'Física'),
+                                    tradeName: client?.nomeFantasia || '',
+                                    phone: client?.telefonePrincipal || client?.phoneNumber || '',
+                                    representativeName: (client as any)?.representativeName || '',
+                                    representativeCpf: (client as any)?.representativeCpf || '',
+                                    representativeRg: (client as any)?.representativeRg || ''
                                 };
 
                                 const updateDetail = (field: string, val: string) => {
@@ -2025,138 +2050,257 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                     }));
                                 };
 
+                                const isPJ = details.tipoPessoa === 'Jurídica' || (details.cpf && details.cpf.replace(/\D/g, '').length > 11);
+
                                 return (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                                    Nome Completo <span className="text-red-500 font-black">*</span>
+                                            {/* Seletor Tipo de Pessoa */}
+                                            <div className="col-span-1 md:col-span-2 space-y-2">
+                                                <Label className="text-xs font-bold text-slate-500 uppercase">
+                                                    Tipo de Pessoa
                                                 </Label>
-                                                <Input
-                                                    value={details.name}
-                                                    onChange={(e) => updateDetail('name', e.target.value)}
-                                                    className="h-14 rounded-2xl bg-white border-slate-200"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                                    Email <span className="text-red-500 font-black">*</span>
-                                                </Label>
-                                                <Input
-                                                    value={details.email}
-                                                    onChange={(e) => updateDetail('email', e.target.value)}
-                                                    className="h-14 rounded-2xl bg-white border-slate-200"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                                    CPF <span className="text-red-500 font-black">*</span>
-                                                </Label>
-                                                <Input
-                                                    value={details.cpf}
-                                                    onChange={(e) => updateDetail('cpf', e.target.value)}
-                                                    className="h-14 rounded-2xl bg-white border-slate-200"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                                    RG <span className="text-red-500 font-black">*</span>
-                                                </Label>
-                                                <Input
-                                                    value={details.rg}
-                                                    onChange={(e) => updateDetail('rg', e.target.value)}
-                                                    className="h-14 rounded-2xl bg-white border-slate-200"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                                    Nacionalidade <span className="text-red-500 font-black">*</span>
-                                                </Label>
-                                                <Input
-                                                    value={details.nationality || ''}
-                                                    onChange={(e) => updateDetail('nationality', e.target.value)}
-                                                    className="h-14 rounded-2xl bg-white border-slate-200"
-                                                    placeholder="Ex: brasileira"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                                    Profissão <span className="text-red-500 font-black">*</span>
-                                                </Label>
-                                                <Input
-                                                    value={details.profession}
-                                                    onChange={(e) => updateDetail('profession', e.target.value)}
-                                                    className="h-14 rounded-2xl bg-white border-slate-200"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                                    Estado Civil <span className="text-red-500 font-black">*</span>
-                                                </Label>
-                                                <Select value={details.maritalStatus} onValueChange={(v) => updateDetail('maritalStatus', v)}>
+                                                <Select value={details.tipoPessoa} onValueChange={(v) => updateDetail('tipoPessoa', v)}>
                                                     <SelectTrigger className="h-14 rounded-2xl bg-white border-slate-200">
-                                                        <SelectValue placeholder="Selecione..." />
+                                                        <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-2xl">
-                                                        <SelectItem value="solteiro(a)">Solteiro(a)</SelectItem>
-                                                        <SelectItem value="casado(a) - Comunhão Parcial de Bens">Casado(a) - Comunhão Parcial de Bens</SelectItem>
-                                                        <SelectItem value="casado(a) - Comunhão Total de Bens">Casado(a) - Comunhão Total de Bens</SelectItem>
-                                                        <SelectItem value="casado(a) - Comunhão Universal de Bens">Casado(a) - Comunhão Universal de Bens</SelectItem>
-                                                        <SelectItem value="casado(a) - Separação Total de Bens">Casado(a) - Separação Total de Bens</SelectItem>
-                                                        <SelectItem value="casado(a) - Participação Final nos Aquestos">Casado(a) - Participação Final nos Aquestos</SelectItem>
-                                                        <SelectItem value="divorciado(a)">Divorciado(a)</SelectItem>
-                                                        <SelectItem value="viúvo(a)">Viúvo(a)</SelectItem>
-                                                        <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                                                        <SelectItem value="Física">Pessoa Física</SelectItem>
+                                                        <SelectItem value="Jurídica">Pessoa Jurídica</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 uppercase">Gênero</Label>
-                                                <Select value={details.gender} onValueChange={(v) => updateDetail('gender', v)}>
-                                                    <SelectTrigger className="h-14 rounded-2xl bg-white border-slate-200">
-                                                        <SelectValue placeholder="Selecione..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-2xl">
-                                                        <SelectItem value="Masculino">Masculino</SelectItem>
-                                                        <SelectItem value="Feminino">Feminino</SelectItem>
-                                                        <SelectItem value="Outro">Outro</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
 
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
-                                                Endereço Completo <span className="text-red-500 font-black">*</span>
-                                            </Label>
-                                            <Input
-                                                value={details.address}
-                                                onChange={(e) => updateDetail('address', e.target.value)}
-                                                className="h-14 rounded-2xl bg-white border-slate-200"
-                                            />
-                                        </div>
+                                            {isPJ ? (
+                                                <>
+                                                    {/* Campos PJ */}
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Razão Social <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.name}
+                                                            onChange={(e) => updateDetail('name', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Nome Fantasia (se houver)
+                                                        </Label>
+                                                        <Input
+                                                            value={details.tradeName}
+                                                            onChange={(e) => updateDetail('tradeName', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            CNPJ <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.cpf}
+                                                            onChange={(e) => updateDetail('cpf', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Telefone <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.phone}
+                                                            onChange={(e) => updateDetail('phone', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Email <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.email}
+                                                            onChange={(e) => updateDetail('email', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2"></div>
+                                                    <div className="col-span-1 md:col-span-2 space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Endereço Completo <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.address}
+                                                            onChange={(e) => updateDetail('address', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
 
-                                        <div className="p-6 bg-secondary/5 rounded-[24px] border border-secondary/10 space-y-4">
-                                            <div className="flex items-center gap-2 text-secondary font-black uppercase text-[10px] tracking-widest">
-                                                <Users className="w-4 h-4" /> Interligação de Cônjuge
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500">Selecionar Cônjuge no CRM</Label>
-                                                <Select value={details.spouseId} onValueChange={(v) => updateDetail('spouseId', v)}>
-                                                    <SelectTrigger className="h-14 rounded-2xl bg-white border-slate-200">
-                                                        <SelectValue placeholder="Nenhum cônjuge selecionado" />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-2xl">
-                                                        <SelectItem value="no_spouse">Sem Cônjuge</SelectItem>
-                                                        {clientes.map(c => (
-                                                            <SelectItem key={c._id} value={c._id} disabled={c._id === editingParticipantId}>
-                                                                {c.clientName} - {formatCPF(c.cpfCnpj || '')}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <p className="text-[10px] text-slate-400">Ao vincular, o sistema qualificará automaticamente ambos como um par no contrato.</p>
-                                            </div>
+                                                    <div className="col-span-1 md:col-span-2 p-6 bg-secondary/5 rounded-[24px] border border-secondary/10 space-y-4">
+                                                        <div className="flex items-center gap-2 text-secondary font-black uppercase text-[10px] tracking-widest">
+                                                            <PenTool className="w-4 h-4" /> Representante Legal (quando aplicável)
+                                                        </div>
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs font-bold text-slate-500">Nome do Representante</Label>
+                                                                <Input
+                                                                    value={details.representativeName}
+                                                                    onChange={(e) => updateDetail('representativeName', e.target.value)}
+                                                                    className="h-12 rounded-xl bg-white border-slate-200"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs font-bold text-slate-500">CPF do Representante</Label>
+                                                                <Input
+                                                                    value={details.representativeCpf}
+                                                                    onChange={(e) => updateDetail('representativeCpf', e.target.value)}
+                                                                    className="h-12 rounded-xl bg-white border-slate-200"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Label className="text-xs font-bold text-slate-500">RG do Representante</Label>
+                                                                <Input
+                                                                    value={details.representativeRg}
+                                                                    onChange={(e) => updateDetail('representativeRg', e.target.value)}
+                                                                    className="h-12 rounded-xl bg-white border-slate-200"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {/* Campos PF */}
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Nome Completo <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.name}
+                                                            onChange={(e) => updateDetail('name', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Email <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.email}
+                                                            onChange={(e) => updateDetail('email', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            CPF <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.cpf}
+                                                            onChange={(e) => updateDetail('cpf', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            RG <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.rg}
+                                                            onChange={(e) => updateDetail('rg', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Nacionalidade <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.nationality || ''}
+                                                            onChange={(e) => updateDetail('nationality', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                            placeholder="Ex: brasileira"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Profissão <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.profession}
+                                                            onChange={(e) => updateDetail('profession', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Estado Civil <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Select value={details.maritalStatus} onValueChange={(v) => updateDetail('maritalStatus', v)}>
+                                                            <SelectTrigger className="h-14 rounded-2xl bg-white border-slate-200">
+                                                                <SelectValue placeholder="Selecione..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="rounded-2xl">
+                                                                <SelectItem value="solteiro(a)">Solteiro(a)</SelectItem>
+                                                                <SelectItem value="casado(a) - Comunhão Parcial de Bens">Casado(a) - Comunhão Parcial de Bens</SelectItem>
+                                                                <SelectItem value="casado(a) - Comunhão Total de Bens">Casado(a) - Comunhão Total de Bens</SelectItem>
+                                                                <SelectItem value="casado(a) - Comunhão Universal de Bens">Casado(a) - Comunhão Universal de Bens</SelectItem>
+                                                                <SelectItem value="casado(a) - Separação Total de Bens">Casado(a) - Separação Total de Bens</SelectItem>
+                                                                <SelectItem value="casado(a) - Participação Final nos Aquestos">Casado(a) - Participação Final nos Aquestos</SelectItem>
+                                                                <SelectItem value="divorciado(a)">Divorciado(a)</SelectItem>
+                                                                <SelectItem value="viúvo(a)">Viúvo(a)</SelectItem>
+                                                                <SelectItem value="uniao_estavel">União Estável</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase">Gênero</Label>
+                                                        <Select value={details.gender} onValueChange={(v) => updateDetail('gender', v)}>
+                                                            <SelectTrigger className="h-14 rounded-2xl bg-white border-slate-200">
+                                                                <SelectValue placeholder="Selecione..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="rounded-2xl">
+                                                                <SelectItem value="Masculino">Masculino</SelectItem>
+                                                                <SelectItem value="Feminino">Feminino</SelectItem>
+                                                                <SelectItem value="Outro">Outro</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="col-span-1 md:col-span-2 space-y-2">
+                                                        <Label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">
+                                                            Endereço Completo <span className="text-red-500 font-black">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            value={details.address}
+                                                            onChange={(e) => updateDetail('address', e.target.value)}
+                                                            className="h-14 rounded-2xl bg-white border-slate-200"
+                                                        />
+                                                    </div>
+
+                                                    <div className="col-span-1 md:col-span-2 p-6 bg-secondary/5 rounded-[24px] border border-secondary/10 space-y-4">
+                                                        <div className="flex items-center gap-2 text-secondary font-black uppercase text-[10px] tracking-widest">
+                                                            <Users className="w-4 h-4" /> Interligação de Cônjuge
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs font-bold text-slate-500">Selecionar Cônjuge no CRM</Label>
+                                                            <Select value={details.spouseId} onValueChange={(v) => updateDetail('spouseId', v)}>
+                                                                <SelectTrigger className="h-14 rounded-2xl bg-white border-slate-200">
+                                                                    <SelectValue placeholder="Nenhum cônjuge selecionado" />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="rounded-2xl">
+                                                                    <SelectItem value="no_spouse">Sem Cônjuge</SelectItem>
+                                                                    {clientes.map(c => (
+                                                                        <SelectItem key={c._id} value={c._id} disabled={c._id === editingParticipantId}>
+                                                                            {c.clientName} - {formatCPF(c.cpfCnpj || '')}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <p className="text-[10px] text-slate-400">Ao vincular, o sistema qualificará automaticamente ambos como um par no contrato.</p>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -2169,30 +2313,48 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                 onClick={async () => {
                                     const clientId = editingParticipantId!;
                                     const client = clientes.find(c => c._id === clientId);
+                                    const currentDetails = formData.PARTICIPANT_DETAILS?.[clientId] || {};
+
                                     const updatedData = {
-                                        name: client?.clientName || '',
+                                        name: client?.nomeRazaoSocial || client?.clientName || (client as any)?.name || '',
                                         cpf: client?.cpfCnpj || '',
                                         rg: (client as any)?.rg || '',
                                         nationality: (client as any)?.nationality || '',
                                         profession: (client as any)?.profession || '',
                                         maritalStatus: (client as any)?.maritalStatus || '',
                                         gender: (client as any)?.gender || 'Masculino',
-                                        email: client?.emailPrincipal || '',
+                                        email: client?.emailPrincipal || client?.email || '',
                                         address: client?.address || '',
                                         spouseId: (client as any)?.spouseRef || '',
-                                        ...(formData.PARTICIPANT_DETAILS?.[clientId] || {})
+                                        tipoPessoa: client?.tipoPessoa || (client?.cpfCnpj && client.cpfCnpj.replace(/\D/g, '').length > 11 ? 'Jurídica' : 'Física'),
+                                        tradeName: client?.nomeFantasia || '',
+                                        phone: client?.telefonePrincipal || client?.phoneNumber || '',
+                                        representativeName: (client as any)?.representativeName || '',
+                                        representativeCpf: (client as any)?.representativeCpf || '',
+                                        representativeRg: (client as any)?.representativeRg || '',
+                                        ...currentDetails
                                     };
+
+                                    const isPJ = updatedData.tipoPessoa === 'Jurídica' || (updatedData.cpf && updatedData.cpf.replace(/\D/g, '').length > 11);
 
                                     // Validar campos obrigatórios no motor
                                     const missingFields: string[] = [];
-                                    if (!updatedData.name?.trim()) missingFields.push('Nome Completo');
-                                    if (!updatedData.nationality?.trim()) missingFields.push('Nacionalidade');
-                                    if (!updatedData.maritalStatus?.trim()) missingFields.push('Estado Civil');
-                                    if (!updatedData.profession?.trim()) missingFields.push('Profissão');
-                                    if (!updatedData.rg?.trim()) missingFields.push('RG');
-                                    if (!updatedData.cpf?.trim()) missingFields.push('CPF');
-                                    if (!updatedData.address?.trim()) missingFields.push('Endereço Completo');
-                                    if (!updatedData.email?.trim()) missingFields.push('Email');
+                                    if (isPJ) {
+                                        if (!updatedData.name?.trim()) missingFields.push('Razão Social');
+                                        if (!updatedData.cpf?.trim()) missingFields.push('CNPJ');
+                                        if (!updatedData.address?.trim()) missingFields.push('Endereço Completo');
+                                        if (!updatedData.email?.trim()) missingFields.push('Email');
+                                        if (!updatedData.phone?.trim()) missingFields.push('Telefone');
+                                    } else {
+                                        if (!updatedData.name?.trim()) missingFields.push('Nome Completo');
+                                        if (!updatedData.nationality?.trim()) missingFields.push('Nacionalidade');
+                                        if (!updatedData.maritalStatus?.trim()) missingFields.push('Estado Civil');
+                                        if (!updatedData.profession?.trim()) missingFields.push('Profissão');
+                                        if (!updatedData.rg?.trim()) missingFields.push('RG');
+                                        if (!updatedData.cpf?.trim()) missingFields.push('CPF');
+                                        if (!updatedData.address?.trim()) missingFields.push('Endereço Completo');
+                                        if (!updatedData.email?.trim()) missingFields.push('Email');
+                                    }
 
                                     if (missingFields.length > 0) {
                                         toast.error(`Campos obrigatórios ausentes: ${missingFields.join(', ')}`);

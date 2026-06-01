@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -807,10 +808,14 @@ export default function AdminFinanciamentoDetalhePage() {
   // Remove vendedor
   const handleRemoveVendedor = (id: string) => {
     const vendedor = vendedores.find(v => v._id === id);
-    setVendedores(vendedores.filter(v => v._id !== id));
-    if (vendedor) {
-      createHistoryEntry(`Vendedor removido: ${vendedor.nome}`);
+    if (!vendedor) return;
+
+    if (!window.confirm(`Deseja realmente desvincular o vendedor ${vendedor.nome}?`)) {
+      return;
     }
+
+    setVendedores(vendedores.filter(v => v._id !== id));
+    createHistoryEntry(`Vendedor removido: ${vendedor.nome}`);
   };
 
   // Toggle documento status for vendedor
@@ -1468,55 +1473,51 @@ export default function AdminFinanciamentoDetalhePage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Valor do Imóvel</Label>
-                      <Input
-                        type="number"
-                        value={formData.valorImovel}
-                        onChange={(e) => {
-                          setFormData({ ...formData, valorImovel: parseFloat(e.target.value) || 0 });
-                          handleAutoSave('valorImovel', parseFloat(e.target.value) || 0);
-                        }}
-                        placeholder="0.00"
-                        className="h-10 bg-primary border-border-gray"
-                      />
+                    <Label className="font-paragraph text-sm mb-2 block">Valor do Imóvel</Label>
+                    <CurrencyInput
+                      value={formData.valorImovel}
+                      onValueChange={(numeric) => {
+                        setFormData({ ...formData, valorImovel: numeric });
+                        handleAutoSave('valorImovel', numeric);
+                      }}
+                      placeholder="R$ 0,00"
+                      className="h-10 bg-primary border-border-gray"
+                    />
                     </div>
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Desejado</Label>
-                      <Input
-                        type="number"
+                      <CurrencyInput
                         value={formData.valorFinanciamentoDesejado}
-                        onChange={(e) => {
-                          setFormData({ ...formData, valorFinanciamentoDesejado: parseFloat(e.target.value) || 0 });
-                          handleAutoSave('valorFinanciamentoDesejado', parseFloat(e.target.value) || 0);
+                        onValueChange={(numeric) => {
+                          setFormData({ ...formData, valorFinanciamentoDesejado: numeric });
+                          handleAutoSave('valorFinanciamentoDesejado', numeric);
                         }}
-                        placeholder="0.00"
+                        placeholder="R$ 0,00"
                         className="h-10 bg-primary border-border-gray"
                       />
                     </div>
                     <div>
-                      <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Possível Aprovado</Label>
-                      <Input
-                        type="number"
+                      <Label className="font-paragraph text-sm mb-2 block">Valor do Financiamento Possível/Aprovado</Label>
+                      <CurrencyInput
                         value={formData.valorFinanciamentoPossivelAprovado}
-                        onChange={(e) => {
-                          setFormData({ ...formData, valorFinanciamentoPossivelAprovado: parseFloat(e.target.value) || 0 });
-                          handleAutoSave('valorFinanciamentoPossivelAprovado', parseFloat(e.target.value) || 0);
+                        onValueChange={(numeric) => {
+                          setFormData({ ...formData, valorFinanciamentoPossivelAprovado: numeric });
+                          handleAutoSave('valorFinanciamentoPossivelAprovado', numeric);
                         }}
-                        placeholder="0.00"
+                        placeholder="R$ 0,00"
                         className="h-10 bg-primary border-border-gray"
                       />
                     </div>
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Valor da Taxa à Vista</Label>
                       <div className="flex gap-2">
-                        <Input
-                          type="number"
+                        <CurrencyInput
                           value={formData.valorTaxaVista}
-                          onChange={(e) => {
-                            setFormData({ ...formData, valorTaxaVista: parseFloat(e.target.value) || 0 });
-                            handleAutoSave('valorTaxaVista', parseFloat(e.target.value) || 0);
+                          onValueChange={(numeric) => {
+                            setFormData({ ...formData, valorTaxaVista: numeric });
+                            handleAutoSave('valorTaxaVista', numeric);
                           }}
-                          placeholder="0.00"
+                          placeholder="R$ 0,00"
                           className="h-10 bg-primary border-border-gray flex-1"
                         />
                         <div className="flex items-center gap-2">
@@ -1533,12 +1534,11 @@ export default function AdminFinanciamentoDetalhePage() {
                     </div>
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Valor do Produto Negociado</Label>
-                      <Input
-                        value={formatCurrency(formData.valorProdutoNegociado)}
-                        onChange={(e) => {
-                          const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
-                          setFormData({ ...formData, valorProdutoNegociado: numericValue });
-                          handleAutoSave('valorProdutoNegociado', numericValue);
+                      <CurrencyInput
+                        value={formData.valorProdutoNegociado}
+                        onValueChange={(numeric) => {
+                          setFormData({ ...formData, valorProdutoNegociado: numeric });
+                          handleAutoSave('valorProdutoNegociado', numeric);
                         }}
                         placeholder="R$ 0,00"
                         className="h-10 bg-primary border-border-gray"
@@ -1547,12 +1547,11 @@ export default function AdminFinanciamentoDetalhePage() {
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Valor do ITBI</Label>
                       <div className="flex gap-2">
-                        <Input
-                          value={formatCurrency(formData.valorItbi)}
-                          onChange={(e) => {
-                            const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
-                            setFormData({ ...formData, valorItbi: numericValue });
-                            handleAutoSave('valorItbi', numericValue);
+                        <CurrencyInput
+                          value={formData.valorItbi}
+                          onValueChange={(numeric) => {
+                            setFormData({ ...formData, valorItbi: numeric });
+                            handleAutoSave('valorItbi', numeric);
                           }}
                           placeholder="R$ 0,00"
                           className="h-10 bg-primary border-border-gray flex-1"
@@ -1572,12 +1571,11 @@ export default function AdminFinanciamentoDetalhePage() {
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Valor da Prenotação do Cartório</Label>
                       <div className="flex gap-2">
-                        <Input
-                          value={formatCurrency(formData.valorPrenotacaoCartorio)}
-                          onChange={(e) => {
-                            const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
-                            setFormData({ ...formData, valorPrenotacaoCartorio: numericValue });
-                            handleAutoSave('valorPrenotacaoCartorio', numericValue);
+                        <CurrencyInput
+                          value={formData.valorPrenotacaoCartorio}
+                          onValueChange={(numeric) => {
+                            setFormData({ ...formData, valorPrenotacaoCartorio: numeric });
+                            handleAutoSave('valorPrenotacaoCartorio', numeric);
                           }}
                           placeholder="R$ 0,00"
                           className="h-10 bg-primary border-border-gray flex-1"
@@ -1597,12 +1595,11 @@ export default function AdminFinanciamentoDetalhePage() {
                     <div>
                       <Label className="font-paragraph text-sm mb-2 block">Valor do Registro</Label>
                       <div className="flex gap-2">
-                        <Input
-                          value={formatCurrency(formData.valorRegistro)}
-                          onChange={(e) => {
-                            const { displayValue, numericValue } = handleCurrencyInput(e.target.value);
-                            setFormData({ ...formData, valorRegistro: numericValue });
-                            handleAutoSave('valorRegistro', numericValue);
+                        <CurrencyInput
+                          value={formData.valorRegistro}
+                          onValueChange={(numeric) => {
+                            setFormData({ ...formData, valorRegistro: numeric });
+                            handleAutoSave('valorRegistro', numeric);
                           }}
                           placeholder="R$ 0,00"
                           className="h-10 bg-primary border-border-gray flex-1"

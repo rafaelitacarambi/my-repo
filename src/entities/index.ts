@@ -496,6 +496,12 @@ export interface Imveis {
   // CORRETOR
   /** @wixFieldType text */
   corretorResponsavelId?: string; // ID do usuário
+  /** @wixFieldType text */
+  origemCaptacao?: string; // R.Sales | Corretor Interno | Proprietário | Corretor Externo
+  /** @wixFieldType text */
+  corretorExternoNome?: string; // Nome do corretor externo (quando origemCaptacao = 'Corretor Externo')
+  /** @wixFieldType text */
+  corretorExternoContato?: string; // Contato do corretor externo
 
   // IMÓVEL INFO
   /** @wixFieldType text */

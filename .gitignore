@@ -43,3 +43,6 @@ docs/*
 !.yarn/versions
 
 /generated/prisma
+
+# Scratch folder
+/scratch/
