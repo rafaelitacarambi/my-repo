@@ -34,7 +34,8 @@ import {
     Upload,
     Building2,
     Key,
-    Save
+    Save,
+    Trash2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -154,6 +155,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         PRAZO_LAVRATURA_DIAS: '30',
         TAXA_OCUPACAO_MENSAL: 0,
         DATA_LIMITE_CHAVES: '',
+        DATA_DOCUMENTO: '',
         // Vistorias e Rescisão
         DATA_VISTORIA: '',
         DATA_ENTREGA_CHAVES: '',
@@ -1220,10 +1222,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         }
     }, [formData, currentStep, isOpen]);
 
-    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files) return;
-        const files = Array.from(e.target.files);
-        
+    const [isDragging, setIsDragging] = useState(false);
+
+    const processUploadFiles = (files: File[]) => {
         files.forEach(file => {
             const reader = new FileReader();
             reader.onload = (ev) => {
@@ -1235,6 +1236,32 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             };
             reader.readAsDataURL(file);
         });
+    };
+
+    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files) return;
+        const files = Array.from(e.target.files);
+        processUploadFiles(files);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files) {
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            if (files.length > 0) {
+                processUploadFiles(files);
+            }
+        }
     };
 
     const renderStepContent = () => {
@@ -1308,6 +1335,21 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                             <p className="text-slate-500">Preencha os dados e selecione as cláusulas para este tipo de negócio.</p>
                         </div>
                         <div className="space-y-12">
+                            
+                            {/* --- DATA DO DOCUMENTO (GLOBAL) --- */}
+                            <div className="space-y-4 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <Label className="text-secondary font-black uppercase tracking-widest text-xs">Informações de Emissão</Label>
+                                <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                                    <Label className="font-bold text-slate-700 text-sm">Data de Emissão do Documento</Label>
+                                    <Input 
+                                        type="date" 
+                                        value={formData.DATA_DOCUMENTO} 
+                                        onChange={(e) => setFormData({ ...formData, DATA_DOCUMENTO: e.target.value })} 
+                                        className="bg-white border-none rounded-xl" 
+                                    />
+                                    <p className="text-xs text-slate-500">Se deixada em branco, será utilizada automaticamente a data atual do dia.</p>
+                                </div>
+                            </div>
                             
                             {/* --- FORMULÁRIO DE LOCAÇÃO --- */}
                             {(selectedType === 'LocacaoResidencial' || selectedType === 'LocacaoComercial') && (
@@ -1437,15 +1479,27 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                 </div>
                             )}
 
-                            {/* --- FORMULÁRIO DE VISTORIAS E CHAVES --- */}
-                            {(selectedType === 'VistoriaEntrada' || selectedType === 'VistoriaSaida' || selectedType === 'EntregaChaves' || selectedType === 'DevolucaoChaves' || selectedType === 'EntregaChavesVenda') && (
+                            {/* --- FORMULÁRIO DE VISTORIAS E CHAVES (DATAS) --- */}
+                            {['VistoriaEntrada', 'VistoriaSaida', 'EntregaChaves', 'DevolucaoChaves', 'EntregaChavesVenda'].includes(selectedType) && (
                                 <div className="space-y-4 text-left">
                                     <Label className="text-secondary font-black uppercase tracking-widest text-xs">Dados do Laudo de Vistoria</Label>
 
                                     <div className={`grid grid-cols-1 ${selectedType === 'VistoriaSaida' || selectedType === 'DevolucaoChaves' ? '' : 'md:grid-cols-2'} gap-4`}>
                                         <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
                                             <Label className="font-bold text-slate-700 text-sm">Data da Vistoria <span className="text-red-500">*</span></Label>
-                                            <Input type="date" value={formData.DATA_VISTORIA} onChange={(e) => setFormData({ ...formData, DATA_VISTORIA: e.target.value })} className="bg-white border-none rounded-xl" />
+                                            <Input 
+                                                type="date" 
+                                                value={formData.DATA_VISTORIA} 
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setFormData(prev => ({ 
+                                                        ...prev, 
+                                                        DATA_VISTORIA: val, 
+                                                        DATA_ENTREGA_CHAVES: (!prev.DATA_ENTREGA_CHAVES || prev.DATA_ENTREGA_CHAVES === prev.DATA_VISTORIA) ? val : prev.DATA_ENTREGA_CHAVES
+                                                    }));
+                                                }} 
+                                                className="bg-white border-none rounded-xl" 
+                                            />
                                         </div>
                                         {selectedType !== 'VistoriaSaida' && selectedType !== 'DevolucaoChaves' && (
                                             <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1455,34 +1509,79 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                             </div>
                                         )}
                                     </div>
-                                    <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
-                                        <Label className="font-bold text-slate-700 text-sm">Anotações / Estado de Conservação</Label>
+                                </div>
+                            )}
+
+                            {/* --- FORMULÁRIO GLOBAL DE LAUDO DE CONSERVAÇÃO E FOTOS --- */}
+                            {selectedType !== 'AutorizacaoDivulgacao' && (
+                                <div className="space-y-4 text-left">
+                                    <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <FileCheck className="w-5 h-5 text-secondary" />
+                                            <Label className="font-extrabold text-slate-800 text-sm">
+                                                Laudo de Vistoria & Conservação (Descrição Detalhada do Imóvel)
+                                            </Label>
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 pl-7 leading-relaxed -mt-1">
+                                            Utilize este espaço para registrar o estado de conservação dos ambientes, danos identificados, desgastes existentes, reparos necessários e outras observações relevantes da vistoria.
+                                        </p>
                                         <textarea
-                                            placeholder="Ex: Pintura com marcas de uso na sala. Pia do banheiro solta..."
+                                            placeholder="Ex: SALA: Pintura em bom estado com leves marcas de uso perto do rodapé. 3 furos de bucha na parede. QUARTO: Porta e janelas fechando perfeitamente, trinco funcional. BANHEIRO: Pequeno vazamento sob a pia (necessita reparo no sifão), azulejos intactos. COZINHA: Armários planejados com dobradiças reguladas..."
                                             value={formData.ESTADO_CONSERVACAO}
                                             onChange={(e) => setFormData({ ...formData, ESTADO_CONSERVACAO: e.target.value })}
-                                            className="w-full h-24 p-4 bg-white border border-slate-200 rounded-xl focus:ring-secondary outline-none text-sm resize-none"
+                                            className="w-full h-32 p-4 bg-white border border-slate-200 rounded-2xl focus:ring-secondary focus:border-secondary outline-none text-sm resize-none transition-all placeholder:text-slate-400"
                                         />
                                     </div>
-                                    <div className="p-5 bg-slate-50 rounded-3xl border border-dashed border-slate-300 space-y-4 flex flex-col items-center justify-center">
-                                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-2">
-                                            <Upload className="w-6 h-6" />
-                                        </div>
-                                        <div className="text-center">
-                                            <Label className="font-bold text-slate-700 text-sm block cursor-pointer">
-                                                Anexar Fotos para o Laudo
-                                                <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                                            </Label>
-                                            <p className="text-xs text-slate-500 mt-1">As fotos anexadas serão geradas como apêndice no final do PDF.</p>
-                                        </div>
+                                    <div 
+                                        onDragOver={handleDragOver}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={handleDrop}
+                                        className={`p-5 bg-slate-50 rounded-3xl border border-dashed ${isDragging ? 'border-indigo-500 bg-indigo-50/50' : 'border-slate-300'} space-y-4 flex flex-col items-center justify-center transition-all duration-200 relative`}
+                                    >
                                         {formData.LAUDO_FOTOS && formData.LAUDO_FOTOS.length > 0 && (
-                                            <div className="flex gap-2 mt-4 flex-wrap justify-center">
+                                            <div className="w-full flex justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, LAUDO_FOTOS: [] })}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-red-650 hover:bg-red-55 rounded-xl transition-all"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                    Limpar Todas ({formData.LAUDO_FOTOS.length})
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <label className="w-full flex flex-col items-center justify-center cursor-pointer">
+                                            <input 
+                                                type="file" 
+                                                multiple 
+                                                accept="image/*" 
+                                                onChange={handlePhotoUpload} 
+                                                className="hidden" 
+                                            />
+                                            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-2 hover:bg-blue-200 transition-colors">
+                                                <Upload className="w-6 h-6" />
+                                            </div>
+                                            <div className="text-center">
+                                                <span className="font-bold text-slate-700 text-sm block">
+                                                    Anexar Fotos para o Laudo
+                                                </span>
+                                                <p className="text-xs text-slate-500 mt-1">Arraste as fotos ou clique aqui para abrir o computador.</p>
+                                                <p className="text-[10px] text-slate-400 mt-0.5">As fotos anexadas serão geradas como apêndice no final do PDF.</p>
+                                            </div>
+                                        </label>
+
+                                        {formData.LAUDO_FOTOS && formData.LAUDO_FOTOS.length > 0 && (
+                                            <div className="flex gap-2 mt-4 flex-wrap justify-center w-full">
                                                 {formData.LAUDO_FOTOS.map((foto: string, idx: number) => (
-                                                    <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+                                                    <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 shadow-sm group">
                                                         <img src={foto} className="w-full h-full object-cover" alt="Laudo" />
                                                         <button 
-                                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"
-                                                            onClick={() => {
+                                                            type="button"
+                                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-90 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
                                                                 const novas = [...formData.LAUDO_FOTOS];
                                                                 novas.splice(idx, 1);
                                                                 setFormData({...formData, LAUDO_FOTOS: novas});
@@ -1501,7 +1600,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
 
 
                             {/* --- TESTEMUNHAS --- */}
-                            {!['VistoriaEntrada', 'VistoriaSaida', 'EntregaChaves'].includes(selectedType) && (
+                            {!['VistoriaEntrada', 'VistoriaSaida', 'EntregaChaves', 'EntregaChavesVenda', 'DevolucaoChaves', 'TermoDevolucaoChavesVistoriaSaida'].includes(selectedType) && (
                                 <div className="space-y-4 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
                                     <Label className="text-secondary font-black uppercase tracking-widest text-xs">Testemunhas do Contrato</Label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">

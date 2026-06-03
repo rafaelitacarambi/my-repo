@@ -247,7 +247,7 @@ export default function AdminVendasKanbanPage() {
     // Part / Participant Autocomplete States
     const [partClientSearchQuery, setPartClientSearchQuery] = useState('');
     const [isPartDropdownOpen, setIsPartDropdownOpen] = useState(false);
-    const [selectedPartRole, setSelectedPartRole] = useState<string>('Locatário');
+    const [selectedPartRole, setSelectedPartRole] = useState<string>('Comprador');
     
     // Document Upload States
     const [uploadedDocs, setUploadedDocs] = useState<{ name: string; url: string; size: number; type: string; uploadedAt: string }[]>([]);
@@ -744,7 +744,7 @@ export default function AdminVendasKanbanPage() {
                     _id: partyId,
                     serviceRecordRef: selectedCase._id,
                     clientRef: clientId,
-                    roleInService: selectedPartRole || 'Locatário',
+                    roleInService: selectedPartRole || 'Comprador',
                     participationPercentage: 100,
                     notes: 'Adicionado pós-cadastro rápido'
                 });
@@ -1940,21 +1940,31 @@ export default function AdminVendasKanbanPage() {
                                                                         <div key={part._id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:bg-white hover:shadow-sm">
                                                                             <div className="flex items-center gap-3.5 min-w-0">
                                                                                 <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-[11px] flex-shrink-0 ${
-                                                                                    part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700' :
-                                                                                    part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700' :
-                                                                                    'bg-amber-100 text-amber-700'
+                                                                                    part.roleInService === 'Comprador' || part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700' :
+                                                                                    part.roleInService === 'Vendedor' || part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700' :
+                                                                                    part.roleInService === 'Cônjuge do Vendedor' || part.roleInService === 'Fiador' ? 'bg-amber-100 text-amber-700' :
+                                                                                    'bg-indigo-100 text-indigo-700'
                                                                                 }`}>
-                                                                                    {part.roleInService === 'Locatário' ? 'LT' : part.roleInService === 'Locador' ? 'LD' : 'FD'}
+                                                                                    {
+                                                                                        part.roleInService === 'Comprador' ? 'CP' :
+                                                                                        part.roleInService === 'Vendedor' ? 'VD' :
+                                                                                        part.roleInService === 'Cônjuge do Vendedor' ? 'CV' :
+                                                                                        part.roleInService === 'Cônjuge do Comprador' ? 'CC' :
+                                                                                        part.roleInService === 'Locatário' ? 'LT' :
+                                                                                        part.roleInService === 'Locador' ? 'LD' :
+                                                                                        part.roleInService === 'Fiador' ? 'FD' : 'CP'
+                                                                                    }
                                                                                 </div>
                                                                                 <div className="min-w-0">
                                                                                     <div className="flex items-center gap-1.5 flex-wrap">
                                                                                         <span className="text-sm font-bold text-slate-800 truncate">{client?.clientName || 'Cliente desconhecido'}</span>
                                                                                         <Badge className={`text-[9px] font-bold border-none px-2 py-0.5 rounded-full flex-shrink-0 ${
-                                                                                            part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
-                                                                                            part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
-                                                                                            'bg-amber-100 text-amber-700 hover:bg-amber-100'
+                                                                                            part.roleInService === 'Comprador' || part.roleInService === 'Locatário' ? 'bg-purple-100 text-purple-700 hover:bg-purple-100' :
+                                                                                            part.roleInService === 'Vendedor' || part.roleInService === 'Locador' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' :
+                                                                                            part.roleInService === 'Cônjuge do Vendedor' || part.roleInService === 'Fiador' ? 'bg-amber-100 text-amber-700 hover:bg-amber-100' :
+                                                                                            'bg-indigo-100 text-indigo-700 hover:bg-indigo-100'
                                                                                         }`}>
-                                                                                            {part.roleInService || 'Locatário'}
+                                                                                            {part.roleInService || 'Comprador'}
                                                                                         </Badge>
                                                                                     </div>
                                                                                     <p className="text-xs text-slate-500 truncate mt-0.5">
@@ -2633,6 +2643,10 @@ export default function AdminVendasKanbanPage() {
                                                                 <SelectValue placeholder="Selecione o papel..." />
                                                             </SelectTrigger>
                                                             <SelectContent className="bg-white border border-slate-100 rounded-xl shadow-lg">
+                                                                <SelectItem value="Comprador" className="rounded-lg">Comprador</SelectItem>
+                                                                <SelectItem value="Vendedor" className="rounded-lg">Vendedor</SelectItem>
+                                                                <SelectItem value="Cônjuge do Vendedor" className="rounded-lg">Cônjuge do Vendedor</SelectItem>
+                                                                <SelectItem value="Cônjuge do Comprador" className="rounded-lg">Cônjuge do Comprador</SelectItem>
                                                                 <SelectItem value="Locatário" className="rounded-lg">Locatário (Inquilino)</SelectItem>
                                                                 <SelectItem value="Locador" className="rounded-lg">Locador (Proprietário)</SelectItem>
                                                                 <SelectItem value="Fiador" className="rounded-lg">Fiador</SelectItem>

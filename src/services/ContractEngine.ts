@@ -575,18 +575,70 @@ export class ContractEngine {
             return `${cleaned.slice(0, 3)}.${cleaned.slice(3, 6)}.${cleaned.slice(6, 9)}-${cleaned.slice(9)}`;
         };
 
+        // Helper para formatação de data de forma segura, evitando bugs de timezone e datas inválidas
+        const parseAndFormatDate = (dateVal: any): string => {
+            if (!dateVal) return '';
+            
+            const dateStr = String(dateVal).trim();
+            
+            // Se já estiver no formato brasileiro DD/MM/YYYY, retorna direto
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+                return dateStr;
+            }
+            
+            try {
+                // Se for formato input date YYYY-MM-DD
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                    const [year, month, day] = dateStr.split('-');
+                    return `${day}/${month}/${year}`;
+                }
+                
+                // Tratar datas de banco ou formatos ISO completos (ex: 2024-02-14T00:00:00.000Z)
+                if (dateStr.includes('T')) {
+                    const datePart = dateStr.split('T')[0];
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+                        const [year, month, day] = datePart.split('-');
+                        return `${day}/${month}/${year}`;
+                    }
+                }
+                
+                const d = new Date(dateVal);
+                if (!isNaN(d.getTime())) {
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    return `${day}/${month}/${year}`;
+                }
+            } catch (e) {
+                console.error("[ContractEngine] Erro ao parsear data:", dateVal, e);
+            }
+            return dateStr;
+        };
+
+        const dataVistoria = parseAndFormatDate(extraData?.DATA_VISTORIA) || parseAndFormatDate(new Date());
+        let dataEntregaChaves = parseAndFormatDate(extraData?.DATA_ENTREGA_CHAVES || extraData?.DATA_VISTORIA);
+        
+        // Forçar igualdade para documentos de vistoria/desocupação ou quando entrega de chaves não for explicitada
+        if (contractType === 'DevolucaoChaves' || contractType === 'VistoriaSaida' || contractType === 'VistoriaEntrada' || !extraData?.DATA_ENTREGA_CHAVES) {
+            dataEntregaChaves = dataVistoria;
+        }
+
+        const dataDocumento = parseAndFormatDate(extraData?.DATA_DOCUMENTO) || parseAndFormatDate(new Date());
+
         const data: ContractData = {
             // Primeiro carregamos os dados brutos do formulário (que podem conter lixo de rascunhos antigos)
             ...extraData,
 
             // Atendimento & Global (Dados mestre que devem sobrepor o formulário)
+            CONTRACT_TYPE: contractType || extraData?.CONTRACT_TYPE || '',
             ATENDIMENTO_ID: atendimento?._id || '',
             PASTA_INTERNA: atendimento?.pastaInterna || '',
             CIDADE_ASSINATURA: 'Poá', // Default for this client
-            DATA_ASSINATURA: new Date().toLocaleDateString('pt-BR'),
-            DATA_VISTORIA: extraData?.DATA_VISTORIA ? new Date(extraData.DATA_VISTORIA + 'T12:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
-            DATA_ENTREGA_CHAVES: extraData?.DATA_ENTREGA_CHAVES ? new Date(extraData.DATA_ENTREGA_CHAVES + 'T12:00:00').toLocaleDateString('pt-BR') : '',
-            DATA_HOJE: new Date().toLocaleDateString('pt-BR'),
+            DATA_ASSINATURA: dataDocumento,
+            DATA_DOCUMENTO: dataDocumento,
+            DATA_VISTORIA: dataVistoria,
+            DATA_ENTREGA_CHAVES: dataEntregaChaves,
+            DATA_HOJE: dataDocumento,
             DIA_HOJE: new Date().getDate(),
             MES_HOJE_EXTENSO: new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date()),
             ANO_HOJE: new Date().getFullYear(),
@@ -1047,11 +1099,15 @@ export class ContractEngine {
         const t1Doc = extraData?.TESTEMUNHA_1_CPF || extraData?.TESTEMUNHA1_RG || extraData?.TESTEMUNHA1_CPF || '';
         const t2Doc = extraData?.TESTEMUNHA_2_CPF || extraData?.TESTEMUNHA2_RG || extraData?.TESTEMUNHA2_CPF || '';
 
-        if (t1Name) {
-            witnesses.push({ role: 'TESTEMUNHA 1', name: `${t1Name}${t1Doc ? ' (CPF/RG: ' + t1Doc + ')' : ''}` });
-        }
-        if (t2Name) {
-            witnesses.push({ role: 'TESTEMUNHA 2', name: `${t2Name}${t2Doc ? ' (CPF/RG: ' + t2Doc + ')' : ''}` });
+        const shouldHaveWitnesses = !['vistoriaentrada', 'vistoriasaida', 'entregachaves', 'entregachavesvenda', 'devolucaochaves', 'termodevolucaochavesvistoriasaida'].includes((contractType || '').toLowerCase());
+
+        if (shouldHaveWitnesses) {
+            if (t1Name) {
+                witnesses.push({ role: 'TESTEMUNHA 1', name: `${t1Name}${t1Doc ? ' (CPF/RG: ' + t1Doc + ')' : ''}` });
+            }
+            if (t2Name) {
+                witnesses.push({ role: 'TESTEMUNHA 2', name: `${t2Name}${t2Doc ? ' (CPF/RG: ' + t2Doc + ')' : ''}` });
+            }
         }
 
         let sigHtml = '<div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;" class="keep-together">';
@@ -1117,6 +1173,13 @@ export class ContractEngine {
         
         data.ASSINATURAS_HTML = sigHtml;
 
+        // Mapeamento extra de variáveis para o Termo de Entrega de Chaves do PDF (Venda)
+        data.data_atual = data.DATA_HOJE || '';
+        data.nome_vendedor = data.VENDEDORES_NOMES || data.VENDEDOR_NOME || '';
+        data.nome_comprador = data.COMPRADORES_NOMES || data.COMPRADOR_NOME || '';
+        data.endereco_imovel_completo = data.IMOVEL_ENDERECO_COMPLETO || '';
+        data.cidade_imovel = data.IMOVEL_CIDADE || 'Poá';
+
         return data;
     }
 
@@ -1130,13 +1193,46 @@ export class ContractEngine {
         }
         const body = this.processTemplate(template, data);
 
+        const contractType = data.CONTRACT_TYPE || '';
+        let headerTitle = 'CONTRATO DE LOCAÇÃO';
+        let headerSubtitle = `Instrumento Particular / ${data.FINALIDADE || 'Residencial'}`;
+
+        const cleanType = contractType.toLowerCase();
+        if (cleanType.includes('compraevenda') || cleanType === 'venda' || cleanType.includes('venda')) {
+            if (cleanType.includes('chavesvenda') || cleanType.includes('entregachavesvenda')) {
+                headerTitle = 'ENTREGA DE CHAVES';
+                headerSubtitle = 'Termo de Entrega e Vistoria / Venda';
+            } else {
+                headerTitle = 'COMPROMISSO DE VENDA';
+                headerSubtitle = 'Instrumento Particular / Compra e Venda';
+            }
+        } else if (cleanType === 'entregachaves') {
+            headerTitle = 'ENTREGA DE CHAVES';
+            headerSubtitle = 'Termo de Entrega e Vistoria / Locação';
+        } else if (cleanType === 'devolucaochaves' || cleanType.includes('devolucaochaves')) {
+            headerTitle = 'DEVOLUÇÃO DE CHAVES';
+            headerSubtitle = 'Termo de Devolução / Locação';
+        } else if (cleanType.includes('rescisao')) {
+            headerTitle = 'RESCISÃO DE LOCAÇÃO';
+            headerSubtitle = 'Termo de Rescisão Contratual';
+        } else if (cleanType.includes('procuracao')) {
+            headerTitle = 'PROCURAÇÃO';
+            headerSubtitle = 'Administração de Imóveis';
+        } else if (cleanType.includes('autorizacao') || cleanType.includes('divulgacao')) {
+            headerTitle = 'AUTORIZAÇÃO';
+            headerSubtitle = 'Divulgação e Comercialização';
+        } else if (cleanType.includes('vistoria')) {
+            headerTitle = 'LAUDO DE VISTORIA';
+            headerSubtitle = cleanType.includes('saida') ? 'Vistoria de Saída' : 'Vistoria de Entrada';
+        }
+
         return `
             <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 40px; max-width: 800px; margin: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ed1c24; padding-bottom: 10px; margin-bottom: 30px;">
                     <img src="${data.LOGO_RSALES || ''}" style="width: 150px; height: auto;" />
                     <div style="text-align: right;">
-                        <h1 style="margin: 0; font-size: 18px; color: #ed1c24;">CONTRATO DE LOCAÇÃO</h1>
-                        <p style="margin: 0; font-size: 12px; color: #666;">Instrumento Particular / ${data.FINALIDADE || ''}</p>
+                        <h1 style="margin: 0; font-size: 18px; color: #ed1c24;">${headerTitle}</h1>
+                        <p style="margin: 0; font-size: 12px; color: #666;">${headerSubtitle}</p>
                     </div>
                 </div>
                 

@@ -1,130 +1,55 @@
-Termo de Vistoria de Imóvel Locado
-Data da Vistoria: 09/04/2026
-LOCADOR: CASAROM POANÓPOLIS EMPREENDIMENTO IMOBILIÁRIO SPE
-LTDA., inscrita no CNPJ sob o nº 35.519.589/0001-13, com sede à Rua Poanópolis, nº
-400, Centro, município de Poá-SP, CEP: 08560-040, neste ato, representada
-legalmente por seu sócio, Sr. RÔMULO SILVA CERQUEIRA, brasileiro, solteiro,
-empresário, portador da cédula de identidade RG nº 27.368.999-X SSP/SP, inscrito no
-CPF sob o nº 283.215.375-53, com o endereço de e-mail
-financeiro.casarom@gmail.com, residente e domiciliado à Rua João Canzi, nº 615,
-unidade 41, Núcleo Itaim, município de Ferraz de Vasconcelos-SP, CEP: 08538-200.
-LOCATÁRIA: CHRISTIANE ALVES DOS SANTOS, brasileira, solteira, consultora de
-vendas, portadora da CNH N° 04974157477 DETRAN/SP e inscrita no CPF/MF N°
-386.736.978-08, com endereço de e-mail chrislandsmann@bol.com.br residente e
-domiciliada na Rua Fernando de Noronha 31, Casa 2, Jardim Santa Helena – Poá/SP.
-QUALIFICAÇÃO DO IMÓVEL: apartamento nº 13, torre 1, do empreendimento
-denominado “RESIDENCIAL ABSOLUTO”, localizado na Rua Poanópolis, nº 400,
-Centro, no município de Poá-SP, CEP: 08560-040, com direito ao uso de uma vaga de
-garagem, no 2° sub solo nº113 para veículo de passeio.
-CONDIÇÕES DO IMÓVEL NA ENTREGA:
-1. O apartamento é novo, nunca habitado, sendo a presente locação a sua primeira
-utilização.
-2. Piso - Piso laminado em todos os ambientes internos (exceto áreas molhadas),
-novo e sem riscos, observando-se o cuidado de que não pode ser lavado com água
-em excesso ou exposto à umidade.
-3. Área de serviço equipada com aquecedor de passagem marca Rinnai, novo,
-compatível com o sistema de aquecimento a gás do condomínio.
-4. Pintura Nova
-5. Cozinha em perfeito estado.
-6. Varanda gourmet com: churrasqueira a carvão com grelhas e espetos novos, pia e
-tornaria em perfeito estado.
-7. Banheiros entregues com: Bancada em mármore travertino, cuba, torneira, chuveiro
-e box em perfeito estado
-Observação: Todas as condições acima descritas encontram-se registradas em laudo
-fotográfico anexo, que passa a integrar o presente termo de vistoria.
-Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e
+TERMO DE ENTREGA DE CHAVES E VISTORIA – COMPRA E VENDA
+DATA: [Data da entrega, ex: {{data_atual}}]
+VENDEDOR(ES): [Nome completo do(s) Vendedor(es), ex: {{nome_vendedor}}]
+COMPRADOR(ES): [Nome completo do(s) Comprador(es), ex: {{nome_comprador}}]
+IMÓVEL: [Endereço completo do imóvel, ex: {{endereco_imovel_completo}}]
+Pelo presente instrumento, as partes declaram:
+1. DA IMISSÃO NA POSSE E ENTREGA DAS CHAVES:
+O(S) VENDEDOR(ES) realiza(m), nesta data, a entrega definitiva das chaves do imóvel acima
+descrito ao(s) COMPRADOR(ES), transferindo-lhe(s) a posse direta do bem, em estrito
+cumprimento ao Instrumento Particular de Compromisso de Compra e Venda firmado entre as
+partes.
+2. DA VISTORIA DE ENTREGA:
+O(S) COMPRADOR(ES) declara(m) ter vistoriado o imóvel nesta data, recebendo-o nas exatas
+condições físicas e de conservação acordadas no contrato de compra e venda.
+Declara(m), ainda, que as instalações elétricas, hidráulicas e os acabamentos encontram-se em
+conformidade com o que foi negociado, não havendo ressalvas a fazer (exceto as eventualmente
+apontadas no registro fotográfico abaixo).
+3. TRANSFERÊNCIA DE RESPONSABILIDADES E CONSUMO:
+A partir desta data de entrega das chaves, passam a ser de inteira e exclusiva responsabilidade
+do(s) COMPRADOR(ES):
+• O pagamento de todos os impostos (IPTU) e taxas incidentes sobre o imóvel;
+• O pagamento das cotas condominiais ordinárias e extraordinárias;
+• A transferência de titularidade junto às concessionárias de serviços públicos (Energia Elétrica,
+Água, Gás, etc.), isentando o(s) VENDEDOR(ES) de qualquer responsabilidade sobre o consumo
+a partir desta data.
+O(s) VENDEDOR(ES) declara(m) ter quitado o consumo proporcional até o dia de hoje.
+4. REGISTRO FOTOGRÁFICO DA VISTORIA:
+(Abaixo, insira as fotos que comprovam o estado do imóvel no momento da entrega)
+AMBIENTE / ITEM | FOTO | OBSERVAÇÃO / ESTADO
+Sala de Estar - Pintura | Inserir Foto no Sistema | Pintura nova, sem avarias
+Cozinha - Armários | Inserir Foto no Sistema | Móveis planejados em perfeito estado
+Banheiro - Hidráulica | Inserir Foto no Sistema | Torneiras e chuveiro testados e funcionando
+Medidores de Consumo | Inserir Foto no Sistema | Leitura atual da Energia: XXXXX / Água:
+YYYYY
+(Você pode adicionar quantas linhas de fotos forem necessárias através do sistema Antigravity)
+5. QUITAÇÃO:
+Com a assinatura deste termo e a respectiva entrega das chaves, as partes dão por cumprida a
+obrigação de imissão na posse estipulada no contrato de compra e venda, nada mais tendo a
+reclamar sobre o estado físico do imóvel.
+[Cidade - UF, ex: {{cidade_imovel}}], [Dia] de [Mês] de [Ano].
+_____________________________________________________
+Assinatura do(s) Comprador(es)
+[Nome do(s) Comprador(es)]
 
--- 1 of 7 --
+-- 1 of 2 --
 
-Relação de Fotos
-Abaixo segue uma relação de fotos que ilustram o estado atual do imóvel, dos ambientes
-mencionados e de outros itens que foram deixados no imóvel, servindo como referência
-para a vistoria inicial.
-Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e
+_____________________________________________________
+Assinatura do(s) Vendedor(es)
+[Nome do(s) Vendedor(es)]
+_____________________________________________________
+Assinatura do Representante / Intermediador
+[Nome da Imobiliária / Corretor]
 
--- 2 of 7 --
-
-Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e
-
--- 3 of 7 --
-
-Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e
-
--- 4 of 7 --
-
-Este documento é parte integrante do Contrato de Locação acordado entre as partes.
-Na data de 10 de abril de 2026, as chaves do imóvel foram entregues a locatária,
-que assume total responsabilidade pela conservação e segurança do imóvel.
-A locatária se compromete a cobrir quaisquer prejuízos resultantes de perdas ou
-danos identificados no momento da devolução do imóvel. Além disso, compromete-se
-a devolver o imóvel em condições iguais ou superiores às que foram encontradas na
-data de início da locação, conforme detalhado neste termo de vistoria.
-Assim, as partes nomeiam o foro da Comarca de Poá (SP) para dirimir quaisquer
-dúvidas, renunciando a qualquer outro, por mais privilegiado que seja, e assinam o
-presente no formato digital, juntamente com as testemunhas que também assinam.
-LOCATÁRIA:
-___________________________________________________
-CHRISTIANE ALVES DOS SANTOS
-Testemunha 01: Testemunha 02:
-_____________________________ _________________________________
-Nome: Nome:
-RG: RG:
-Poá, 10 de abril de 2026.
-Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e	Document ID: aeab349d-b1ec-4f05-a614-0d8ea4d1e98e
-
--- 5 of 7 --
-
-Manifesto de Assinaturas
-(Relatório de Evidências)
-Título do documento: Vistoria Christiane
-Este manifesto é resultado de um processo completo de assinatura utilizando produtos da Bry Tecnologia, sendo um formato
-destinado à verificação de evidências e portando deve ser usado apenas para conferência. A validade jurídica de uma assinatura
-feita eletrônicamente só pode ser devidamente verificada em arquivos digitais.
-Para validar, comparar, ou baixar outras versões deste documento, vá até o endereço
-https://app.youassinadordigital.com.br/validate/aeab349d-b1ec-4f05-a614-0d8ea4d1e98e
-e informe a senha de acesso disponibilizada a seguir.
-Código de verificação:
-aeab349d-b1ec-4f05-a614-0d8ea4d1e98e
-Senha de acesso:
-K4DD9ODX
-Lista de assinantes e eventos
-O processo de assinatura obedeceu a seguinte ordem e obteve as evidências descritas abaixo:
-01
-02
-03
-04
-05
-Criação do processo de assinatura:
-Nome: R. SALES IMOVEIS LTDA
-Email: rafael@rsalesimoveis.com.br
-15/04/2026 12:07:01 (BRT)
-CHRISTIANE ALVES DOS SANTOS
-Assinante
-Tipo de assinatura: Eletrônica Simples
-Email: chrislandsmann@bol.com.br
-Assinado em: 22/04/2026 15:56:53 (BRT)
-IP: 172.225.83.35
-Geolocalização: -23.466524135194913,-46.35176080265143
-Rafael Sales Itacarambi
-Assinante
-Tipo de assinatura: Eletrônica Simples
-Email: rafaelitacarambi@gmail.com
-Assinado em: 30/04/2026 15:16:31 (BRT)
-IP: 200.173.173.202
-Pamella Simões de Lima
-Assinante
-Tipo de assinatura: Eletrônica Simples
-Email: pamella.s.lima@hotmail.com
-Assinado em: 30/04/2026 16:22:35 (BRT)
-IP: 177.143.121.139
-Finalização do processo de assinatura: 	30/04/2026 16:22:35 (BRT)
-
--- 6 of 7 --
-
-A Bry Tecnologia atesta que na data de emissão deste protocolo a cópia do documento que se mantém em nosso banco
-de dados possui as assinaturas e evidências citadas.
-Data de emissão do relatório: 30/04/2026 16:26:48 (BRT)
-https://app.youassinadordigital.com.br
-
--- 7 of 7 --
+-- 2 of 2 --
 

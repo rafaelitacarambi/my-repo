@@ -112,10 +112,24 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>DÉCIMA SEXTA - DA CONTRATAÇÃO DIGITAL:</strong> Os CONTRATANTES declaram e concordam que o presente instrumento, incluindo todas as páginas de assinatura e eventuais anexos, poderão ser todos formados por meio digital com o qual expressamente declaram concordar, representam a integralidade dos termos entre elas acordados, substituindo quaisquer outros acordos anteriores formalizados por qualquer outro meio, verbal ou escrito, físico ou digital, nos termos dos art. 107, 219 e 220 do Código Civil. Adicionalmente, nos termos do art. 10, § 2º, da Medida Provisória nº 2.200-2, e do art. 2º, I da MP 983/2020, as PARTES expressamente concordam em utilizar e reconhecem como válida qualquer forma de comprovação de anuência aos termos ora acordados em formato eletrônico.</p>
 
+    [[IF ESTADO_CONSERVACAO]]
+    <div style="page-break-before: always;"></div>
+    <h3 style="color: #ed1c24; font-size: 16px; border-bottom: 2px solid #ed1c24; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px;">ANEXO I - LAUDO DE CONSERVAÇÃO E VISTORIA DO IMÓVEL</h3>
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
+    <p><strong>1. DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL:</strong></p>
+    <div style="padding-left: 20px; margin-bottom: 15px;">
+        <p>{{ESTADO_CONSERVACAO}}</p>
+    </div>
+    
+    <p><strong>2. REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
+    {{LAUDO_FOTOS_HTML}}
+    <div style="page-break-before: always;"></div>
+    [[ENDIF]]
+
     {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
-        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
     </p>
 </div>
     `,
@@ -198,10 +212,24 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>NONA - DA CONTRATAÇÃO DIGITAL:</strong> As partes declaram-se cientes e de pleno acordo com a validade jurídica das assinaturas eletrônicas apostas neste instrumento.</p>
 
+    [[IF ESTADO_CONSERVACAO]]
+    <div style="page-break-before: always;"></div>
+    <h3 style="color: #ed1c24; font-size: 16px; border-bottom: 2px solid #ed1c24; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px;">ANEXO I - LAUDO DE CONSERVAÇÃO E VISTORIA DO IMÓVEL</h3>
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
+    <p><strong>1. DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL:</strong></p>
+    <div style="padding-left: 20px; margin-bottom: 15px;">
+        <p>{{ESTADO_CONSERVACAO}}</p>
+    </div>
+    
+    <p><strong>2. REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
+    {{LAUDO_FOTOS_HTML}}
+    <div style="page-break-before: always;"></div>
+    [[ENDIF]]
+
     {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
-        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
     </p>
 </div>
     `,
@@ -242,10 +270,24 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA NONA - DO FORO E DA ASSINATURA DIGITAL:</strong> As partes elegem o foro da comarca de [[IF OPCIONAIS.FORO_SAO_PAULO]]São Paulo-SP[[ELSE]]Poá-SP[[ENDIF]] para dirimir eventuais litígios judiciais. E, por estarem acordadas, assinam eletronicamente o presente instrumento na presença das testemunhas abaixo.</p>
 
+    [[IF ESTADO_CONSERVACAO]]
+    <div style="page-break-before: always;"></div>
+    <h3 style="color: #ed1c24; font-size: 16px; border-bottom: 2px solid #ed1c24; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px;">ANEXO I - LAUDO DE CONSERVAÇÃO E VISTORIA DO IMÓVEL</h3>
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
+    <p><strong>1. DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL:</strong></p>
+    <div style="padding-left: 20px; margin-bottom: 15px;">
+        <p>{{ESTADO_CONSERVACAO}}</p>
+    </div>
+    
+    <p><strong>2. REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
+    {{LAUDO_FOTOS_HTML}}
+    <div style="page-break-before: always;"></div>
+    [[ENDIF]]
+
     {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
-        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
     </p>
 </div>
     `,
@@ -270,10 +312,20 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA QUARTA - DO FORO:</strong> Elegem o foro deste contrato nos mesmos termos do contrato de locação principal.</p>
 
+    <h3 style="color: #ed1c24; font-size: 16px; border-bottom: 2px solid #ed1c24; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px;">LAUDO DE CONSERVAÇÃO E VISTORIA</h3>
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
+    <p><strong>1. DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL:</strong></p>
+    <div style="padding-left: 20px; margin-bottom: 15px;">
+        <p>[[IF ESTADO_CONSERVACAO]]{{ESTADO_CONSERVACAO}}[[ELSE]]O imóvel é entregue em perfeito estado de conservação, habitabilidade e funcionamento, sem quaisquer ressalvas ou pendências apontadas pelas partes neste ato.[[ENDIF]]</p>
+    </div>
+    
+    <p><strong>2. REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
+    {{LAUDO_FOTOS_HTML}}
+
     {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
-        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
     </p>
 </div>
     `,
@@ -282,7 +334,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 <h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">INSTRUMENTO DE DESOCUPAÇÃO E VISTORIA FINAL</h3>
 
 <div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
-    <p><strong>DATA:</strong> [[IF DATA_ENTREGA_CHAVES]]{{DATA_ENTREGA_CHAVES}}[[ELSE]]{{DATA_HOJE}}[[ENDIF]]</p>
+    <p><strong>DATA:</strong> {{DATA_DOCUMENTO}}</p>
     <p><strong>{{LOCADORES_LABEL}}:</strong> {{LOCADORES_LISTA}}</p>
     <p><strong>{{LOCATARIOS_LABEL}}:</strong> {{LOCATARIOS_LISTA}}</p>
     <p><strong>IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
@@ -290,15 +342,24 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p>Pelo presente instrumento, as partes declaram:</p>
 
     <p><strong>1. DA ENTREGA DAS CHAVES:</strong><br/>
-    O(A) {{LOCATARIOS_LABEL}} realiza, nesta data ([[IF DATA_ENTREGA_CHAVES]]{{DATA_ENTREGA_CHAVES}}[[ELSE]]{{DATA_HOJE}}[[ENDIF]]), a entrega das chaves do imóvel acima descrito para a realização da Vistoria de Saída, em cumprimento à Cláusula Décima do contrato.</p>
+    O(A) {{LOCATARIOS_LABEL}} realiza, nesta data ({{DATA_VISTORIA}}), a entrega das chaves do imóvel acima descrito para a realização da Vistoria de Saída, em cumprimento à Cláusula Décima do contrato.</p>
 
     <p><strong>2. DA ISENÇÃO/COBRANÇA DE MULTA CONTRATUAL:</strong><br/>
     As partes reconhecem que [[IF INCIDE_MULTA]]incide[[ELSE]]não incide[[ENDIF]] multa rescisória pela desocupação antecipada [[IF MULTA_JUSTIFICATIVA]]({{MULTA_JUSTIFICATIVA}})[[ELSE]](uma vez que já foi cumprido o período mínimo de locação estipulado ou o prazo contratual foi integralmente observado)[[ENDIF]].</p>
 
     <p><strong>3. DA VISTORIA E APONTAMENTOS:</strong><br/>
     A entrega das chaves neste ato é provisória e não configura quitação plena. A quitação final dependerá da aprovação do estado de conservação do imóvel na vistoria a ser realizada.<br/>
-    O imóvel deve ser devolvido nas mesmas condições em que foi recebido, exceto pelo desgaste natural, conforme a Cláusula Segunda e Cláusula Quinta do contrato original.<br/>
+    O imóvel deve ser devolvido nas mesmas condições in que foi recebido, exceto pelo desgaste natural, conforme a Cláusula Segunda e Cláusula Quinta do contrato original.<br/>
     Qualquer dano, furação não autorizada ou alteração na pintura constatada será apontada para reparo ou indenização.</p>
+
+    <p><strong>3.1 DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO (VISTORIA DE SAÍDA):</strong></p>
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
+    <div style="padding-left: 20px; margin-bottom: 15px;">
+        <p>[[IF ESTADO_CONSERVACAO]]{{ESTADO_CONSERVACAO}}[[ELSE]]O imóvel é devolvido em perfeito estado de conservação, ressalvados apenas os desgastes naturais decorrentes do uso regular, sem pendências adicionais constatadas na vistoria final.[[ENDIF]]</p>
+    </div>
+
+    <p><strong>3.2 REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
+    {{LAUDO_FOTOS_HTML}}
 
     <p><strong>4. PENDÊNCIAS FINANCEIRAS E CONSUMO:</strong><br/>
     O Termo de Rescisão Final e a devolução da garantia serão processados após a verificação de:<br/>
@@ -312,7 +373,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
-        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
     </p>
 </div>
     `,
@@ -336,7 +397,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
-        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
     </p>
 </div>
     `,
@@ -352,15 +413,15 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     
     <p style="margin-top: 20px;"><strong>QUALIFICAÇÃO DO IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
     
-    [[IF ESTADO_CONSERVACAO]]
-    <p style="margin-top: 30px;"><strong>CONDIÇÕES DO IMÓVEL NA ENTREGA:</strong></p>
-    <div style="padding-left: 20px;">
-        <p>{{ESTADO_CONSERVACAO}}</p>
+    <h3 style="color: #000; font-size: 15px; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL</h3>
+    <div style="padding-left: 20px; margin-top: 10px; margin-bottom: 15px;">
+        <p>[[IF ESTADO_CONSERVACAO]]{{ESTADO_CONSERVACAO}}[[ELSE]]O imóvel é entregue em perfeito estado de conservação, habitabilidade e funcionamento, sem quaisquer ressalvas apontadas pelas partes neste ato.[[ENDIF]]</p>
     </div>
 
-    <p style="margin-top: 30px;"><strong>Observação:</strong> Todas as condições acima descritas encontram-se registradas em laudo fotográfico anexo, que passa a integrar o presente termo de vistoria.</p>
+    <p style="margin-top: 20px;"><strong>Observação:</strong> Todas as condições descritas e o estado geral do imóvel encontram-se devidamente documentados no laudo fotográfico anexo, que passa a integrar o presente termo de vistoria para todos os fins de direito.</p>
     <p>Este documento é parte integrante do Contrato de Locação acordado entre as partes.</p>
-    [[ENDIF]]
+    
+    <h3 style="color: #000; font-size: 15px; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">REGISTRO FOTOGRÁFICO DA VISTORIA</h3>
     {{LAUDO_FOTOS_HTML}}
     
     [[IF DATA_ENTREGA_CHAVES]]
@@ -386,15 +447,14 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     
     <p style="margin-top: 20px;"><strong>QUALIFICAÇÃO DO IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
     
-    [[IF ESTADO_CONSERVACAO]]
-    <p style="margin-top: 30px;"><strong>CONDIÇÕES DO IMÓVEL SENDO DEVOLVIDO:</strong></p>
-    <div style="padding-left: 20px;">
-        <p>{{ESTADO_CONSERVACAO}}</p>
+    <h3 style="color: #000; font-size: 15px; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL (VISTORIA DE SAÍDA)</h3>
+    <div style="padding-left: 20px; margin-top: 10px; margin-bottom: 15px;">
+        <p>[[IF ESTADO_CONSERVACAO]]{{ESTADO_CONSERVACAO}}[[ELSE]]O imóvel é devolvido em perfeito estado de conservação, habitabilidade e funcionamento, em conformidade com o estado recebido na vistoria de entrada, ressalvados apenas os desgastes naturais do uso regular, sem ressalvas adicionais.[[ENDIF]]</p>
     </div>
 
-    <p style="margin-top: 30px;"><strong>Observação:</strong> Todas as condições acima descritas encontram-se registradas em laudo fotográfico anexo, que passa a integrar o presente termo de vistoria.</p>
-    [[ENDIF]]
+    <p style="margin-top: 20px;"><strong>Observação:</strong> O estado de conservação geral na devolução encontra-se documentado no laudo fotográfico anexo, que passa a integrar este termo para fins de vistoria final e desocupação.</p>
     
+    <h3 style="color: #000; font-size: 15px; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">REGISTRO FOTOGRÁFICO DA VISTORIA</h3>
     {{LAUDO_FOTOS_HTML}}
     
     <p style="margin-top: 25px;">O presente Termo de Vistoria de Saída tem por finalidade registrar a restituição do imóvel ao {{LOCADORES_LABEL}}, declarando que foi realizada a vistoria final do imóvel, apurando-se seu estado de conservação em comparação com a vistoria de entrada.</p>
@@ -409,9 +469,9 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 <div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
     <p><strong>QUALIFICAÇÃO DO ATO:</strong></p>
     
-    <p><strong>IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
     <p><strong>{{VENDEDORES_LABEL}} (PROMITENTE VENDEDOR):</strong> {{VENDEDORES_LISTA}}</p>
     <p><strong>{{COMPRADORES_LABEL}} (PROMITENTE COMPRADOR):</strong> {{COMPRADORES_LISTA}}</p>
+    <p><strong>IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
 
     <p>Pelo presente instrumento, as partes formalizam a entrega das chaves da unidade acima qualificada, declarando e assentindo o seguinte:</p>
 
@@ -428,22 +488,22 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     • A transferência de titularidade junto às concessionárias de serviços públicos (Energia Elétrica, Água, Gás, etc.), isentando o(s) VENDEDOR(ES) de qualquer responsabilidade sobre o consumo a partir desta data.<br/>
     O(s) VENDEDOR(ES) declara(m) ter quitado o consumo proporcional até o dia de hoje.</p>
 
-    <p><strong>4. REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
-    [[IF ESTADO_CONSERVACAO]]
+    <p><strong>4. DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL:</strong></p>
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
     <div style="padding-left: 20px; margin-bottom: 15px;">
-        <p>{{ESTADO_CONSERVACAO}}</p>
+        <p>[[IF ESTADO_CONSERVACAO]]{{ESTADO_CONSERVACAO}}[[ELSE]]O imóvel é entregue pelo(s) VENDEDOR(ES) e recebido pelo(s) COMPRADOR(ES) em perfeito estado de conservação, habitabilidade e funcionamento, em conformidade com o que foi negociado pelas partes, sem quaisquer ressalvas ou pendências de reparo.[[ENDIF]]</p>
     </div>
-    [[ENDIF]]
     
+    <p><strong>5. REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
     {{LAUDO_FOTOS_HTML}}
 
-    <p><strong>5. QUITAÇÃO:</strong><br/>
+    <p><strong>6. QUITAÇÃO:</strong><br/>
     Com a assinatura deste termo e a respectiva entrega das chaves, as partes dão por cumprida a obrigação de imissão na posse estipulada no contrato de compra e venda, nada mais tendo a reclamar sobre o estado físico do imóvel.</p>
 
     {{ASSINATURAS_HTML}}
 
     <p style="text-align: center; margin-top: 50px;">
-        {{CIDADE_ASSINATURA}}, {{DATA_HOJE}}.
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
     </p>
 </div>
 `
