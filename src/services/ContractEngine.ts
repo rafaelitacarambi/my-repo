@@ -623,7 +623,41 @@ export class ContractEngine {
             dataEntregaChaves = dataVistoria;
         }
 
+        const getDocumentDateObj = (dateVal: any): Date => {
+            if (!dateVal) return new Date();
+            const dateStr = String(dateVal).trim();
+            try {
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                    const [year, month, day] = dateStr.split('-');
+                    return new Date(Number(year), Number(month) - 1, Number(day));
+                }
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+                    const [day, month, year] = dateStr.split('/');
+                    return new Date(Number(year), Number(month) - 1, Number(day));
+                }
+                if (dateStr.includes('T')) {
+                    const datePart = dateStr.split('T')[0];
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+                        const [year, month, day] = datePart.split('-');
+                        return new Date(Number(year), Number(month) - 1, Number(day));
+                    }
+                }
+                const parsed = new Date(dateVal);
+                if (!isNaN(parsed.getTime())) {
+                    return parsed;
+                }
+            } catch (e) {
+                console.error("[ContractEngine] Erro ao obter objeto Date para:", dateVal, e);
+            }
+            return new Date();
+        };
+
+        const docDateObj = getDocumentDateObj(extraData?.DATA_DOCUMENTO);
         const dataDocumento = parseAndFormatDate(extraData?.DATA_DOCUMENTO) || parseAndFormatDate(new Date());
+        
+        const diaDoc = docDateObj.getDate();
+        const mesDocExtenso = new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(docDateObj);
+        const anoDoc = docDateObj.getFullYear();
 
         const data: ContractData = {
             // Primeiro carregamos os dados brutos do formulário (que podem conter lixo de rascunhos antigos)
@@ -639,9 +673,17 @@ export class ContractEngine {
             DATA_VISTORIA: dataVistoria,
             DATA_ENTREGA_CHAVES: dataEntregaChaves,
             DATA_HOJE: dataDocumento,
-            DIA_HOJE: new Date().getDate(),
-            MES_HOJE_EXTENSO: new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date()),
-            ANO_HOJE: new Date().getFullYear(),
+            DIA_HOJE: diaDoc,
+            MES_HOJE_EXTENSO: mesDocExtenso,
+            ANO_HOJE: anoDoc,
+
+            // Mapeamentos em minúsculo para máxima compatibilidade
+            data_documento: dataDocumento,
+            data_vistoria: dataVistoria,
+            data_entrega_chaves: dataEntregaChaves,
+            data_hoje: dataDocumento,
+            data_atual: dataDocumento,
+
             LOGO_RSALES: 'https://static.wixstatic.com/media/9b23b4_8b5ff4d697054133a09457af0365ebeb~mv2.png',
 
             // Imóvel (priorizando os dados editados no wizard/extraData)

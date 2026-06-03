@@ -433,6 +433,10 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p>Assim as partes nomeiam o foro da Comarca de {{IMOVEL_CIDADE}} ({{IMOVEL_ESTADO}}) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital, juntamente com as testemunhas que também assinam.</p>
 
     {{ASSINATURAS_HTML}}
+
+    <p style="text-align: center; margin-top: 50px;">
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
+    </p>
 </div>`,
 
     'VistoriaSaida': `
@@ -462,6 +466,10 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p>Assim as partes nomeiam o foro da Comarca de {{IMOVEL_CIDADE}} ({{IMOVEL_ESTADO}}) para dirimir quaisquer dúvidas, renunciando a qualquer outro por mais privilegiado que seja, e assinam o presente no formato digital.</p>
 
     {{ASSINATURAS_HTML}}
+
+    <p style="text-align: center; margin-top: 50px;">
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
+    </p>
 </div>`,
     'EntregaChavesVenda': `
 <h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">TERMO DE ENTREGA DE CHAVES E VISTORIA – COMPRA E VENDA</h2>
