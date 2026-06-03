@@ -9,6 +9,16 @@ export interface ContractData {
     [key: string]: any;
 }
 
+export interface ContractClause {
+    key: string;
+    titulo: string;
+    textoHtml: string;
+    obrigatoria: boolean;
+    condicional?: string;
+    ancoraRef?: string;
+    semNumero?: boolean;
+}
+
 export class ContractEngine {
     /**
      * Processa o template substituindo placeholders e avaliando condicionais.
@@ -652,8 +662,16 @@ export class ContractEngine {
             return new Date();
         };
 
-        const docDateObj = getDocumentDateObj(extraData?.DATA_DOCUMENTO);
-        const dataDocumento = parseAndFormatDate(extraData?.DATA_DOCUMENTO) || parseAndFormatDate(new Date());
+        let rawDocDate = extraData?.DATA_DOCUMENTO;
+        if (!rawDocDate) {
+            if (contractType === 'EntregaChaves' || contractType === 'EntregaChavesVenda') {
+                rawDocDate = extraData?.DATA_ENTREGA_CHAVES;
+            } else if (contractType === 'VistoriaEntrada' || contractType === 'VistoriaSaida' || contractType === 'DevolucaoChaves') {
+                rawDocDate = extraData?.DATA_VISTORIA;
+            }
+        }
+        const docDateObj = getDocumentDateObj(rawDocDate);
+        const dataDocumento = parseAndFormatDate(rawDocDate) || parseAndFormatDate(new Date());
         
         const diaDoc = docDateObj.getDate();
         const mesDocExtenso = new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(docDateObj);
@@ -787,7 +805,9 @@ export class ContractEngine {
             // Variáveis Booleanas de Exclusão (Evitar múltiplas garantias no DOC)
             GARANTIA_CAUCAO: extraData?.GARANTIA === 'Caucao',
             GARANTIA_FIADOR: extraData?.GARANTIA === 'Fiador',
+            GARANTIA_FIANCA: extraData?.GARANTIA === 'Fiador',
             GARANTIA_SEGURO_FIANCA: extraData?.GARANTIA === 'SeguroFianca',
+            GARANTIA_SEGURO: extraData?.GARANTIA === 'SeguroFianca',
             GARANTIA_NENHUMA: extraData?.GARANTIA === 'SemGarantia',
             PRAZO_IGUAL_SUPERIOR_30: parseInt(extraData?.PRAZO_MESES || '0') >= 30,
 
@@ -895,12 +915,14 @@ export class ContractEngine {
                 'Locatário': { m: 'O LOCATÁRIO', f: 'A LOCATÁRIA' },
                 'Vendedor': { m: 'O VENDEDOR', f: 'A VENDEDORA' },
                 'Comprador': { m: 'O COMPRADOR', f: 'A COMPRADORA' },
+                'Fiador': { m: 'O FIADOR', f: 'A FIADORA' },
             };
             const mapPlural: any = {
                 'Locador': { mp: 'OS LOCADORES', fp: 'AS LOCADORAS' },
                 'Locatário': { mp: 'OS LOCATÁRIOS', fp: 'AS LOCATÁRIAS' },
                 'Vendedor': { mp: 'OS VENDEDORES', fp: 'AS VENDEDORAS' },
                 'Comprador': { mp: 'OS COMPRADORES', fp: 'AS COMPRADORAS' },
+                'Fiador': { mp: 'OS FIADORES', fp: 'AS FIADORAS' },
             };
 
             const sing = mapSingular[roleBase] || { m: roleBase, f: roleBase };
@@ -952,6 +974,7 @@ export class ContractEngine {
                 'Vendedor': { ms: 'O VENDEDOR', fs: 'A VENDEDORA', mp: 'OS VENDEDORES', fp: 'AS VENDEDORAS' },
                 'Comprador': { ms: 'O COMPRADOR', fs: 'A COMPRADORA', mp: 'OS COMPRADORES', fp: 'AS COMPRADORAS' },
                 'Proprietário': { ms: 'O PROPRIETÁRIO', fs: 'A PROPRIETÁRIA', mp: 'OS PROPRIETÁRIOS', fp: 'AS PROPRIETÁRIAS' },
+                'Fiador': { ms: 'O FIADOR', fs: 'A FIADORA', mp: 'OS FIADORES', fp: 'AS FIADORAS' },
             };
 
             const labels = map[roleBase] || { ms: roleBase, fs: roleBase, mp: roleBase, fp: roleBase };
@@ -1009,6 +1032,30 @@ export class ContractEngine {
             data.LOCATARIO_CPF = o.cpf || client?.cpfCnpj || client?.document || '';
             data.LOCATARIO_EMAIL = o.email || client?.emailPrincipal || client?.email || '';
             data.LOCATARIO_ENDERECO_COMPLETO = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
+        }
+
+        // Mapear FIADOR (Fiador principal)
+        const fiadorIds = extraData?.FIADORES_IDS || [];
+        if (fiadorIds.length > 0) {
+            const firstId = fiadorIds[0];
+            const client = clientes.find(c => c._id === firstId || c.id === firstId);
+            const o = extraData?.PARTICIPANT_DETAILS?.[firstId] || {};
+            const isFem = (o.gender || (client as any)?.gender) === 'Feminino';
+
+            data.FIADOR_LABEL = getIndividualLabel(firstId, 'Fiador');
+            data.FIADOR_NOME = o.name || client?.clientName || client?.name || '';
+            data.FIADOR_QUALIFICACAO = getQualification(firstId);
+
+            // Campos individuais
+            const nationality = o.nationality || (client as any)?.nationality || (isFem ? 'brasileira' : 'brasileiro');
+            data.FIADOR_NACIONALIDADE = nationality;
+            data.FIADOR_ESTADO_CIVIL = o.maritalStatus || (client as any)?.maritalStatus || '';
+            data.FIADOR_PROFISSAO = o.profession || (client as any)?.profession || '';
+            data.FIADOR_DOCUMENTO_TIPO = 'RG';
+            data.FIADOR_DOCUMENTO_NUM = o.rg || (client as any)?.rg || '';
+            data.FIADOR_CPF = o.cpf || client?.cpfCnpj || client?.document || '';
+            data.FIADOR_EMAIL = o.email || client?.emailPrincipal || client?.email || '';
+            data.FIADOR_ENDERECO_COMPLETO = o.address || client?.address || (client?.street ? `${client.street}, ${client.number || 'S/N'} - ${client.city || ''}/${client.state || ''}` : '') || '';
         }
 
         // Mapear VENDEDOR (Vendedor principal)
@@ -1082,6 +1129,10 @@ export class ContractEngine {
         data.COMPRADORES_LABEL = getGroupRoleLabel(compradorIds, 'Comprador');
         data.COMPRADORES_LISTA = compradorIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
         data.COMPRADORES_NOMES = compradorIds.map((id: string) => getName(id)).filter(Boolean).join(', ');
+
+        data.FIADORES_LABEL = getGroupRoleLabel(fiadorIds, 'Fiador');
+        data.FIADORES_LISTA = fiadorIds.map((id: string) => getQualification(id)).filter(Boolean).join('; ');
+        data.FIADORES_NOMES = fiadorIds.map((id: string) => getName(id)).filter(Boolean).join(', ');
         // -- GRAMMAR LOGIC --
         const locLabel = data.LOCATARIOS_LABEL || 'LOCATÁRIO(A)';
         const locIsPlural = locLabel.endsWith('S');
@@ -1119,6 +1170,7 @@ export class ContractEngine {
         const group1: { role: string; name: string }[] = [];
         const group2: { role: string; name: string }[] = [];
         const witnesses: { role: string; name: string }[] = [];
+        const fiadoresGroup: { role: string; name: string }[] = [];
 
         const isVenda = contractType === 'CompraEVenda' || (contractType || '').toLowerCase().includes('venda');
         const isAutorizacao = contractType === 'AutorizacaoDivulgacao';
@@ -1137,6 +1189,12 @@ export class ContractEngine {
             const labelLocatario = (data.LOCATARIOS_LABEL || 'LOCATÁRIO(A)').toUpperCase();
             locadorIds.forEach((id: string) => group1.push({ role: labelLocador, name: getName(id) }));
             locatarioIds.forEach((id: string) => group2.push({ role: labelLocatario, name: getName(id) }));
+        }
+
+        // Popula assinaturas do Fiador se aplicável
+        if (extraData?.GARANTIA === 'Fiador' && fiadorIds.length > 0) {
+            const labelFiador = (data.FIADORES_LABEL || 'FIADOR(A)').toUpperCase();
+            fiadorIds.forEach((id: string) => fiadoresGroup.push({ role: labelFiador, name: getName(id) }));
         }
 
         const t1Name = extraData?.TESTEMUNHA_1_NOME || extraData?.TESTEMUNHA1_NOME || '';
@@ -1209,6 +1267,11 @@ export class ContractEngine {
             }
         }
 
+        // Renderizar fiadores
+        if (fiadoresGroup.length > 0) {
+            sigHtml += renderGroupRows(fiadoresGroup);
+        }
+
         // Renderizar testemunhas
         if (witnesses.length > 0) {
             sigHtml += renderGroupRows(witnesses);
@@ -1229,6 +1292,183 @@ export class ContractEngine {
     }
 
     /**
+     * Auxiliar para obter valor de caminhos aninhados em objetos.
+     */
+    static getValueFromPath(obj: any, path: string): any {
+        const keys = path.split('.');
+        let value = obj;
+        for (const k of keys) {
+            value = value?.[k];
+        }
+        return value;
+    }
+
+    /**
+     * Avalia uma condição lógica simples contra os dados do formulário.
+     */
+    static evaluateCondition(cond: string, data: any): boolean {
+        if (!cond) return true;
+        cond = cond.trim();
+        
+        // Suporte para igualdade, ex: GARANTIA == 'Caucao'
+        const equalityMatch = cond.match(/^([\w.]+)\s*===\s*['"]([^'"]*)['"]$/) || 
+                              cond.match(/^([\w.]+)\s*==\s*['"]([^'"]*)['"]$/);
+        if (equalityMatch) {
+            const [, key, val] = equalityMatch;
+            const actualValue = this.getValueFromPath(data, key);
+            return String(actualValue ?? '') === val;
+        }
+
+        // Suporte para desigualdade, ex: GARANTIA != 'Caucao'
+        const inequalityMatch = cond.match(/^([\w.]+)\s*!==\s*['"]([^'"]*)['"]$/) || 
+                                cond.match(/^([\w.]+)\s*!=\s*['"]([^'"]*)['"]$/);
+        if (inequalityMatch) {
+            const [, key, val] = inequalityMatch;
+            const actualValue = this.getValueFromPath(data, key);
+            return String(actualValue ?? '') !== val;
+        }
+
+        // Suporte para negação simples, ex: !IS_PACOTE
+        let isNegative = cond.startsWith('!');
+        let cleanKey = isNegative ? cond.substring(1).trim() : cond;
+        
+        const value = this.getValueFromPath(data, cleanKey);
+        let conditionMet = !!value;
+        if (isNegative) conditionMet = !conditionMet;
+        return conditionMet;
+    }
+
+    /**
+     * Converte um número para ordinal extenso em português (feminino, ex: PRIMEIRA).
+     */
+    static getOrdinalWord(num: number): string {
+        const ones = ['', 'PRIMEIRA', 'SEGUNDA', 'TERCEIRA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÉTIMA', 'OITAVA', 'NONA'];
+        const tens = ['', 'DÉCIMA', 'VIGÉSIMA', 'TRIGÉSIMA', 'QUADRAGÉSIMA', 'QUINQUAGÉSIMA', 'SEXAGÉSIMA', 'SEPTUAGÉSIMA', 'OCTOGÉSIMA', 'NONAGÉSIMA'];
+
+        if (num <= 0) return '';
+        if (num < 10) return ones[num];
+        
+        const t = Math.floor(num / 10);
+        const o = num % 10;
+        
+        if (o === 0) {
+            return tens[t];
+        }
+        
+        return `${tens[t]} ${ones[o]}`;
+    }
+
+    /**
+     * Parseia o conteúdo HTML do template buscando cláusulas estruturadas JSON.
+     */
+    static parseTemplateClauses(templateContent: string): ContractClause[] {
+        if (!templateContent) return [];
+        
+        const trimmed = templateContent.trim();
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) {
+                    return parsed as ContractClause[];
+                }
+            } catch (e) {
+                console.warn("[ContractEngine] Falha ao parsear template como array JSON, tratando como legado HTML.", e);
+            }
+        }
+        
+        // Fallback: tratar como cláusula única legada
+        return [{
+            key: 'legacy_content',
+            titulo: 'Cláusula Única (Legado)',
+            textoHtml: templateContent,
+            obrigatoria: true
+        }];
+    }
+
+    /**
+     * Filtra, renumera, resolve referências cruzadas e renderiza cláusulas estruturadas.
+     */
+    static assembleContract(templateJson: string, data: ContractData): string {
+        const clauses = this.parseTemplateClauses(templateJson);
+        
+        // 1. Filtragem e Visibilidade
+        const activeClauses = clauses.filter(clause => {
+            if (clause.obrigatoria) return true;
+            
+            // Se estiver explicitamente desabilitado pelo usuário
+            if (Array.isArray(data.DISABLED_CLAUSES) && data.DISABLED_CLAUSES.includes(clause.key)) {
+                return false;
+            }
+            
+            // Avaliar condição
+            if (clause.condicional) {
+                return this.evaluateCondition(clause.condicional, data);
+            }
+            
+            return true;
+        });
+
+        // 2. Renumeração e Mapeamento de Âncoras
+        let clauseCounter = 0;
+        const anchorToNum: Record<string, number> = {};
+        const anchorToOrdinal: Record<string, string> = {};
+
+        const mappedClauses = activeClauses.map(clause => {
+            const hasNum = !clause.semNumero;
+            let numArabe = 0;
+            let numOrdinal = '';
+
+            if (hasNum) {
+                clauseCounter++;
+                numArabe = clauseCounter;
+                numOrdinal = this.getOrdinalWord(clauseCounter);
+                
+                if (clause.ancoraRef) {
+                    const cleanAnchor = clause.ancoraRef.trim();
+                    anchorToNum[cleanAnchor] = numArabe;
+                    anchorToOrdinal[cleanAnchor] = numOrdinal;
+                }
+            }
+
+            return {
+                ...clause,
+                numArabe,
+                numOrdinal
+            };
+        });
+
+        // 3. Processamento de Texto e Resolução de Referências
+        const processedHtmlList = mappedClauses.map(clause => {
+            let text = clause.textoHtml || '';
+            let title = clause.titulo || '';
+
+            // Substituir placeholders de número locais
+            text = text.replace(/\{\{NUMERO_CLAUSULA_EXTENSO\}\}/g, clause.numOrdinal || '');
+            text = text.replace(/\{\{NUMERO_CLAUSULA_ARABE\}\}/g, String(clause.numArabe || ''));
+            text = text.replace(/\{\{TITULO_CLAUSULA\}\}/g, title);
+
+            title = title.replace(/\{\{NUMERO_CLAUSULA_EXTENSO\}\}/g, clause.numOrdinal || '');
+            title = title.replace(/\{\{NUMERO_CLAUSULA_ARABE\}\}/g, String(clause.numArabe || ''));
+
+            // Resolver referências cruzadas
+            text = text.replace(/\{\{REF:(\w+)\}\}/g, (match, anchor) => {
+                return anchorToOrdinal[anchor] || `[REF NÃO RESOLVIDA: ${anchor}]`;
+            });
+            text = text.replace(/\{\{REF_NUM:(\w+)\}\}/g, (match, anchor) => {
+                return String(anchorToNum[anchor] || `[REF NÃO RESOLVIDA: ${anchor}]`);
+            });
+
+            // Processar placeholders normais e condicionais internos
+            const processedText = this.processTemplate(text, data);
+            
+            return processedText;
+        });
+
+        // Junta as cláusulas em um único bloco de HTML
+        return processedHtmlList.join('\n\n');
+    }
+
+    /**
      * Gera o HTML final pronto para o Preview e PDF, incluindo CSS básico e Logo.
      */
     static renderContract(template: string, data: ContractData): string {
@@ -1236,7 +1476,16 @@ export class ContractEngine {
         if (template?.includes('EUZIQUE')) {
             console.warn('[ContractEngine] ALERTA: O template contém o nome "EUZIQUE" hardcoded!');
         }
-        const body = this.processTemplate(template, data);
+        
+        let body = '';
+        const trimmed = (template || '').trim();
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+            // Process structured JSON clauses
+            body = this.assembleContract(trimmed, data);
+        } else {
+            // Legacy processing
+            body = this.processTemplate(template, data);
+        }
 
         const contractType = data.CONTRACT_TYPE || '';
         let headerTitle = 'CONTRATO DE LOCAÇÃO';

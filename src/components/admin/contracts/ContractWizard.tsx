@@ -108,6 +108,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         LOCATARIOS_IDS: [],
         VENDEDORES_IDS: [],
         COMPRADORES_IDS: [],
+        FIADORES_IDS: [],
         PARTES_RELACIONADAS: [], // Ex: cônjuges
         PARTICIPANT_DETAILS: {}, // Overrides for client data {(clientId): {name, cpf, rg, profession, maritalStatus, etc}}
         // Financeiro
@@ -167,6 +168,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         OBSERVACOES_CHAVES: '',
         INVENTARIO_MOVEIS: '',
         LAUDO_FOTOS: [],
+        DISABLED_CLAUSES: [],
         // Testemunhas
         TESTEMUNHA1_NOME: '',
         TESTEMUNHA1_RG: '',
@@ -246,6 +248,32 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
     });
     const [showDebug, setShowDebug] = useState(false);
 
+    // Estados para o Modal de Cadastro/Vínculo de Fiador
+    const INITIAL_FIADOR_FORM = {
+        name: '',
+        cpf: '',
+        rg: '',
+        nationality: 'brasileiro(a)',
+        maritalStatus: 'solteiro(a)',
+        profession: '',
+        gender: 'Masculino',
+        email: '',
+        phone: '',
+        address: '',
+        spouseId: 'no_spouse',
+        tipoPessoa: 'Física',
+        tradeName: '',
+        representativeName: '',
+        representativeCpf: '',
+        representativeRg: ''
+    };
+    const [isFiadorModalOpen, setIsFiadorModalOpen] = useState(false);
+    const [prevGarantia, setPrevGarantia] = useState('Caucao');
+    const [newFiadorForm, setNewFiadorForm] = useState<any>(INITIAL_FIADOR_FORM);
+    const [isRegisteringNewFiador, setIsRegisteringNewFiador] = useState(false);
+    const [selectedExistingFiadorId, setSelectedExistingFiadorId] = useState('');
+    const [searchFiadorQuery, setSearchFiadorQuery] = useState('');
+
     const syncLatestCardData = async (type = selectedType) => {
         try {
             console.log('[ContractWizard] Sincronizando dados mais recentes do cartão...');
@@ -275,6 +303,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 const locatarios: string[] = [];
                 const vendedores: string[] = [];
                 const compradores: string[] = [];
+                const fiadores: string[] = [];
 
                 freshParties.forEach((p: any) => {
                     if (p.clientRef) {
@@ -284,6 +313,8 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                         } else if (p.roleInService === 'Locatário' || p.roleInService === 'Proponente' || p.roleInService === 'Comprador') {
                             if (isLocacao(type)) locatarios.push(p.clientRef);
                             else compradores.push(p.clientRef);
+                        } else if (p.roleInService === 'Fiador') {
+                            fiadores.push(p.clientRef);
                         }
                     }
                 });
@@ -298,9 +329,11 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 newFormData.LOCATARIOS_IDS = locatarios;
                 newFormData.VENDEDORES_IDS = vendedores;
                 newFormData.COMPRADORES_IDS = compradores;
+                newFormData.FIADORES_IDS = fiadores;
             } else if (freshCase.clientePrincipalRef) {
                 newFormData.LOCATARIOS_IDS = [freshCase.clientePrincipalRef];
                 newFormData.COMPRADORES_IDS = [freshCase.clientePrincipalRef];
+                newFormData.FIADORES_IDS = [];
             }
 
             // 3. Map Imóvel
@@ -421,15 +454,18 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                     const locatarios: string[] = [];
                     const vendedores: string[] = [];
                     const compradores: string[] = [];
+                    const fiadores: string[] = [];
 
                     parties.forEach(p => {
                         if (p.clientRef) {
-                            if (p.roleInService === 'Vendedor') {
+                            if (p.roleInService === 'Locador' || p.roleInService === 'Vendedor') {
                                 if (isLocacao(selectedType)) locadores.push(p.clientRef);
                                 else vendedores.push(p.clientRef);
-                            } else if (p.roleInService === 'Proponente' || p.roleInService === 'Comprador') {
+                            } else if (p.roleInService === 'Locatário' || p.roleInService === 'Proponente' || p.roleInService === 'Comprador') {
                                 if (isLocacao(selectedType)) locatarios.push(p.clientRef);
                                 else compradores.push(p.clientRef);
+                            } else if (p.roleInService === 'Fiador') {
+                                fiadores.push(p.clientRef);
                             }
                         }
                     });
@@ -446,12 +482,14 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                         LOCATARIOS_IDS: locatarios.length > 0 ? locatarios : newFormData.LOCATARIOS_IDS,
                         VENDEDORES_IDS: vendedores.length > 0 ? vendedores : newFormData.VENDEDORES_IDS,
                         COMPRADORES_IDS: compradores.length > 0 ? compradores : newFormData.COMPRADORES_IDS,
+                        FIADORES_IDS: fiadores.length > 0 ? fiadores : newFormData.FIADORES_IDS,
                     };
                 } else if (atendimento.clientePrincipalRef) {
                     newFormData = {
                         ...newFormData,
                         LOCATARIOS_IDS: [atendimento.clientePrincipalRef!],
-                        COMPRADORES_IDS: [atendimento.clientePrincipalRef!]
+                        COMPRADORES_IDS: [atendimento.clientePrincipalRef!],
+                        FIADORES_IDS: []
                     };
                 }
                 
@@ -477,11 +515,13 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
             const group1Ids = isLocacao(selectedType) ? formData.LOCADORES_IDS : formData.VENDEDORES_IDS;
             const group2Ids = isLocacao(selectedType) ? formData.LOCATARIOS_IDS : formData.COMPRADORES_IDS;
             const relatedIds = formData.PARTES_RELACIONADAS || [];
+            const fiadorIds = formData.FIADORES_IDS || [];
 
             const participants = [
-                ...(group1Ids || []).map((id: string) => ({ id, role: 'Vendedor' })),
-                ...(group2Ids || []).map((id: string) => ({ id, role: 'Proponente' })),
-                ...(relatedIds || []).map((id: string) => ({ id, role: 'Proponente' }))
+                ...(group1Ids || []).map((id: string) => ({ id, role: isLocacao(selectedType) ? 'Locador' : 'Vendedor' })),
+                ...(group2Ids || []).map((id: string) => ({ id, role: isLocacao(selectedType) ? 'Locatário' : 'Proponente' })),
+                ...(relatedIds || []).map((id: string) => ({ id, role: isLocacao(selectedType) ? 'Locatário' : 'Proponente' })),
+                ...(fiadorIds || []).map((id: string) => ({ id, role: 'Fiador' }))
             ].filter(p => p.id);
 
             // Deduplica por ID de cliente
@@ -580,6 +620,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                     // Garantir que campos novos da V2 existam mesmo se o rascunho for antigo
                     if (!parsed.PARTICIPANT_DETAILS) parsed.PARTICIPANT_DETAILS = {};
                     if (!parsed.PARTES_RELACIONADAS) parsed.PARTES_RELACIONADAS = [];
+                    if (!parsed.DISABLED_CLAUSES) parsed.DISABLED_CLAUSES = [];
 
                     setFormData(parsed);
                 }
@@ -1328,7 +1369,21 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                     </div>
                 );
 
-            case 2: // ETAPA 2: OPCIONAIS
+            case 2: { // ETAPA 2: OPCIONAIS
+                let templateRaw = '';
+                if (useDefaultTemplateOverride && DEFAULT_TEMPLATES[selectedType]) {
+                    templateRaw = DEFAULT_TEMPLATES[selectedType];
+                } else {
+                    let template = selectedTemplate ? templates.find(t => t._id === selectedTemplate) : availableTemplatesForType[0];
+                    if (template) {
+                        templateRaw = template?.conteudoHtml || template?.templateBody || template?.templateContent;
+                    } else if (DEFAULT_TEMPLATES[selectedType]) {
+                        templateRaw = DEFAULT_TEMPLATES[selectedType];
+                    }
+                }
+                const activeClauses = ContractEngine.parseTemplateClauses(templateRaw);
+                const showModulesSection = activeClauses.length > 0 && activeClauses[0].key !== 'legacy_content';
+
                 return (
                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 text-center">
                         <div className="space-y-2">
@@ -1440,31 +1495,120 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                        <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                            <Label className="font-bold text-slate-700 text-sm">Garantia Locatícia</Label>
-                                            <Select value={formData.GARANTIA} onValueChange={(val) => setFormData({ ...formData, GARANTIA: val })}>
-                                                <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                                                <SelectContent className="bg-white border border-slate-100 rounded-xl">
-                                                    <SelectItem value="Caucao">Caução (Depósito)</SelectItem>
-                                                    <SelectItem value="SeguroFianca">Seguro Fiança</SelectItem>
-                                                    <SelectItem value="Fiador">Fiador</SelectItem>
-                                                    <SelectItem value="SemGarantia">Sem Garantia</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        {formData.GARANTIA === 'Caucao' && (
-                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                                <Label className="font-bold text-slate-700 text-sm">Valor do Caução</Label>
-                                                <Input type="text" value={formData.CAUCAO_VALOR ? formatCurrency(formData.CAUCAO_VALOR) : ''} onChange={(e) => setFormData({ ...formData, CAUCAO_VALOR: parseCurrency(e.target.value) })} className="bg-white border-none rounded-xl font-bold" />
-                                            </div>
-                                        )}
-                                        {formData.GARANTIA === 'SeguroFianca' && (
-                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
-                                                <Label className="font-bold text-slate-700 text-sm">Nome da Seguradora (Ex: Loft)</Label>
-                                                <Input type="text" value={formData.SEGURO_FIANCA_NOME} onChange={(e) => setFormData({ ...formData, SEGURO_FIANCA_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
-                                            </div>
-                                        )}
-                                    </div>
+                                         <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                             <Label className="font-bold text-slate-700 text-sm">Garantia Locatícia</Label>
+                                             <Select value={formData.GARANTIA} onValueChange={(val) => {
+                                                 const oldGarantia = formData.GARANTIA;
+                                                 setFormData({ ...formData, GARANTIA: val });
+                                                 if (val === 'Fiador' && (!formData.FIADORES_IDS || formData.FIADORES_IDS.length === 0)) {
+                                                     setPrevGarantia(oldGarantia);
+                                                     setNewFiadorForm(INITIAL_FIADOR_FORM);
+                                                     setIsRegisteringNewFiador(false);
+                                                     setSelectedExistingFiadorId('');
+                                                     setSearchFiadorQuery('');
+                                                     setIsFiadorModalOpen(true);
+                                                 }
+                                             }}>
+                                                 <SelectTrigger className="bg-white border-none rounded-xl"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                                                 <SelectContent className="bg-white border border-slate-100 rounded-xl">
+                                                     <SelectItem value="Caucao">Caução (Depósito)</SelectItem>
+                                                     <SelectItem value="SeguroFianca">Seguro Fiança</SelectItem>
+                                                     <SelectItem value="Fiador">Fiador</SelectItem>
+                                                     <SelectItem value="SemGarantia">Sem Garantia</SelectItem>
+                                                 </SelectContent>
+                                             </Select>
+                                         </div>
+                                         {formData.GARANTIA === 'Caucao' && (
+                                             <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                 <Label className="font-bold text-slate-700 text-sm">Valor do Caução</Label>
+                                                 <Input type="text" value={formData.CAUCAO_VALOR ? formatCurrency(formData.CAUCAO_VALOR) : ''} onChange={(e) => setFormData({ ...formData, CAUCAO_VALOR: parseCurrency(e.target.value) })} className="bg-white border-none rounded-xl font-bold" />
+                                             </div>
+                                         )}
+                                         {formData.GARANTIA === 'SeguroFianca' && (
+                                             <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                 <Label className="font-bold text-slate-700 text-sm">Nome da Seguradora (Ex: Loft)</Label>
+                                                 <Input type="text" value={formData.SEGURO_FIANCA_NOME} onChange={(e) => setFormData({ ...formData, SEGURO_FIANCA_NOME: e.target.value })} className="bg-white border-none rounded-xl" />
+                                             </div>
+                                         )}
+                                         {formData.GARANTIA === 'Fiador' && (
+                                             <div className="col-span-1 md:col-span-2 p-5 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-200">
+                                                 <div className="space-y-1">
+                                                     <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider block">Fiador Vinculado</Label>
+                                                     {(() => {
+                                                         const firstFiadorId = formData.FIADORES_IDS?.[0];
+                                                         const fiador = clientes.find(c => c._id === firstFiadorId);
+                                                         if (!fiador) {
+                                                             return <p className="text-sm font-bold text-red-500">Nenhum fiador cadastrado/vinculado!</p>;
+                                                         }
+                                                         const o = formData.PARTICIPANT_DETAILS?.[firstFiadorId] || {};
+                                                         const name = o.name || fiador.clientName;
+                                                         const cpf = o.cpf || fiador.cpfCnpj;
+                                                         return (
+                                                             <div className="text-slate-800">
+                                                                 <p className="text-sm font-bold">{name}</p>
+                                                                 <p className="text-xs text-slate-500">CPF/CNPJ: {cpf || 'Não informado'}</p>
+                                                             </div>
+                                                         );
+                                                     })()}
+                                                 </div>
+                                                 <div className="flex gap-2 flex-shrink-0">
+                                                     <Button 
+                                                         type="button"
+                                                         variant="outline" 
+                                                         className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
+                                                         onClick={() => {
+                                                             const firstFiadorId = formData.FIADORES_IDS?.[0];
+                                                             if (firstFiadorId) {
+                                                                 const fiadorClient = clientes.find(c => c._id === firstFiadorId);
+                                                                 const o = formData.PARTICIPANT_DETAILS?.[firstFiadorId] || {};
+                                                                 setNewFiadorForm({
+                                                                     name: o.name || fiadorClient?.clientName || '',
+                                                                     cpf: o.cpf || fiadorClient?.cpfCnpj || '',
+                                                                     rg: o.rg || (fiadorClient as any)?.rg || '',
+                                                                     nationality: o.nationality || (fiadorClient as any)?.nationality || 'brasileiro(a)',
+                                                                     maritalStatus: o.maritalStatus || (fiadorClient as any)?.maritalStatus || 'solteiro(a)',
+                                                                     profession: o.profession || (fiadorClient as any)?.profession || '',
+                                                                     gender: o.gender || (fiadorClient as any)?.gender || 'Masculino',
+                                                                     email: o.email || fiadorClient?.emailPrincipal || fiadorClient?.email || '',
+                                                                     phone: o.phone || fiadorClient?.telefonePrincipal || fiadorClient?.phoneNumber || '',
+                                                                     address: o.address || fiadorClient?.address || '',
+                                                                     spouseId: o.spouseId || (fiadorClient as any)?.spouseRef || 'no_spouse',
+                                                                     tipoPessoa: o.tipoPessoa || fiadorClient?.tipoPessoa || 'Física',
+                                                                     tradeName: o.tradeName || fiadorClient?.nomeFantasia || '',
+                                                                     representativeName: o.representativeName || (fiadorClient as any)?.representativeName || '',
+                                                                     representativeCpf: o.representativeCpf || (fiadorClient as any)?.representativeCpf || '',
+                                                                     representativeRg: o.representativeRg || (fiadorClient as any)?.representativeRg || ''
+                                                                 });
+                                                                 setSelectedExistingFiadorId(firstFiadorId);
+                                                                 setIsRegisteringNewFiador(false);
+                                                                 setIsFiadorModalOpen(true);
+                                                             } else {
+                                                                 setNewFiadorForm(INITIAL_FIADOR_FORM);
+                                                                 setIsRegisteringNewFiador(false);
+                                                                 setSelectedExistingFiadorId('');
+                                                                 setIsFiadorModalOpen(true);
+                                                             }
+                                                         }}
+                                                     >
+                                                         Editar Fiador
+                                                     </Button>
+                                                     <Button 
+                                                         type="button"
+                                                         variant="outline" 
+                                                         className="h-10 px-4 rounded-xl border-slate-200 text-xs font-bold hover:bg-slate-100"
+                                                         onClick={() => {
+                                                             setNewFiadorForm(INITIAL_FIADOR_FORM);
+                                                             setIsRegisteringNewFiador(false);
+                                                             setSelectedExistingFiadorId('');
+                                                             setIsFiadorModalOpen(true);
+                                                         }}
+                                                     >
+                                                         Alterar Fiador
+                                                     </Button>
+                                                 </div>
+                                             </div>
+                                         )}
+                                     </div>
                                     
                                     {/* Campos Extras Garantia */}
                                     {formData.GARANTIA === 'Caucao' && (
@@ -1656,6 +1800,86 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
 
 
 
+                            {/* --- MÓDULOS DO CONTRATO --- */}
+                            {showModulesSection && (
+                                <div className="space-y-4 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <Label className="text-secondary font-black uppercase tracking-widest text-xs">Módulos do Contrato</Label>
+                                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
+                                        <p className="text-xs text-slate-500 mb-2">Configure os capítulos e cláusulas opcionais que farão parte do documento final.</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {activeClauses.map((clause) => {
+                                                const isMandatory = clause.obrigatoria;
+                                                const conditionMet = clause.condicional ? ContractEngine.evaluateCondition(clause.condicional, formData) : true;
+                                                const isUserDisabled = Array.isArray(formData.DISABLED_CLAUSES) && formData.DISABLED_CLAUSES.includes(clause.key);
+                                                const isChecked = isMandatory || (conditionMet && !isUserDisabled);
+                                                const isDisabled = isMandatory || !conditionMet;
+
+                                                return (
+                                                    <div 
+                                                        key={clause.key}
+                                                        className={`flex items-start gap-3 p-4 rounded-2xl border transition-all ${
+                                                            isMandatory 
+                                                                ? 'bg-slate-100/50 border-slate-200/60' 
+                                                                : !conditionMet 
+                                                                    ? 'bg-slate-100/30 border-slate-200/40 opacity-50'
+                                                                    : isChecked 
+                                                                        ? 'bg-white border-secondary/20 shadow-sm'
+                                                                        : 'bg-white border-slate-250 opacity-70'
+                                                        }`}
+                                                    >
+                                                        <div className="pt-0.5">
+                                                            {isMandatory ? (
+                                                                <div className="w-5 h-5 flex items-center justify-center text-slate-400">
+                                                                    📌
+                                                                </div>
+                                                            ) : (
+                                                                <Checkbox 
+                                                                    id={`clause-${clause.key}`}
+                                                                    checked={isChecked}
+                                                                    disabled={isDisabled}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const currentDisabled = Array.isArray(formData.DISABLED_CLAUSES) ? [...formData.DISABLED_CLAUSES] : [];
+                                                                        if (checked) {
+                                                                            const updated = currentDisabled.filter(k => k !== clause.key);
+                                                                            setFormData({ ...formData, DISABLED_CLAUSES: updated });
+                                                                        } else {
+                                                                            if (!currentDisabled.includes(clause.key)) {
+                                                                                currentDisabled.push(clause.key);
+                                                                            }
+                                                                            setFormData({ ...formData, DISABLED_CLAUSES: currentDisabled });
+                                                                        }
+                                                                    }}
+                                                                    className="data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
+                                                                />
+                                                            )}
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label 
+                                                                htmlFor={`clause-${clause.key}`}
+                                                                className={`text-sm font-bold block ${isDisabled && !isMandatory ? 'text-slate-400' : 'text-slate-850'}`}
+                                                            >
+                                                                {clause.titulo}
+                                                            </Label>
+                                                            <div className="flex gap-2 items-center">
+                                                                {isMandatory && (
+                                                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-200 px-2 py-0.5 rounded">Obrigatória</span>
+                                                                )}
+                                                                {!isMandatory && conditionMet && (
+                                                                    <span className="text-[10px] font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded">Opcional</span>
+                                                                )}
+                                                                {!isMandatory && !conditionMet && (
+                                                                    <span className="text-[10px] font-bold text-slate-450 bg-slate-200/50 px-2 py-0.5 rounded">Oculto por regra</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* --- TESTEMUNHAS --- */}
                             {!['VistoriaEntrada', 'VistoriaSaida', 'EntregaChaves', 'EntregaChavesVenda', 'DevolucaoChaves', 'TermoDevolucaoChavesVistoriaSaida'].includes(selectedType) && (
                                 <div className="space-y-4 text-left animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -1680,6 +1904,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                         </div>
                     </div>
                 );
+            }
 
             case 3: // ETAPA 3: REVISÃO
                 return (
@@ -2619,6 +2844,328 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                         </div>
                     </DialogContent>
                 </Dialog>
+            </Dialog>
+
+            {/* Modal de Cadastro / Seleção de Fiador */}
+            <Dialog open={isFiadorModalOpen} onOpenChange={(open) => {
+                if (!open) {
+                    // Revert to prev guarantee if no fiador is linked
+                    if (!formData.FIADORES_IDS || formData.FIADORES_IDS.length === 0) {
+                        setFormData(prev => ({ ...prev, GARANTIA: prevGarantia }));
+                        toast.warning('É necessário cadastrar ou selecionar um fiador para utilizar esta garantia.');
+                    }
+                    setIsFiadorModalOpen(false);
+                }
+            }}>
+                <DialogContent className="max-w-2xl bg-white p-0 overflow-hidden rounded-[32px] flex flex-col max-h-[85vh]">
+                    <DialogHeader className="p-8 bg-white border-b border-slate-100 flex-shrink-0 flex flex-row items-center justify-between">
+                        <div>
+                            <DialogTitle className="text-xl font-black text-slate-900">Configurar Garantia: Fiador</DialogTitle>
+                            <p className="text-xs text-slate-400 font-bold uppercase mt-1">Vincule ou Cadastre o Fiador do Atendimento</p>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+                        {/* Tabs to switch between Select Existing and Register New */}
+                        <div className="flex bg-slate-100 p-1 rounded-2xl">
+                            <button
+                                type="button"
+                                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${!isRegisteringNewFiador ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                onClick={() => setIsRegisteringNewFiador(false)}
+                            >
+                                Selecionar Existente
+                            </button>
+                            <button
+                                type="button"
+                                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${isRegisteringNewFiador ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                onClick={() => {
+                                    setIsRegisteringNewFiador(true);
+                                    if (!selectedExistingFiadorId) {
+                                        setNewFiadorForm(INITIAL_FIADOR_FORM);
+                                    }
+                                }}
+                            >
+                                Cadastrar Novo
+                            </button>
+                        </div>
+
+                        {!isRegisteringNewFiador ? (
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-slate-500 uppercase">Buscar Cliente Existente</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Digite o nome, CPF ou email do cliente..."
+                                        value={searchFiadorQuery}
+                                        onChange={(e) => setSearchFiadorQuery(e.target.value)}
+                                        className="bg-slate-50 border-none rounded-xl h-12"
+                                    />
+                                </div>
+
+                                {searchFiadorQuery.trim().length > 1 && (
+                                    <div className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50 max-h-48 overflow-y-auto space-y-1 p-2">
+                                        {(() => {
+                                            const query = searchFiadorQuery.toLowerCase();
+                                            const filtered = clientes.filter(c => 
+                                                (c.clientName || '').toLowerCase().includes(query) || 
+                                                (c.cpfCnpj || '').includes(query) || 
+                                                (c.email || '').toLowerCase().includes(query)
+                                            );
+
+                                            if (filtered.length === 0) {
+                                                return <p className="text-xs text-slate-400 p-3 text-center">Nenhum cliente encontrado.</p>;
+                                            }
+
+                                            return filtered.map(c => (
+                                                <button
+                                                    key={c._id}
+                                                    type="button"
+                                                    className={`w-full text-left p-3 rounded-xl transition-all text-xs font-bold flex flex-col gap-0.5 ${selectedExistingFiadorId === c._id ? 'bg-secondary text-white' : 'hover:bg-slate-100 text-slate-700'}`}
+                                                    onClick={() => {
+                                                        setSelectedExistingFiadorId(c._id);
+                                                        setNewFiadorForm({
+                                                            name: c.clientName || '',
+                                                            cpf: c.cpfCnpj || '',
+                                                            rg: (c as any).rg || '',
+                                                            nationality: (c as any).nationality || 'brasileiro(a)',
+                                                            maritalStatus: (c as any).maritalStatus || 'solteiro(a)',
+                                                            profession: (c as any).profession || '',
+                                                            gender: (c as any).gender || 'Masculino',
+                                                            email: c.emailPrincipal || c.email || '',
+                                                            phone: c.telefonePrincipal || c.phoneNumber || '',
+                                                            address: c.address || '',
+                                                            spouseId: (c as any).spouseRef || 'no_spouse',
+                                                            tipoPessoa: c.tipoPessoa || 'Física',
+                                                            tradeName: c.nomeFantasia || '',
+                                                            representativeName: (c as any).representativeName || '',
+                                                            representativeCpf: (c as any).representativeCpf || '',
+                                                            representativeRg: (c as any).representativeRg || ''
+                                                        });
+                                                    }}
+                                                >
+                                                    <span>{c.clientName}</span>
+                                                    <span className={selectedExistingFiadorId === c._id ? 'text-white/80' : 'text-slate-400'}>
+                                                        CPF/CNPJ: {c.cpfCnpj || 'Não cadastrado'} • Email: {c.email || 'Não cadastrado'}
+                                                    </span>
+                                                </button>
+                                            ));
+                                        })()}
+                                    </div>
+                                )}
+
+                                {selectedExistingFiadorId && (
+                                    <div className="p-5 rounded-2xl bg-secondary/5 border border-secondary/20 space-y-4">
+                                        <p className="text-xs font-black uppercase text-secondary tracking-wider">Confirmar & Editar Qualificação do Fiador</p>
+                                        
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="col-span-2">
+                                                <Label className="text-[10px] text-slate-400 font-bold block mb-1">Nome Completo *</Label>
+                                                <Input className="bg-white border-none rounded-xl h-10 font-bold" value={newFiadorForm.name} onChange={(e) => setNewFiadorForm({...newFiadorForm, name: e.target.value})} />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] text-slate-400 font-bold block mb-1">CPF/CNPJ</Label>
+                                                <Input className="bg-white border-none rounded-xl h-10" value={newFiadorForm.cpf} onChange={(e) => setNewFiadorForm({...newFiadorForm, cpf: e.target.value})} />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] text-slate-400 font-bold block mb-1">RG</Label>
+                                                <Input className="bg-white border-none rounded-xl h-10" value={newFiadorForm.rg} onChange={(e) => setNewFiadorForm({...newFiadorForm, rg: e.target.value})} />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] text-slate-400 font-bold block mb-1">Nacionalidade</Label>
+                                                <Input className="bg-white border-none rounded-xl h-10" value={newFiadorForm.nationality} onChange={(e) => setNewFiadorForm({...newFiadorForm, nationality: e.target.value})} />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] text-slate-400 font-bold block mb-1">Estado Civil</Label>
+                                                <Input className="bg-white border-none rounded-xl h-10" value={newFiadorForm.maritalStatus} onChange={(e) => setNewFiadorForm({...newFiadorForm, maritalStatus: e.target.value})} />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] text-slate-400 font-bold block mb-1">Profissão</Label>
+                                                <Input className="bg-white border-none rounded-xl h-10" value={newFiadorForm.profession} onChange={(e) => setNewFiadorForm({...newFiadorForm, profession: e.target.value})} />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[10px] text-slate-400 font-bold block mb-1">Gênero</Label>
+                                                <Select value={newFiadorForm.gender} onValueChange={(v) => setNewFiadorForm({...newFiadorForm, gender: v})}>
+                                                    <SelectTrigger className="bg-white border-none rounded-xl h-10"><SelectValue /></SelectTrigger>
+                                                    <SelectContent className="bg-white border"><SelectItem value="Masculino">Masculino</SelectItem><SelectItem value="Feminino">Feminino</SelectItem></SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <Label className="text-[10px] text-slate-400 font-bold block mb-1">Endereço Completo</Label>
+                                                <Input className="bg-white border-none rounded-xl h-10" value={newFiadorForm.address} onChange={(e) => setNewFiadorForm({...newFiadorForm, address: e.target.value})} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <p className="text-xs font-black uppercase text-secondary tracking-wider">Novo Cadastro de Fiador</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">Nome Completo *</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10 font-bold" value={newFiadorForm.name} onChange={(e) => setNewFiadorForm({...newFiadorForm, name: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">CPF/CNPJ *</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10" value={newFiadorForm.cpf} onChange={(e) => setNewFiadorForm({...newFiadorForm, cpf: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">RG</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10" value={newFiadorForm.rg} onChange={(e) => setNewFiadorForm({...newFiadorForm, rg: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">E-mail</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10" type="email" value={newFiadorForm.email} onChange={(e) => setNewFiadorForm({...newFiadorForm, email: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">Telefone</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10" value={newFiadorForm.phone} onChange={(e) => setNewFiadorForm({...newFiadorForm, phone: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">Nacionalidade</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10" value={newFiadorForm.nationality} onChange={(e) => setNewFiadorForm({...newFiadorForm, nationality: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">Estado Civil</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10" value={newFiadorForm.maritalStatus} onChange={(e) => setNewFiadorForm({...newFiadorForm, maritalStatus: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">Profissão</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10" value={newFiadorForm.profession} onChange={(e) => setNewFiadorForm({...newFiadorForm, profession: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">Gênero</Label>
+                                        <Select value={newFiadorForm.gender} onValueChange={(v) => setNewFiadorForm({...newFiadorForm, gender: v})}>
+                                            <SelectTrigger className="bg-slate-50 border-none rounded-xl h-10"><SelectValue /></SelectTrigger>
+                                            <SelectContent className="bg-white border"><SelectItem value="Masculino">Masculino</SelectItem><SelectItem value="Feminino">Feminino</SelectItem></SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <Label className="text-[10px] text-slate-400 font-bold block mb-1">Endereço Completo</Label>
+                                        <Input className="bg-slate-50 border-none rounded-xl h-10" value={newFiadorForm.address} onChange={(e) => setNewFiadorForm({...newFiadorForm, address: e.target.value})} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-3 flex-shrink-0">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="flex-1 h-12 rounded-xl"
+                            onClick={() => {
+                                if (!formData.FIADORES_IDS || formData.FIADORES_IDS.length === 0) {
+                                    setFormData(prev => ({ ...prev, GARANTIA: prevGarantia }));
+                                    toast.warning('Garantia redefinida para a anterior por falta de fiador.');
+                                }
+                                setIsFiadorModalOpen(false);
+                            }}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="button"
+                            className="flex-1 h-12 rounded-xl bg-secondary hover:bg-secondary/90 text-white font-bold"
+                            disabled={saving || (!isRegisteringNewFiador && !selectedExistingFiadorId) || (isRegisteringNewFiador && !newFiadorForm.name)}
+                            onClick={async () => {
+                                try {
+                                    setSaving(true);
+                                    let targetClientId = selectedExistingFiadorId;
+
+                                    if (isRegisteringNewFiador) {
+                                        const newId = crypto.randomUUID();
+                                        await BaseCrudService.create('clientes', {
+                                            _id: newId,
+                                            clientName: newFiadorForm.name,
+                                            cpfCnpj: newFiadorForm.cpf,
+                                            email: newFiadorForm.email,
+                                            phoneNumber: newFiadorForm.phone,
+                                            address: newFiadorForm.address,
+                                            status: 'Ativo',
+                                            papeis: 'Fiador',
+                                            rg: newFiadorForm.rg,
+                                            nationality: newFiadorForm.nationality,
+                                            maritalStatus: newFiadorForm.maritalStatus,
+                                            profession: newFiadorForm.profession,
+                                            gender: newFiadorForm.gender
+                                        } as any);
+                                        targetClientId = newId;
+                                        toast.success('Novo fiador cadastrado com sucesso!');
+                                    } else {
+                                        const existing = clientes.find(c => c._id === targetClientId);
+                                        await BaseCrudService.update('clientes', {
+                                            _id: targetClientId,
+                                            clientName: newFiadorForm.name || existing?.clientName,
+                                            cpfCnpj: newFiadorForm.cpf || existing?.cpfCnpj,
+                                            email: newFiadorForm.email || existing?.email,
+                                            phoneNumber: newFiadorForm.phone || existing?.phoneNumber,
+                                            address: newFiadorForm.address || existing?.address,
+                                            rg: newFiadorForm.rg || (existing as any)?.rg,
+                                            nationality: newFiadorForm.nationality || (existing as any)?.nationality,
+                                            maritalStatus: newFiadorForm.maritalStatus || (existing as any)?.maritalStatus,
+                                            profession: newFiadorForm.profession || (existing as any)?.profession,
+                                            gender: newFiadorForm.gender || (existing as any)?.gender
+                                        } as any);
+                                        toast.success('Qualificação do fiador atualizada com sucesso!');
+                                    }
+
+                                    const { items: allParties } = await BaseCrudService.getAll<ServiceParties>('atendimentopartes');
+                                    const linked = allParties.some(p => p.serviceRecordRef === atendimento._id && p.clientRef === targetClientId && p.roleInService === 'Fiador');
+                                    
+                                    if (!linked) {
+                                        await BaseCrudService.create('atendimentopartes', {
+                                            serviceRecordRef: atendimento._id,
+                                            clientRef: targetClientId,
+                                            roleInService: 'Fiador',
+                                            notes: 'Vinculado via Garantia Locatícia no assistente'
+                                        });
+                                    }
+
+                                    const [allClientsRes] = await Promise.all([
+                                        BaseCrudService.getAll<Clients>('clientes')
+                                    ]);
+                                    setClientes(allClientsRes.items);
+
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        FIADORES_IDS: [targetClientId],
+                                        PARTICIPANT_DETAILS: {
+                                            ...prev.PARTICIPANT_DETAILS,
+                                            [targetClientId]: {
+                                                name: newFiadorForm.name,
+                                                cpf: newFiadorForm.cpf,
+                                                rg: newFiadorForm.rg,
+                                                nationality: newFiadorForm.nationality,
+                                                maritalStatus: newFiadorForm.maritalStatus,
+                                                profession: newFiadorForm.profession,
+                                                gender: newFiadorForm.gender,
+                                                email: newFiadorForm.email,
+                                                phone: newFiadorForm.phone,
+                                                address: newFiadorForm.address,
+                                                spouseId: newFiadorForm.spouseId,
+                                                tipoPessoa: newFiadorForm.tipoPessoa,
+                                                tradeName: newFiadorForm.tradeName,
+                                                representativeName: newFiadorForm.representativeName,
+                                                representativeCpf: newFiadorForm.representativeCpf,
+                                                representativeRg: newFiadorForm.representativeRg
+                                            }
+                                        }
+                                    }));
+
+                                    setIsFiadorModalOpen(false);
+                                } catch (err) {
+                                    console.error('Erro ao salvar fiador:', err);
+                                    toast.error('Erro ao salvar e vincular fiador no banco.');
+                                } finally {
+                                    setSaving(false);
+                                }
+                            }}
+                        >
+                            Salvar e Vincular Fiador
+                        </Button>
+                    </div>
+                </DialogContent>
             </Dialog>
         </>
     );

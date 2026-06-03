@@ -49,6 +49,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 // showLeadModal removed
     const [showClientModal, setShowClientModal] = useState(false);
 
+    useEffect(() => {
+        const isKanban = location.pathname.toLowerCase().includes('kanban');
+        if (isKanban) {
+            setSidebarOpen(false);
+        }
+    }, [location.pathname]);
+
     const userSectors = userProfile?.setores || [];
     const isAdmin = userProfile?.profile === 'Admin';
 
