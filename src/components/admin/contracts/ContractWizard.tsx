@@ -116,6 +116,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
         VALOR_ALUGUEL: 0,
         VALOR_CONDOMINIO: 0,
         VALOR_IPTU: 0,
+        IS_PACOTE: false,
         PRAZO_MESES: '30',
         FORMA_PAGAMENTO: '',
         DIA_PAGAMENTO: '10',
@@ -1353,8 +1354,63 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                             
                             {/* --- FORMULÁRIO DE LOCAÇÃO --- */}
                             {(selectedType === 'LocacaoResidencial' || selectedType === 'LocacaoComercial') && (
-                                <div className="space-y-4 text-left">
-                                    <Label className="text-secondary font-black uppercase tracking-widest text-xs">Condições de Locação</Label>
+                                <div className="space-y-8 text-left">
+                                    {/* --- VALORES DA LOCAÇÃO --- */}
+                                    <div className="space-y-4">
+                                        <Label className="text-secondary font-black uppercase tracking-widest text-xs">Valores da Locação</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                <Label className="font-bold text-slate-700 text-sm">Valor do Aluguel <span className="text-red-500">*</span></Label>
+                                                <Input 
+                                                    type="text" 
+                                                    value={formData.VALOR_ALUGUEL ? formatCurrency(formData.VALOR_ALUGUEL) : ''} 
+                                                    onChange={(e) => setFormData({ ...formData, VALOR_ALUGUEL: parseCurrency(e.target.value) })} 
+                                                    className="bg-white border-none rounded-xl font-bold" 
+                                                />
+                                            </div>
+                                            <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
+                                                <Label className="font-bold text-slate-700 text-sm">Locação em Pacote?</Label>
+                                                <Select 
+                                                    value={formData.IS_PACOTE ? 'Sim' : 'Nao'} 
+                                                    onValueChange={(val) => setFormData({ ...formData, IS_PACOTE: val === 'Sim' })}
+                                                >
+                                                    <SelectTrigger className="bg-white border-none rounded-xl font-bold">
+                                                        <SelectValue placeholder="Selecione..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="bg-white border border-slate-100 rounded-xl">
+                                                        <SelectItem value="Sim">Sim (Pacote Fechado)</SelectItem>
+                                                        <SelectItem value="Nao">Não (Detalhado)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            {!formData.IS_PACOTE && (
+                                                <>
+                                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100 animate-in fade-in duration-200">
+                                                        <Label className="font-bold text-slate-700 text-sm">Valor do Condomínio</Label>
+                                                        <Input 
+                                                            type="text" 
+                                                            value={formData.VALOR_CONDOMINIO ? formatCurrency(formData.VALOR_CONDOMINIO) : ''} 
+                                                            onChange={(e) => setFormData({ ...formData, VALOR_CONDOMINIO: parseCurrency(e.target.value) })} 
+                                                            className="bg-white border-none rounded-xl" 
+                                                        />
+                                                    </div>
+                                                    <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100 animate-in fade-in duration-200">
+                                                        <Label className="font-bold text-slate-700 text-sm">Valor do IPTU</Label>
+                                                        <Input 
+                                                            type="text" 
+                                                            value={formData.VALOR_IPTU ? formatCurrency(formData.VALOR_IPTU) : ''} 
+                                                            onChange={(e) => setFormData({ ...formData, VALOR_IPTU: parseCurrency(e.target.value) })} 
+                                                            className="bg-white border-none rounded-xl" 
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* --- CONDIÇÕES GERAIS --- */}
+                                    <div className="space-y-4">
+                                        <Label className="text-secondary font-black uppercase tracking-widest text-xs">Condições de Locação</Label>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
                                             <Label className="font-bold text-slate-700 text-sm">Prazo (Meses)</Label>
@@ -1381,8 +1437,9 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                                             <Input type="number" value={formData.MULTA_RESCISAO_ALUGUEIS} onChange={(e) => setFormData({ ...formData, MULTA_RESCISAO_ALUGUEIS: e.target.value })} className="bg-white border-none rounded-xl" />
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                         <div className="p-5 bg-slate-50 rounded-3xl space-y-2 border border-slate-100">
                                             <Label className="font-bold text-slate-700 text-sm">Garantia Locatícia</Label>
                                             <Select value={formData.GARANTIA} onValueChange={(val) => setFormData({ ...formData, GARANTIA: val })}>

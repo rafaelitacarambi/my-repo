@@ -684,6 +684,9 @@ export class ContractEngine {
             data_hoje: dataDocumento,
             data_atual: dataDocumento,
 
+            IS_PACOTE: !!extraData?.IS_PACOTE,
+            is_pacote: !!extraData?.IS_PACOTE,
+
             LOGO_RSALES: 'https://static.wixstatic.com/media/9b23b4_8b5ff4d697054133a09457af0365ebeb~mv2.png',
 
             // Imóvel (priorizando os dados editados no wizard/extraData)
@@ -713,11 +716,11 @@ export class ContractEngine {
             VALOR_ALUGUEL_EXTENSO: extraData?.VALOR_ALUGUEL ? NumberToWords.convertCurrency(parseFloat(extraData.VALOR_ALUGUEL)) : '',
             DATA_VENCIMENTO: extraData?.DATA_VENCIMENTO || '10',
             
-            CONDOMINIO_VALOR: formatBRL(extraData?.VALOR_CONDOMINIO !== undefined ? extraData.VALOR_CONDOMINIO : (imovel?.valorCondominio || 0)),
-            CONDOMINIO_VALOR_EXTENSO: (extraData?.VALOR_CONDOMINIO || imovel?.valorCondominio) ? NumberToWords.convertCurrency(parseFloat(extraData?.VALOR_CONDOMINIO || imovel?.valorCondominio)) : '',
+            CONDOMINIO_VALOR: !!extraData?.IS_PACOTE ? '0,00' : formatBRL(extraData?.VALOR_CONDOMINIO !== undefined ? extraData.VALOR_CONDOMINIO : (imovel?.valorCondominio || 0)),
+            CONDOMINIO_VALOR_EXTENSO: !!extraData?.IS_PACOTE ? '' : ((extraData?.VALOR_CONDOMINIO || imovel?.valorCondominio) ? NumberToWords.convertCurrency(parseFloat(extraData?.VALOR_CONDOMINIO || imovel?.valorCondominio)) : ''),
             
-            IPTU_VALOR: formatBRL(extraData?.VALOR_IPTU !== undefined ? extraData.VALOR_IPTU : (imovel?.valorIPTU || 0)),
-            IPTU_VALOR_EXTENSO: (extraData?.VALOR_IPTU || imovel?.valorIPTU) ? NumberToWords.convertCurrency(parseFloat(extraData?.VALOR_IPTU || imovel?.valorIPTU)) : '',
+            IPTU_VALOR: !!extraData?.IS_PACOTE ? '0,00' : formatBRL(extraData?.VALOR_IPTU !== undefined ? extraData.VALOR_IPTU : (imovel?.valorIPTU || 0)),
+            IPTU_VALOR_EXTENSO: !!extraData?.IS_PACOTE ? '' : ((extraData?.VALOR_IPTU || imovel?.valorIPTU) ? NumberToWords.convertCurrency(parseFloat(extraData?.VALOR_IPTU || imovel?.valorIPTU)) : ''),
             
             REAJUSTE_INDICE: extraData?.REAJUSTE_INDICE || 'IGP-M (FGV)',
             MULTA_RESCISAO_ALUGUEIS: extraData?.MULTA_RESCISAO_ALUGUEIS || '3',

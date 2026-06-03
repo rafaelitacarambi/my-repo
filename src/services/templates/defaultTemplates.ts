@@ -29,6 +29,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p><em>Parágrafo único:</em> A entrega das chaves e o início da contagem do prazo contratual somente ocorrerão após a conclusão das obras essenciais que permitam o uso regular do imóvel, não sendo devido qualquer valor de aluguel até a efetiva entrega das chaves.</p>
 
     <p><strong>VALOR DA LOCAÇÃO:</strong> O valor mensal da locação é de R$ {{VALOR_ALUGUEL}} ({{VALOR_ALUGUEL_EXTENSO}}).</p>
+    [[IF !IS_PACOTE]]
     <p>Além do aluguel, os LOCATÁRIOS serão responsáveis pelo pagamento do IPTU e da taxa de condomínio, atualmente fixados em:</p>
     <p style="margin-left: 20px; margin-bottom: 15px;">
         • Condomínio (custas ordinárias): R$ {{CONDOMINIO_VALOR}}<br/>
@@ -36,6 +37,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     </p>
     <p>Os valores acima serão cobrados juntamente com o aluguel, em boleto único mensal, emitido pela administradora.</p>
     <p><em>Parágrafo único:</em> Os LOCATÁRIOS serão responsáveis exclusivamente pelas despesas condominiais ordinárias, conforme legislação vigente, incluindo, mas não se limitando a despesas de manutenção, conservação e administração do condomínio. Quaisquer despesas extraordinárias, tais como obras estruturais, melhorias, fundo de reserva, benfeitorias que aumentem o padrão do condomínio ou outras previstas no art. 22 da Lei 8.245/91, serão de responsabilidade do(a) LOCADOR(a). Eventuais ajustes nos valores do condomínio ordinário e/ou IPTU serão automaticamente repassados aos LOCATÁRIOS, passando a integrar o boleto mensal a partir da data de sua vigência.</p>
+    [[ENDIF]]
 
     <p><strong>DATA DE PAGAMENTO DO ALUGUEL:</strong> todo dia {{DIA_PAGAMENTO}} do mês subsequente ao vencido. Devendo ser pago, exclusively, através de boleto bancário a ser emitido pela administradora.</p>
 
@@ -77,7 +79,9 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p><strong>SEGUNDA:</strong> O prazo de locação é determinado, devendo os LOCATÁRIOS restituir o imóvel à LOCADORA imediatamente ao final do prazo, totalmente desocupado, nas mesmas condições em que o recebeu. O contrato pode ser renovado mediante ajuste entre as partes, devendo, para tanto, os LOCATÁRIOS manifestarem sua vontade de renovação com, no mínimo, 60 (sessenta) dias de antecedência em relação ao término do contrato.</p>
 
     <p><strong>TERCEIRA:</strong> Não vindo a efetuar o pagamento do aluguel até a data estipulada, o locatário fica obrigado a pagar multa de 10% (dez por cento) sobre o valor do aluguel estipulado neste contrato, bem como juros de mora de 1% (um por cento) ao mês, mais correção monetária, sem prejuízo de eventuais multas, juros e correções monetárias por atraso no pagamento do IPTU e condomínio. Na hipótese de cobrança judicial ou extrajudicial dos aluguéis e encargos eventualmente inadimplidos, por assessoria jurídica, fica o locatário obrigado ao pagamento de 20% (vinte por cento) de honorários advocatícios sobre o valor total do débito.</p>
+    [[IF !IS_PACOTE]]
     <p><em>Parágrafo único:</em> O valor da locação é composto pelo aluguel e pelo IPTU, sendo este repassado, por meio da administradora, à LOCADORA, que ficará responsável pelo pagamento.</p>
+    [[ENDIF]]
 
     <p><strong>QUARTA:</strong> Os encargos locatícios de consumo de água, energia elétrica e gás são de responsabilidade dos LOCATÁRIOS, conforme detalhado a seguir:<br/>
     1. Consumo de água: O consumo de água é medido e cobrado pelo condomínio, sendo o valor correspondente repassado para o boleto de locação, de responsabilidade dos LOCATÁRIOS para pagamento.<br/>
@@ -161,7 +165,11 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>PRAZO DE LOCAÇÃO COMERCIAL:</strong> O prazo de locação comercial será de {{PRAZO_MESES}} ({{PRAZO_MESES_EXTENSO}}) meses, com início previsto para o dia {{DATA_INICIO_PREVISTA}}, data em que ocorrerá a entrega oficial das chaves.</p>
 
+    [[IF IS_PACOTE]]
+    <p><strong>VALOR DA LOCAÇÃO:</strong> O aluguel mensal inicial (pacote fechado) é de R$ {{VALOR_ALUGUEL}} ({{VALOR_ALUGUEL_EXTENSO}}).</p>
+    [[ELSE]]
     <p><strong>VALOR DA LOCAÇÃO E ENCARGOS:</strong> O aluguel mensal inicial é de R$ {{VALOR_ALUGUEL}} ({{VALOR_ALUGUEL_EXTENSO}}), acrescido de condomínio (R$ {{CONDOMINIO_VALOR}}) e IPTU (R$ {{IPTU_VALOR}}).</p>
+    [[ENDIF]]
 
     <p><strong>DATA DE PAGAMENTO DO ALUGUEL:</strong> todo dia {{DIA_PAGAMENTO}} do mês subsequente ao vencido. Devendo ser pago através de boleto emitido pela administradora.</p>
 
