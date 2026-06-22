@@ -30,7 +30,7 @@ export class ContractEngine {
         let content = template;
 
         // 1. Processar Condicionais [[IF key]] ... [[ENDIF]]
-        const conditionalRegex = /\[\[IF\s+(!?\w+)]]([\s\S]*?)(?:\[\[ELSE]]([\s\S]*?))?\[\[ENDIF]]/g;
+        const conditionalRegex = /\[\[IF\s+(!?[\w.]+)]]([\s\S]*?)(?:\[\[ELSE]]([\s\S]*?))?\[\[ENDIF]]/g;
 
         content = content.replace(conditionalRegex, (match, key, thenBlock, elseBlock) => {
             let isNegative = key.startsWith('!');
@@ -817,6 +817,19 @@ export class ContractEngine {
             SEGURO_FIANCA_APOLICE: extraData?.SEGURO_FIANCA_APOLICE || '',
             MODALIDADE_VENDA_FINANCIADA: extraData?.MODALIDADE_VENDA === 'Financiada',
             MODALIDADE_VENDA_AVISTA: extraData?.MODALIDADE_VENDA === 'AVista',
+            MODALIDADE_VENDA_AVISTA_QUITACAO: extraData?.MODALIDADE_VENDA === 'AVistaQuitacao',
+            PAGAMENTO_AVISTA_QUITACAO: extraData?.MODALIDADE_VENDA === 'AVistaQuitacao',
+            PAGAMENTO_FINANCIADO: extraData?.MODALIDADE_VENDA === 'Financiada',
+            BENS_INCLUSOS: extraData?.BENS_INCLUSOS === 'Sim' || extraData?.BENS_INCLUSOS === true || !!extraData?.INVENTARIO_MOVEIS,
+            MULTA_POSSE: extraData?.MULTA_POSSE === 'Sim' || extraData?.MULTA_POSSE === true,
+            VENDA_FUNDO_COMERCIO: extraData?.VENDA_FUNDO_COMERCIO === 'Sim' || extraData?.VENDA_FUNDO_COMERCIO === true,
+            IMOVEL_LOCADO: extraData?.IMOVEL_LOCADO === 'Sim' || extraData?.IMOVEL_LOCADO === true,
+            RESPONSABILIDADE_ALVARA_COMPRADOR: extraData?.RESPONSABILIDADE_ALVARA === 'Comprador',
+            
+            QUITACAO_BANCO: extraData?.QUITACAO_BANCO || 'Banco Santander',
+            QUITACAO_VALOR: formatBRL(extraData?.QUITACAO_VALOR || 0),
+            QUITACAO_VALOR_EXTENSO: extraData?.QUITACAO_VALOR ? NumberToWords.convertCurrency(parseFloat(extraData.QUITACAO_VALOR)) : '',
+            
             FINANCIAMENTO_BANCO: extraData?.FINANCIAMENTO_BANCO || '',
             FINANCIAMENTO_VALOR: formatBRL(extraData?.FINANCIAMENTO_VALOR || 0),
             FINANCIAMENTO_VALOR_EXTENSO: extraData?.FINANCIAMENTO_VALOR ? NumberToWords.convertCurrency(parseFloat(extraData.FINANCIAMENTO_VALOR)) : '',
@@ -824,14 +837,15 @@ export class ContractEngine {
             ITBI_RESPONSABILIDADE: extraData?.ITBI_RESPONSABILIDADE || '',
             PRAZO_LAVRATURA_DIAS: extraData?.PRAZO_LAVRATURA_DIAS || '',
             TAXA_OCUPACAO_MENSAL: formatBRL(extraData?.TAXA_OCUPACAO_MENSAL || 0),
+            TAXA_OCUPACAO_MENSAL_EXTENSO: extraData?.TAXA_OCUPACAO_MENSAL ? NumberToWords.convertCurrency(parseFloat(extraData.TAXA_OCUPACAO_MENSAL)) : '',
             DATA_LIMITE_CHAVES: extraData?.DATA_LIMITE_CHAVES || '',
             
             // Vistorias e Inventário
-            ESTADO_CONSERVACAO: extraData?.ESTADO_CONSERVACAO || '',
-            LEITURA_AGUA: extraData?.LEITURA_AGUA || '',
-            LEITURA_LUZ: extraData?.LEITURA_LUZ || '',
+            ESTADO_CONSERVACAO: extraData?.ESTADO_CONSERVACAO ? extraData.ESTADO_CONSERVACAO.replace(/\n/g, '<br/>') : '',
+            LEITURA_AGUA: extraData?.LEITURA_AGUA ? extraData.LEITURA_AGUA.replace(/\n/g, '<br/>') : '',
+            LEITURA_LUZ: extraData?.LEITURA_LUZ ? extraData.LEITURA_LUZ.replace(/\n/g, '<br/>') : '',
             MULTA_RESCISORIA_VALOR: formatBRL(extraData?.MULTA_RESCISORIA_VALOR || 0),
-            OBSERVACOES_CHAVES: extraData?.OBSERVACOES_CHAVES || '',
+            OBSERVACOES_CHAVES: extraData?.OBSERVACOES_CHAVES ? extraData.OBSERVACOES_CHAVES.replace(/\n/g, '<br/>') : '',
             INVENTARIO_MOVEIS: extraData?.INVENTARIO_MOVEIS ? extraData.INVENTARIO_MOVEIS.replace(/\n/g, '<br/>') : ''
         };
 
@@ -1288,6 +1302,21 @@ export class ContractEngine {
         data.endereco_imovel_completo = data.IMOVEL_ENDERECO_COMPLETO || '';
         data.cidade_imovel = data.IMOVEL_CIDADE || 'Poá';
 
+        // Merge all extraData keys (and nested OPCIONAIS keys) to ensure they are available in templates
+        if (extraData) {
+            Object.keys(extraData).forEach(key => {
+                if (key !== 'OPCIONAIS' && !(key in data)) {
+                    (data as any)[key] = extraData[key];
+                }
+            });
+            if (extraData.OPCIONAIS) {
+                data.OPCIONAIS = {
+                    ...(data.OPCIONAIS || {}),
+                    ...extraData.OPCIONAIS
+                };
+            }
+        }
+
         return data;
     }
 
@@ -1487,6 +1516,34 @@ export class ContractEngine {
             body = this.processTemplate(template, data);
         }
 
+        // Resolve dynamic clause numbering and cross-referencing
+        const clauseRegex = /\[CLAUSULA:([a-zA-Z0-9_-]+)\]/g;
+        const clauses: string[] = [];
+        let match;
+        clauseRegex.lastIndex = 0;
+        while ((match = clauseRegex.exec(body)) !== null) {
+            if (!clauses.includes(match[1])) {
+                clauses.push(match[1]);
+            }
+        }
+
+        const ordinalWords = [
+            'PRIMEIRA', 'SEGUNDA', 'TERCEIRA', 'QUARTA', 'QUINTA',
+            'SEXTA', 'SÉTIMA', 'OITAVA', 'NONA', 'DÉCIMA',
+            'DÉCIMA PRIMEIRA', 'DÉCIMA SEGUNDA', 'DÉCIMA TERCEIRA', 'DÉCIMA QUARTA',
+            'DÉCIMA QUINTA', 'DÉCIMA SEXTA', 'DÉCIMA SÉTIMA', 'DÉCIMA OITAVA',
+            'DÉCIMA NONA', 'VIGÉSIMA'
+        ];
+
+        clauses.forEach((clauseId, index) => {
+            const num = index + 1;
+            const word = ordinalWords[index] || num.toString();
+            const clausePlaceholder = `[CLAUSULA:${clauseId}]`;
+            body = body.replaceAll(clausePlaceholder, `CLÁUSULA ${word}`);
+            const refPlaceholder = `{ref:${clauseId}}`;
+            body = body.replaceAll(refPlaceholder, `Cláusula ${num}`);
+        });
+
         const contractType = data.CONTRACT_TYPE || '';
         let headerTitle = 'CONTRATO DE LOCAÇÃO';
         let headerSubtitle = `Instrumento Particular / ${data.FINALIDADE || 'Residencial'}`;
@@ -1498,7 +1555,13 @@ export class ContractEngine {
                 headerSubtitle = 'Termo de Entrega e Vistoria / Venda';
             } else {
                 headerTitle = 'COMPROMISSO DE VENDA';
-                headerSubtitle = 'Instrumento Particular / Compra e Venda';
+                if (cleanType.includes('residencial')) {
+                    headerSubtitle = 'Instrumento Particular / Compra e Venda Residencial';
+                } else if (cleanType.includes('comercial')) {
+                    headerSubtitle = 'Instrumento Particular / Compra e Venda Comercial';
+                } else {
+                    headerSubtitle = 'Instrumento Particular / Compra e Venda';
+                }
             }
         } else if (cleanType === 'entregachaves') {
             headerTitle = 'ENTREGA DE CHAVES';

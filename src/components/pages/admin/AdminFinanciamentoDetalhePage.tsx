@@ -442,7 +442,7 @@ export default function AdminFinanciamentoDetalhePage() {
         [field]: value
       };
 
-      await BaseCrudService.update('atendimentos', updates);
+      await BaseCrudService.update('atendimentos', updates as any);
 
       // Create history entry
       await createHistoryEntry(`Campo "${field}" atualizado`);

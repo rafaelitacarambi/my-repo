@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, Upload, FileText, Wand2, Save, X, Code, Eye } from 'lucide-react';
+import { Loader2, Upload, FileText, Wand2, Save, X, Code, Eye, Edit2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -103,7 +103,7 @@ export function TemplateEditorModal({ isOpen, onClose, template, onSave }: Templ
     // Detectar variáveis sempre que o HTML mudar
     useEffect(() => {
         const matches = htmlContent.match(/\{\{([^}]+)\}\}/g) || [];
-        const unique = [...new Set(matches.map((m: string) => m.replace(/[{}]/g, '').trim()))];
+        const unique = [...new Set(matches.map((m: string) => m.replace(/[{}]/g, '').trim()))] as string[];
         setVariaveisDetectadas(unique);
     }, [htmlContent]);
 

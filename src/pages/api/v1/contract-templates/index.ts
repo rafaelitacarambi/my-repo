@@ -25,6 +25,18 @@ export const GET: APIRoute = async ({ request }) => {
                 conteudoHtml: DEFAULT_TEMPLATES.CompraEVenda
             },
             {
+                tipoOperacao: 'CompraEVendaResidencial',
+                nome: 'Template Padrão Compra e Venda Residencial',
+                categoria: 'VENDA',
+                conteudoHtml: DEFAULT_TEMPLATES.CompraEVendaResidencial
+            },
+            {
+                tipoOperacao: 'CompraEVendaComercial',
+                nome: 'Template Padrão Compra e Venda Comercial',
+                categoria: 'VENDA',
+                conteudoHtml: DEFAULT_TEMPLATES.CompraEVendaComercial
+            },
+            {
                 tipoOperacao: 'EntregaChaves',
                 nome: 'Termo Padrão Entrega de Chaves',
                 categoria: 'OUTROS',

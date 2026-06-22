@@ -30,43 +30,12 @@ export const GET: APIRoute = async ({ params, request }) => {
             whereClause = { [filterField]: filterValue };
         }
 
+        // Return all fields for all collections by default to ensure all metadata is sent to frontend
         let queryOptions: any = {
             where: whereClause,
-            take: 200,
+            take: 2000,
             orderBy: { createdAt: 'desc' }
         };
-
-        if (collection === 'imoveis') {
-            queryOptions.select = {
-                id: true,
-                code: true,
-                title: true,
-                type: true,
-                finalidade: true,
-                status: true,
-                salePrice: true,
-                rentPrice: true,
-                condoPrice: true,
-                iptuPrice: true,
-                mainImage: true,
-                areaTotal: true,
-                areaUtil: true,
-                bedrooms: true,
-                suites: true,
-                bathrooms: true,
-                garages: true,
-                zipCode: true,
-                street: true,
-                number: true,
-                complement: true,
-                neighborhood: true,
-                city: true,
-                state: true,
-                ownerId: true,
-                createdAt: true,
-                updatedAt: true
-            };
-        }
 
         // @ts-ignore
         const items = await model.findMany(queryOptions);
@@ -139,29 +108,63 @@ export const POST: APIRoute = async ({ params, request }) => {
 export const mapForPrismaCreate = (collection: string, item: any) => {
     if (collection === 'imoveis') {
         const typeStr = item.tipoImovel || 'Casa';
-        const isLoc = item.pretensao?.includes('Locação');
-        const isVen = item.pretensao?.includes('Venda') || !item.pretensao;
-        const mappedStatus = item.statusImovel === 'Ativo' ? 'AVAILABLE' : (item.statusImovel === 'Locado' ? 'RENTED' : (item.statusImovel === 'Vendido' ? 'SOLD' : 'UNAVAILABLE'));
+        const mappedStatus = item.statusImovel === 'Ativo' ? 'AVAILABLE' : (item.statusImovel === 'Locado' ? 'RENTED' : (item.statusImovel === 'Vendido' ? 'SOLD' : (item.statusImovel === 'Suspenso' ? 'UNAVAILABLE' : 'AVAILABLE')));
+
+        // Coletar amenidades (campos booleanos do formulário)
+        const AMENITY_FIELDS = [
+            'mobiliado','dormitorioReversivel','escritorio','aceitaPet','edicula','despensa','adega',
+            'lavanderia','vestiario','closet','suiteHidro','banheira','peDireitoDuplo','homeOffice',
+            'salaEstar','cozinhaAmericana','cozinhaPlanejada','ilha','lareira','arCondicionado',
+            'aquecimentoGas','energiaSolar','automacao','iluminacaoLed','persianas','fechaduraEletronica',
+            'deposito','quintal','jardim','pergolado','espacoZen','firePit','redario','pomar','horta',
+            'espacoPet','canil','lounge','gazebo','espacoDescanso','solarium','churrasqueira',
+            'varandaGourmet','piscina','ofuro','sauna','playground','quadraPoliesportiva','salaoFestas',
+            'academia','piscinaCondominio','spa','cinema','coworking','biblioteca','loungeCondominio',
+            'vagasVisitantes','carroEletrico','bicicletario','portaria24h','seguranca','elevador',
+            'acessibilidade','coletaSeletiva','reusoAgua','captacaoChuva','telhadoVerde',
+            'ventilacaoCruzada','iluminacaoNatural','tratamentoAcustico','isolamentoTermico'
+        ];
+        const amenidades: Record<string, boolean> = {};
+        for (const field of AMENITY_FIELDS) {
+            if (item[field] === true) amenidades[field] = true;
+        }
 
         return {
             id: item._id || crypto.randomUUID(),
             code: item.codigoReference || item.codImovel || `MCK-NEW-${Date.now()}`,
             title: item.resumoImovel || 'Novo Imóvel',
             type: typeStr,
+            finalidade: item.finalidade || null,
+            pretensao: item.pretensao || null,
             status: mappedStatus,
-            salePrice: isVen ? (Number(item.precoVenda) || null) : null,
-            rentPrice: isLoc ? (Number(item.precoLocacao) || null) : null,
+            situacaoImovel: item.situacaoImovel || null,
+            midiaOrigem: item.midiaOrigem || null,
+            // Valores
+            salePrice: Number(item.precoVenda) || null,
+            rentPrice: Number(item.precoLocacao) || null,
             condoPrice: Number(item.valorCondominio) || null,
             iptuPrice: Number(item.valorIPTU) || null,
-            description: item.descricaoAnuncio || null,
+            periodicidadeIPTU: item.periodicidadeIPTU || 'Anual',
+            entradaMinimaEstimada: Number(item.entradaMinimaEstimada) || null,
+            pacoteLocacao: Number(item.pacoteLocacao) || null,
+            // Flags
+            aceitaFinanciamento: item.aceitaFinanciamento === true,
+            aceitaFgts: item.aceitaFgts === true,
+            imovelCondominio: item.imovelCondominio === true,
+            investimentoOportunidade: item.investimentoOportunidade === true,
+            permiteFinanciamento: item.permiteFinanciamento !== false,
+            // Conteúdo
+            description: item.descricaoAnuncio || item.description || null,
             mainImage: (item.propertyImages && item.propertyImages.length > 0) ? item.propertyImages[0] : (item.galeriaFotos && item.galeriaFotos.length > 0 ? item.galeriaFotos[0] : null),
-            images: item.galeriaFotos || [],
+            images: item.galeriaFotos || item.images || [],
             areaTotal: Number(item.areaTerreno || item.areaTotal) || null,
             areaUtil: Number(item.areaConstruida || item.areaUtil) || null,
             bedrooms: Number(item.dormitorios || item.quartos) || null,
             suites: Number(item.suites) || null,
             bathrooms: Number(item.banheiros) || null,
             garages: Number(item.vagasCobertas || item.vagas) || null,
+            amenidades: Object.keys(amenidades).length > 0 ? amenidades : undefined,
+            // Endereço
             zipCode: item.cep || null,
             street: item.enderecoRua || item.logradouro || null,
             number: item.numero || null,
@@ -169,6 +172,10 @@ export const mapForPrismaCreate = (collection: string, item: any) => {
             neighborhood: item.enderecoBairro || item.bairro || null,
             city: item.enderecoCidade || item.cidade || null,
             state: item.enderecoEstado || item.estado || null,
+            // Proprietário
+            nomeProprietario: item.nomeProprietario || null,
+            telefoneProprietario: item.telefoneProprietario || null,
+            emailProprietario: item.emailProprietario || null,
             ownerId: item.corretorResponsavelId || null
         }
     }
@@ -243,18 +250,36 @@ export const mapForPrismaCreate = (collection: string, item: any) => {
 
 export const mapForFrontend = (collection: string, row: any) => {
     if (collection === 'imoveis' && row) {
+        // Spread amenidades como campos booleanos individuais
+        const amenidadesObj = (row.amenidades && typeof row.amenidades === 'object') ? row.amenidades : {};
         return {
             ...row,
+            ...amenidadesObj,
             _id: row.id,
             codigoReference: row.code,
             codImovel: row.code,
             resumoImovel: row.title,
             tipoImovel: row.type,
+            finalidade: row.finalidade,
+            pretensao: row.pretensao,
+            situacaoImovel: row.situacaoImovel,
+            midiaOrigem: row.midiaOrigem,
             statusImovel: row.status === 'AVAILABLE' ? 'Ativo' : (row.status === 'RENTED' ? 'Locado' : (row.status === 'SOLD' ? 'Vendido' : 'Suspenso')),
+            // Valores
             precoVenda: row.salePrice,
             precoLocacao: row.rentPrice,
             valorCondominio: row.condoPrice,
             valorIPTU: row.iptuPrice,
+            periodicidadeIPTU: row.periodicidadeIPTU || 'Anual',
+            entradaMinimaEstimada: row.entradaMinimaEstimada,
+            pacoteLocacao: row.pacoteLocacao,
+            // Flags
+            aceitaFinanciamento: row.aceitaFinanciamento,
+            aceitaFgts: row.aceitaFgts,
+            imovelCondominio: row.imovelCondominio,
+            investimentoOportunidade: row.investimentoOportunidade,
+            permiteFinanciamento: row.permiteFinanciamento,
+            // Conteúdo
             descricaoAnuncio: row.description,
             propertyImages: row.mainImage ? [row.mainImage] : [],
             galeriaFotos: row.images || [],
@@ -267,6 +292,7 @@ export const mapForFrontend = (collection: string, row: any) => {
             banheiros: row.bathrooms,
             vagas: row.garages,
             vagasCobertas: row.garages,
+            // Endereço
             cep: row.zipCode,
             enderecoRua: row.street,
             logradouro: row.street,
@@ -279,6 +305,10 @@ export const mapForFrontend = (collection: string, row: any) => {
             enderecoCidade: row.city,
             estado: row.state,
             enderecoEstado: row.state,
+            // Proprietário
+            nomeProprietario: row.nomeProprietario,
+            telefoneProprietario: row.telefoneProprietario,
+            emailProprietario: row.emailProprietario,
             _createdDate: row.createdAt,
             _updatedDate: row.updatedAt,
             corretorResponsavelId: row.ownerId,

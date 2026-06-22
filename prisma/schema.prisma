@@ -110,17 +110,30 @@ model Property {
   code   String @unique // Ex: CA0149
   title  String // Ex: Casa em Suzano
   type   String // Ex: Casa, Apartamento, Terreno
-  finalidade String? // Ex: Residencial, Comercial
-  status String @default("AVAILABLE") // AVAILABLE, RENTED, SOLD
+  finalidade    String? // Ex: Residencial, Comercial
+  pretensao     String? // Venda, Locacao, Venda e Locacao
+  status        String  @default("AVAILABLE") // AVAILABLE, RENTED, SOLD
+  situacaoImovel String? // Desocupado, Ocupado, Reservado, Em construção
+  midiaOrigem   String? // Captacao, Indicacao, Portal, Proprietario
 
   // Valores
-  salePrice  Float?
-  rentPrice  Float?
-  condoPrice Float?
-  iptuPrice  Float?
+  salePrice             Float?
+  rentPrice             Float?
+  condoPrice            Float?
+  iptuPrice             Float?
+  periodicidadeIPTU     String? // Mensal, Anual
+  entradaMinimaEstimada Float?
+  pacoteLocacao         Float?
+
+  // Flags financeiras
+  aceitaFinanciamento      Boolean @default(false)
+  aceitaFgts               Boolean @default(false)
+  imovelCondominio         Boolean @default(false)
+  investimentoOportunidade Boolean @default(false)
+  permiteFinanciamento     Boolean @default(true)
 
   // Características
-  description String?
+  description String?  @db.Text
   mainImage   String?
   images      String[]
   areaTotal Float?
@@ -129,6 +142,9 @@ model Property {
   suites    Int?
   bathrooms Int?
   garages   Int?
+
+  // Amenidades (checkboxes)
+  amenidades Json? // { churrasqueira: true, piscina: true, ... }
 
   // Localização
   zipCode      String?
@@ -139,10 +155,16 @@ model Property {
   city         String?
   state        String?
 
+  // Proprietário
+  nomeProprietario     String?
+  telefoneProprietario String?
+  emailProprietario    String?
+
   ownerId String?
   owner   Client? @relation("PropertyOwner", fields: [ownerId], references: [id])
 
   contracts Contract[]
+  generatedContracts GeneratedContract[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -255,6 +277,9 @@ model GeneratedContract {
   leadId            String?  
   lead              Lead?    @relation(fields: [leadId], references: [id])
   
+  propertyId        String?
+  property          Property? @relation(fields: [propertyId], references: [id])
+  
   templateId        String
   template          ContractTemplate @relation(fields: [templateId], references: [id])
   
@@ -268,6 +293,53 @@ model GeneratedContract {
   statusAssinatura  String?
   signedAt          DateTime?
 
+  // Relacionamentos para assinaturas avançadas
+  signers           ContractSigner[]
+  histories         SignatureHistory[]
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
+model ContractSigner {
+  id                   String            @id @default(uuid())
+  generatedContractId  String
+  generatedContract    GeneratedContract @relation(fields: [generatedContractId], references: [id], onDelete: Cascade)
+  
+  name                 String
+  email                String
+  phone                String?
+  cpf                  String
+  role                 String            // Locador, Locatário, Fiador, Testemunha, etc.
+  status               String            @default("PENDENTE") // PENDENTE, ASSINADO, REJEITADO
+  
+  // Detalhes da assinatura (ICP-Brasil / Eletrônica)
+  signedAt             DateTime?
+  ipAddress            String?
+  certificateDetails   String?           // Detalhes do Certificado ICP-Brasil (Ex: Emissor, Validade, etc.)
+  
+  // Links de assinatura individuais
+  signUrl              String?           // Link individual para assinar
+  
+  // Posicionamento manual da assinatura
+  coordsJson           String?           // JSON contendo posicionamento [{ page: 1, x: 100, y: 150, type: 'signature'|'rubrica' }]
+  
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+}
+
+model SignatureHistory {
+  id                   String            @id @default(uuid())
+  generatedContractId  String
+  generatedContract    GeneratedContract @relation(fields: [generatedContractId], references: [id], onDelete: Cascade)
+  
+  event                String            // ENVIO, ABERTURA, ASSINATURA, REENVIO, CANCELAMENTO
+  description          String
+  signerName           String?
+  signerEmail          String?
+  ipAddress            String?
+  userAgent            String?
+  
+  createdAt            DateTime          @default(now())
+}
+

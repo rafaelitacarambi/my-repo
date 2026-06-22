@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { BaseCrudService } from "@/integrations";
 import { FinancingStageChecklist } from "./FinancingStageChecklist";
-import { Trash2, Plus, X, Search, User, ClipboardList, CheckSquare, Save, Clock, ChevronDown, CheckCircle, Smartphone, AlertCircle, Trash, Copy } from 'lucide-react';
+import { Trash2, Plus, X, Search, User, ClipboardList, CheckSquare, Save, Clock, ChevronDown, CheckCircle, Smartphone, AlertCircle, Trash, Copy, FileText, Building, Landmark, Folder, Building2, ListTodo, History } from 'lucide-react';
 import { CopyButton } from '@/components/ui/CopyButton';
 import { ProponentChecklistCard } from './ProponentChecklistCard';
 import {
@@ -651,7 +651,7 @@ export function FinancingDetailModal({ open, onOpenChange, caseId, initialTab = 
                                     <Card>
                                         <CardHeader>
                                             <CardTitle className="text-lg font-heading flex items-center gap-2">
-                                                <FileTextIcon className="w-5 h-5 text-secondary" />
+                                                <FileText className="w-5 h-5 text-secondary" />
                                                 Informações Básicas
                                             </CardTitle>
                                         </CardHeader>

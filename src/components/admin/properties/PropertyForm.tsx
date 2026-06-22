@@ -11,7 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Upload, X, Search, MapPin } from 'lucide-react';
+import { Upload, X, Search, MapPin, Plus, FileText, Download, Eye, Globe, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
+import PropertyAuthorizationModal from './PropertyAuthorizationModal';
 
 interface PropertyFormProps {
     initialData?: Partial<Imveis>;
@@ -121,6 +126,211 @@ export default function PropertyForm({ initialData, onSubmit, onCancel, isLoadin
     const [activeTab, setActiveTab] = useState('basico');
     const [cepLoading, setCepLoading] = useState(false);
     const [corretores, setCorretores] = useState<UsuriosdoSistema[]>([]);
+    
+    // Autorizações de Divulgação States & Logic
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [authorizations, setAuthorizations] = useState<any[]>([]);
+    const [loadingAuths, setLoadingAuths] = useState(false);
+    const [selectedAuth, setSelectedAuth] = useState<any | null>(null);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+    const loadAuthorizations = async () => {
+        const propId = initialData?._id;
+        if (!propId) return;
+        setLoadingAuths(true);
+        try {
+            const res = await fetch(`/api/v1/generated-contracts?propertyId=${propId}`);
+            if (res.ok) {
+                const json = await res.json();
+                setAuthorizations(json.items || []);
+            }
+        } catch (error) {
+            console.error("Error loading property authorizations:", error);
+        } finally {
+            setLoadingAuths(false);
+        }
+    };
+
+    useEffect(() => {
+        loadAuthorizations();
+    }, [initialData?._id]);
+
+    const handleDownloadPdf = async (auth: any) => {
+        setDownloadingId(auth._id);
+        try {
+            const parserContainer = document.createElement('div');
+            parserContainer.innerHTML = auth.conteudoFinalHtml;
+            
+            const images = parserContainer.querySelectorAll('img');
+            images.forEach(img => img.setAttribute('crossorigin', 'anonymous'));
+
+            const pages: HTMLElement[] = [];
+            let currentPage = document.createElement('div');
+
+            const setupPageStyles = (page: HTMLElement, forMeasurement = false) => {
+                page.style.width = '794px';
+                if (forMeasurement) {
+                    page.style.height = 'auto';
+                    page.style.minHeight = '0px';
+                    page.style.maxHeight = 'none';
+                } else {
+                    page.style.height = '1122px';
+                    page.style.minHeight = '1122px';
+                    page.style.maxHeight = '1122px';
+                }
+                page.style.padding = '65px 70px 75px 70px';
+                page.style.boxSizing = 'border-box';
+                page.style.background = 'white';
+                page.style.position = 'relative';
+                page.style.overflow = 'hidden';
+                page.style.display = 'block';
+                page.style.fontFamily = 'Arial, sans-serif';
+                page.style.color = '#333';
+            };
+
+            setupPageStyles(currentPage, true);
+            document.body.appendChild(currentPage);
+
+            const flattenHTMLNode = (node: Node): HTMLElement[] => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (!node.textContent?.trim()) return [];
+                    const span = document.createElement('span');
+                    span.textContent = node.textContent;
+                    return [span];
+                }
+                if (node.nodeType !== Node.ELEMENT_NODE) return [];
+                
+                const el = node as HTMLElement;
+                const tagName = el.tagName.toLowerCase();
+                const isFlex = el.style?.display === 'flex';
+                const isKeepTogether = el.classList?.contains('keep-together');
+                const isLeafBlock = isFlex || isKeepTogether || ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'ul', 'ol'].includes(tagName);
+                
+                const childrenArr = Array.from(el.childNodes);
+                const hasBlockChildren = childrenArr.some(child => {
+                    if (child.nodeType !== Node.ELEMENT_NODE) return false;
+                    const childTag = (child as HTMLElement).tagName.toLowerCase();
+                    return ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'ul', 'ol', 'div'].includes(childTag);
+                });
+                
+                if (isLeafBlock || !hasBlockChildren) {
+                    return [el.cloneNode(true) as HTMLElement];
+                }
+                
+                const result: HTMLElement[] = [];
+                for (const child of childrenArr) {
+                    const flattened = flattenHTMLNode(child);
+                    for (const flatChild of flattened) {
+                        const parentClone = el.cloneNode(false) as HTMLElement;
+                        parentClone.style.marginTop = '0px';
+                        parentClone.style.marginBottom = '0px';
+                        parentClone.style.paddingTop = '0px';
+                        parentClone.style.paddingBottom = '0px';
+                        parentClone.style.border = 'none';
+                        parentClone.appendChild(flatChild);
+                        result.push(parentClone);
+                    }
+                }
+                return result;
+            };
+
+            const flatElements: HTMLElement[] = [];
+            Array.from(parserContainer.childNodes).forEach(node => {
+                flatElements.push(...flattenHTMLNode(node));
+            });
+
+            for (const child of flatElements) {
+                const clone = child.cloneNode(true);
+                currentPage.appendChild(clone);
+                
+                if (currentPage.scrollHeight > 1020 && currentPage.childNodes.length > 1) {
+                    currentPage.removeChild(clone);
+                    document.body.removeChild(currentPage);
+                    setupPageStyles(currentPage, false);
+                    pages.push(currentPage);
+                    
+                    currentPage = document.createElement('div');
+                    setupPageStyles(currentPage, true);
+                    document.body.appendChild(currentPage);
+                    currentPage.appendChild(clone);
+                }
+            }
+
+            document.body.removeChild(currentPage);
+            setupPageStyles(currentPage, false);
+            pages.push(currentPage);
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            for (let i = 0; i < pages.length; i++) {
+                const pageContainer = pages[i];
+                
+                // Header
+                const header = document.createElement('div');
+                header.style.position = 'absolute';
+                header.style.top = '20px';
+                header.style.left = '70px';
+                header.style.right = '70px';
+                header.style.borderBottom = '1px solid #f1f5f9';
+                header.style.paddingBottom = '5px';
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.fontSize = '9px';
+                header.style.color = '#94a3b8';
+                header.style.fontWeight = 'bold';
+                header.style.textTransform = 'uppercase';
+                header.innerHTML = `<span>R.Sales Imóveis</span><span>Autorização de Divulgação</span>`;
+                pageContainer.appendChild(header);
+
+                // Footer
+                const footer = document.createElement('div');
+                footer.style.position = 'absolute';
+                footer.style.bottom = '20px';
+                footer.style.left = '70px';
+                footer.style.right = '70px';
+                footer.style.borderTop = '1px solid #f1f5f9';
+                footer.style.paddingTop = '5px';
+                footer.style.display = 'flex';
+                footer.style.justifyContent = 'space-between';
+                footer.style.fontSize = '9px';
+                footer.style.color = '#94a3b8';
+                footer.innerHTML = `<span>Autorização - Código: ${data.codImovel || ''}</span><span>Página ${i + 1} de ${pages.length}</span>`;
+                pageContainer.appendChild(footer);
+
+                document.body.appendChild(pageContainer);
+                await new Promise(resolve => setTimeout(resolve, 80));
+
+                const canvas = await html2canvas(pageContainer, {
+                    scale: 1.5,
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: 800,
+                    backgroundColor: '#ffffff'
+                });
+                
+                document.body.removeChild(pageContainer);
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                
+                if (i > 0) pdf.addPage();
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            }
+
+            pdf.save(`${auth.nomeDocumento || 'Autorizacao_Divulgacao'}.pdf`);
+            toast.success('PDF baixado com sucesso!');
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            toast.error('Erro ao gerar arquivo PDF.');
+        } finally {
+            setDownloadingId(null);
+        }
+    };
 
     useEffect(() => {
         const fetchCorretores = async () => {
@@ -203,7 +413,7 @@ export default function PropertyForm({ initialData, onSubmit, onCancel, isLoadin
     };
 
     const isVenda = data.pretensao?.includes('Venda');
-    const isLocacao = data.pretensao?.includes('Locação');
+    const isLocacao = data.pretensao?.includes('Locação') || data.pretensao?.includes('Locacao');
 
     return (
         <div className="flex flex-col h-full">
@@ -700,10 +910,102 @@ export default function PropertyForm({ initialData, onSubmit, onCancel, isLoadin
                         <TabsContent value="interno" className="space-y-6">
                             <div className="space-y-4">
                                 <Label>Comentários Internos (Visível apenas para equipe)</Label>
-                                <Textarea value={data.comentariosInternos || ''} onChange={(e) => updateField('comentariosInternos', e.target.value)} className="min-h-[150px] bg-yellow-50/50" prefix="🔒" />
+                                <Textarea value={data.comentariosInternos || ''} onChange={(e) => updateField('comentariosInternos', e.target.value)} className="min-h-[120px] bg-yellow-50/50" prefix="🔒" />
 
                                 <Label>Localização das Chaves</Label>
                                 <Input value={data.localChaves || ''} onChange={(e) => updateField('localChaves', e.target.value)} placeholder="Ex: Portaria, Claviculário 02" />
+                            </div>
+
+                            <Separator className="my-6" />
+
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <div className="space-y-1">
+                                        <h3 className="font-heading text-lg text-primary flex items-center gap-2">
+                                            <Globe className="w-5 h-5 text-secondary" />
+                                            Autorização de Divulgação
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground">Vincule e gerencie as autorizações de comercialização do imóvel.</p>
+                                    </div>
+                                    {initialData?._id && (
+                                        <Button
+                                            type="button"
+                                            onClick={() => setShowAuthModal(true)}
+                                            className="bg-secondary text-secondary-foreground hover:bg-secondary/90 h-9 text-xs"
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Gerar Autorização
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {!initialData?._id ? (
+                                    <Card className="border-dashed">
+                                        <CardContent className="py-6 text-center text-xs text-muted-foreground">
+                                            ⚠️ Salve o imóvel primeiro para poder emitir a autorização de divulgação.
+                                        </CardContent>
+                                    </Card>
+                                ) : loadingAuths ? (
+                                    <div className="flex justify-center items-center py-8">
+                                        <Loader2 className="w-6 h-6 text-secondary animate-spin" />
+                                    </div>
+                                ) : authorizations.length === 0 ? (
+                                    <Card className="border-dashed bg-slate-50/50">
+                                        <CardContent className="py-8 text-center text-xs text-muted-foreground space-y-3">
+                                            <FileText className="w-8 h-8 mx-auto text-muted-foreground/50" />
+                                            <p>Nenhuma autorização de divulgação emitida para este imóvel.</p>
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {authorizations.map((auth) => (
+                                            <div
+                                                key={auth._id}
+                                                className="p-4 bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow flex justify-between items-center"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+                                                        <FileText className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm text-slate-800">{auth.nomeDocumento}</h4>
+                                                        <p className="text-2xs text-muted-foreground">
+                                                            Gerado em: {new Date(auth.createdAt).toLocaleString('pt-BR')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-slate-600 hover:text-primary"
+                                                        onClick={() => setSelectedAuth(auth)}
+                                                        title="Visualizar Prévia"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-secondary border-secondary/20 hover:bg-secondary/5"
+                                                        onClick={() => handleDownloadPdf(auth)}
+                                                        disabled={downloadingId === auth._id}
+                                                        title="Baixar PDF"
+                                                    >
+                                                        {downloadingId === auth._id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Download className="w-4 h-4" />
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </TabsContent>
 
@@ -717,6 +1019,61 @@ export default function PropertyForm({ initialData, onSubmit, onCancel, isLoadin
                     </Button>
                 </div>
             </Tabs >
+
+            {/* Modal para gerar autorização */}
+            {initialData?._id && (
+                <PropertyAuthorizationModal
+                    isOpen={showAuthModal}
+                    onClose={() => setShowAuthModal(false)}
+                    property={initialData}
+                    onSuccess={loadAuthorizations}
+                />
+            )}
+
+            {/* Dialog para visualização de PDF/HTML existente */}
+            <Dialog open={!!selectedAuth} onOpenChange={(open) => !open && setSelectedAuth(null)}>
+                <DialogContent className="max-w-4xl w-full h-[80vh] flex flex-col p-0 bg-background overflow-hidden border-none shadow-2xl">
+                    <DialogHeader className="px-6 py-4 border-b bg-muted/10 flex flex-row items-center justify-between">
+                        <div>
+                            <DialogTitle className="font-heading text-lg text-primary flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-secondary" />
+                                Visualizar Autorização de Divulgação
+                            </DialogTitle>
+                            <p className="text-xs text-muted-foreground mt-1">Código: <span className="font-mono">{data.codImovel}</span></p>
+                        </div>
+                    </DialogHeader>
+
+                    <div className="flex-1 bg-slate-100 p-6 overflow-hidden flex flex-col">
+                        <div className="flex-1 bg-white border rounded-2xl shadow-inner overflow-hidden p-1">
+                            <ScrollArea className="h-full bg-white p-8">
+                                <div 
+                                    dangerouslySetInnerHTML={{ __html: selectedAuth?.conteudoFinalHtml || '' }} 
+                                    className="prose prose-sm max-w-none text-left"
+                                />
+                            </ScrollArea>
+                        </div>
+                    </div>
+
+                    <div className="px-6 py-4 border-t bg-muted/10 flex justify-end gap-3">
+                        <Button variant="outline" onClick={() => setSelectedAuth(null)}>
+                            Fechar
+                        </Button>
+                        <Button onClick={() => handleDownloadPdf(selectedAuth)} disabled={downloadingId === selectedAuth?._id}>
+                            {downloadingId === selectedAuth?._id ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Gerando PDF...
+                                </>
+                            ) : (
+                                <>
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Baixar PDF
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div >
     );
 }

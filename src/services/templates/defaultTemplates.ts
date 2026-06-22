@@ -530,11 +530,169 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA OITAVA - DA AUTORIZAÇÃO DE TRATAMENTO DE DADOS (LGPD):</strong> Os contratantes consentem com o tratamento de seus dados pela administradora R.Sales Imóveis para os fins deste negócio.</p>
 
-    <p><strong>CLÁUSULA NONA - DO FORO E DA ASSINATURA DIGITAL:</strong> As partes elegem o foro da comarca de [[IF OPCIONAIS.FORO_SAO_PAULO]]São Paulo-SP[[ELSE]]Poá-SP[[ENDIF]] para dirimir eventuais litígios judiciais. E, por estarem acordadas, assinam eletronicamente o presente instrumento na presença das testemunhas abaixo.</p>
+    <p><strong>CLÁUSULA NONA - DO FORO E DA ASSINATURA DIGITAL:</strong> As partes elegem o foro da comarca de [[IF OPCIONAIS.FORO_SAO_PAULO]]São Paulo-SP[[ELSE]]Poá-SP[[ENDIF]] para dirimir eventuais litígios judiciais. E, por estarem acordadas, assinam eletronicamente o presente instrumento.</p>
+</div>
+    `,
+    CompraEVendaResidencial: `
+<h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">INSTRUMENTO PARTICULAR DE PROMESSA DE COMPRA E VENDA DE IMÓVEL RESIDENCIAL</h2>
+<h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">COM CLÁUSULA DE IRREVOGABILIDADE E IRRETRATABILIDADE</h3>
+
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
+    <p><strong>DAS PARTES CONTRATANTES:</strong></p>
+    
+    <p><strong>{{VENDEDORES_LABEL}} (PROMITENTE VENDEDOR):</strong> {{VENDEDORES_LISTA}}</p>
+
+    <p><strong>{{COMPRADORES_LABEL}} (PROMITENTE COMPRADOR):</strong> {{COMPRADORES_LISTA}}</p>
+
+    <p><strong>[CLAUSULA:clausula_partes] - DA QUALIFICAÇÃO E CAPACIDADE:</strong> As partes acima qualificadas declaram, sob as penas da lei, possuir plena capacidade civil para a celebração deste compromisso, obrigando-se por si, seus herdeiros e sucessores ao fiel cumprimento de todas as obrigações pactuadas.</p>
+
+    <p><strong>[CLAUSULA:clausula_objeto] - DO OBJETO:</strong> O objeto deste contrato é a promessa de compra e venda do imóvel residencial: {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]][[IF IMOVEL_TORRE]], torre {{IMOVEL_TORRE}}[[ENDIF]][[IF IMOVEL_CONDOMINIO_NOME]], do condomínio “{{IMOVEL_CONDOMINIO_NOME}}”[[ENDIF]], situado na {{IMOVEL_ENDERECO_COMPLETO}}, matriculado sob o nº <strong>{{MATRICULA}}</strong> perante o Cartório de Registro de Imóveis competente, totalmente livre e desembaraçado de quaisquer ônus, impostos, taxas, dívidas ou gravames judiciais ou extrajudiciais.</p>
+
+    <p><strong>[CLAUSULA:clausula_ad_corpus] - DA VENDA "AD CORPUS":</strong> A presente transação imobiliária é pactuada em caráter "Ad Corpus", ou seja, o imóvel é vendido como coisa certa e discriminada, sendo as dimensões e áreas descritas na matrícula meramente enunciativas, sem direito a qualquer complemento de área ou abatimento de preço caso ocorram eventuais divergências de metragem.</p>
+
+    <p><strong>[CLAUSULA:clausula_preco_pagamento] - DO PREÇO E DA FORMA DE PAGAMENTO:</strong> O preço total ajustado para a compra e venda do imóvel é de R$ <strong>{{VALOR_TOTAL}}</strong> ({{VALOR_TOTAL_EXTENSO}}), que será quitado da seguinte forma:</p>
+    
+    <p style="padding-left: 20px;"><strong>1. Sinal e Princípio de Pagamento:</strong> R$ {{VALOR_ENTRADA}} ({{VALOR_ENTRADA_EXTENSO}}), pagos na assinatura deste instrumento a título de sinal e princípio de pagamento.</p>
+
+    [[IF PAGAMENTO_AVISTA_QUITACAO]]
+    <div style="padding-left: 20px;">
+        <p><strong>[CLAUSULA:clausula_pagamento_avista_quitacao] - DA QUITAÇÃO DE DÍVIDA E SALDO À VISTA:</strong> O saldo devedor restante será quitado à vista, sendo que parte deste valor será destinado pelo PROMITENTE COMPRADOR diretamente para a liquidação integral do saldo devedor da alienação fiduciária existente junto à instituição financeira credora, com o objetivo de obter o termo de quitação e baixa de gravame. O saldo remanescente será pago no ato da outorga da Escritura Definitiva de Compra e Venda.</p>
+    </div>
+    [[ENDIF]]
+
+    [[IF PAGAMENTO_FINANCIADO]]
+    <div style="padding-left: 20px;">
+        <p><strong>[CLAUSULA:clausula_pagamento_financiado] - DO SALDO MEDIANTE FINANCIAMENTO BANCÁRIO:</strong> O saldo devedor restante será quitado mediante recursos obtidos de Financiamento Bancário, a ser contratado pelo PROMITENTE COMPRADOR no prazo estimado de até 90 (noventa) dias contados desta data.</p>
+        <p style="padding-left: 20px;"><strong>Parágrafo Único (Aprovação Parcial de Crédito):</strong> Caso a instituição financeira conceda crédito em montante inferior ao saldo necessário para a quitação integral da transação (condicionamento de crédito), o PROMITENTE COMPRADOR obriga-se a pagar a diferença diretamente ao PROMITENTE VENDEDOR, com recursos próprios, no prazo improrrogável de até 20 (vinte) dias contados da respectiva notificação da aprovação parcial.</p>
+    </div>
+    [[ENDIF]]
+
+    [[IF FORMA_PAGAMENTO_OUTROS]]
+    <div style="padding-left: 20px;">
+        <p><strong>2. Saldo Devedor e Condições Complementares:</strong> {{FORMA_PAGAMENTO}}</p>
+    </div>
+    [[ENDIF]]
+
+    <p><strong>[CLAUSULA:clausula_imissao_posse] - DA IMISSÃO NA POSSE:</strong> O PROMITENTE COMPRADOR será imitido na posse precária do imóvel na data de outorga da escritura definitiva ou conforme data de entrega acordada: {{DATA_ENTREGA_CHAVES_OBS}}, passando a arcar com os impostos, condomínios e taxas que incidirem sobre o imóvel a partir da mesma.</p>
+
+    [[IF BENS_INCLUSOS]]
+    <p><strong>[CLAUSULA:clausula_bens_inclusos] - DOS MÓVEIS E BENFEITORIAS INCLUSAS:</strong> Estão inclusos no preço e integram a presente transação os móveis planejados, jacuzzi, aparelhos de ar condicionado e demais benfeitorias/itens de mobília listados no inventário a seguir, que guarnecem o imóvel e serão entregues pelo PROMITENTE VENDEDOR em perfeito estado de funcionamento: <br/>{{INVENTARIO_MOVEIS}}</p>
+    [[ENDIF]]
+
+    [[IF MULTA_POSSE]]
+    <p><strong>[CLAUSULA:clausula_multa_posse] - DA MULTA POR ATRASO NA ENTREGA DA POSSE (TAXA DE OCUPAÇÃO):</strong> Caso o PROMITENTE VENDEDOR não proceda à entrega definitiva das chaves e da posse do imóvel no prazo acordado, incidirá, a título de taxa de ocupação e aluguel pró-rata, multa de R$ {{TAXA_OCUPACAO_MENSAL}} ({{TAXA_OCUPACAO_MENSAL_EXTENSO}}) por mês de atraso, contada dia a dia até a efetiva imissão do PROMITENTE COMPRADOR na posse do imóvel, sem prejuízo das demais penalidades cabíveis.</p>
+    [[ENDIF]]
+
+    <p><strong>[CLAUSULA:clausula_certidoes] - DAS CERTIDÕES E DO DESEMBARAÇO:</strong> O(s) PROMITENTE(S) VENDEDOR(ES) obriga-se a apresentar todas as certidões negativas de ônus reais, certidões fiscais municipais, estaduais e federais, e certidões de distribuição de ações judiciais que comprovem a sua idoneidade financeira e a regularidade do imóvel objeto desta transação.</p>
+
+    <p><strong>[CLAUSULA:clausula_comissao_fixa] - DA COMISSÃO DE INTERMEDIAÇÃO:</strong> As partes reconhecem expressamente que a imobiliária <strong>R. Sales Imóveis</strong> realizou a intermediação útil da presente transação, fazendo jus à comissão de corretagem acordada. O PROMITENTE VENDEDOR assume a responsabilidade exclusiva pelo pagamento integral da referida comissão à intermediadora, a ser paga no ato do recebimento do sinal previsto na {ref:clausula_preco_pagamento}, aplicando-se as penalidades da {ref:clausula_multa_convencional} em caso de inadimplemento.</p>
+
+    <p><strong>[CLAUSULA:clausula_irrevogabilidade] - DA IRREVOGABILIDADE E IRRETRATABILIDADE:</strong> O presente contrato é pactuado em caráter irrevogável e irretratável, obrigando-se as partes, seus herdeiros e sucessores a qualquer título, renunciando expressamente ao direito de arrependimento.</p>
+
+    <p><strong>[CLAUSULA:clausula_escritura] - DA ESCRITURA E DO REGISTRO:</strong> As despesas com a outorga da escritura pública de compra e venda, imposto de transmissão (ITBI) e taxas de registro cartorário correrão por conta exclusiva do PROMITENTE COMPRADOR.</p>
+
+    <p><strong>[CLAUSULA:clausula_multa_convencional] - DA MULTA CONVENCIONAL:</strong> O descumprimento de qualquer uma das cláusulas deste contrato sujeitará a parte infratora ao pagamento de multa equivalente a 10% (dez por cento) sobre o valor total do negócio, cobrada pela via judicial ou extrajudicial, sem prejuízo de perdas e danos.</p>
+
+    <p><strong>[CLAUSULA:clausula_lgpd] - DA LGPD:</strong> Os contratantes consentem com o tratamento de seus dados pela administradora R.Sales Imóveis para os fins deste negócio.</p>
+
+    <p><strong>[CLAUSULA:clausula_foro] - DO FORO E ELEIÇÃO:</strong> As partes elegem o foro da comarca de [[IF OPCIONAIS.FORO_SAO_PAULO]]São Paulo-SP[[ELSE]]Poá-SP[[ENDIF]] para dirimir eventuais litígios judiciais.</p>
+
+    <p><strong>[CLAUSULA:clausula_assinatura_eletronica] - DA ASSINATURA ELETRÔNICA:</strong> As partes declaram-se cientes e de acordo com a validade jurídica das assinaturas eletrônicas apostas neste contrato por meio da plataforma You Digital (em conformidade com a ICP-Brasil), reconhecendo-as como plenamente válidas e eficazes para todos os fins de direito.</p>
 
     [[IF ESTADO_CONSERVACAO]]
     <div style="page-break-before: always;"></div>
     <h3 style="color: #ed1c24; font-size: 16px; border-bottom: 2px solid #ed1c24; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px;">ANEXO I - LAUDO DE CONSERVAÇÃO E VISTORIA DO IMÓVEL</h3>
+    <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
+    <p><strong>1. DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL:</strong></p>
+    <div style="padding-left: 20px; margin-bottom: 15px;">
+        <p>{{ESTADO_CONSERVACAO}}</p>
+    </div>
+    
+    <p><strong>2. REGISTRO FOTOGRÁFICO DA VISTORIA:</strong></p>
+    {{LAUDO_FOTOS_HTML}}
+    <div style="page-break-before: always;"></div>
+    [[ENDIF]]
+
+    {{ASSINATURAS_HTML}}
+
+    <p style="text-align: center; margin-top: 50px;">
+        {{CIDADE_ASSINATURA}}, {{DATA_DOCUMENTO}}.
+    </p>
+</div>
+    `,
+    CompraEVendaComercial: `
+<h2 style="text-align: center; color: #ed1c24; margin-bottom: 5px;">INSTRUMENTO PARTICULAR DE PROMESSA DE COMPRA E VENDA DE IMÓVEL COMERCIAL</h2>
+<h3 style="text-align: center; color: #666; font-size: 16px; margin-top: 0px; margin-bottom: 20px;">COM CLÁUSULA DE IRREVOGABILIDADE E IRRETRATABILIDADE</h3>
+
+<div style="margin-top: 20px; font-size: 14px; text-align: left; line-height: 1.6;">
+    <p><strong>DAS PARTES CONTRATANTES:</strong></p>
+    
+    <p><strong>{{VENDEDORES_LABEL}} (PROMITENTE VENDEDOR):</strong> {{VENDEDORES_LISTA}}</p>
+
+    <p><strong>{{COMPRADORES_LABEL}} (PROMITENTE COMPRADOR):</strong> {{COMPRADORES_LISTA}}</p>
+
+    <p><strong>[CLAUSULA:clausula_partes_pj] - DA QUALIFICAÇÃO E CAPACIDADE DAS PARTES:</strong> As partes acima identificadas, sendo representadas na forma de seus atos constitutivos quando pessoas jurídicas, declaram sob as penas da lei possuir plena capacidade jurídica e poderes bastantes para assumir os compromissos aqui pactuados, obrigando-se por si, seus herdeiros, sucessores e cessionários ao fiel cumprimento deste contrato.</p>
+
+    <p><strong>[CLAUSULA:clausula_objeto_comercial] - DO OBJETO:</strong> O objeto do presente contrato é a promessa de compra e venda do imóvel comercial de tipo {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]][[IF IMOVEL_TORRE]], torre {{IMOVEL_TORRE}}[[ENDIF]][[IF IMOVEL_CONDOMINIO_NOME]], do condomínio “{{IMOVEL_CONDOMINIO_NOME}}”[[ENDIF]], situado na {{IMOVEL_ENDERECO_COMPLETO}}, matriculado sob o nº <strong>{{MATRICULA}}</strong> perante o Cartório de Registro de Imóveis competente, totalmente livre e desembaraçado de quaisquer ônus, gravames, impostos, taxas ou dívidas, [[IF IMOVEL_LOCADO]]com observância ao disposto na {ref:clausula_respeito_locacao},[[ENDIF]] declarando o PROMITENTE COMPRADOR ter vistoriado o imóvel e aceito o seu estado de conservação.</p>
+
+    <p><strong>[CLAUSULA:clausula_preco_pagamento_comercial] - DO PREÇO E DA FORMA DE PAGAMENTO:</strong> O preço total e certo ajustado para a compra e venda do imóvel comercial é de R$ <strong>{{VALOR_TOTAL}}</strong> ({{VALOR_TOTAL_EXTENSO}}), que será quitado pelo PROMITENTE COMPRADOR da seguinte forma:</p>
+    
+    <p style="padding-left: 20px;"><strong>1. Sinal e Princípio de Pagamento:</strong> R$ {{VALOR_ENTRADA}} ({{VALOR_ENTRADA_EXTENSO}}), pagos na assinatura deste instrumento a título de sinal e princípio de pagamento.</p>
+
+    [[IF PAGAMENTO_AVISTA_QUITACAO]]
+    <div style="padding-left: 20px;">
+        <p><strong>[CLAUSULA:clausula_pagamento_comercial_avista_quitacao] - DA QUITAÇÃO DE DÍVIDA E SALDO À VISTA:</strong> O saldo devedor restante será quitado à vista, sendo que parte deste valor será destinado pelo PROMITENTE COMPRADOR diretamente para a liquidação integral do saldo devedor da alienação fiduciária existente junto à instituição financeira credora, com o objetivo de obter o termo de quitação e baixa de gravame. O saldo remanescente será pago no ato da outorga da Escritura Definitiva de Compra e Venda.</p>
+    </div>
+    [[ENDIF]]
+
+    [[IF PAGAMENTO_FINANCIADO]]
+    <div style="padding-left: 20px;">
+        <p><strong>[CLAUSULA:clausula_pagamento_comercial_financiado] - DO SALDO MEDIANTE FINANCIAMENTO BANCÁRIO:</strong> O saldo devedor restante será quitado mediante recursos obtidos de Financiamento Bancário, a ser contratado pelo PROMITENTE COMPRADOR no prazo estimado de até 90 (noventa) dias contados desta data.</p>
+        <p style="padding-left: 20px;"><strong>Parágrafo Único (Aprovação Parcial de Crédito):</strong> Caso a instituição financeira conceda crédito em montante inferior ao saldo necessário para a quitação integral da transação (condicionamento de crédito), o PROMITENTE COMPRADOR obriga-se a pagar a diferença diretamente ao PROMITENTE VENDEDOR, com recursos próprios, no prazo improrrogável de até 20 (vinte) dias contados da respectiva notificação da aprovação parcial.</p>
+    </div>
+    [[ENDIF]]
+
+    [[IF FORMA_PAGAMENTO_OUTROS]]
+    <div style="padding-left: 20px;">
+        <p><strong>2. Saldo Devedor e Condições Complementares:</strong> {{FORMA_PAGAMENTO}}</p>
+    </div>
+    [[ENDIF]]
+
+    <p><strong>[CLAUSULA:clausula_imissao_posse_comercial] - DA IMISSÃO NA POSSE:</strong> O PROMITENTE COMPRADOR será imitido na posse definitiva do imóvel na data de outorga da escritura definitiva ou conforme data de entrega acordada: {{DATA_ENTREGA_CHAVES_OBS}}, passando a arcar com todos os impostos, condomínios, taxas e tarifas de consumo que incidirem sobre o imóvel a partir desta data.</p>
+
+    [[IF VENDA_FUNDO_COMERCIO]]
+    <p><strong>[CLAUSULA:clausula_trespasse] - DA TRANSFERÊNCIA DE FUNDO DE COMÉRCIO (TRESPASSE):</strong> A presente transação compreende a venda do fundo de comércio localizado no imóvel, incluindo a transferência definitiva do ponto comercial, estoque de mercadorias, máquinas, equipamentos, utensílios e direito de uso da marca e do CNPJ operantes no local, conforme inventário de bens que passa a integrar este instrumento.</p>
+    [[ELSE]]
+    <p><strong>[CLAUSULA:clausula_imovel_vazio] - DA ENTREGA DO IMÓVEL COMERCIAL VAZIO E DESCARACTERIZADO:</strong> O PROMITENTE VENDEDOR obriga-se a entregar o imóvel comercial completamente desocupado de pessoas e coisas, bem como totalmente descaracterizado de sua marca, identidade visual, letreiros e operação anterior, de modo que o PROMITENTE COMPRADOR possa iniciar sua própria atividade sem embaraço de qualquer natureza.</p>
+    [[ENDIF]]
+
+    [[IF IMOVEL_LOCADO]]
+    <p><strong>[CLAUSULA:clausula_respeito_locacao] - DO RESPEITO À LOCAÇÃO E INQUILINO EXISTENTE:</strong> O PROMITENTE COMPRADOR declara ter plena ciência de que o imóvel encontra-se locado a terceiros. O comprador assume expressamente a obrigação de respeitar os termos do contrato de locação vigente, sub-rogando-se em todos os direitos e deveres do locador anterior. Declaram ainda as partes que o direito de preferência legal do inquilino atual foi devidamente ofertado por escrito e formalmente declinado.</p>
+    [[ENDIF]]
+
+    [[IF RESPONSABILIDADE_ALVARA_COMPRADOR]]
+    <p><strong>[CLAUSULA:clausula_risco_zoneamento] - DA RESPONSABILIDADE POR LICENÇAS, ALVARÁS E ZONEAMENTO:</strong> O PROMITENTE COMPRADOR declara sob sua inteira responsabilidade que procedeu à prévia consulta de viabilidade técnica e zoneamento urbano junto à Prefeitura Municipal, assumindo total e exclusivo risco quanto à obtenção e manutenção de alvarás de funcionamento, licenças ambientais, sanitárias e demais autorizações necessárias para a abertura e operação de sua atividade comercial específica no imóvel objeto desta venda, isentando o PROMITENTE VENDEDOR e a intermediadora de qualquer responsabilidade.</p>
+    [[ENDIF]]
+
+    <p><strong>[CLAUSULA:clausula_certidoes_comercial] - DAS CERTIDÕES E DO DESEMBARAÇO:</strong> O(s) PROMITENTE(S) VENDEDOR(ES) obriga-se a apresentar todas as certidões negativas de ônus reais, certidões fiscais municipais, estaduais e federais, e certidões de distribuição de ações judiciais que comprovem a sua idoneidade financeira e a regularidade do imóvel objeto desta transação.</p>
+
+    <p><strong>[CLAUSULA:clausula_comissao] - DA COMISSÃO DE INTERMEDIAÇÃO E BASE IMOBILIÁRIA:</strong> As partes reconhecem expressamente que a imobiliária <strong>R. Sales Imóveis</strong> realizou a intermediação útil da presente transação, fazendo jus à comissão de corretagem acordada. O PROMITENTE VENDEDOR assume a responsabilidade exclusiva pelo pagamento integral da referida comissão à intermediadora, a ser paga no ato do recebimento do sinal previsto na {ref:clausula_preco_pagamento_comercial}, aplicando-se as penalidades da {ref:clausula_multa_convencional_comercial} em caso de inadimplemento.</p>
+
+    <p><strong>[CLAUSULA:clausula_irrevogabilidade_comercial] - DA IRREVOGABILIDADE E IRRETRATABILIDADE:</strong> O presente contrato é pactuado em caráter irrevogável e irretratável, obrigando-se as partes, seus herdeiros e sucessores a qualquer título, renunciando expressamente ao direito de arrependimento.</p>
+
+    <p><strong>[CLAUSULA:clausula_escritura_comercial] - DA ESCRITURA E DO REGISTRO:</strong> As despesas com a outorga da escritura pública de compra e venda, imposto de transmissão (ITBI) e taxas de registro cartorário correrão por conta exclusiva do PROMITENTE COMPRADOR.</p>
+
+    <p><strong>[CLAUSULA:clausula_multa_convencional_comercial] - DA MULTA CONVENCIONAL:</strong> O descumprimento de qualquer uma das cláusulas deste contrato sujeitará a parte infratora ao pagamento de multa equivalente a 10% (dez por cento) sobre o valor total do negócio, cobrada pela via judicial ou extrajudicial, sem prejuízo de perdas e danos.</p>
+
+    <p><strong>[CLAUSULA:clausula_lgpd_comercial] - DA LGPD:</strong> Os contratantes consentem com o tratamento de seus dados pela administradora R.Sales Imóveis para os fins deste negócio.</p>
+
+    <p><strong>[CLAUSULA:clausula_foro] - DO FORO COMPETENTE E ELEIÇÃO:</strong> As partes elegem o foro da comarca de [[IF OPCIONAIS.FORO_SAO_PAULO]]São Paulo-SP[[ELSE]]Poá-SP[[ENDIF]] para dirimir eventuais litígios judiciais decorrentes deste instrumento.</p>
+
+    <p><strong>[CLAUSULA:clausula_assinatura_eletronica_comercial] - DA ASSINATURA ELETRÔNICA:</strong> As partes declaram-se cientes e de acordo com a validade jurídica das assinaturas eletrônicas apostas neste contrato por meio da plataforma You Digital (em conformidade com a ICP-Brasil), reconhecendo-as como plenamente válidas e eficazes para todos os fins de direito.</p>
+
+    [[IF ESTADO_CONSERVACAO]]
+    <div style="page-break-before: always;"></div>
+    <h3 style="color: #ed1c24; font-size: 16px; border-bottom: 2px solid #ed1c24; padding-bottom: 5px; margin-top: 30px; margin-bottom: 15px;">ANEXO I - LAUDO DE CONSERVAÇÃO E VISTORIA DO IMÓVEL COMERCIAL</h3>
     <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>
     <p><strong>1. DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL:</strong></p>
     <div style="padding-left: 20px; margin-bottom: 15px;">
@@ -570,7 +728,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
     <p><strong>CLÁUSULA SEGUNDA - DA VISTORIA E ACEITAÇÃO:</strong> Os LOCATÁRIOS declaram que efetuaram vistoria minuciosa no imóvel e atestam que o mesmo encontra-se nas exatas condições descritas no Laudo de Vistoria anexo com fotografias, com instalações elétricas, hidráulicas, pintura e portas em prefeito estado de conservação, habitabilidade e funcionamento.</p>
 
-    <p><strong>CLÁUSULA TERCEIRA - DOS ENCARGOS DO IMÓVEL:</strong> A partir desta data, os LOCATÁRIOS assumem a responsabilidade integral por todas as despesas decorrentes do uso do imóvel, tais como condomínio ordinário, IPTU, consumo de água, energia elétrica, gás e seguros.</p>
+    <p><strong>CLÁUSULA TERCEIRA - DOS ENCARGOS DO IMÓVEL:</strong> A partir desta data de {{DATA_ENTREGA_CHAVES}}, os LOCATÁRIOS assumem a responsabilidade integral por todas as despesas decorrentes do uso do imóvel, tais como condomínio ordinário, IPTU, consumo de água, energia elétrica, gás e seguros.</p>
 
     <p><strong>CLÁUSULA QUARTA - DO FORO:</strong> Elegem o foro deste contrato nos mesmos termos do contrato de locação principal.</p>
 
@@ -743,20 +901,20 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
     <p><strong>{{COMPRADORES_LABEL}} (PROMITENTE COMPRADOR):</strong> {{COMPRADORES_LISTA}}</p>
     <p><strong>IMÓVEL:</strong> {{IMOVEL_TIPO}} [[IF IMOVEL_NUMERO]]nº {{IMOVEL_NUMERO}}[[ENDIF]], localizado na {{IMOVEL_ENDERECO_COMPLETO}}.</p>
 
-    <p>Pelo presente instrumento, as partes formalizam a entrega das chaves da unidade acima qualificada, declarando e assentindo o seguinte:</p>
+    <p>Pelo presente instrumento, as partes formalizam a entrega das chaves da unidade acima qualificada na data de {{DATA_ENTREGA_CHAVES}}, declarando e assentindo o seguinte:</p>
 
     <p><strong>1. DA IMISSÃO NA POSSE E ENTREGA DAS CHAVES:</strong><br/>
-    O(S) VENDEDOR(ES) realiza(m), nesta data, a entrega definitiva das chaves do imóvel acima descrito ao(s) COMPRADOR(ES), transferindo-lhe(s) a posse direta do bem, em estrito cumprimento ao Instrumento Particular de Compromisso de Compra e Venda firmado entre as partes.</p>
+    O(S) VENDEDOR(ES) realiza(m), na data de {{DATA_ENTREGA_CHAVES}}, a entrega definitiva das chaves do imóvel acima descrito ao(s) COMPRADOR(ES), transferindo-lhe(s) a posse direta do bem, em estrito cumprimento ao Instrumento Particular de Compromisso de Compra e Venda firmado entre as partes.</p>
 
     <p><strong>2. DA VISTORIA DE ENTREGA:</strong><br/>
-    O(S) COMPRADOR(ES) declara(m) ter vistoriado o imóvel nesta data, recebendo-o nas exatas condições físicas e de conservação acordadas no contrato de compra e venda. Declara(m), ainda, que as instalações elétricas, hidráulicas e os acabamentos encontram-se em conformidade com o que foi negociado, não havendo ressalvas a fazer (exceto as eventualmente apontadas no registro fotográfico abaixo).</p>
+    O(S) COMPRADOR(ES) declara(m) ter vistoriado o imóvel na data de {{DATA_ENTREGA_CHAVES}}, recebendo-o nas exatas condições físicas e de conservação acordadas no contrato de compra e venda. Declara(m), ainda, que as instalações elétricas, hidráulicas e os acabamentos encontram-se em conformidade com o que foi negociado, não havendo ressalvas a fazer (exceto as eventualmente apontadas no registro fotográfico abaixo).</p>
 
     <p><strong>3. TRANSFERÊNCIA DE RESPONSABILIDADES E CONSUMO:</strong><br/>
-    A partir desta data de entrega das chaves, passam a ser de inteira e exclusiva responsabilidade do(s) COMPRADOR(ES):<br/>
+    A partir desta data de entrega das chaves ({{DATA_ENTREGA_CHAVES}}), passam a ser de inteira e exclusiva responsabilidade do(s) COMPRADOR(ES):<br/>
     • O pagamento de todos os impostos (IPTU) e taxas incidentes sobre o imóvel;<br/>
     • O pagamento das cotas condominiais ordinárias e extraordinárias;<br/>
-    • A transferência de titularidade junto às concessionárias de serviços públicos (Energia Elétrica, Água, Gás, etc.), isentando o(s) VENDEDOR(ES) de qualquer responsabilidade sobre o consumo a partir desta data.<br/>
-    O(s) VENDEDOR(ES) declara(m) ter quitado o consumo proporcional até o dia de hoje.</p>
+    • A transferência de titularidade junto às concessionárias de serviços públicos (Energia Elétrica, Água, Gás, etc.), isentando o(s) VENDEDOR(ES) de qualquer responsabilidade sobre o consumo a partir desta data de entrega das chaves ({{DATA_ENTREGA_CHAVES}}).<br/>
+    O(s) VENDEDOR(ES) declara(m) ter quitado o consumo proporcional até esta data de {{DATA_ENTREGA_CHAVES}}.</p>
 
     <p><strong>4. DESCRIÇÃO DO ESTADO DE CONSERVAÇÃO DO IMÓVEL:</strong></p>
     <p><strong>Data da Vistoria:</strong> {{DATA_VISTORIA}}</p>

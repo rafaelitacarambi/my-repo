@@ -25,6 +25,7 @@ import AdminChavesPage from '@/components/pages/admin/AdminChavesPage';
 import AdminFinanceiroPage from '@/components/pages/admin/AdminFinanceiroPage';
 import AdminClientesPage from '@/components/pages/admin/AdminClientesPage';
 import AdminAgendamentosPage from '@/components/pages/admin/AdminAgendamentosPage';
+import AdminAssinaturasPage from '@/components/pages/admin/AdminAssinaturasPage';
 import AdminHistoricoPage from '@/components/pages/admin/AdminHistoricoPage';
 import AdminFinancingKanbanPage from '@/components/pages/admin/AdminFinancingKanbanPage';
 import AdminFinanciamentoDetalhePage from '@/components/pages/admin/AdminFinanciamentoDetalhePage';
@@ -172,6 +173,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedAdminRoute>
             <AdminAgendamentosPage />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: "admin/assinaturas/documentos",
+        element: (
+          <ProtectedAdminRoute>
+            <AdminAssinaturasPage />
           </ProtectedAdminRoute>
         ),
       },

@@ -1,22 +1,17 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Plus, Kanban } from 'lucide-react';
+import { Kanban } from 'lucide-react';
 import { CreateNewModal } from '@/components/CreateNewModal';
 
 export default function QuickActions() {
   const navigate = useNavigate();
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   return (
     <div className="flex gap-4 mb-8">
-      <Button
-        onClick={() => setShowCreateModal(true)}
-        className="bg-brandaccent hover:bg-orange-600 text-white flex items-center gap-2"
-      >
-        <Plus size={20} />
-        Criar Novo
-      </Button>
+      <CreateNewModal
+        onSelectProperty={() => navigate('/admin/imoveis')}
+        onSelectClient={() => navigate('/admin/clientes', { state: { openNewClient: true } })}
+      />
 
       <Button
         onClick={() => navigate('/admin/financiamento-kanban')}
@@ -26,10 +21,6 @@ export default function QuickActions() {
         <Kanban size={20} />
         Kanban de Financiamento
       </Button>
-
-      {showCreateModal && (
-        <CreateNewModal onClose={() => setShowCreateModal(false)} />
-      )}
     </div>
   );
 }

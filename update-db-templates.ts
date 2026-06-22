@@ -10,6 +10,8 @@ async function main() {
         { tipo: 'LocacaoResidencial', content: DEFAULT_TEMPLATES.LocacaoResidencial, name: 'Template Padrão Locação Residencial', cat: 'LOCACAO' },
         { tipo: 'LocacaoComercial', content: DEFAULT_TEMPLATES.LocacaoComercial, name: 'Template Padrão Locação Comercial', cat: 'LOCACAO' },
         { tipo: 'CompraEVenda', content: DEFAULT_TEMPLATES.CompraEVenda, name: 'Template Padrão Compra e Venda', cat: 'VENDA' },
+        { tipo: 'CompraEVendaResidencial', content: DEFAULT_TEMPLATES.CompraEVendaResidencial, name: 'Template Padrão Compra e Venda Residencial', cat: 'VENDA' },
+        { tipo: 'CompraEVendaComercial', content: DEFAULT_TEMPLATES.CompraEVendaComercial, name: 'Template Padrão Compra e Venda Comercial', cat: 'VENDA' },
         { tipo: 'EntregaChaves', content: DEFAULT_TEMPLATES.EntregaChaves, name: 'Termo Padrão Entrega de Chaves', cat: 'OUTROS' },
         { tipo: 'DevolucaoChaves', content: DEFAULT_TEMPLATES.DevolucaoChaves, name: 'Termo Padrão Devolução de Chaves', cat: 'LOCACAO' },
         { tipo: 'VistoriaEntrada', content: DEFAULT_TEMPLATES.VistoriaEntrada, name: 'Template Padrão Vistoria de Entrada', cat: 'LOCACAO' },

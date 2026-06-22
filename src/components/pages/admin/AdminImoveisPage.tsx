@@ -1,13 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { motion } from 'framer-motion';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Building2, Plus, Edit, Trash2, ArrowLeft, X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Building2, Plus, Edit, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Upload } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import { Textarea } from '@/components/ui/textarea';
 import { BaseCrudService } from '@/integrations';
 import { Imveis, UsuriosdoSistema } from '@/entities';
@@ -370,32 +369,22 @@ function AdminImoveisContent() {
   };
 
   return (
-    <div className="min-h-screen bg-primary">
-      <Header />
+    <AdminLayout>
+      <div className="space-y-6">
+        
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-slate-100">
+          <div>
+            <h1 className="font-heading text-3xl font-bold text-slate-900 flex items-center gap-3">
+              <Building2 className="w-8 h-8 text-[#1a73e8]" />
+              Gestão de Imóveis
+            </h1>
+            <p className="font-paragraph text-slate-500 mt-1">
+              Cadastre e gerencie imóveis disponíveis
+            </p>
+          </div>
 
-      {/* Header */}
-      <section className="w-full bg-gradient-to-br from-brandaccent/10 to-secondary/5 py-12">
-        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
-          <Link to="/area-restrita">
-            <Button
-              variant="ghost"
-              className="text-primary-foreground hover:text-secondary hover:bg-primary-foreground/5 font-paragraph mb-6"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Voltar para Área Restrita
-            </Button>
-          </Link>
-
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div>
-              <h1 className="font-heading text-4xl lg:text-5xl text-secondary mb-4">
-                Gestão de Imóveis
-              </h1>
-              <p className="font-paragraph text-lg text-primary-foreground/80">
-                Cadastre e gerencie imóveis disponíveis
-              </p>
-            </div>
-
+          <div className="flex flex-wrap gap-2 w-full lg:w-auto">
             <Dialog open={dialogOpen} onOpenChange={(open) => {
               setDialogOpen(open);
               if (!open) {
@@ -403,7 +392,7 @@ function AdminImoveisContent() {
               }
             }}>
               <DialogTrigger asChild>
-                <Button className="bg-buttonbackground text-secondary-foreground hover:bg-buttonbackground/90 font-paragraph font-semibold h-12 px-6 rounded-lg">
+                <Button className="bg-[#1a73e8] hover:bg-[#1557b0] text-white font-paragraph font-semibold h-11 px-5 rounded-xl">
                   <Plus className="w-5 h-5 mr-2" />
                   Novo Imóvel
                 </Button>
@@ -426,11 +415,9 @@ function AdminImoveisContent() {
               </DialogContent>
             </Dialog>
 
-
-
             <Button
               variant="outline"
-              className="border-secondary text-secondary hover:bg-secondary/10 font-paragraph font-semibold h-12 px-6 rounded-lg ml-2"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 font-paragraph font-semibold h-11 px-5 rounded-xl"
               onClick={handleCheckDuplicates}
             >
               Verificar Duplicatas
@@ -438,21 +425,14 @@ function AdminImoveisContent() {
 
             <Button
               variant="outline"
-              className="border-secondary text-secondary hover:bg-secondary/10 font-paragraph font-semibold h-12 px-6 rounded-lg ml-2"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 font-paragraph font-semibold h-11 px-5 rounded-xl"
               onClick={async () => {
                 if (!confirm('Deseja gerar códigos (Ex: C0001, A0001) para todos os imóveis que ainda não possuem?')) return;
 
                 setLoading(true);
                 try {
                   let updatedCount = 0;
-                  // Process in chunks to avoid overwhelming correct max code calc
-                  // Actually, we can just iterate and update local state then save, but easier to just do it sequentially or simply re-fetch
-                  // To ensure uniqueness, we must sort and then assign.
-
-                  // 1. Get all properties again to be sure
                   const { items: allProps } = await BaseCrudService.getAll<Imveis>('imoveis', undefined, { limit: 5000 });
-
-                  // 2. Identify missing codes
                   const missing = allProps.filter(p => !p.codImovel);
 
                   if (missing.length === 0) {
@@ -460,11 +440,6 @@ function AdminImoveisContent() {
                     setLoading(false);
                     return;
                   }
-
-                  // 3. Assign codes
-                  // We must respect existing generated codes in `allProps` when calculating next
-                  // But since we are inside a loop, we need to update `allProps` view as we go?
-                  // Easier: specific counters.
 
                   const getNextCode = (prefix: string, list: Imveis[]) => {
                     const existing = list
@@ -474,8 +449,6 @@ function AdminImoveisContent() {
                     return (existing.length > 0 ? Math.max(...existing) : 0) + 1;
                   };
 
-                  // Group by type to batch? No, sequential is safer for uniqueness.
-                  // Let's maintan a local simulation of the DB state for code generation
                   const currentList = [...allProps];
 
                   for (const prop of missing) {
@@ -485,14 +458,11 @@ function AdminImoveisContent() {
                     else if (['TERRENO', 'AREA', 'LOTE'].some(t => type.includes(t))) prefix = 'T';
                     else if (['GALPAO', 'LOJA', 'SALA', 'PREDIO', 'COMERCIAL'].some(t => type.includes(t))) prefix = 'C';
 
-                    // Calculate next based on currentList state
                     const nextNum = getNextCode(prefix, currentList);
                     const newCode = `${prefix}${nextNum.toString().padStart(4, '0')}`;
 
-                    // Update DB
                     await BaseCrudService.update('imoveis', { _id: prop._id, codImovel: newCode });
 
-                    // Update local list for next iteration
                     const idx = currentList.findIndex(p => p._id === prop._id);
                     if (idx !== -1) currentList[idx].codImovel = newCode;
 
@@ -513,12 +483,10 @@ function AdminImoveisContent() {
               Gerar Códigos Faltantes
             </Button>
 
-
-
             <Button
               onClick={handleImportMissing}
               variant="outline"
-              className="border-secondary text-secondary hover:bg-secondary/10 font-paragraph font-semibold h-12 px-6 rounded-lg ml-2"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 font-paragraph font-semibold h-11 px-5 rounded-xl"
             >
               Importar Faltantes
             </Button>
@@ -532,7 +500,6 @@ function AdminImoveisContent() {
                   const referenceList = await response.json();
                   const { items: currentItems } = await BaseCrudService.getAll<Imveis>('imoveis', undefined, { limit: 2000 });
 
-                  // Buscar usuários para vincular IDs de captadores
                   const usersResult = await BaseCrudService.getAll<UsuriosdoSistema>('usuariossistema');
                   const users = (usersResult as any).items || (usersResult as any).data || [];
                   const userMap = new Map();
@@ -576,11 +543,9 @@ function AdminImoveisContent() {
                         areaUtil: ref.areaConstruida || item.areaUtil || 0
                       };
 
-                      // Tentar vincular o ID do corretor se o nome bater com um usuário cadastrado
                       if (ref.corretorResponsavel || !ref.corretorResponsavel) {
                         let captadorName = (ref.corretorResponsavel || '').trim().toLowerCase();
 
-                        // Regra Especial: Rsales ou Vazio vinculado ao login 'rs'
                         if (captadorName === 'rsales' || captadorName === '') {
                           captadorName = 'rs';
                         }
@@ -588,7 +553,6 @@ function AdminImoveisContent() {
                         const userId = userMap.get(captadorName);
                         if (userId) {
                           updateData.corretorResponsavelId = userId;
-                          // Opcional: Atualizar o nome textual também para facilitar visualização
                           if (captadorName === 'rs') {
                             updateData.corretorResponsavel = 'RS';
                           }
@@ -608,36 +572,29 @@ function AdminImoveisContent() {
                 }
               }}
               variant="outline"
-              className="border-blue-500 text-blue-500 hover:bg-blue-500/10 font-paragraph font-semibold h-12 px-6 rounded-lg ml-2"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 font-paragraph font-semibold h-11 px-5 rounded-xl"
             >
               Sincronizar Logradouros
             </Button>
 
-
             <Button
               variant="outline"
-              className="border-warning text-warning hover:bg-warning/10 font-paragraph font-semibold h-12 px-6 rounded-lg ml-2"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 font-paragraph font-semibold h-11 px-5 rounded-xl"
               onClick={async () => {
                 if (!confirm('Deseja sincronizar o status dos imóveis? Imóveis que NÃO estiverem na planilha de referência serão marcados como SUSPENSOS. Os demais permanecerão Ativos.')) return;
 
                 setLoading(true);
                 try {
-                  // 1. Fetch current DB properties
                   const { items: allProps } = await BaseCrudService.getAll<Imveis>('imoveis', undefined, { limit: 5000 });
 
-                  // 2. Fetch Reference JSON
                   const response = await fetch('/active_reference.json');
                   if (!response.ok) throw new Error('Arquivo de referência não encontrado.');
                   const referenceList = await response.json();
 
-                  // 3. Create a Set of "Active Keys" for O(1) lookup
-                  // 3. Create a Set of "Active Keys" for O(1) lookup
                   const activeKeys = new Set();
                   referenceList.forEach((p: any) => {
-                    // Key 1: Code Reference (e.g. CA0149)
                     if (p.codigoReference) activeKeys.add(`REF:${p.codigoReference.trim().toUpperCase()}`);
 
-                    // Key 2: Strict Address Match (Street + Number + Complement)
                     const street = (p.enderecoRua || '').toLowerCase().trim();
                     const number = (p.numero || '').toString().toLowerCase().trim();
                     const comp = (p.enderecoComplemento || '').toLowerCase().trim();
@@ -645,13 +602,6 @@ function AdminImoveisContent() {
                     if (street && street.length > 2) {
                       activeKeys.add(`ADDR:${street}|${number}|${comp}`);
                     }
-
-                    // Key 3: Full Title Match - REMOVED to prevent false positives
-                    // Generic titles like "Apartamento" were matching everything.
-                    // const title = (p.resumoImovel || '').toLowerCase().trim();
-                    // if (title && title.length > 5) {
-                    //      activeKeys.add(`TITLE:${title}`);
-                    // }
                   });
 
                   let suspendedCount = 0;
@@ -660,7 +610,6 @@ function AdminImoveisContent() {
 
                   for (const prop of allProps) {
                     totalChecked++;
-                    // Normalized Property Keys
                     const propRef = prop.codigoReference ? `REF:${prop.codigoReference.trim().toUpperCase()}` : null;
 
                     const street = (prop.enderecoRua || prop.logradouro || '').toLowerCase().trim();
@@ -668,19 +617,8 @@ function AdminImoveisContent() {
                     const comp = (prop.enderecoComplemento || '').toLowerCase().trim();
                     const propAddrKey = (street && street.length > 2) ? `ADDR:${street}|${number}|${comp}` : null;
 
-                    // Removed Title Key lookup
-                    // const title = (prop.resumoImovel || prop.propertyName || '').toLowerCase().trim();
-                    // const propTitleKey = (title && title.length > 5) ? `TITLE:${title}` : null;
-
                     const isActive = (propRef && activeKeys.has(propRef)) ||
                       (propAddrKey && activeKeys.has(propAddrKey));
-
-                    // Determine if we need to change status
-                    // "Suspenso" properties stay suspenso unless found active? 
-                    // User request: "colocar todos os outros como inativos".
-                    // So if NOT found -> Suspenso.
-                    // If Found -> Ensure Ativo (unless manually suspended? User said "Todos... planilha tem 275 ativos").
-                    // Let's assume if found in spreadsheet => MUST BE ACTIVE.
 
                     if (isActive) {
                       if (prop.statusImovel !== 'Ativo') {
@@ -695,14 +633,7 @@ function AdminImoveisContent() {
                     }
                   }
 
-                  alert(`Sincronização Finalizada!
-
-                - Total Verificados: ${totalChecked}
-                - Total na Planilha: ${referenceList.length}
-                - Imóveis Suspensos (Não encontrados na planilha): ${suspendedCount}
-                - Imóveis Ativados/Confirmados: ${activeCount}
-
-                Nota: Se o número de suspensos for 0 e você acredita que deveriam haver, verifique se os títulos ou endereços correspondem exatamente.`);
+                  alert('Sincronização Finalizada!\n\n- Total Verificados: ' + totalChecked + '\n- Total na Planilha: ' + referenceList.length + '\n- Imóveis Suspensos (Não encontrados na planilha): ' + suspendedCount + '\n- Imóveis Ativados/Confirmados: ' + activeCount + '\n\nNota: Se o número de suspensos for 0 e você acredita que deveriam haver, verifique se os títulos ou endereços correspondem exatamente.');
                   loadProperties();
 
                 } catch (e: any) {
@@ -718,7 +649,7 @@ function AdminImoveisContent() {
 
             <Button
               variant="outline"
-              className="border-primary text-primary hover:bg-primary/10 font-paragraph font-semibold h-12 px-6 rounded-lg ml-2"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 font-paragraph font-semibold h-11 px-5 rounded-xl"
               onClick={async () => {
                 if (!confirm('Isso irá tentar extrair o NÚMERO e definir ESTADO=SP para todos os imóveis. Continuar?')) return;
 
@@ -731,13 +662,11 @@ function AdminImoveisContent() {
                     let updates: any = {};
                     let changed = false;
 
-                    // 1. Default State to SP
                     if (!p.estado || p.estado !== 'SP') {
                       updates.estado = 'SP';
                       changed = true;
                     }
 
-                    // 2. Extract Number from Street if Number is missing
                     const fullAddr = p.enderecoRua || p.logradouro || '';
                     const currentNum = p.numero;
 
@@ -760,7 +689,6 @@ function AdminImoveisContent() {
                       }
                     }
 
-                    // 3. Ensure Bairro/Cidade from legacy fields
                     if (!p.bairro && p.enderecoBairro) { updates.bairro = p.enderecoBairro; changed = true; }
                     if (!p.cidade && p.enderecoCidade) { updates.cidade = p.enderecoCidade; changed = true; }
 
@@ -782,33 +710,29 @@ function AdminImoveisContent() {
             >
               Normalizar Endereços
             </Button>
-
-            {/* Old Import Dialog removed. New Import is via direct file input above. */}
           </div>
-        </div >
-      </section >
+        </div>
 
-      {/* Content */}
-      < section className="py-12 bg-primary" >
-        <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
+        {/* Content */}
+        <div className="max-w-[120rem] mx-auto">
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto"></div>
-              <p className="mt-4 text-primary-foreground">Carregando imóveis...</p>
+              <p className="mt-4 text-slate-500">Carregando imóveis...</p>
             </div>
           ) : (
             <div className="space-y-6">
 
               {/* Tabs */}
-              <div className="flex space-x-4 border-b border-primary-foreground/10 pb-2">
+              <div className="flex space-x-4 border-b border-slate-100 pb-2">
                 <button
                   onClick={() => {
                     setActiveTab('ativos');
                     setSearchParams({ tab: 'ativos' });
                   }}
-                  className={`px-4 py-2 font-heading font-semibold text-lg transition-colors ${activeTab === 'ativos'
-                    ? 'text-secondary border-b-2 border-secondary'
-                    : 'text-primary-foreground/50 hover:text-primary-foreground'
+                  className={`px-4 py-2 font-heading font-semibold text-lg transition-colors relative ${activeTab === 'ativos'
+                    ? 'text-[#1a73e8] border-b-2 border-[#1a73e8]'
+                    : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
                   Ativos ({properties.filter(p => (p.statusImovel || p.status) === 'Ativo' || (p.statusImovel || p.status) === 'Disponível').length})
@@ -818,9 +742,9 @@ function AdminImoveisContent() {
                     setActiveTab('inativos');
                     setSearchParams({ tab: 'inativos' });
                   }}
-                  className={`px-4 py-2 font-heading font-semibold text-lg transition-colors ${activeTab === 'inativos'
-                    ? 'text-secondary border-b-2 border-secondary'
-                    : 'text-primary-foreground/50 hover:text-primary-foreground'
+                  className={`px-4 py-2 font-heading font-semibold text-lg transition-colors relative ${activeTab === 'inativos'
+                    ? 'text-[#1a73e8] border-b-2 border-[#1a73e8]'
+                    : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
                   Inativos / Suspensos ({properties.filter(p => (p.statusImovel || p.status) !== 'Ativo' && (p.statusImovel || p.status) !== 'Disponível').length})
@@ -828,12 +752,12 @@ function AdminImoveisContent() {
               </div>
 
               {(filterStatus || filterType) && (
-                <div className="flex items-center gap-4 bg-secondary/5 p-4 rounded-lg border border-secondary/20">
+                <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <div className="flex-1">
-                    <p className="text-sm text-secondary font-medium">
-                      Filtrando por: <span className="font-bold">{filterStatus || (filterType === 'novos' ? 'Novos' : 'Desatualizados')}</span>
+                    <p className="text-sm text-slate-700 font-medium">
+                      Filtrando por: <span className="font-bold text-slate-900">{filterStatus || (filterType === 'novos' ? 'Novos' : 'Desatualizados')}</span>
                     </p>
-                    <p className="text-xs text-primary-foreground/60">
+                    <p className="text-xs text-slate-500 font-medium">
                       Exibindo {filteredProperties.length} imóveis
                     </p>
                   </div>
@@ -841,7 +765,7 @@ function AdminImoveisContent() {
                     variant="ghost"
                     size="sm"
                     onClick={clearFilters}
-                    className="text-primary-foreground/60 hover:text-secondary"
+                    className="text-slate-500 hover:text-slate-800 hover:bg-slate-100"
                   >
                     <X className="w-4 h-4 mr-2" />
                     Limpar Filtros
@@ -855,16 +779,16 @@ function AdminImoveisContent() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     key={property._id}
-                    className="bg-cardbackground rounded-xl p-6 border border-primary-foreground/10 hover:border-secondary/50 transition-all duration-300"
+                    className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-[#1a73e8]/30 hover:shadow-md transition-all duration-300 flex flex-col justify-between"
                   >
                     <div className="mb-4">
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-between items-start mb-3">
                         <div className="flex gap-2">
-                          <span className="bg-secondary/20 text-secondary text-xs px-2 py-1 rounded-full font-paragraph font-semibold">
+                          <span className="bg-[#e8f0fe] text-[#1a73e8] text-xs px-2.5 py-1 rounded-full font-paragraph font-semibold">
                             {property.pretensao || property.transactionType}
                           </span>
                           {property.codImovel && (
-                            <span className="bg-primary/10 text-primary-foreground text-xs px-2 py-1 rounded-full font-paragraph font-bold border border-primary/20">
+                            <span className="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-paragraph font-bold border border-slate-200">
                               {property.codImovel}
                             </span>
                           )}
@@ -874,7 +798,7 @@ function AdminImoveisContent() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(property)}
-                            className="h-8 w-8 text-primary-foreground/60 hover:text-secondary hover:bg-secondary/10"
+                            className="h-8 w-8 text-slate-400 hover:text-[#1a73e8] hover:bg-slate-50 rounded-lg"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -882,7 +806,7 @@ function AdminImoveisContent() {
                       </div>
 
                       {/* Cover Image */}
-                      <div className="relative aspect-video w-full overflow-hidden rounded-lg mb-4 bg-muted/50">
+                      <div className="relative aspect-video w-full overflow-hidden rounded-xl mb-4 bg-slate-50 border border-slate-100">
                         {property.propertyImages || (property.galeriaFotos && property.galeriaFotos.length > 0) ? (
                           <img
                             src={(Array.isArray(property.propertyImages) ? property.propertyImages[0] : property.propertyImages) || (property.galeriaFotos && property.galeriaFotos[0])}
@@ -893,35 +817,35 @@ function AdminImoveisContent() {
                             }}
                           />
                         ) : (
-                          <div className="flex items-center justify-center w-full h-full text-muted-foreground">
-                            <Building2 className="w-12 h-12 opacity-20" />
+                          <div className="flex items-center justify-center w-full h-full text-slate-300">
+                            <Building2 className="w-12 h-12 opacity-30" />
                           </div>
                         )}
                       </div>
 
-                      {/* Fallback to legacy field names if new ones are empty */}
-                      <h3 className="font-heading text-xl text-primary-foreground mb-1 line-clamp-1">
+                      <h3 className="font-heading text-lg font-bold text-slate-800 mb-1 line-clamp-1">
                         {property.resumoImovel || property.propertyName || 'Imóvel sem título'}
                       </h3>
-                      <div className="flex items-center text-primary-foreground/60 text-sm mb-4">
-                        <Building2 className="w-4 h-4 mr-1" />
+                      <div className="flex items-center text-slate-500 text-xs mb-3 font-medium">
+                        <Building2 className="w-3.5 h-3.5 mr-1 text-slate-400" />
                         {property.tipoImovel || property.propertyType}
                       </div>
-                      <p className="font-paragraph text-sm text-primary-foreground/60 mb-4 line-clamp-2">
+                      <p className="font-paragraph text-sm text-slate-600 mb-4 line-clamp-2 leading-relaxed">
                         {property.descricaoAnuncio || property.description}
                       </p>
-                      <div className="flex justify-between items-center pt-4 border-t border-primary-foreground/10">
-                        <span className="font-heading text-lg text-secondary">
+                      <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+                        <span className="font-heading text-lg font-bold text-slate-900">
                           {property.precoVenda
                             ? `R$ ${property.precoVenda.toLocaleString()}`
                             : (property.precoLocacao
                               ? `R$ ${property.precoLocacao.toLocaleString()}/mês`
                               : (property.price ? `R$ ${property.price.toLocaleString()}` : 'R$ 0,00'))
-                          }
+                        }
                         </span>
-                        <span className={`text-xs px-2 py-1 rounded-full ${(property.statusImovel || property.status) === 'Ativo' || (property.statusImovel || property.status) === 'Disponível'
-                          ? 'bg-green-500/20 text-green-500'
-                          : 'bg-yellow-500/20 text-yellow-500'
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
+                          (property.statusImovel || property.status) === 'Ativo' || (property.statusImovel || property.status) === 'Disponível'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                            : 'bg-amber-50 text-amber-700 border-amber-100'
                           }`}>
                           {property.statusImovel || property.status}
                         </span>
@@ -933,16 +857,16 @@ function AdminImoveisContent() {
             </div>
           )}
           <Dialog open={duplicatesDialogOpen} onOpenChange={setDuplicatesDialogOpen}>
-            <DialogContent className="max-w-4xl bg-white text-slate-900 max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl bg-white text-slate-900 max-h-[80vh] overflow-y-auto rounded-2xl">
               <DialogHeader>
-                <DialogTitle>Imóveis Duplicados Encontrados</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-2xl font-bold text-slate-900">Imóveis Duplicados Encontrados</DialogTitle>
+                <DialogDescription className="text-slate-500 mt-1">
                   Encontramos {potentialDuplicates.length} grupos de imóveis potencialmente duplicados.
                 </DialogDescription>
                 {potentialDuplicates.length > 0 && (
                   <Button
                     variant="destructive"
-                    className="mt-2"
+                    className="mt-4 rounded-xl font-semibold h-11 px-5"
                     onClick={async () => {
                       if (!confirm(`Isso manterá apenas o imóvel MAIS ANTIGO de cada grupo e excluirá os outros.\nTotal de grupos: ${potentialDuplicates.length}\n\nTem certeza?`)) return;
 
@@ -997,28 +921,28 @@ function AdminImoveisContent() {
                   </Button>
                 )}
               </DialogHeader>
-              <div className="space-y-6">
+              <div className="space-y-6 mt-4">
                 {potentialDuplicates.length === 0 ? (
                   <p className="text-center text-slate-500 py-8">Nenhuma duplicata encontrada!</p>
                 ) : (
                   potentialDuplicates.map((group, idx) => (
-                    <div key={idx} className="border rounded-lg p-4 bg-slate-50">
+                    <div key={idx} className="border rounded-xl p-4 bg-slate-50 border-slate-100">
                       <h3 className="font-bold text-sm text-slate-700 mb-2">Grupo {idx + 1}</h3>
                       <div className="space-y-2">
                         {group.map(p => (
-                          <div key={p._id} className="flex items-center justify-between bg-white p-3 rounded border">
+                          <div key={p._id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                             <div>
-                              <p className="font-semibold">{p.resumoImovel || p.propertyName || 'Sem Título'}</p>
+                              <p className="font-semibold text-slate-800">{p.resumoImovel || p.propertyName || 'Sem Título'}</p>
                               <p className="text-xs text-slate-500">
                                 {p.enderecoRua}, {p.numero} - {p.enderecoBairro}
                               </p>
                               <p className="text-xs text-slate-400">ID: {p._id}</p>
                             </div>
                             <div className="flex gap-2">
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(p)}>
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="text-slate-500 hover:text-[#1a73e8] hover:bg-slate-50">
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button variant="destructive" size="sm" onClick={() => handleDelete(p._id)}>
+                              <Button variant="destructive" size="sm" onClick={() => handleDelete(p._id)} className="bg-red-50 text-red-600 hover:bg-red-100 border-none">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
@@ -1032,10 +956,8 @@ function AdminImoveisContent() {
             </DialogContent>
           </Dialog>
         </div>
-      </section >
-
-      <Footer />
-    </div >
+      </div>
+    </AdminLayout>
   );
 }
 
