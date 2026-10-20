@@ -1,3 +1,4 @@
+import { requireAdmin } from '@/lib/require-admin';
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
 import { mapForFrontend, mapForPrismaCreate } from './index';
@@ -14,7 +15,11 @@ const resolveModel = (collectionId: string) => {
     }
 }
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request }) => {
+    if (params.collection === 'usuariossistema') {
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
+    }
     const { collection, id } = params;
     const model = resolveModel(collection as string);
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });
@@ -30,6 +35,10 @@ export const GET: APIRoute = async ({ params }) => {
 }
 
 export const PUT: APIRoute = async ({ params, request }) => {
+    if (params.collection === 'usuariossistema') {
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
+    }
     const { collection, id } = params;
     const model = resolveModel(collection as string);
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });
@@ -80,7 +89,11 @@ export const PUT: APIRoute = async ({ params, request }) => {
     }
 }
 
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
+    if (params.collection === 'usuariossistema') {
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
+    }
     const { collection, id } = params;
     const model = resolveModel(collection as string);
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });
