@@ -20,7 +20,7 @@ export default defineConfig({
           if (command === "dev") {
             injectScript(
               "page",
-              `import loadFramewire from "framewire.js";
+              `import loadFramewire from "/framewire.js";
               loadFramewire(true);`
             );
           }
