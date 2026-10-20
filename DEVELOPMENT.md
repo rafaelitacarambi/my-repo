@@ -27,8 +27,9 @@ como parte da preparação.
 - Criação de usuários e CRUD de `usuariossistema` agora exigem sessão Clerk
   verificada e perfil Admin consultado no servidor. Contas bloqueadas ou banidas
   são negadas. O payload com senha não é mais registrado pela rota de criação.
-- Revisar a autorização das rotas de API, inclusive coleções genéricas e rotas
-  de diagnóstico. Proteção de tela React não protege acesso direto à API.
+- Middleware protege APIs internas com sessão e perfil verificados. Diagnósticos,
+  sincronização em lote e gestão de usuários exigem Admin; cobranças exigem
+  Admin ou Financeiro. Revisar futuramente autorização por registro/equipe.
 - Validar login e permissões com contas de teste de cada perfil, leitura e
   escrita em banco de desenvolvimento e funcionamento dos contratos.
 - Confirmar a necessidade de `security.checkOrigin: false` na configuração Astro.
@@ -51,6 +52,24 @@ Não considerar a compilação uma validação de acesso ou das integrações.
   e negação em todas as seis entradas de gestão de usuários.
 - Compilação concluída após as alterações.
 - Testes usam Clerk simulado; não substituem teste com contas reais.
-- O controle adicionado cobre gestão de usuários, não todas as APIs.
-- Webhooks Clerk/WhatsApp ainda precisam de validação de assinatura; a rota de
-  assinatura de contratos também requer revisão de identidade do signatário.
+- As demais APIs agora passam pelo middleware; as exceções explícitas são leitura
+  pública de imóveis e os dois webhooks com validação de assinatura própria.
+- A rota de assinatura só simula em `astro dev` com opt-in explícito. Assinatura
+  real depende de integração e verificação da identidade/consentimento.
+
+
+## Segunda etapa: APIs, imóveis públicos e eventos
+
+- Consultas públicas de imóveis retornam apenas campos permitidos e imóveis
+  AVAILABLE. Nome, telefone, e-mail do proprietário e endereço exato ficam fora
+  da resposta pública. Equipe autenticada mantém a resposta completa.
+- Webhook Clerk usa verifyWebhook do SDK; WhatsApp usa HMAC SHA-256 do corpo
+  original. Sem as variáveis de assinatura, retornam 503 sem processar eventos.
+- SIGNATURE_SIMULATION_ENABLED é false por padrão. Em build/produção, a rota
+  retorna 501; a simulação em desenvolvimento valida o vínculo signatário/contrato
+  e registra no histórico que é uma simulação. Não representa assinatura real.
+- 40 testes simulados passaram e npm run build concluiu. Nenhum dado real foi
+  alterado e nenhuma mensagem foi enviada.
+- Ainda faltam testes visuais, configuração das contas externas, permissões por
+  registro, revisão completa do fluxo de contratos, limites de requisições e
+  tratamento idempotente de eventos repetidos. Não é liberação para produção.

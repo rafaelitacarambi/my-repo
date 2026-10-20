@@ -6,7 +6,7 @@ const deny = (status: number, error: string) => Response.json({ error }, {
 });
 
 /** Authorize before reading a payload or touching the database. */
-export async function requireAdmin(request: Request): Promise<Response | null> {
+export async function requireRoles(request: Request, roles: readonly string[]): Promise<Response | null> {
   const secretKey = import.meta.env.CLERK_SECRET_KEY || process.env.CLERK_SECRET_KEY;
   const publishableKey = import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY;
   if (!secretKey || !publishableKey) return deny(503, 'Autenticação não configurada.');
@@ -26,11 +26,15 @@ export async function requireAdmin(request: Request): Promise<Response | null> {
     if (!state.isAuthenticated || !auth?.userId) return deny(401, 'Faça login para continuar.');
     // Read current server-managed metadata; never trust roles from the request body.
     const user = await clerk.users.getUser(auth.userId);
-    if (user.banned || user.locked || accessRole(user.publicMetadata?.role) !== 'Admin') {
-      return deny(403, 'Acesso restrito a administradores.');
+    if (user.banned || user.locked || !roles.includes(accessRole(user.publicMetadata?.role) ?? '')) {
+      return deny(403, 'Seu perfil não permite esta operação.');
     }
     return null;
   } catch {
     return deny(503, 'Não foi possível validar o acesso. Tente novamente.');
   }
+}
+
+export function requireAdmin(request: Request) {
+  return requireRoles(request, ['Admin']);
 }

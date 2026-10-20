@@ -1,3 +1,4 @@
+import { publicProperty } from '@/lib/public-property';
 import { requireAdmin } from '@/lib/require-admin';
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
@@ -16,7 +17,7 @@ const resolveModel = (collectionId: string) => {
     }
 }
 
-export const GET: APIRoute = async ({ params, request }) => {
+export const GET: APIRoute = async ({ params, request, locals }) => {
     if (params.collection === 'usuariossistema') {
         const denied = await requireAdmin(request);
         if (denied) return denied;
@@ -35,6 +36,9 @@ export const GET: APIRoute = async ({ params, request }) => {
             whereClause = { [filterField]: filterValue };
         }
 
+        const isPublic = collection === 'imoveis' && !(locals as any)?.propertyStaffAccess;
+        if (isPublic) whereClause = { AND: [whereClause, { status: 'AVAILABLE' }] };
+
         // Return all fields for all collections by default to ensure all metadata is sent to frontend
         let queryOptions: any = {
             where: whereClause,
@@ -45,7 +49,10 @@ export const GET: APIRoute = async ({ params, request }) => {
         // @ts-ignore
         const items = await model.findMany(queryOptions);
 
-        const mappedItems = items.map((item: any) => mapForFrontend(collection as string, item));
+        const mappedItems = items.map((item: any) => {
+            const mapped = mapForFrontend(collection as string, item);
+            return isPublic ? publicProperty(mapped) : mapped;
+        });
 
         return new Response(JSON.stringify({
             items: mappedItems,

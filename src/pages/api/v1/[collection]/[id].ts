@@ -1,3 +1,4 @@
+import { publicProperty } from '@/lib/public-property';
 import { requireAdmin } from '@/lib/require-admin';
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
@@ -15,7 +16,7 @@ const resolveModel = (collectionId: string) => {
     }
 }
 
-export const GET: APIRoute = async ({ params, request }) => {
+export const GET: APIRoute = async ({ params, request, locals }) => {
     if (params.collection === 'usuariossistema') {
         const denied = await requireAdmin(request);
         if (denied) return denied;
@@ -27,7 +28,10 @@ export const GET: APIRoute = async ({ params, request }) => {
     try {
         // @ts-ignore
         const item = await model.findUnique({ where: { id: id as string } });
-        const mappedItem = item ? mapForFrontend(collection as string, item) : null;
+        const isPublic = collection === 'imoveis' && !(locals as any)?.propertyStaffAccess;
+        if (isPublic && (!item || item.status !== 'AVAILABLE')) return new Response('Not found', { status: 404 });
+        const mapped = item ? mapForFrontend(collection as string, item) : null;
+        const mappedItem = isPublic ? publicProperty(mapped) : mapped;
         return new Response(JSON.stringify(mappedItem), { status: 200 });
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
