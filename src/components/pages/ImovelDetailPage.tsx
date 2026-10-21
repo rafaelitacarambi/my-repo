@@ -17,24 +17,32 @@ export default function ImovelDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Imveis | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
+    let active = true;
     const loadProperty = async () => {
-      if (!id) return;
+      setLoading(true);
+      setLoadError(false);
+      setProperty(null);
+      setSelectedImage(0);
+      if (!id) { setLoading(false); return; }
 
       try {
         const item = await BaseCrudService.getById<Imveis>('imoveis', id);
-        setProperty(item);
+        if (active) setProperty(item);
       } catch (error) {
-        console.error('Error loading property:', error);
+        if (active) setLoadError(true);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     loadProperty();
-  }, [id]);
+    return () => { active = false; };
+  }, [id, loadAttempt]);
 
   if (loading) {
     return (
@@ -49,6 +57,16 @@ export default function ImovelDetailPage() {
         <Footer />
       </div>
     );
+  }
+
+  if (loadError) {
+    return <div className="min-h-screen bg-primary"><Header />
+      <main role="alert" className="max-w-3xl mx-auto px-6 py-20 text-center space-y-4">
+        <h1 className="font-heading text-3xl">Não foi possível carregar este imóvel</h1>
+        <p>A consulta falhou. Tente novamente em alguns instantes.</p>
+        <Button onClick={() => setLoadAttempt(value => value + 1)}>Tentar novamente</Button>
+        <div><Link to="/imoveis">Voltar para imóveis</Link></div>
+      </main><Footer /></div>;
   }
 
   if (!property || property.statusImovel !== 'Ativo') {

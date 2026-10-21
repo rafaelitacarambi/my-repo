@@ -1,8 +1,7 @@
 import { Resend } from 'resend';
 import { prisma } from '@/lib/prisma';
 
-// A checagem da chave evita crashes caso a variável ainda não esteja no .env
-const resend = new Resend(process.env.RESEND_API_KEY || 're_mock_key');
+
 
 export class EmailService {
 
@@ -16,11 +15,10 @@ export class EmailService {
 
         try {
             if (!process.env.RESEND_API_KEY) {
-                console.warn('⚠️ [EmailService] RESEND_API_KEY não configurada. Simulando envio.');
-                status = 'SENT';
-                resendId = `simulado_${Date.now()}`;
+                status = 'FAILED';
+                errorMsg = 'Envio de e-mail não configurado. Nenhuma mensagem foi enviada.';
             } else {
-                const { data, error } = await resend.emails.send({
+                const { data, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
                     from: 'R Sales Imobiliária <nao-responda@rsales.com>', // Necessário validar domínio no Resend depois
                     to,
                     subject,
@@ -31,6 +29,9 @@ export class EmailService {
                     status = 'FAILED';
                     errorMsg = error.message;
                     console.error('❌ Erro no envio Resend:', error);
+                } else if (!data?.id) {
+                    status = 'FAILED';
+                    errorMsg = 'O provedor não confirmou o envio.';
                 } else {
                     status = 'SENT';
                     resendId = data?.id;

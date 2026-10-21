@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request }) => {
             result = await EmailService.sendEmail(to, subject || 'Mensagem Genérica', html || '<p>Olá</p>');
         }
 
-        return new Response(JSON.stringify(result), { status: 200 });
+        return new Response(JSON.stringify(result), { status: result.status === 'SENT' ? 200 : 503 });
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
     }

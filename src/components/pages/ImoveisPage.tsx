@@ -1,3 +1,4 @@
+import { listingFields, listingPrice, matchesTransaction } from '@/lib/property-listing';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -34,6 +35,8 @@ export default function ImoveisPage() {
   const [properties, setProperties] = useState<Imveis[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Imveis[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [transactionFilter, setTransactionFilter] = useState('all');
@@ -49,28 +52,33 @@ export default function ImoveisPage() {
   const [amenitiesFilter, setAmenitiesFilter] = useState<string[]>([]);
 
   useEffect(() => {
+    let active = true;
     const loadProperties = async () => {
+      setLoading(true);
+      setLoadError(false);
       try {
         const { items } = await BaseCrudService.getAll<Imveis>('imoveis', undefined, { limit: 1000 });
 
         // Sort by date (newest first)
-        const sortedItems = [...items].sort((a, b) => {
+        const sortedItems = items.map(listingFields).sort((a, b) => {
           const dateA = a._createdDate ? new Date(a._createdDate).getTime() : 0;
           const dateB = b._createdDate ? new Date(b._createdDate).getTime() : 0;
           return dateB - dateA;
         });
 
+        if (!active) return;
         setProperties(sortedItems);
         setFilteredProperties(sortedItems);
       } catch (error) {
-        console.error('Error loading properties:', error);
+        if (active) setLoadError(true);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     loadProperties();
-  }, []);
+    return () => { active = false; };
+  }, [loadAttempt]);
 
   useEffect(() => {
     let filtered = properties;
@@ -91,7 +99,7 @@ export default function ImoveisPage() {
     }
 
     if (transactionFilter !== 'all') {
-      filtered = filtered.filter((p) => p.transactionType === transactionFilter);
+      filtered = filtered.filter((p) => matchesTransaction(p.transactionType, transactionFilter));
     }
 
     if (statusFilter !== 'all') {
@@ -107,11 +115,11 @@ export default function ImoveisPage() {
 
     // Advanced filters (AND logic)
     if (priceMin) {
-      filtered = filtered.filter((p) => (p.price || 0) >= parseFloat(priceMin));
+      filtered = filtered.filter((p) => listingPrice(p, transactionFilter) >= parseFloat(priceMin));
     }
 
     if (priceMax) {
-      filtered = filtered.filter((p) => (p.price || 0) <= parseFloat(priceMax));
+      filtered = filtered.filter((p) => listingPrice(p, transactionFilter) <= parseFloat(priceMax));
     }
 
     if (bedroomsMin) {
@@ -410,7 +418,7 @@ export default function ImoveisPage() {
         <div className="max-w-[120rem] mx-auto px-6 lg:px-12">
           <div className="flex items-center justify-between mb-8">
             <p className="font-paragraph text-base text-dark-gray">
-              {filteredProperties.length} {filteredProperties.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}
+              {loading ? 'Carregando imóveis…' : loadError ? 'Consulta indisponível' : `${filteredProperties.length} ${filteredProperties.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'}`}
             </p>
           </div>
 
@@ -419,6 +427,12 @@ export default function ImoveisPage() {
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="bg-light-gray rounded-2xl h-96 animate-pulse border border-border-gray"></div>
               ))}
+            </div>
+          ) : loadError ? (
+            <div role="alert" className="text-center py-20 space-y-4">
+              <h3 className="font-heading text-2xl">Não foi possível carregar os imóveis</h3>
+              <p>Tente novamente em alguns instantes.</p>
+              <Button onClick={() => setLoadAttempt(value => value + 1)}>Tentar novamente</Button>
             </div>
           ) : filteredProperties.length === 0 ? (
             <div className="text-center py-20">
@@ -492,8 +506,8 @@ export default function ImoveisPage() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="font-heading text-2xl text-secondary font-bold">
-                            {property.price || property.precoVenda || property.precoLocacao
-                              ? `R$ ${(property.price || property.precoVenda || property.precoLocacao || 0).toLocaleString('pt-BR')}`
+                            {listingPrice(property, transactionFilter)
+                              ? `R$ ${listingPrice(property, transactionFilter).toLocaleString('pt-BR')}`
                               : 'Consulte'}
                           </span>
                         </div>

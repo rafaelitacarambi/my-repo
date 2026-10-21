@@ -73,3 +73,16 @@ Não considerar a compilação uma validação de acesso ou das integrações.
 - Ainda faltam testes visuais, configuração das contas externas, permissões por
   registro, revisão completa do fluxo de contratos, limites de requisições e
   tratamento idempotente de eventos repetidos. Não é liberação para produção.
+
+## Terceira etapa: consulta e confirmações de envio
+
+- Lista e detalhe de imóveis distinguem falha de rede/servidor de ausência de
+  resultados e oferecem nova tentativa. Troca de imóvel reinicia carregamento
+  e galeria; respostas de consultas antigas são ignoradas.
+- Campos usados pelos filtros são normalizados a partir da API. Venda e locação
+  simultâneas são reconhecidas, inclusive sem acento; faixa de aluguel usa o
+  preço de locação, também exibido nos cartões.
+- Sem chave Resend, envio retorna FAILED, sem mensagem fictícia nem ID simulado.
+  Resposta sem ID do provedor também falha. A API retorna 503 nessas falhas, e a
+  tela só confirma quando o provedor aceita. Aceitação não comprova entrega.
+- 46 testes simulados passaram. Revisão visual no navegador ainda pendente.
