@@ -43,7 +43,7 @@ interface Signer {
 
 interface AuditHistory {
     id: string;
-    event: 'ENVIO' | 'ABERTURA' | 'ASSINATURA' | 'REENVIO' | 'CANCELAMENTO' | 'CONCLUIDO';
+    event: 'GERACAO' | 'ENVIO' | 'ABERTURA' | 'ASSINATURA' | 'REENVIO' | 'CANCELAMENTO' | 'CONCLUIDO';
     description: string;
     signerName?: string;
     signerEmail?: string;
@@ -162,7 +162,8 @@ export default function AdminAssinaturasPage() {
                 setContracts(contracts.map(c => c.id === updated.id ? updated : c));
                 toast.success(`Notificação enviada com sucesso para o participante via ${channel}!`);
             } else {
-                toast.error('Erro ao reenviar notificação.');
+                const detail = await res.json().catch(() => ({}));
+                toast.error(detail.error || 'Erro ao reenviar notificação.');
             }
         } catch (error) {
             toast.error('Erro de conexão ao reenviar notificação.');
@@ -213,7 +214,8 @@ export default function AdminAssinaturasPage() {
                 setCertPin('');
                 setSimulatingSigner(null);
             } else {
-                toast.error('Erro ao simular assinatura.');
+                const detail = await res.json().catch(() => ({}));
+                toast.error(detail.error || 'Erro ao simular assinatura.');
             }
         } catch (error) {
             toast.error('Erro de conexão ao simular assinatura.');

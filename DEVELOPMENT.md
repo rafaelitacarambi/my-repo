@@ -86,3 +86,13 @@ Não considerar a compilação uma validação de acesso ou das integrações.
   Resposta sem ID do provedor também falha. A API retorna 503 nessas falhas, e a
   tela só confirma quando o provedor aceita. Aceitação não comprova entrega.
 - 46 testes simulados passaram. Revisão visual no navegador ainda pendente.
+
+## Rodada de conclusão local — 21/10/2026
+
+Consulte STATUS_DESENVOLVIMENTO.md para o relatório consolidado. Foram adicionados
+validação de contratos, estados honestos de geração/envio, paginação, limite de
+upload, acesso público sem Clerk e confiabilidade do histórico local. A suíte
+local contém 62 testes aprovados e o build de produção passou. Não houve deploy,
+merge, migração de banco real nem envio de mensagens.
+
+Verificação final: `npm run type-check` concluída com código de saída 0.

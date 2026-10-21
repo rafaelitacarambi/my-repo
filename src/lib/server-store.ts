@@ -18,22 +18,28 @@ const INITIAL_DB = {
 function getDb() {
     if (!fs.existsSync(DB_FILE)) {
         fs.writeFileSync(DB_FILE, JSON.stringify(INITIAL_DB, null, 2));
-        return INITIAL_DB;
+        return structuredClone(INITIAL_DB);
     }
     try {
         const data = fs.readFileSync(DB_FILE, 'utf-8');
         return JSON.parse(data);
     } catch (error) {
         console.error('Error reading DB:', error);
-        return INITIAL_DB;
+        throw new Error('Não foi possível ler o histórico de mensagens.');
     }
 }
 
 function saveDb(data: any) {
     try {
-        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+        const temporary = `${DB_FILE}.${crypto.randomUUID()}.tmp`;
+        try {
+            fs.writeFileSync(temporary, JSON.stringify(data, null, 2));
+            fs.renameSync(temporary, DB_FILE);
+        } finally {
+            if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+        }
     } catch (error) {
-        console.error('Error saving DB:', error);
+        throw new Error('Não foi possível salvar o histórico de mensagens.');
     }
 }
 
@@ -55,6 +61,12 @@ export const ServerStore = {
     saveMessage: (message: any) => {
         const db = getDb();
 
+        if (message.wamid) {
+            const previous = db.mensagens.find((m: any) => m.wamid === message.wamid);
+            if (previous) return previous;
+        }
+        const preview = typeof message.text === 'string' ? message.text : message.text?.body || `[${message.type || 'mensagem'}]`;
+
         // Check if conversation exists, if not create/update it
         let conversation = db.conversas.find((c: any) => c.whatsappNumber === message.whatsappNumber);
 
@@ -64,12 +76,12 @@ export const ServerStore = {
                 whatsappNumber: message.whatsappNumber,
                 status: 'Aberta',
                 lastMessageTimestamp: new Date().toISOString(),
-                lastMessagePreview: message.text || (message.type === 'text' ? message.text.body : `[${message.type}]`)
+                lastMessagePreview: preview
             };
             db.conversas.push(conversation);
         } else {
             conversation.lastMessageTimestamp = new Date().toISOString();
-            conversation.lastMessagePreview = message.text || (message.type === 'text' ? message.text.body : `[${message.type}]`);
+            conversation.lastMessagePreview = preview;
         }
 
         const newMessage = {

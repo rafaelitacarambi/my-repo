@@ -64,24 +64,9 @@ export class EmailService {
      * Template: Enviar link do contrato para assinatura
      */
     static async sendContractLink(tenantEmail: string, tenantName: string, contractId: string, propertyTitle: string) {
-        const subject = `Assinatura de Contrato - ${propertyTitle}`;
-        const link = `https://rsales.com/contrato/${contractId}`; // Placeholder
-
-        const html = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-                <h2 style="color: #6366f1;">Olá, ${tenantName}!</h2>
-                <p>O seu contrato de locação para o imóvel <strong>${propertyTitle}</strong> já está disponível para assinatura digital.</p>
-                <div style="margin: 30px 0;">
-                    <a href="${link}" style="background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                        Acessar Contrato
-                    </a>
-                </div>
-                <p>Se tiver qualquer dúvida, responda este e-mail.</p>
-                <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
-                <p style="font-size: 12px; color: #888;">Equipe R Sales Imobiliária</p>
-            </div>
-        `;
-
-        return this.sendEmail(tenantEmail, subject, html);
+        return {
+            status: 'FAILED', resendId: null,
+            errorMsg: 'Envio de link de assinatura ainda não integrado. Nenhuma mensagem foi enviada.',
+        };
     }
 }

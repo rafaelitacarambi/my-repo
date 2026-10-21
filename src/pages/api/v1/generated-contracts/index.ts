@@ -1,3 +1,4 @@
+import { contractInput } from '@/lib/contract-input';
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
 
@@ -51,7 +52,12 @@ export const GET: APIRoute = async ({ request }) => {
 
 export const POST: APIRoute = async ({ request }) => {
     try {
-        const data = await request.json();
+        let raw;
+        try { raw = await request.json(); }
+        catch { return Response.json({ error: 'JSON inválido.' }, { status: 400 }); }
+        const parsed = contractInput.safeParse(raw);
+        if (!parsed.success) return Response.json({ error: 'Dados do contrato inválidos.', fields: parsed.error.flatten() }, { status: 400 });
+        const data = parsed.data;
         const newContract = await prisma.generatedContract.create({
             data: {
                 leadId: data.leadId,
@@ -68,14 +74,14 @@ export const POST: APIRoute = async ({ request }) => {
                         cpf: s.cpf,
                         role: s.role,
                         status: s.status || 'PENDENTE',
-                        signUrl: s.signUrl || null,
+                        signUrl: null,
                         coordsJson: s.coordsJson ? JSON.stringify(s.coordsJson) : null
                     }))
                 } : undefined,
                 histories: {
                     create: {
-                        event: 'ENVIO',
-                        description: `Documento gerado e enviado para assinatura via método ${data.method || 'Eletrônica'}.`
+                        event: 'GERACAO',
+                        description: 'Documento gerado e salvo. Nenhuma solicitação de assinatura foi enviada.'
                     }
                 }
             },

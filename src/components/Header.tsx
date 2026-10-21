@@ -6,16 +6,22 @@ import { Image } from '@/components/ui/image';
 import { useAuth, useClerk } from '@clerk/clerk-react';
 
 export default function Header() {
+  return import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY ? <AuthenticatedHeader /> : <HeaderContent isAuthenticated={false} onSignOut={() => {}} />;
+}
+function AuthenticatedHeader() {
+  const { isSignedIn } = useAuth();
+  const { signOut } = useClerk();
+  return <HeaderContent isAuthenticated={!!isSignedIn} onSignOut={() => { void signOut(); }} />;
+}
+function HeaderContent({ isAuthenticated, onSignOut }: { isAuthenticated: boolean; onSignOut: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { isSignedIn: isAuthenticated } = useAuth();
-  const { signOut } = useClerk();
 
   const isActive = (path: string) => location.pathname === path;
   const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname === '/area-restrita' || location.pathname === '/perfil';
 
   const handleLogout = () => {
-    signOut();
+    onSignOut();
   };
 
   return (

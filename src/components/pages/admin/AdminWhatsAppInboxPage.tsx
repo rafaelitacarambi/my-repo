@@ -68,7 +68,7 @@ export default function AdminWhatsAppInboxPage() {
         if (!newMessage.trim() || !selectedConversation) return;
 
         const tempMsg = newMessage;
-        setNewMessage('');
+
 
         try {
             const res = await fetch('/api/whatsapp', {
@@ -83,9 +83,13 @@ export default function AdminWhatsAppInboxPage() {
 
             if (res.ok) {
                 const sentMsg = await res.json();
+                setNewMessage('');
                 setMessages([...messages, sentMsg]);
                 scrollToBottom();
                 loadConversations(); // Update preview
+            } else {
+                const error = await res.json().catch(() => ({}));
+                toast({ title: 'Mensagem não enviada', description: error.error || 'Tente novamente mais tarde.', variant: 'destructive' });
             }
         } catch (error) {
             toast({ title: 'Erro', description: 'Falha ao enviar mensagem', variant: 'destructive' });

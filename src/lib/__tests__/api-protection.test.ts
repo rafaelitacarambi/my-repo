@@ -4,9 +4,9 @@ import { createHmac } from 'node:crypto';
 import { apiPolicy } from '../api-policy';
 import { publicProperty } from '../public-property';
 import { verifyWhatsAppSignature } from '../whatsapp-signature';
-const mocks = vi.hoisted(() => ({ findMany: vi.fn(), findUnique: vi.fn(), verify: vi.fn(), upsert: vi.fn(), save: vi.fn(), signer: vi.fn() }));
+const mocks = vi.hoisted(() => ({ count: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), verify: vi.fn(), upsert: vi.fn(), save: vi.fn(), signer: vi.fn() }));
 vi.mock('@/lib/prisma', () => ({ prisma: {
-  property: { findMany: mocks.findMany, findUnique: mocks.findUnique },
+  property: { count: mocks.count, findMany: mocks.findMany, findUnique: mocks.findUnique },
   user: { upsert: mocks.upsert }, contractSigner: { findFirst: mocks.signer },
 } }));
 vi.mock('@/lib/require-admin', () => ({ requireAdmin: vi.fn() }));
@@ -19,6 +19,7 @@ import { POST as whatsappWebhook } from '../../pages/api/webhooks/whatsapp';
 import { POST as sign } from '../../pages/api/v1/generated-contracts/[id]/sign';
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.count.mockResolvedValue(1);
   vi.stubEnv('CLERK_WEBHOOK_SIGNING_SECRET', 'test-signing-secret');
   vi.stubEnv('WHATSAPP_APP_SECRET', 'test-meta-secret');
   vi.stubEnv('SIGNATURE_SIMULATION_ENABLED', 'false');

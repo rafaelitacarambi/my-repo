@@ -1,3 +1,4 @@
+import { paginationParams } from '@/lib/pagination';
 import { publicProperty } from '@/lib/public-property';
 import { requireAdmin } from '@/lib/require-admin';
 import type { APIRoute } from 'astro';
@@ -28,6 +29,9 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
 
     try {
         const { searchParams } = new URL(request.url);
+        let page;
+        try { page = paginationParams(searchParams); }
+        catch { return Response.json({ error: 'Paginação inválida.' }, { status: 400 }); }
         const filterField = searchParams.get('filterField');
         const filterValue = searchParams.get('filterValue');
 
@@ -42,12 +46,14 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
         // Return all fields for all collections by default to ensure all metadata is sent to frontend
         let queryOptions: any = {
             where: whereClause,
-            take: 2000,
+            take: page.take,
+            skip: page.skip,
             orderBy: { createdAt: 'desc' }
         };
 
         // @ts-ignore
         const items = await model.findMany(queryOptions);
+        const totalCount = await (model as any).count({ where: whereClause });
 
         const mappedItems = items.map((item: any) => {
             const mapped = mapForFrontend(collection as string, item);
@@ -56,10 +62,11 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
 
         return new Response(JSON.stringify({
             items: mappedItems,
-            totalCount: items.length,
-            hasNext: false,
-            currentPage: 0,
-            pageSize: items.length
+            totalCount,
+            hasNext: page.skip + items.length < totalCount,
+            nextSkip: page.skip + items.length < totalCount ? page.skip + page.take : null,
+            currentPage: Math.floor(page.skip / page.take),
+            pageSize: page.take
         }), { status: 200 });
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });

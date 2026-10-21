@@ -6,6 +6,8 @@ const fields = ['_id', 'codigoReference', 'codImovel', 'resumoImovel', 'tipoImov
   'investimentoOportunidade', 'permiteFinanciamento', 'descricaoAnuncio',
   'propertyImages', 'galeriaFotos', 'areaTotal', 'areaConstruida', 'areaUtil',
   'dormitorios', 'quartos', 'suites', 'banheiros', 'vagas', 'vagasCobertas',
+  'piscina', 'academia', 'elevador', 'seguranca24h', 'acessibilidade',
+  'churrasqueira', 'playground', 'sacadaVaranda', '_createdDate',
   'bairro', 'enderecoBairro', 'cidade', 'enderecoCidade', 'estado', 'enderecoEstado'];
 export function publicProperty(item: Record<string, unknown> | null) {
   if (!item) return null;
