@@ -9,6 +9,7 @@ export const POST: APIRoute = async ({ request }) => {
             return new Response(JSON.stringify({ error: 'Arquivo é obrigatório e deve ser válido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
+        if (file.size > 5 * 1024 * 1024) return Response.json({ error: 'Arquivo muito grande. Limite de 5 MB.' }, { status: 413 });
         const filename = file.name;
         const mimeType = file.type;
         const arrayBuffer = await file.arrayBuffer();
@@ -44,11 +45,12 @@ export const POST: APIRoute = async ({ request }) => {
                 const parser = new PDFParse({ data: buffer });
                 const textResult = await parser.getText();
                 extractedText = textResult.text;
+                await parser.destroy();
                 
                 // Converter quebras de linha simples em <br> ou <p>
                 htmlContent = extractedText
                     .split('\n\n')
-                    .map((paragraph: string) => `<p>${paragraph.replace(/\n/g, '<br/>')}</p>`)
+                    .map((paragraph: string) => `<p>${paragraph.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>')}</p>`)
                     .join('');
             } catch (pdfError: any) {
                  console.error('Erro no pdf-parse:', pdfError);

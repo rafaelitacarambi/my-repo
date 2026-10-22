@@ -228,7 +228,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 }).catch(() => {})
             ));
 
-            toast.success('Contrato gerado, assinado e registrado com sucesso!');
+            toast.success('Contrato gerado e registrado. A assinatura ainda está pendente.');
             setShowPositioning(false);
             onClose();
             if (onSuccess) onSuccess();
@@ -1254,7 +1254,7 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                 await syncParticipantsWithCRM();
 
                 // 2. Registrar Contrato na Coleção 'generated-contracts' (Prisma)
-                await fetch('/api/v1/generated-contracts', {
+                const contractResponse = await fetch('/api/v1/generated-contracts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1265,6 +1265,8 @@ export function ContractWizard({ isOpen, onClose, atendimento, onSuccess }: Cont
                         status: 'GERADO'
                     })
                 });
+
+                if (!contractResponse.ok) throw new Error('Não foi possível registrar o contrato.');
 
                 // Mantém registro no CRM legado para Kanban
                 await BaseCrudService.create('contratos', {

@@ -1,3 +1,5 @@
+import { publicProperty } from '@/lib/public-property';
+import { requireAdmin } from '@/lib/require-admin';
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
 import { mapForFrontend, mapForPrismaCreate } from './index';
@@ -14,7 +16,11 @@ const resolveModel = (collectionId: string) => {
     }
 }
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request, locals }) => {
+    if (params.collection === 'usuariossistema') {
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
+    }
     const { collection, id } = params;
     const model = resolveModel(collection as string);
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });
@@ -22,7 +28,10 @@ export const GET: APIRoute = async ({ params }) => {
     try {
         // @ts-ignore
         const item = await model.findUnique({ where: { id: id as string } });
-        const mappedItem = item ? mapForFrontend(collection as string, item) : null;
+        const isPublic = collection === 'imoveis' && !(locals as any)?.propertyStaffAccess;
+        if (isPublic && (!item || item.status !== 'AVAILABLE')) return new Response('Not found', { status: 404 });
+        const mapped = item ? mapForFrontend(collection as string, item) : null;
+        const mappedItem = isPublic ? publicProperty(mapped) : mapped;
         return new Response(JSON.stringify(mappedItem), { status: 200 });
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
@@ -30,6 +39,10 @@ export const GET: APIRoute = async ({ params }) => {
 }
 
 export const PUT: APIRoute = async ({ params, request }) => {
+    if (params.collection === 'usuariossistema') {
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
+    }
     const { collection, id } = params;
     const model = resolveModel(collection as string);
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });
@@ -80,7 +93,11 @@ export const PUT: APIRoute = async ({ params, request }) => {
     }
 }
 
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
+    if (params.collection === 'usuariossistema') {
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
+    }
     const { collection, id } = params;
     const model = resolveModel(collection as string);
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });

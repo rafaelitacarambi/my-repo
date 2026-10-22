@@ -2,6 +2,9 @@ import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
 
 export const POST: APIRoute = async ({ params, request }) => {
+    // This endpoint is a prototype, not proof of a person's identity or consent.
+    const simulation = import.meta.env.DEV && import.meta.env.SIGNATURE_SIMULATION_ENABLED === 'true';
+    if (!simulation) return Response.json({ error: 'Assinatura real ainda não integrada. Simulação disponível somente em desenvolvimento.' }, { status: 501 });
     try {
         const { id } = params;
         if (!id) {
@@ -15,13 +18,16 @@ export const POST: APIRoute = async ({ params, request }) => {
             return new Response(JSON.stringify({ error: 'signerId e method são obrigatórios' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
+        const signer = await prisma.contractSigner.findFirst({ where: { id: signerId, generatedContractId: id } });
+        if (!signer) return Response.json({ error: 'Signatário não pertence a este contrato.' }, { status: 404 });
+
         // 1. Atualizar o status do signatário
         const updatedSigner = await prisma.contractSigner.update({
             where: { id: signerId },
             data: {
                 status: 'ASSINADO',
                 signedAt: new Date(),
-                ipAddress: ipAddress || '192.168.1.1',
+                ipAddress: null,
                 certificateDetails: certificateDetails || null
             }
         });
@@ -32,11 +38,11 @@ export const POST: APIRoute = async ({ params, request }) => {
             data: {
                 generatedContractId: id,
                 event: 'ASSINATURA',
-                description: `Assinado por ${updatedSigner.name} (${updatedSigner.role}) via assinatura ${method} - IP: ${updatedSigner.ipAddress}${certDesc}.`,
+                description: `[SIMULAÇÃO SEM VALIDADE] Assinado por ${updatedSigner.name} (${updatedSigner.role}) via assinatura ${method} - IP: ${updatedSigner.ipAddress}${certDesc}.`,
                 signerName: updatedSigner.name,
                 signerEmail: updatedSigner.email,
                 ipAddress: updatedSigner.ipAddress,
-                userAgent: userAgent || 'Browser Simulation'
+                userAgent: request.headers.get('user-agent') || 'Development simulation'
             }
         });
 

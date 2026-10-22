@@ -1,3 +1,4 @@
+import { contractUpdate } from '@/lib/contract-input';
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
 
@@ -45,15 +46,12 @@ export const PUT: APIRoute = async ({ params, request }) => {
             return new Response(JSON.stringify({ error: 'ID do contrato é obrigatório' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
-        const data = await request.json();
-        
-        // Exclude relations and ID
-        const updateData: any = {};
-        if (data.status !== undefined) updateData.status = data.status;
-        if (data.pdfUrl !== undefined) updateData.pdfUrl = data.pdfUrl;
-        if (data.signUrl !== undefined) updateData.signUrl = data.signUrl;
-        if (data.statusAssinatura !== undefined) updateData.statusAssinatura = data.statusAssinatura;
-        if (data.signedAt !== undefined) updateData.signedAt = data.signedAt ? new Date(data.signedAt) : null;
+        let raw;
+        try { raw = await request.json(); }
+        catch { return Response.json({ error: 'JSON inválido.' }, { status: 400 }); }
+        const parsed = contractUpdate.safeParse(raw);
+        if (!parsed.success) return Response.json({ error: 'Atualização inválida. Assinaturas só podem ser registradas por fluxo verificado.' }, { status: 400 });
+        const updateData = parsed.data;
 
         const updatedContract = await prisma.generatedContract.update({
             where: { id },

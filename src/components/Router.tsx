@@ -1,5 +1,5 @@
 import { MemberProvider } from '@/integrations';
-import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ScrollToTop } from '@/lib/scroll-to-top';
 import { MemberProtectedRoute } from '@/components/ui/member-protected-route';
 import { ProtectedAdminRoute } from '@/components/ui/protected-admin-route';
@@ -58,6 +58,18 @@ import AdminEmailsPage from '@/components/pages/admin/AdminEmailsPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
+  const { pathname } = useLocation();
+  const routePath = pathname.toLowerCase().replace(/\/+$/, '');
+  const internal = routePath.startsWith('/admin') || ['/perfil', '/area-restrita', '/diagnostico-usuario'].includes(routePath);
+  if (!import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY && internal) {
+    return <main className="min-h-screen flex items-center justify-center bg-primary px-6">
+      <div className="max-w-xl text-center space-y-5">
+        <h1 className="font-heading text-3xl">Área interna em preparação</h1>
+        <p>O acesso da equipe ainda não foi configurado. Você pode continuar navegando pelas páginas públicas.</p>
+        <a href="/" className="inline-block underline">Voltar ao início</a>
+      </div>
+    </main>;
+  }
   return (
     <>
       <ScrollToTop />
@@ -396,7 +408,7 @@ const clerkPk = import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default function AppRouter() {
   if (!clerkPk) {
-    return <div>Erro: PUBLIC_CLERK_PUBLISHABLE_KEY ausente ou não instalada.</div>;
+    return <MemberProvider><Toaster position="top-right" richColors /><RouterProvider router={router} /></MemberProvider>;
   }
 
   return (

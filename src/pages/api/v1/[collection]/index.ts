@@ -1,3 +1,6 @@
+import { paginationParams } from '@/lib/pagination';
+import { publicProperty } from '@/lib/public-property';
+import { requireAdmin } from '@/lib/require-admin';
 import type { APIRoute } from 'astro';
 import { prisma } from '@/lib/prisma';
 
@@ -15,13 +18,20 @@ const resolveModel = (collectionId: string) => {
     }
 }
 
-export const GET: APIRoute = async ({ params, request }) => {
+export const GET: APIRoute = async ({ params, request, locals }) => {
+    if (params.collection === 'usuariossistema') {
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
+    }
     const { collection } = params;
     const model = resolveModel(collection as string);
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });
 
     try {
         const { searchParams } = new URL(request.url);
+        let page;
+        try { page = paginationParams(searchParams); }
+        catch { return Response.json({ error: 'Paginação inválida.' }, { status: 400 }); }
         const filterField = searchParams.get('filterField');
         const filterValue = searchParams.get('filterValue');
 
@@ -30,24 +40,33 @@ export const GET: APIRoute = async ({ params, request }) => {
             whereClause = { [filterField]: filterValue };
         }
 
+        const isPublic = collection === 'imoveis' && !(locals as any)?.propertyStaffAccess;
+        if (isPublic) whereClause = { AND: [whereClause, { status: 'AVAILABLE' }] };
+
         // Return all fields for all collections by default to ensure all metadata is sent to frontend
         let queryOptions: any = {
             where: whereClause,
-            take: 2000,
+            take: page.take,
+            skip: page.skip,
             orderBy: { createdAt: 'desc' }
         };
 
         // @ts-ignore
         const items = await model.findMany(queryOptions);
+        const totalCount = await (model as any).count({ where: whereClause });
 
-        const mappedItems = items.map((item: any) => mapForFrontend(collection as string, item));
+        const mappedItems = items.map((item: any) => {
+            const mapped = mapForFrontend(collection as string, item);
+            return isPublic ? publicProperty(mapped) : mapped;
+        });
 
         return new Response(JSON.stringify({
             items: mappedItems,
-            totalCount: items.length,
-            hasNext: false,
-            currentPage: 0,
-            pageSize: items.length
+            totalCount,
+            hasNext: page.skip + items.length < totalCount,
+            nextSkip: page.skip + items.length < totalCount ? page.skip + page.take : null,
+            currentPage: Math.floor(page.skip / page.take),
+            pageSize: page.take
         }), { status: 200 });
     } catch (err: any) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
@@ -55,6 +74,10 @@ export const GET: APIRoute = async ({ params, request }) => {
 }
 
 export const POST: APIRoute = async ({ params, request }) => {
+    if (params.collection === 'usuariossistema') {
+        const denied = await requireAdmin(request);
+        if (denied) return denied;
+    }
     const { collection } = params;
     const model = resolveModel(collection as string);
     if (!model) return new Response(JSON.stringify({ error: `Not implemented for ${collection}` }), { status: 404 });

@@ -1,3 +1,4 @@
+import { requireAdmin } from '@/lib/require-admin';
 import type { APIRoute } from 'astro';
 import { createClerkClient } from '@clerk/backend';
 
@@ -8,9 +9,11 @@ const clerkClient = createClerkClient({
 });
 
 export const POST: APIRoute = async ({ request }) => {
+    const denied = await requireAdmin(request);
+    if (denied) return denied;
     try {
         const payload = await request.json();
-        console.log("Creating Clerk User with payload:", JSON.stringify(payload, null, 2));
+
 
         const { email, password, firstName, lastName, publicMetadata } = payload;
 
@@ -33,11 +36,11 @@ export const POST: APIRoute = async ({ request }) => {
         }), { status: 200 });
 
     } catch (error: any) {
-        console.error("Clerk Create User Error:", error);
+        console.error("Clerk user creation failed.");
 
         // Check if it's a Clerk API error (usually contains 'errors' array)
         const clerkErrors = error.errors;
-        let errorMessage = error.message;
+        let errorMessage = 'Não foi possível criar o usuário.';
 
         if (clerkErrors && clerkErrors.length > 0) {
             errorMessage = clerkErrors[0].message || clerkErrors[0].longMessage || errorMessage;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
+import { accessRole } from '@/lib/access-role';
 
 export interface AuthValidationResult {
   isValidating: boolean;
@@ -31,9 +32,12 @@ export function useAuthValidation() {
       return;
     }
 
-    // Authorization Clerk Ok
-    // Se a role ainda não sincronizou no Dashboard Clerk, force 'Admin' por enquanto
-    const role = (user.publicMetadata?.role as string) || 'Admin';
+    const role = accessRole(user.publicMetadata?.role);
+    if (!role) {
+      setValidationState({ isValidating: false, isAuthorized: false,
+        userProfile: null, error: 'Seu perfil de acesso ainda não foi autorizado.' });
+      return;
+    }
 
     setValidationState({
       isValidating: false,

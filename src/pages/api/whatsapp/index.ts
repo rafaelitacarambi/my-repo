@@ -33,29 +33,6 @@ export const GET: APIRoute = ({ request }) => {
     return new Response('Invalid request', { status: 400 });
 };
 
-export const POST: APIRoute = async ({ request }) => {
-    // Handler for sending messages from the UI (which also calls WhatsAppService)
-    // This is a proxy to keep logic securely on server
-    try {
-        const body = await request.json();
-        const { to, text, conversationId } = body;
-
-        // 1. Call WhatsAppService (Simulated here since we don't have real creds in dev usually)
-        // In real app: await WhatsAppService.sendTextMessage(to, text);
-
-        // 2. Save to ServerStore
-        const newMessage = ServerStore.saveMessage({
-            whatsappNumber: to,
-            origin: 'Atendente', // From UI
-            text: { body: text },
-            type: 'text',
-            isSent: true,
-            deliveryStatus: 'sent'
-        });
-
-        return new Response(JSON.stringify(newMessage), { status: 200 });
-    } catch (error) {
-        console.error('Error sending message:', error);
-        return new Response('Error', { status: 500 });
-    }
-}
+export const POST: APIRoute = async () => Response.json({
+    error: 'Envio de WhatsApp ainda não integrado. Nenhuma mensagem foi enviada.',
+}, { status: 501 });

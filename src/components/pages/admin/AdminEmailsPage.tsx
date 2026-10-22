@@ -49,14 +49,14 @@ export default function AdminEmailsPage() {
 
             const data = await res.json();
 
-            if (data.status === 'SENT') {
-                toast.success('E-mail disparado via Resend com sucesso!');
+            if (res.ok && data.status === 'SENT') {
+                toast.success('E-mail aceito pelo serviço de envio.');
                 setTo(''); setSubject(''); setBody('');
                 // Recarrega lista
                 const newLogs = await (await fetch('/api/v1/emails')).json();
                 setLogs(newLogs.items || []);
             } else {
-                toast.error('Ocorreu um erro no disparo: ' + data.errorMsg);
+                toast.error(data.errorMsg || data.error || 'Não foi possível enviar o e-mail.');
             }
 
         } catch (error: any) {

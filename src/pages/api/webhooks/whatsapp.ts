@@ -1,3 +1,4 @@
+import { verifyWhatsAppSignature } from '@/lib/whatsapp-signature';
 import type { APIRoute } from 'astro';
 import { ServerStore } from '@/lib/server-store';
 
@@ -8,8 +9,9 @@ export const GET: APIRoute = ({ request }) => {
     const challenge = url.searchParams.get('hub.challenge');
 
     // Verify Token should be an environment variable
-    const VERIFY_TOKEN = import.meta.env.WHATSAPP_VERIFY_TOKEN || 'rsales_secure_token';
+    const VERIFY_TOKEN = import.meta.env.WHATSAPP_VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN;
 
+    if (!VERIFY_TOKEN) return new Response('Webhook not configured', { status: 503 });
     if (mode && token) {
         if (mode === 'subscribe' && token === VERIFY_TOKEN) {
             console.log('WEBHOOK_VERIFIED');
@@ -24,8 +26,15 @@ export const GET: APIRoute = ({ request }) => {
 
 export const POST: APIRoute = async ({ request }) => {
     try {
-        const body = await request.json();
-        console.log('Incoming WhatsApp Webhook:', JSON.stringify(body, null, 2));
+        const secret = import.meta.env.WHATSAPP_APP_SECRET || process.env.WHATSAPP_APP_SECRET;
+        if (!secret) return new Response('Webhook not configured', { status: 503 });
+        const raw = await request.text();
+        if (!verifyWhatsAppSignature(raw, request.headers.get('x-hub-signature-256'), secret)) {
+            return new Response('Invalid signature', { status: 401 });
+        }
+        let body;
+        try { body = JSON.parse(raw); }
+        catch { return new Response('Invalid JSON', { status: 400 }); }
 
         if (body.object) {
             if (
