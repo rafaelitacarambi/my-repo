@@ -1,0 +1,23 @@
+# Test deployment: existing Supabase database, no automatic migrations.
+services:
+  - type: web
+    name: rsales-desenvolvimento
+    runtime: node
+    plan: free
+    region: ohio
+    branch: codex/preparacao-desenvolvimento
+    autoDeployTrigger: "off"
+    buildCommand: npm ci --include=dev && npm run build:host
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        sync: false
+      - key: PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false

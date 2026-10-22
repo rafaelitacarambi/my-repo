@@ -1,7 +1,7 @@
 # R Sales — situação do desenvolvimento
 
-Atualizado em 21/10/2026. Branch: `codex/preparacao-desenvolvimento`.
-As alterações estão na proposta de revisão nº 1, sem merge e sem publicação.
+Atualizado em 22/10/2026. Branch: `codex/preparacao-desenvolvimento`.
+As alterações estão na proposta de revisão nº 1, sem merge. Há uma demonstração estática privada publicada, separada do servidor completo.
 
 ## Concluído e verificado localmente
 
@@ -28,7 +28,7 @@ As alterações estão na proposta de revisão nº 1, sem merge e sem publicaç�
 
 ## Verificação
 
-- 62 testes automatizados passaram, usando dados fictícios e serviços simulados.
+- 65 testes automatizados passaram, usando dados fictícios e serviços simulados.
 - Compilação de produção concluída.
 - Verificação de tipos executada; resultado final registrado em DEVELOPMENT.md.
 - Teste de renderização confirma navegação pública sem credenciais Clerk.
@@ -40,12 +40,12 @@ As alterações estão na proposta de revisão nº 1, sem merge e sem publicaç�
 | --- | --- |
 | Aparência e uso em celular/computador | Não houve navegador de QA compatível disponível neste ambiente; testes de renderização não substituem inspeção visual. |
 | Cadastro, edição e persistência reais | Falta validar conexão e estrutura do PostgreSQL/Supabase com dados de teste. |
-| Login e permissões com pessoas reais | Falta localizar/configurar a conta Clerk e um administrador de teste. Usuário autorizou adiar essa etapa. |
+| Login e permissões com pessoas reais | Conta Clerk Development identificada e perfil Admin de Rafael confirmado no painel; faltam variáveis no servidor e validação do login real. |
 | Envio/recebimento real de WhatsApp | Exige conta Meta, credenciais, configuração do webhook e implementação/validação do envio. |
 | Entrega real de e-mail | Exige conta Resend, remetente/domínio validado e testes de entrega. |
 | Assinatura válida de contratos | O projeto contém um protótipo. Falta provedor, validação de identidade/consentimento, links e retorno assinado. |
 | Fluxos legados | Parte das coleções continua usando serviços Wix; não foi comprovada sua conexão nem concluída migração para PostgreSQL. |
-| Site acessível por link novo | Não foi feito deploy. A proposta no GitHub é código em revisão, não um site publicado. |
+| Site acessível por link novo | Demonstração privada: https://rsales-demonstracao.oakenboot21.chatgpt.site . Servidor completo ainda não publicado; configuração Render preparada em HOSPEDAGEM.md. |
 
 ## Trabalho ainda necessário antes de uso real
 
@@ -70,3 +70,10 @@ trabalho de implementação, além das dependências de contas:
 
 Não é necessário fornecer senhas pelo chat. Quando essas integrações forem
 retomadas, configurar acessos pelos respectivos painéis e mecanismos seguros.
+
+## Retomada em 22/10/2026
+
+- Preparados comandos de build/start Node e Blueprint Render, sem migrações automáticas.
+- Adicionado GET `/api/admin/readiness`, exclusivo para Admin: testa conexão SQL com SELECT 1, não lê registros nem revela credenciais. Não certifica esquema ou prontidão para produção.
+- Supabase existente identificado pelo usuário, com tabelas correspondentes ao esquema Prisma; conexão e dados ainda não verificados neste ambiente.
+- Nenhuma conta de hospedagem foi criada e nenhuma mensagem real foi enviada.

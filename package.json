@@ -12,7 +12,9 @@
     "check": "astro check",
     "test:run": "vitest run",
     "type-check": "tsc --noEmit",
-    "sync-imoveis": "tsx scripts/sync_imoveis.ts"
+    "sync-imoveis": "tsx scripts/sync_imoveis.ts",
+    "start": "node ./dist/server/entry.mjs",
+    "build:host": "prisma generate && astro build"
   },
   "dependencies": {
     "@astrojs/check": "0.9.4",
